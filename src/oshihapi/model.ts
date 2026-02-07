@@ -71,6 +71,8 @@ export type InputMeta = {
   itemKind?: ItemKind;
 };
 
+export type AnswerValue = string | number | string[];
+
 export type DecisionRun = {
   runId: string;
   createdAt: number;
@@ -78,7 +80,7 @@ export type DecisionRun = {
   category: Category;
   mode: Mode;
   meta: InputMeta;
-  answers: Record<string, any>;
+  answers: Record<string, AnswerValue>;
   output: DecisionOutput;
 };
 

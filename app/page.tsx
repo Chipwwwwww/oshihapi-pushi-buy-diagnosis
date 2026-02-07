@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { ItemKind, Mode } from "@/src/oshihapi/model";
+import type { InputMeta, ItemKind, Mode } from "@/src/oshihapi/model";
 
 const deadlineOptions = [
   { value: "today", label: "今日" },
@@ -11,6 +11,36 @@ const deadlineOptions = [
   { value: "in1week", label: "1週間以内" },
   { value: "unknown", label: "未定" },
 ] as const;
+
+type DeadlineValue = NonNullable<InputMeta["deadline"]>;
+
+const DEADLINE_VALUES = deadlineOptions.map((option) => option.value);
+const ITEM_KIND_VALUES: ItemKind[] = [
+  "goods",
+  "blind_draw",
+  "used",
+  "preorder",
+  "ticket",
+];
+
+const isDeadlineValue = (value: string): value is DeadlineValue =>
+  DEADLINE_VALUES.includes(value as DeadlineValue);
+
+const isItemKindValue = (value: string): value is ItemKind =>
+  ITEM_KIND_VALUES.includes(value as ItemKind);
+
+const parseDeadlineValue = (value: string): DeadlineValue =>
+  isDeadlineValue(value) ? value : "unknown";
+
+const parseItemKindValue = (value: string): ItemKind =>
+  isItemKindValue(value) ? value : "goods";
+
+const parsePriceYen = (value: string): number | undefined => {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
 
 const itemKindOptions: { value: ItemKind; label: string }[] = [
   { value: "goods", label: "グッズ" },
@@ -25,7 +55,7 @@ export default function Home() {
   const [mode, setMode] = useState<Mode>("urgent");
   const [itemName, setItemName] = useState("");
   const [priceYen, setPriceYen] = useState("");
-  const [deadline, setDeadline] = useState("unknown");
+  const [deadline, setDeadline] = useState<DeadlineValue>("unknown");
   const [itemKind, setItemKind] = useState<ItemKind>("goods");
 
   const modeDescription = useMemo(
@@ -40,9 +70,12 @@ export default function Home() {
     const params = new URLSearchParams();
     params.set("mode", mode);
     if (itemName.trim()) params.set("itemName", itemName.trim());
-    if (priceYen) params.set("priceYen", priceYen);
-    if (deadline) params.set("deadline", deadline);
-    if (itemKind) params.set("itemKind", itemKind);
+    const parsedPrice = parsePriceYen(priceYen);
+    if (parsedPrice !== undefined) params.set("priceYen", String(parsedPrice));
+    const normalizedDeadline = parseDeadlineValue(deadline);
+    if (normalizedDeadline) params.set("deadline", normalizedDeadline);
+    const normalizedItemKind = parseItemKindValue(itemKind);
+    if (normalizedItemKind) params.set("itemKind", normalizedItemKind);
     router.push(`/flow?${params.toString()}`);
   };
 
@@ -120,7 +153,7 @@ export default function Home() {
             締切
             <select
               value={deadline}
-              onChange={(event) => setDeadline(event.target.value)}
+              onChange={(event) => setDeadline(parseDeadlineValue(event.target.value))}
               className="rounded-lg border border-zinc-200 px-3 py-2 text-base text-zinc-900 focus:border-pink-400 focus:outline-none"
             >
               {deadlineOptions.map((option) => (
@@ -134,7 +167,7 @@ export default function Home() {
             種別
             <select
               value={itemKind}
-              onChange={(event) => setItemKind(event.target.value as ItemKind)}
+              onChange={(event) => setItemKind(parseItemKindValue(event.target.value))}
               className="rounded-lg border border-zinc-200 px-3 py-2 text-base text-zinc-900 focus:border-pink-400 focus:outline-none"
             >
               {itemKindOptions.map((option) => (

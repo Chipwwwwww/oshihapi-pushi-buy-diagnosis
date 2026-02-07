@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { DecisionRun } from "@/src/oshihapi/model";
 import { findRun } from "@/src/oshihapi/runStorage";
@@ -14,14 +14,13 @@ const decisionLabels: Record<string, string> = {
 export default function ResultPage() {
   const router = useRouter();
   const params = useParams<{ runId: string }>();
-  const [run, setRun] = useState<DecisionRun | null>(null);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    if (!params?.runId) return;
-    const found = findRun(params.runId);
-    setRun(found ?? null);
-  }, [params?.runId]);
+  const runId = params?.runId;
+  const run = useMemo<DecisionRun | undefined>(() => {
+    if (!runId) return undefined;
+    return findRun(runId);
+  }, [runId]);
 
   const handleCopy = async () => {
     if (!run) return;
@@ -37,13 +36,15 @@ export default function ResultPage() {
   if (!run) {
     return (
       <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col items-center justify-center px-6 py-10">
-        <p className="text-sm text-zinc-500">結果が見つかりませんでした。</p>
+        <p className="text-sm text-zinc-500">
+          結果が見つかりませんでした。ホームからもう一度お試しください。
+        </p>
         <button
           type="button"
-          onClick={() => router.push("/history")}
+          onClick={() => router.push("/")}
           className="mt-4 rounded-full bg-zinc-900 px-5 py-2 text-sm font-semibold text-white"
         >
-          履歴を見る
+          Homeへ戻る
         </button>
       </div>
     );
@@ -72,9 +73,21 @@ export default function ResultPage() {
 
       <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
         <h2 className="text-base font-semibold text-zinc-800">次のアクション</h2>
-        <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-zinc-600">
+        <ul className="mt-3 space-y-3 text-sm text-zinc-600">
           {run.output.actions.map((action) => (
-            <li key={action.id}>{action.text}</li>
+            <li key={action.id} className="rounded-xl border border-zinc-200 p-4">
+              <p className="text-sm text-zinc-700">{action.text}</p>
+              {action.linkOut ? (
+                <a
+                  href={action.linkOut.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-3 inline-flex rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white"
+                >
+                  {action.linkOut.label}
+                </a>
+              ) : null}
+            </li>
           ))}
         </ul>
       </section>
