@@ -1,4 +1,12 @@
-import type { Decision, DecisionOutput, EngineConfig, QuestionSet, ScoreDimension } from './model';
+import type {
+  AnswerValue,
+  Decision,
+  DecisionOutput,
+  EngineConfig,
+  InputMeta,
+  QuestionSet,
+  ScoreDimension,
+} from './model';
 import { engineConfig as defaultConfig, normalize01ToSigned, clamp } from './engineConfig';
 import { pickReasons, pickActions, buildShareText } from './reasonRules';
 import { decideMerchMethod } from './merchMethod';
@@ -6,9 +14,9 @@ import { decideMerchMethod } from './merchMethod';
 type EvaluateInput = {
   config?: EngineConfig;
   questionSet: QuestionSet;
-  meta: { itemName?: string; priceYen?: number; deadline?: any; itemKind?: any };
+  meta: InputMeta;
   // answers: questionId -> (optionId | number for scale)
-  answers: Record<string, any>;
+  answers: Record<string, AnswerValue>;
 };
 
 function initScores(): Record<ScoreDimension, number> {
@@ -43,6 +51,7 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     if (ans == null) continue;
 
     if (q.type === 'scale' || q.type === 'number') {
+      if (Array.isArray(ans)) continue;
       const v = Number(ans);
       if (Number.isFinite(v) && q.mapTo) {
         // scale 0..5 => 0..100

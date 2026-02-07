@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { DecisionRun } from "@/src/oshihapi/model";
 import { loadRuns } from "@/src/oshihapi/runStorage";
@@ -28,11 +28,7 @@ const decisionLabels: Record<string, string> = {
 };
 
 export default function HistoryPage() {
-  const [runs, setRuns] = useState<DecisionRun[]>([]);
-
-  useEffect(() => {
-    setRuns(loadRuns());
-  }, []);
+  const [runs] = useState<DecisionRun[]>(() => loadRuns());
 
   const hasRuns = useMemo(() => runs.length > 0, [runs]);
 
@@ -46,7 +42,7 @@ export default function HistoryPage() {
 
       {!hasRuns ? (
         <section className="rounded-2xl border border-dashed border-zinc-300 bg-white p-6 text-sm text-zinc-500">
-          まだ履歴がありません。ホームから診断を始めてください。
+          まだ履歴がありません。
         </section>
       ) : (
         <section className="space-y-3">
