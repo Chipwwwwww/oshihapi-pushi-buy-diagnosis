@@ -1,0 +1,25 @@
+# Codex PR タスク: Homeに「モード選びガイド」を追加
+
+## Motivation
+ユーザーが短/中/長のどれを選ぶべきか迷う時間を減らし、離脱を下げる。
+ACG/推し活の“場面”で選べるUIにする。
+
+## Scope
+- Home（app/page.tsx）に以下を追加
+  1) 「迷ったらおすすめ」: recommendMode()の結果表示（おすすめモード・理由チップ・信頼度）
+  2) 「状況から選ぶ」: SITUATION_CHIPS_JA を横スクロールのチップで表示。クリックでmodeセット。
+  3) 「例から選ぶ」: SCENARIO_CARDS_JA をカードで表示。クリックでmodeセット（+必要なら入力もプリセット）
+
+- ロジックは既存の `src/oshihapi/modeGuide/*` を利用（今回追加済み前提）。
+- UIはモバイル優先、余白多め、カードは2xl rounded + shadow。
+- モードカード（短/中/長）が既にあるなら、選択状態の強調（border/背景）を更新。
+
+## Acceptance Criteria
+- Homeで入力がなくても、状況チップ/例カードからモードが選べる
+- 入力を入れたらおすすめが更新される（価格/締切/店頭/候補数/遠征費に追従）
+- 急ぎ×高額のケースで followUp が表示される（「保留なら後で長」）
+- TypeScriptエラーなし、npm run dev -- --webpack で動作確認できる
+
+## Notes
+- 既存の query params / navigation 方針に合わせる（modeをクエリに載せてflowへ）
+- 余計な外部APIは使わない

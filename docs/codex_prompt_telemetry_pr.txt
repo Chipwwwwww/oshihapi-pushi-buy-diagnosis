@@ -1,0 +1,37 @@
+# Codex PR Task: Add anonymous telemetry (Neon Postgres) + Result UI consent card
+
+## Goal
+Add an opt-in, privacy-first telemetry pipeline so users can send anonymous diagnostic data for ML/parameter tuning.
+Use the already-created Neon Postgres table `telemetry_runs`.
+
+## Requirements
+1) API Route: `POST /api/telemetry` (Node runtime)
+- Validate allowlisted events: 'run_export' | 'l1_feedback'
+- Enforce ~64KB max payload
+- Insert into Postgres: id(UUID), session_id, source(event), data(JSONB)
+
+2) Client helper: `src/oshihapi/telemetryClient.ts`
+- getOrCreateSessionId() -> localStorage 'oshihapi_session_id'
+- buildTelemetryPayloadFromRun(run) -> no free-text; omit price/itemName by default
+- sendTelemetry(event, run, options) -> POST
+
+3) Result UI
+- Add card:
+  - Title: 学習のために匿名データを送信
+  - Checkboxes (default checked): 価格を送らない / 商品名を送らない
+  - Button: 匿名データを送信する
+- On success: toast + set localStorage 'oshihapi_telemetry_opt_in=true'
+
+4) L1 feedback
+- If opt-in true, send event 'l1_feedback' with label when user clicks.
+
+5) Docs
+- Add docs/telemetry.md (what collected, queries, privacy text)
+
+## DB connection env priority
+POSTGRES_URL_NON_POOLING > POSTGRES_URL > DATABASE_URL
+
+## Acceptance
+- `npm run build` passes
+- Works on Vercel; rows appear in telemetry_runs
+- Default privacy: price/itemName NOT sent
