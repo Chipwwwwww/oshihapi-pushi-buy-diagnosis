@@ -1,4 +1,4 @@
-import { randomUUID } from "crypto";
+import crypto from "crypto";
 
 type PgClientConstructor = new (config: {
   connectionString: string;
@@ -14,7 +14,7 @@ const ALLOWED_EVENTS = new Set(["run_export", "l1_feedback"]);
 export const runtime = "nodejs";
 
 const ENV_HINT =
-  "Set .env.local POSTGRES_URL_NON_POOLING=postgresql://USER:PASSWORD@HOST/db";
+  "Set .env.local: POSTGRES_URL_NON_POOLING=... (or POSTGRES_URL/DATABASE_URL)";
 
 const loadPgClient = () => {
   const requireFn = eval("require") as NodeRequire;
@@ -25,17 +25,18 @@ const loadPgClient = () => {
 const jsonError = (
   status: number,
   error: string,
-  options?: { hint?: string; detail?: string },
-) =>
-  Response.json(
-    {
-      ok: false,
-      error,
-      ...(options?.hint ? { hint: options.hint } : {}),
-      ...(options?.detail ? { detail: options.detail } : {}),
-    },
-    { status },
-  );
+  options?: { hint?: string; detail?: string; missing?: string[] },
+) => {
+  const payload = {
+    ok: false,
+    error,
+    ...(options?.hint ? { hint: options.hint } : {}),
+    ...(options?.detail ? { detail: options.detail } : {}),
+    ...(options?.missing ? { missing: options.missing } : {}),
+  };
+
+  return Response.json(payload, { status });
+};
 
 const getConnectionString = () =>
   process.env.POSTGRES_URL_NON_POOLING ??
@@ -44,31 +45,46 @@ const getConnectionString = () =>
 
 const shortenError = (error: unknown) => {
   if (error instanceof Error) {
-    return error.message.split("\n")[0].slice(0, 140);
+    const firstLine = error.message.split("\n")[0];
+    return firstLine.replace(/postgres(?:ql)?:\/\/\S+/gi, "[redacted]").slice(0, 180);
   }
   return "unknown_error";
+};
+
+const buildDbHint = (message: string) => {
+  const lower = message.toLowerCase();
+  if (lower.includes("ssl")) {
+    return "Check SSL settings for Neon/Vercel Postgres.";
+  }
+  if (lower.includes("password") || lower.includes("authentication")) {
+    return "Check database username/password in env.";
+  }
+  if (lower.includes("timeout") || lower.includes("connect")) {
+    return "Check database host/network access.";
+  }
+  return undefined;
 };
 
 export async function POST(request: Request) {
   const contentLength = request.headers.get("content-length");
   if (contentLength && Number(contentLength) > MAX_PAYLOAD_BYTES) {
-    return jsonError(413, "Payload too large");
+    return jsonError(413, "bad_request", { hint: "Payload too large." });
   }
 
   const rawBody = await request.text();
   if (Buffer.byteLength(rawBody, "utf8") > MAX_PAYLOAD_BYTES) {
-    return jsonError(413, "Payload too large");
+    return jsonError(413, "bad_request", { hint: "Payload too large." });
   }
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(rawBody);
   } catch {
-    return jsonError(400, "Invalid JSON");
+    return jsonError(400, "bad_request", { hint: "Invalid JSON." });
   }
 
   if (typeof parsed !== "object" || parsed === null) {
-    return jsonError(400, "Invalid payload");
+    return jsonError(400, "bad_request", { hint: "Invalid payload." });
   }
 
   const { event, sessionId, data } = parsed as {
@@ -78,39 +94,52 @@ export async function POST(request: Request) {
   };
 
   if (!event || !ALLOWED_EVENTS.has(event)) {
-    return jsonError(400, "Invalid event");
+    return jsonError(400, "bad_request", { hint: "Invalid event." });
   }
 
   if (typeof sessionId !== "string" || sessionId.length === 0) {
-    return jsonError(400, "Invalid session");
+    return jsonError(400, "bad_request", { hint: "Invalid session." });
   }
 
   if (typeof data !== "object" || data === null) {
-    return jsonError(400, "Invalid data");
+    return jsonError(400, "bad_request", { hint: "Invalid data." });
   }
 
   const connectionString = getConnectionString();
 
   if (!connectionString) {
-    return jsonError(500, "DB env missing", { hint: ENV_HINT });
+    const missing = ["POSTGRES_URL_NON_POOLING", "POSTGRES_URL", "DATABASE_URL"].filter(
+      (key) => !process.env[key],
+    );
+    return jsonError(500, "db_env_missing", { hint: ENV_HINT, missing });
   }
 
   const Client = loadPgClient();
   const client = new Client({ connectionString });
+  const id = crypto.randomUUID();
   try {
     await client.connect();
-    await client.query(
-      "INSERT INTO telemetry_runs (id, session_id, source, data) VALUES ($1, $2, $3, $4)",
-      [randomUUID(), sessionId, event, data],
-    );
+    const result = (await client.query(
+      "INSERT INTO telemetry_runs (id, session_id, source, data) VALUES ($1, $2, $3, $4) RETURNING created_at",
+      [id, sessionId, event, data],
+    )) as { rows?: Array<{ created_at?: string | Date }> };
+    const createdAtRaw = result?.rows?.[0]?.created_at;
+    const createdAt =
+      createdAtRaw instanceof Date ? createdAtRaw.toISOString() : createdAtRaw;
+    return Response.json({ ok: true, id, createdAt });
   } catch (error) {
     console.error("Telemetry insert failed", error);
-    return jsonError(500, "DB insert failed", {
-      detail: shortenError(error),
+    const message = shortenError(error);
+    const code =
+      typeof error === "object" && error !== null && "code" in error
+        ? String((error as { code?: string }).code)
+        : undefined;
+    const hint = buildDbHint(message);
+    return jsonError(500, "db_insert_failed", {
+      detail: code ? `code=${code}; ${message}` : message,
+      ...(hint ? { hint } : {}),
     });
   } finally {
     await client.end();
   }
-
-  return Response.json({ ok: true });
 }
