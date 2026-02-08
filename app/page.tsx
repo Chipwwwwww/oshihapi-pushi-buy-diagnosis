@@ -9,6 +9,18 @@ import {
   SITUATION_CHIPS_JA,
   recommendMode,
 } from "@/src/oshihapi/modeGuide";
+import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
+import Card from "@/components/ui/Card";
+import RadioCard from "@/components/ui/RadioCard";
+import {
+  bodyTextClass,
+  containerClass,
+  helperTextClass,
+  inputBaseClass,
+  pageTitleClass,
+  sectionTitleClass,
+} from "@/components/ui/tokens";
 
 const deadlineOptions = [
   { value: "today", label: "今日" },
@@ -124,204 +136,156 @@ export default function Home() {
   };
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-10 px-6 py-10">
-      <header className="flex flex-col gap-3">
-        <p className="text-sm font-semibold uppercase tracking-widest text-pink-600">
+    <div className={`${containerClass} flex min-h-screen flex-col gap-8 py-10`}>
+      <header className="flex flex-col gap-2">
+        <p className="text-sm font-semibold uppercase tracking-widest text-accent">
           オシハピ
         </p>
-        <h1 className="text-3xl font-bold leading-tight text-zinc-900">
-          推し買い診断
-        </h1>
-        <p className="text-base text-zinc-600">
-          推しグッズの「買う/保留/やめる」を60秒で。くじ・中古・予約もOK
+        <h1 className={pageTitleClass}>推し買い診断</h1>
+        <p className={bodyTextClass}>
+          推しグッズの「買う/保留/やめる」を60秒で。くじ・中古・予約もOK。
         </p>
       </header>
 
-      <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold text-zinc-800">
-              迷ったらおすすめ
-            </h2>
-            <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-600">
-              信頼度 {recommendation.confidence}%
+      <Card className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className={sectionTitleClass}>迷ったらおすすめ</h2>
+          <Badge variant="accent">信頼度 {recommendation.confidence}%</Badge>
+        </div>
+        <div className="space-y-4 rounded-2xl border border-border bg-muted p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={helperTextClass}>おすすめモード</span>
+            <Badge variant="primary">{MODE_LABELS[recommendation.mode]}</Badge>
+            <span className={helperTextClass}>
+              {getModeDescription(recommendation.mode)}
             </span>
           </div>
-          <div className="flex flex-col gap-3 rounded-2xl border border-zinc-100 bg-zinc-50 p-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-zinc-500">おすすめモード</span>
-              <span className="rounded-full bg-pink-100 px-3 py-1 text-sm font-semibold text-pink-700">
-                {MODE_LABELS[recommendation.mode]}
-              </span>
-              <span className="text-xs text-zinc-500">
-                {getModeDescription(recommendation.mode)}
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {recommendation.reasonChips.map((reason) => (
-                <span
-                  key={reason}
-                  className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs text-zinc-600"
-                >
-                  {reason}
-                </span>
-              ))}
-            </div>
-            {recommendation.followUp ? (
-              <p className="text-xs text-amber-600">{recommendation.followUp}</p>
-            ) : null}
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4">
-          <p className="text-sm font-semibold text-zinc-700">モード</p>
-          <div className="grid gap-3 md:grid-cols-3">
-            <button
-              type="button"
-              onClick={() => handleSelectMode("short")}
-              className={`rounded-2xl border px-4 py-3 text-left shadow-sm transition ${
-                mode === "short"
-                  ? "border-pink-500 bg-pink-50 text-pink-700 shadow-md"
-                  : "border-zinc-200 bg-white text-zinc-600 hover:border-pink-300"
-              }`}
-            >
-              <p className="text-base font-semibold">急いで決める（30秒）</p>
-              <p className="text-xs">急ぎの買い物に。</p>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSelectMode("medium")}
-              className={`rounded-2xl border px-4 py-3 text-left shadow-sm transition ${
-                mode === "medium"
-                  ? "border-indigo-500 bg-indigo-50 text-indigo-700 shadow-md"
-                  : "border-zinc-200 bg-white text-zinc-600 hover:border-indigo-300"
-              }`}
-            >
-              <p className="text-base font-semibold">
-                じっくり決める（60秒〜2分）
-              </p>
-              <p className="text-xs">比較しながら決めたい時に。</p>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSelectMode("long")}
-              className={`rounded-2xl border px-4 py-3 text-left shadow-sm transition ${
-                mode === "long"
-                  ? "border-emerald-500 bg-emerald-50 text-emerald-700 shadow-md"
-                  : "border-zinc-200 bg-white text-zinc-600 hover:border-emerald-300"
-              }`}
-            >
-              <p className="text-base font-semibold">AIに相談する（長診断）</p>
-              <p className="text-xs">深掘り用のプロンプトを作る。</p>
-            </button>
-          </div>
-          <p className="text-xs text-zinc-500">{modeDescription}</p>
-        </div>
-      </section>
-
-      <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4">
-          <h2 className="text-base font-semibold text-zinc-800">状況から選ぶ</h2>
-          <div className="-mx-2 flex gap-2 overflow-x-auto px-2 pb-1">
-            {SITUATION_CHIPS_JA.map((chip) => (
-              <button
-                key={chip.id}
-                type="button"
-                onClick={() => handleSelectMode(chip.mode)}
-                className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm transition ${
-                  mode === chip.mode
-                    ? "border-pink-400 bg-pink-50 text-pink-700"
-                    : "border-zinc-200 bg-white text-zinc-600 hover:border-pink-300"
-                }`}
-              >
-                {chip.label}
-              </button>
+          <div className="flex flex-wrap gap-2">
+            {recommendation.reasonChips.map((reason) => (
+              <Badge key={reason} variant="outline">
+                {reason}
+              </Badge>
             ))}
           </div>
-          <p className="text-xs text-zinc-500">
+          {recommendation.followUp ? (
+            <p className="text-sm text-amber-700">{recommendation.followUp}</p>
+          ) : null}
+        </div>
+      </Card>
+
+      <Card className="space-y-4">
+        <h2 className={sectionTitleClass}>モードを選ぶ</h2>
+        <div className="grid gap-4">
+          <RadioCard
+            title="急いで決める（30秒）"
+            description="時間がなくてもサクッと判断。"
+            isSelected={mode === "short"}
+            onClick={() => handleSelectMode("short")}
+          />
+          <RadioCard
+            title="じっくり決める（60秒〜2分）"
+            description="比較しながら安心して決めたいとき。"
+            isSelected={mode === "medium"}
+            onClick={() => handleSelectMode("medium")}
+          />
+          <RadioCard
+            title="AIに相談する（長診断）"
+            description="深掘り用プロンプトも作って相談。"
+            isSelected={mode === "long"}
+            onClick={() => handleSelectMode("long")}
+          />
+        </div>
+        <p className={helperTextClass}>{modeDescription}</p>
+      </Card>
+
+      <Card className="space-y-4">
+        <div className="flex flex-col gap-2">
+          <h2 className={sectionTitleClass}>状況から選ぶ</h2>
+          <p className={helperTextClass}>
             チップをタップするとモードが切り替わります。
           </p>
         </div>
-      </section>
+        <div className="flex flex-wrap gap-2">
+          {SITUATION_CHIPS_JA.map((chip) => (
+            <Button
+              key={chip.id}
+              variant={mode === chip.mode ? "primary" : "outline"}
+              onClick={() => handleSelectMode(chip.mode)}
+              className="rounded-full px-4"
+            >
+              {chip.label}
+            </Button>
+          ))}
+        </div>
+      </Card>
 
-      <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4">
-          <h2 className="text-base font-semibold text-zinc-800">例から選ぶ</h2>
-          <div className="grid gap-4 md:grid-cols-2">
-            {SCENARIO_CARDS_JA.map((scenario) => (
-              <button
-                key={scenario.id}
-                type="button"
-                onClick={() => handleApplyScenario(scenario)}
-                className="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-4 text-left shadow-sm transition hover:border-pink-300 hover:shadow-md"
-              >
-                <div className="flex items-center justify-between">
-                  <p className="text-base font-semibold text-zinc-800">
-                    {scenario.title}
-                  </p>
-                  <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-600">
-                    {MODE_LABELS[scenario.mode]}
-                  </span>
-                </div>
-                <p className="text-sm text-zinc-600">{scenario.description}</p>
-                {scenario.preset ? (
-                  <div className="flex flex-wrap gap-2 text-xs text-zinc-500">
+      <Card className="space-y-4">
+        <h2 className={sectionTitleClass}>例から選ぶ</h2>
+        <div className="grid gap-4">
+          {SCENARIO_CARDS_JA.map((scenario) => (
+            <RadioCard
+              key={scenario.id}
+              title={scenario.title}
+              description={scenario.description}
+              isSelected={mode === scenario.mode}
+              onClick={() => handleApplyScenario(scenario)}
+              footer={
+                scenario.preset ? (
+                  <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                     {scenario.preset.priceYen ? (
                       <span>¥{scenario.preset.priceYen.toLocaleString()}</span>
                     ) : null}
                     {scenario.preset.deadline ? (
                       <span>
-                        締切:{" "}
+                        締切: {" "}
                         {deadlineLabelMap.get(scenario.preset.deadline) ??
                           scenario.preset.deadline}
                       </span>
                     ) : null}
                     {scenario.preset.itemKind ? (
                       <span>
-                        種別:{" "}
+                        種別: {" "}
                         {itemKindLabelMap.get(scenario.preset.itemKind) ??
                           scenario.preset.itemKind}
                       </span>
                     ) : null}
                   </div>
-                ) : null}
-              </button>
-            ))}
-          </div>
+                ) : null
+              }
+            />
+          ))}
         </div>
-      </section>
+      </Card>
 
-      <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <h2 className="text-base font-semibold text-zinc-800">入力（任意）</h2>
-        <div className="mt-4 grid gap-4">
-          <label className="grid gap-2 text-sm text-zinc-600">
+      <Card className="space-y-4">
+        <h2 className={sectionTitleClass}>入力（任意）</h2>
+        <div className="grid gap-4">
+          <label className="grid gap-2 text-sm font-semibold text-foreground">
             商品名
             <input
               value={itemName}
               onChange={(event) => setItemName(event.target.value)}
-              className="rounded-lg border border-zinc-200 px-3 py-2 text-base text-zinc-900 focus:border-pink-400 focus:outline-none"
+              className={inputBaseClass}
               placeholder="例：推しアクスタ 2025"
             />
           </label>
-          <label className="grid gap-2 text-sm text-zinc-600">
+          <label className="grid gap-2 text-sm font-semibold text-foreground">
             価格（円）
             <input
               type="number"
               min="0"
               value={priceYen}
               onChange={(event) => setPriceYen(event.target.value)}
-              className="rounded-lg border border-zinc-200 px-3 py-2 text-base text-zinc-900 focus:border-pink-400 focus:outline-none"
+              className={inputBaseClass}
               placeholder="例：8800"
             />
           </label>
-          <label className="grid gap-2 text-sm text-zinc-600">
+          <label className="grid gap-2 text-sm font-semibold text-foreground">
             締切
             <select
               value={deadline}
               onChange={(event) => setDeadline(parseDeadlineValue(event.target.value))}
-              className="rounded-lg border border-zinc-200 px-3 py-2 text-base text-zinc-900 focus:border-pink-400 focus:outline-none"
+              className={inputBaseClass}
             >
               {deadlineOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -330,12 +294,12 @@ export default function Home() {
               ))}
             </select>
           </label>
-          <label className="grid gap-2 text-sm text-zinc-600">
+          <label className="grid gap-2 text-sm font-semibold text-foreground">
             種別
             <select
               value={itemKind}
               onChange={(event) => setItemKind(parseItemKindValue(event.target.value))}
-              className="rounded-lg border border-zinc-200 px-3 py-2 text-base text-zinc-900 focus:border-pink-400 focus:outline-none"
+              className={inputBaseClass}
             >
               {itemKindOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -345,15 +309,16 @@ export default function Home() {
             </select>
           </label>
         </div>
-      </section>
+      </Card>
 
-      <button
-        type="button"
-        onClick={handleStart}
-        className="rounded-full bg-zinc-900 px-8 py-4 text-base font-semibold text-white transition hover:bg-zinc-800"
-      >
-        Start
-      </button>
+      <div className="space-y-4">
+        <Button onClick={handleStart} className="w-full text-base">
+          診断をはじめる
+        </Button>
+        <p className={helperTextClass}>
+          迷ったらまずは短診断でOK。途中で戻ることもできます。
+        </p>
+      </div>
     </div>
   );
 }
