@@ -8,6 +8,10 @@ import { buildLongPrompt } from "@/src/oshihapi/promptBuilder";
 import type { DecisionRun, FeedbackImmediate } from "@/src/oshihapi/model";
 import { clamp, engineConfig, normalize01ToSigned } from "@/src/oshihapi/engineConfig";
 import { findRun, updateRun } from "@/src/oshihapi/runStorage";
+import {
+  sendTelemetry,
+  TELEMETRY_OPT_IN_KEY,
+} from "@/src/oshihapi/telemetryClient";
 
 const decisionLabels: Record<string, string> = {
   BUY: "買う",
@@ -26,6 +30,9 @@ export default function ResultPage() {
   const params = useParams<{ runId: string }>();
   const [toast, setToast] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<FeedbackImmediate | undefined>(undefined);
+  const [telemetryOptIn, setTelemetryOptIn] = useState(false);
+  const [skipPrice, setSkipPrice] = useState(true);
+  const [skipItemName, setSkipItemName] = useState(true);
 
   const runId = params?.runId;
   const run = useMemo<DecisionRun | undefined>(() => {
@@ -36,6 +43,12 @@ export default function ResultPage() {
   useEffect(() => {
     setFeedback(run?.feedback_immediate);
   }, [run]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem(TELEMETRY_OPT_IN_KEY);
+    setTelemetryOptIn(stored === "true");
+  }, []);
 
   const decisionScale = useMemo(() => {
     if (!run) return "wait";
@@ -110,12 +123,19 @@ export default function ResultPage() {
   };
 
   const handleFeedback = (value: FeedbackImmediate) => {
-    if (!runId) return;
+    if (!runId || !run) return;
     const nextRun = updateRun(runId, (current) => ({
       ...current,
       feedback_immediate: value,
     }));
     setFeedback(nextRun?.feedback_immediate ?? value);
+    if (telemetryOptIn) {
+      void sendTelemetry("l1_feedback", run, {
+        label: value,
+        includePrice: !skipPrice,
+        includeItemName: !skipItemName,
+      });
+    }
   };
 
   if (!run) {
@@ -225,6 +245,54 @@ export default function ResultPage() {
           className="mt-4 rounded-full bg-zinc-900 px-5 py-2 text-sm font-semibold text-white"
         >
           共有テキストをコピー
+        </button>
+      </section>
+
+      <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <h2 className="text-base font-semibold text-zinc-800">
+          学習のために匿名データを送信
+        </h2>
+        <p className="mt-2 text-sm text-zinc-500">
+          個人が特定される情報は送信されません。いつでも送信内容を選べます。
+        </p>
+        <div className="mt-4 flex flex-col gap-3 text-sm text-zinc-600">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={skipPrice}
+              onChange={(event) => setSkipPrice(event.target.checked)}
+              className="h-4 w-4 rounded border-zinc-300 text-pink-600"
+            />
+            価格を送らない
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={skipItemName}
+              onChange={(event) => setSkipItemName(event.target.checked)}
+              className="h-4 w-4 rounded border-zinc-300 text-pink-600"
+            />
+            商品名を送らない
+          </label>
+        </div>
+        <button
+          type="button"
+          onClick={async () => {
+            const ok = await sendTelemetry("run_export", run, {
+              includePrice: !skipPrice,
+              includeItemName: !skipItemName,
+            });
+            if (ok) {
+              window.localStorage.setItem(TELEMETRY_OPT_IN_KEY, "true");
+              setTelemetryOptIn(true);
+              showToast("匿名データを送信しました");
+            } else {
+              showToast("送信に失敗しました");
+            }
+          }}
+          className="mt-4 inline-flex rounded-full bg-pink-600 px-5 py-2 text-sm font-semibold text-white"
+        >
+          匿名データを送信する
         </button>
       </section>
 
