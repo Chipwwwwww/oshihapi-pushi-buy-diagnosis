@@ -20,7 +20,7 @@ import { buildLongPrompt } from "@/src/oshihapi/promptBuilder";
 import type { DecisionRun, FeedbackImmediate } from "@/src/oshihapi/model";
 import { clamp, engineConfig, normalize01ToSigned } from "@/src/oshihapi/engineConfig";
 import { findRun, updateRun } from "@/src/oshihapi/runStorage";
-import { sendTelemetry } from "@/src/oshihapi/telemetryClient";
+import { sendTelemetry, TELEMETRY_OPT_IN_KEY } from "@/src/oshihapi/telemetryClient";
 
 const decisionLabels: Record<string, string> = {
   BUY: "買う",
@@ -43,7 +43,13 @@ export default function ResultPage() {
   );
   const [telemetryOptIn, setTelemetryOptIn] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
-    return window.localStorage.getItem("oshihapi:telemetry_opt_in") === "true";
+    const legacyValue =
+      window.localStorage.getItem("oshihapi:telemetry_opt_in") === "true";
+    const nextValue = window.localStorage.getItem(TELEMETRY_OPT_IN_KEY) === "true";
+    if (legacyValue && !nextValue) {
+      window.localStorage.setItem(TELEMETRY_OPT_IN_KEY, "true");
+    }
+    return legacyValue || nextValue;
   });
   const [telemetrySubmitting, setTelemetrySubmitting] = useState(false);
   const [telemetrySubmitted, setTelemetrySubmitted] = useState(false);
@@ -293,10 +299,7 @@ export default function ResultPage() {
               const nextValue = event.target.checked;
               setTelemetryOptIn(nextValue);
               if (typeof window !== "undefined") {
-                window.localStorage.setItem(
-                  "oshihapi:telemetry_opt_in",
-                  String(nextValue),
-                );
+                window.localStorage.setItem(TELEMETRY_OPT_IN_KEY, String(nextValue));
               }
             }}
             className="h-5 w-5 rounded border border-border text-primary"
