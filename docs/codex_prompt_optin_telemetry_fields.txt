@@ -1,0 +1,40 @@
+# PR Goal
+Change the anonymous telemetry section on the Result page so that price/name sending is OPT-IN (unchecked by default).
+Currently the UI uses "価格を送らない / 商品名を送らない" with default checked.
+We want default unchecked, while keeping privacy safe: unchecked means those fields are NOT sent.
+
+# Context
+- Next.js App Router + TypeScript
+- Result page: app/result/[runId]/page.tsx (or a component it uses)
+- Runs stored in localStorage; telemetry feature may exist already.
+- Keep behavior stable; only adjust the telemetry UI defaults + payload composition.
+
+# Requirements (MUST)
+1) In the "学習のために匿名データを送信" section:
+   - Replace checkboxes with opt-in labels:
+     - 「価格を送る（任意）」 default unchecked
+     - 「商品名を送る（任意）」 default unchecked
+   - Add helper text (JP) clarifying:
+     - 「チェックしない場合、価格・商品名は送信されません。」
+2) Payload rules:
+   - If user does NOT check "価格を送る", omit price from telemetry payload (undefined / null / do not include key).
+   - If user does NOT check "商品名を送る", omit item name from telemetry payload.
+   - If checked, include the value (if present). If the value is missing, still behave gracefully.
+3) State defaults:
+   - includePrice = false, includeItemName = false
+   - Do NOT default to sending anything extra.
+4) If there is persisted preference in localStorage (e.g. omitPrice/omitName):
+   - Migrate safely or just set new defaults to false without breaking.
+   - Prefer: new keys includePrice/includeItemName; fallback false.
+5) Keep the rest of the page unchanged.
+
+# Files to update (likely)
+- app/result/[runId]/page.tsx
+- Possibly a telemetry helper/component in components/ or src/oshihapi/
+- If telemetry payload builder exists, update it accordingly.
+
+# Acceptance criteria
+- When opening Result page, both checkboxes are UNCHECKED.
+- Clicking "匿名データを送信する" WITHOUT checking any box sends telemetry without price/name fields.
+- Checking each box includes only that field.
+- UI copy is Japanese and friendly; no confusing double-negatives.

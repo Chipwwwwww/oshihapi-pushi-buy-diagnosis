@@ -34,6 +34,9 @@ const decisionSubcopy: Record<string, string> = {
   SKIP: "今回は見送りでOK。次の推し活に回そう。",
 };
 
+const TELEMETRY_INCLUDE_PRICE_KEY = "oshihapi_telemetry_include_price";
+const TELEMETRY_INCLUDE_ITEM_NAME_KEY = "oshihapi_telemetry_include_item_name";
+
 export default function ResultPage() {
   const router = useRouter();
   const params = useParams<{ runId: string }>();
@@ -129,7 +132,7 @@ export default function ResultPage() {
   };
 
   const handleFeedback = (value: FeedbackImmediate) => {
-    if (!runId) return;
+    if (!runId || !run) return;
     const nextRun = updateRun(runId, (current) => ({
       ...current,
       feedback_immediate: value,
