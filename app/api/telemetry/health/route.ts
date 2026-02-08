@@ -1,88 +1,87 @@
-import { type Client as PgClient } from "pg";
-
-type PgClientConstructor = new (config: {
-  connectionString: string;
-}) => PgClient;
-
 export const runtime = "nodejs";
 
+import { NextResponse } from "next/server";
+import { Client } from "pg";
+
 const ENV_HINT =
-  "Set .env.local: POSTGRES_URL_NON_POOLING=... (or POSTGRES_URL/DATABASE_URL)";
+  "Vercel の Environment Variables に DATABASE_URL（推奨: pooled）または POSTGRES_URL を設定してください。";
 
-const loadPgClient = () => {
-  const requireFn = eval("require") as NodeRequire;
-  const pgModule = requireFn("pg") as { Client: PgClientConstructor };
-  return pgModule.Client;
-};
+function getConnectionString(): string | undefined {
+  return (
+    process.env.POSTGRES_URL_NON_POOLING ??
+    process.env.POSTGRES_URL ??
+    process.env.DATABASE_URL
+  );
+}
 
-const getConnectionString = () =>
-  process.env.POSTGRES_URL_NON_POOLING ??
-  process.env.POSTGRES_URL ??
-  process.env.DATABASE_URL;
+function redactMessage(error: unknown): string {
+  const msg =
+    error instanceof Error ? error.message : typeof error === "string" ? error : "unknown_error";
+  // redact connection strings
+  return msg
+    .split("\n")[0]
+    .replace(/postgres(?:ql)?:\/\/\S+/gi, "[redacted]")
+    .slice(0, 220);
+}
 
-const shortenError = (error: unknown) => {
-  if (error instanceof Error) {
-    const firstLine = error.message.split("\n")[0];
-    return firstLine.replace(/postgres(?:ql)?:\/\/\S+/gi, "[redacted]").slice(0, 180);
-  }
-  return "unknown_error";
-};
-
-const buildDbHint = (message: string) => {
-  const lower = message.toLowerCase();
-  if (lower.includes("ssl")) {
-    return "Check SSL settings for Neon/Vercel Postgres.";
-  }
-  if (lower.includes("password") || lower.includes("authentication")) {
-    return "Check database username/password in env.";
-  }
-  if (lower.includes("timeout") || lower.includes("connect")) {
-    return "Check database host/network access.";
-  }
+function buildDbHint(messageLower: string): string | undefined {
+  if (messageLower.includes("ssl")) return "SSL 設定（sslmode=require）を確認してください。";
+  if (messageLower.includes("password") || messageLower.includes("authentication"))
+    return "DB のユーザー/パスワード（env）を確認してください。";
+  if (messageLower.includes("timeout") || messageLower.includes("connect") || messageLower.includes("econn"))
+    return "DB ホスト/ネットワーク/接続制限を確認してください（pooler 推奨）。";
   return undefined;
-};
+}
 
 export async function GET() {
-  const connectionString = getConnectionString();
-  if (!connectionString) {
-    const missing = ["POSTGRES_URL_NON_POOLING", "POSTGRES_URL", "DATABASE_URL"].filter(
-      (key) => !process.env[key],
-    );
-    return Response.json(
-      {
-        ok: false,
-        error: "db_env_missing",
-        hint: ENV_HINT,
-        missing,
-      },
-      { status: 500 },
-    );
-  }
-
-  const Client = loadPgClient();
-  const client = new Client({ connectionString });
   try {
-    await client.connect();
-    await client.query("SELECT 1");
-    return Response.json({ ok: true, db: "ok" });
+    const connectionString = getConnectionString();
+
+    if (!connectionString) {
+      const keys = ["POSTGRES_URL_NON_POOLING", "POSTGRES_URL", "DATABASE_URL"] as const;
+      const missing = keys.filter((k) => !process.env[k]);
+
+      // debug しやすいように 200 で JSON を返す（ok=false）
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "db_env_missing",
+          hint: ENV_HINT,
+          missing,
+          present: {
+            POSTGRES_URL_NON_POOLING: Boolean(process.env.POSTGRES_URL_NON_POOLING),
+            POSTGRES_URL: Boolean(process.env.POSTGRES_URL),
+            DATABASE_URL: Boolean(process.env.DATABASE_URL),
+          },
+        },
+        { status: 200 },
+      );
+    }
+
+    const client = new Client({ connectionString });
+
+    try {
+      await client.connect();
+      await client.query("SELECT 1 as ok");
+      return NextResponse.json({ ok: true, db: "ok" }, { status: 200 });
+    } finally {
+      // end() が失敗しても health を壊さない
+      await client.end().catch(() => {});
+    }
   } catch (error) {
-    console.error("Telemetry health check failed", error);
-    const message = shortenError(error);
-    const code =
-      typeof error === "object" && error !== null && "code" in error
-        ? String((error as { code?: string }).code)
-        : undefined;
-    const hint = buildDbHint(message);
-    return Response.json(
+    const message = redactMessage(error);
+    const lower = message.toLowerCase();
+    const hint = buildDbHint(lower);
+
+    // ここも 200 にして、白ページ 500 を避ける
+    return NextResponse.json(
       {
         ok: false,
-        error: "db_unreachable",
-        detail: code ? `code=${code}; ${message}` : message,
+        error: "health_failed",
+        message,
         ...(hint ? { hint } : {}),
       },
-      { status: 500 },
+      { status: 200 },
     );
-  } finally {
-    await client.end();
   }
 }
