@@ -2,7 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import DecisionScale from "@/components/DecisionScale";
+import { merch_v2_ja } from "@/src/oshihapi/merch_v2_ja";
+import { buildLongPrompt } from "@/src/oshihapi/promptBuilder";
 import type { DecisionRun, FeedbackImmediate } from "@/src/oshihapi/model";
+import { clamp, engineConfig, normalize01ToSigned } from "@/src/oshihapi/engineConfig";
 import { findRun, updateRun } from "@/src/oshihapi/runStorage";
 
 const decisionLabels: Record<string, string> = {
@@ -11,10 +15,16 @@ const decisionLabels: Record<string, string> = {
   SKIP: "やめる",
 };
 
+const decisionSubcopy: Record<string, string> = {
+  BUY: "今の条件ならOK。上限だけ決めて進もう。",
+  THINK: "今は保留でOK。条件が整ったらまた検討しよう。",
+  SKIP: "今回は見送りでOK。次の推し活に回そう。",
+};
+
 export default function ResultPage() {
   const router = useRouter();
   const params = useParams<{ runId: string }>();
-  const [copied, setCopied] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<FeedbackImmediate | undefined>(undefined);
 
   const runId = params?.runId;
@@ -26,6 +36,39 @@ export default function ResultPage() {
   useEffect(() => {
     setFeedback(run?.feedback_immediate);
   }, [run]);
+
+  const decisionScale = useMemo(() => {
+    if (!run) return "wait";
+    if (run.output.decision === "BUY") return "buy";
+    if (run.output.decision === "SKIP") return "no";
+    return "wait";
+  }, [run]);
+
+  const decisionIndex = useMemo(() => {
+    if (!run) return 0;
+    const score = run.output.score;
+    if (typeof score === "number" && Number.isFinite(score)) {
+      return clamp(-1, 1, score);
+    }
+    let fallback = 0;
+    for (const [dim, weight] of Object.entries(engineConfig.decisionWeights)) {
+      const val = run.output.scoreSummary[dim as keyof typeof run.output.scoreSummary];
+      if (typeof val === "number") {
+        fallback += normalize01ToSigned(val) * weight;
+      }
+    }
+    return clamp(-1, 1, fallback);
+  }, [run]);
+
+  const longPrompt = useMemo(() => {
+    if (!run) return "";
+    return buildLongPrompt({ run, questionSet: merch_v2_ja });
+  }, [run]);
+
+  const showToast = (message: string) => {
+    setToast(message);
+    window.setTimeout(() => setToast(null), 1500);
+  };
 
   const logActionClick = (actionId: string) => {
     if (!runId) return;
@@ -44,15 +87,25 @@ export default function ResultPage() {
     }));
   };
 
-  const handleCopy = async () => {
+  const handleCopyShare = async () => {
     if (!run) return;
     try {
       await navigator.clipboard.writeText(run.output.shareText);
-      setCopied(true);
       logActionClick("copy_share_text");
-      setTimeout(() => setCopied(false), 1500);
+      showToast("共有テキストをコピーしました");
     } catch {
-      setCopied(false);
+      showToast("コピーに失敗しました");
+    }
+  };
+
+  const handleCopyPrompt = async () => {
+    if (!longPrompt) return;
+    try {
+      await navigator.clipboard.writeText(longPrompt);
+      logActionClick("copy_long_prompt");
+      showToast("AI相談用プロンプトをコピーしました");
+    } catch {
+      showToast("コピーに失敗しました");
     }
   };
 
@@ -98,23 +151,14 @@ export default function ResultPage() {
         <h1 className="text-3xl font-bold text-zinc-900">
           {decisionLabels[run.output.decision]}
         </h1>
-        <p className="text-sm text-zinc-500">
-          信頼度: {run.output.confidence}%
-        </p>
+        <p className="text-sm text-zinc-500">{decisionSubcopy[run.output.decision]}</p>
       </header>
 
-      <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <h2 className="text-base font-semibold text-zinc-800">理由</h2>
-        <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-zinc-600">
-          {run.output.reasons.map((reason) => (
-            <li key={reason.id}>{reason.text}</li>
-          ))}
-        </ul>
-      </section>
+      <DecisionScale decision={decisionScale} index={decisionIndex} />
 
       <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <h2 className="text-base font-semibold text-zinc-800">次のアクション</h2>
-        <ul className="mt-3 space-y-3 text-sm text-zinc-600">
+        <h2 className="text-base font-semibold text-zinc-800">今すぐやる</h2>
+        <ul className="mt-4 grid gap-3 text-sm text-zinc-600">
           {run.output.actions.map((action) => (
             <li key={action.id} className="rounded-xl border border-zinc-200 p-4">
               <p className="text-sm text-zinc-700">{action.text}</p>
@@ -135,8 +179,39 @@ export default function ResultPage() {
       </section>
 
       <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <h2 className="text-base font-semibold text-zinc-800">買い方メモ</h2>
-        <p className="mt-3 text-sm text-zinc-600">{run.output.merchMethod.note}</p>
+        <h2 className="text-base font-semibold text-zinc-800">理由</h2>
+        <div className="mt-4 grid gap-3">
+          {run.output.reasons.map((reason) => (
+            <div key={reason.id} className="rounded-xl border border-zinc-200 p-4">
+              <p className="text-sm text-zinc-700">{reason.text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
+        <div className="flex flex-col gap-2">
+          <h2 className="text-base font-semibold text-emerald-900">
+            AIに相談する（プロンプトをコピー）
+          </h2>
+          <p className="text-sm text-emerald-700">
+            {run.mode === "long"
+              ? "長診断の内容をまとめたプロンプトです。"
+              : "もっと深掘りしたいときに使えます。"}
+          </p>
+        </div>
+        <textarea
+          readOnly
+          value={longPrompt}
+          className="mt-4 min-h-[180px] w-full rounded-xl border border-emerald-200 bg-white px-4 py-3 text-xs text-emerald-900"
+        />
+        <button
+          type="button"
+          onClick={handleCopyPrompt}
+          className="mt-4 inline-flex rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white"
+        >
+          プロンプトをコピー
+        </button>
       </section>
 
       <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
@@ -146,7 +221,7 @@ export default function ResultPage() {
         </p>
         <button
           type="button"
-          onClick={handleCopy}
+          onClick={handleCopyShare}
           className="mt-4 rounded-full bg-zinc-900 px-5 py-2 text-sm font-semibold text-white"
         >
           共有テキストをコピー
@@ -160,9 +235,9 @@ export default function ResultPage() {
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {[
             { id: "bought", label: "買った" },
-            { id: "hold", label: "保留" },
+            { id: "waited", label: "保留した" },
             { id: "not_bought", label: "買わなかった" },
-            { id: "not_yet", label: "まだ" },
+            { id: "unknown", label: "まだ" },
           ].map((option) => (
             <button
               key={option.id}
@@ -197,9 +272,9 @@ export default function ResultPage() {
         </button>
       </section>
 
-      {copied ? (
+      {toast ? (
         <div className="fixed bottom-6 left-1/2 z-50 w-[90%] max-w-sm -translate-x-1/2 rounded-full bg-zinc-900 px-5 py-3 text-center text-sm font-semibold text-white shadow-lg">
-          コピーしました
+          {toast}
         </div>
       ) : null}
     </div>

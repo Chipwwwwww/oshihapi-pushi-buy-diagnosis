@@ -15,7 +15,7 @@ import { merch_v2_ja } from "@/src/oshihapi/merch_v2_ja";
 import { evaluate } from "@/src/oshihapi/engine";
 import { saveRun } from "@/src/oshihapi/runStorage";
 
-const MODE_FALLBACK: Mode = "normal";
+const MODE_FALLBACK: Mode = "medium";
 const DEADLINE_VALUES = [
   "today",
   "tomorrow",
@@ -40,7 +40,9 @@ const isItemKindValue = (value: string): value is ItemKind =>
   ITEM_KIND_VALUES.includes(value as ItemKind);
 
 const parseMode = (value: string | null): Mode =>
-  value === "urgent" || value === "normal" ? value : MODE_FALLBACK;
+  value === "short" || value === "medium" || value === "long"
+    ? value
+    : MODE_FALLBACK;
 
 const parsePriceYen = (value: string | null): number | undefined => {
   if (!value) return undefined;
@@ -74,10 +76,12 @@ export default function FlowPage() {
   const itemKind = parseItemKind(searchParams.get("itemKind"));
 
   const questions = useMemo(() => {
-    if (mode === "urgent") {
-      return merch_v2_ja.questions.filter((q) => q.urgentCore);
-    }
-    return merch_v2_ja.questions.filter((q) => q.required);
+    return merch_v2_ja.questions.filter((q) => {
+      const isStandard = q.standard ?? q.required ?? false;
+      if (mode === "short") return q.urgentCore;
+      if (mode === "medium") return q.urgentCore || isStandard;
+      return q.urgentCore || isStandard || q.longOnly;
+    });
   }, [mode]);
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -115,6 +119,7 @@ export default function FlowPage() {
 
   const isAnswered = (question: Question | undefined) => {
     if (!question) return false;
+    if (!question.required) return true;
     const value = answers[question.id];
     if (question.type === "scale" || question.type === "number") {
       if (question.type === "scale" && typeof value !== "number") {
@@ -122,6 +127,9 @@ export default function FlowPage() {
         return fallback !== undefined;
       }
       return value !== undefined && value !== null && value !== "";
+    }
+    if (question.type === "text") {
+      return typeof value === "string" && value.trim().length > 0;
     }
     return value != null;
   };
@@ -220,7 +228,11 @@ export default function FlowPage() {
       <header className="flex flex-col gap-2">
         <p className="text-sm font-semibold text-pink-600">質問フロー</p>
         <h1 className="text-2xl font-bold text-zinc-900">
-          {mode === "urgent" ? "急いで診断" : "じっくり診断"}
+          {mode === "short"
+            ? "急いで診断"
+            : mode === "medium"
+              ? "じっくり診断"
+              : "AIに相談する長診断"}
         </h1>
         <p className="text-xs text-zinc-500">
           {currentIndex + 1}/{questions.length}
@@ -290,6 +302,14 @@ export default function FlowPage() {
                 </button>
               ))}
             </div>
+          ) : null}
+          {currentQuestion.type === "text" ? (
+            <textarea
+              value={String(answers[currentQuestion.id] ?? "")}
+              onChange={(event) => updateAnswer(currentQuestion.id, event.target.value)}
+              placeholder="例：予算とのバランスが不安、再販情報が知りたい"
+              className="min-h-[120px] w-full rounded-xl border border-zinc-200 px-4 py-3 text-sm text-zinc-700 focus:border-pink-400 focus:outline-none"
+            />
           ) : null}
         </div>
       </section>

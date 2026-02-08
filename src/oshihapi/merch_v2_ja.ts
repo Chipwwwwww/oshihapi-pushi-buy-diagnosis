@@ -20,6 +20,7 @@ export const merch_v2_ja: QuestionSet = {
       description: '0=気になるだけ / 5=本命レベル',
       required: true,
       urgentCore: true,
+      standard: true,
       min: 0,
       max: 5,
       step: 1,
@@ -34,6 +35,7 @@ export const merch_v2_ja: QuestionSet = {
       title: 'この出費、あとで痛い？',
       required: true,
       urgentCore: true,
+      standard: true,
       options: [
         { id: 'ok', label: '全然平気', tags: ['budget_ok'], delta: { affordability: 85, regretRisk: 35 } },
         { id: 'some', label: 'ちょい痛い', tags: ['budget_some'], delta: { affordability: 60, regretRisk: 45 } },
@@ -47,6 +49,7 @@ export const merch_v2_ja: QuestionSet = {
       title: '今買わないとどうなる？（急ぎ度）',
       required: true,
       urgentCore: true,
+      standard: true,
       options: [
         { id: 'not_urgent', label: 'いつでも買えそう', tags: ['urgency_low'], delta: { urgency: 20, rarity: 30, restockChance: 70 } },
         { id: 'low_stock', label: '在庫が減ってる/締切が近い', tags: ['urgency_mid'], delta: { urgency: 55, rarity: 55, restockChance: 45 } },
@@ -61,6 +64,7 @@ export const merch_v2_ja: QuestionSet = {
       description: '再販が高いほど「今買う必要」は下がりやすい',
       required: true,
       urgentCore: true,
+      standard: true,
       options: [
         { id: 'likely', label: 'しそう（高い）', tags: ['restock_high'], delta: { restockChance: 80, rarity: 35 } },
         { id: 'maybe', label: 'たぶん（中）', tags: ['restock_mid'], delta: { restockChance: 55, rarity: 50 } },
@@ -75,6 +79,7 @@ export const merch_v2_ja: QuestionSet = {
       description: '買い方提案（中古/BOX/くじ上限）に影響する',
       required: true,
       urgentCore: false,
+      standard: true,
       options: [
         { id: 'single', label: '推し（特定の1つ）だけ欲しい', tags: ['goal_single'] },
         { id: 'set', label: 'セットで揃えたい', tags: ['goal_set'] },
@@ -87,6 +92,7 @@ export const merch_v2_ja: QuestionSet = {
       title: '欲しい枠（推し）は人気枠？（燙角/冷角）',
       required: true,
       urgentCore: false,
+      standard: true,
       options: [
         { id: 'hot', label: '人気（高騰しがち）', tags: ['hot'] },
         { id: 'normal', label: '普通', tags: ['normal_popularity'] },
@@ -100,12 +106,23 @@ export const merch_v2_ja: QuestionSet = {
       title: 'いまの自分、どれに近い？（衝動/後悔リスク）',
       required: true,
       urgentCore: true,
+      standard: true,
       options: [
         { id: 'calm', label: '冷静（後悔しにくい）', tags: ['state_calm'], delta: { impulse: 25, regretRisk: 35 } },
         { id: 'excited', label: 'テンション高め（勢い）', tags: ['state_excited'], delta: { impulse: 65, regretRisk: 55 } },
         { id: 'tired', label: '疲れてる/メンタル弱り気味', tags: ['state_tired'], delta: { impulse: 70, regretRisk: 70 } },
         { id: 'fomo', label: '焦ってる（今しかない圧）', tags: ['state_fomo'], delta: { impulse: 75, regretRisk: 65, urgency: 70 } },
       ],
+    },
+    {
+      id: 'q_long_note',
+      type: 'text',
+      title: 'AIに相談したいポイントを一言で書いてください',
+      description: 'あとでAIに相談するためのメモになります',
+      required: false,
+      urgentCore: false,
+      standard: false,
+      longOnly: true,
     },
   ],
 };
