@@ -1,0 +1,99 @@
+# Codex PR 任務：モバイルUI（iPhone）で読みやすくする / レイアウト崩れ修正（P0）
+
+目的：PCではOKだがスマホ（特にiPhone Safari）で「薄くて読めない／余白・文字サイズが不自然／DecisionScaleが小さすぎる」問題を直す。
+※ロジックは触らない。UI/スタイルのみ。
+
+---
+
+## ✅ 受け入れ条件（必ず満たす）
+### A. 実機/DevToolsで見た目が崩れない
+- iPhone幅（375〜430px）で Result ページが**横スクロール無し**（`overflow-x` 発生しない）
+- 主要テキスト（判定/理由/信頼度）が**十分なコントラスト**で読める（薄すぎない）
+- ボタンが指で押しやすい（高さ 44px 以上、余白が詰まりすぎない）
+
+### B. DecisionScale（判定刻度尺）がスマホ向けに読みやすい
+- ラベル「やめる / 保留 / 買う」が小さすぎない（最低 12–14px 相当）
+- 現在位置（マーカー）が視認できる
+- 文字がカード背景に埋もれない（薄いグレー禁止）
+
+### C. 安全領域対応（iPhone）
+- 下部のホームバーに被らない（`env(safe-area-inset-bottom)` を反映）
+- `viewport-fit=cover` を入れても崩れない
+
+---
+
+## 変更方針（MVP / 依存追加なし）
+- Tailwind等の前提に依存しない（既存があっても無くても動くように、`app/globals.css` ベースで修正）
+- 「色の指定がバラバラ」「暗背景に暗文字」になっている箇所を、CSS変数（design tokens）で統一
+- 文字サイズは `clamp()` でスマホ〜PCを滑らかにスケール
+- 余白はモバイル優先（`px: 16px` 起点）
+- `max-width` で読みやすいカラム幅に制限（例: 720px）
+
+---
+
+## 実装タスク（ファイル別）
+### 1) `app/layout.tsx`
+- `<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />` を追加
+- `app/globals.css` を必ず import（既にあるなら維持、無いなら作る）
+
+### 2) `app/globals.css`（無ければ新規作成）
+以下の要件を満たすベーススタイルを追加：
+
+**(a) デザイントークン（CSS変数）**
+- `--bg`, `--surface`, `--text`, `--muted`, `--border`, `--accent` を定義
+- `prefers-color-scheme: dark` にも対応（暗背景でも文字が薄くならない）
+- どの背景でも `--text` と `--muted` のコントラストが出る値にする（暗背景で `--muted` が暗すぎないこと）
+
+**(b) タイポグラフィ**
+- `body` に日本語に強い system font stack を設定（例: system-ui, "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", ...）
+- `font-size` / `line-height` をモバイル向けに（例: `font-size: 16px; line-height: 1.65;`）
+- 見出しは `clamp()` を使用（例: `h1 { font-size: clamp(28px, 6vw, 44px); }`）
+
+**(c) レイアウト**
+- `.page`（または既存のルートコンテナ）に `min-height` と `padding` を付ける
+- 下部に `padding-bottom: calc(24px + env(safe-area-inset-bottom));`
+- 横は `padding-inline: 16px;`（sm以上は 24px）
+
+**(d) カード/ボタン**
+- `.card`：背景 `--surface`、文字色 `--text`、境界 `--border`、角丸 16px、`padding: 16〜20px`
+- `.muted`：`color: var(--muted)`
+- `button`：`min-height: 44px`、`border-radius: 12px`
+- `:focus-visible` の輪郭を付ける（アクセシビリティ）
+
+**(e) 横スクロール事故の予防**
+- `html, body { overflow-x: hidden; }`（ただし必要以上に隠さない）
+- 長いURL/文字列で崩れないよう `word-break: break-word; overflow-wrap: anywhere;`
+
+### 3) Resultページ（`app/result/[runId]/page.tsx` など）
+- ルートに `.page` + `.container` 的なクラスを付与（なければ div を追加）
+- 「信頼度」「判定の傾き」等のテキストに `muted` を適用しつつ、暗背景でも読める色（＝`--muted`）に統一
+- カード内の文字色が `opacity` で薄くなっている箇所があれば、**カード全体に opacity をかけない**（disabled はボタンだけに）
+
+### 4) DecisionScale コンポーネント（`components/DecisionScale.tsx` 等）
+- スマホ幅での表示を調整：
+  - ラベル文字サイズを `clamp(12px, 3.5vw, 14px)` などに
+  - スケール自体の高さを少し上げる（タッチ/視認性）
+  - マーカーの視認性を上げる（色は `--accent`、背景とのコントラスト確保）
+- 横幅が足りない場合に崩れるなら：
+  - ラベルを `justify-content: space-between;` ＋ `flex-wrap: wrap;` または
+  - ラベルを2段表示（上にスケール、下にラベル）に切り替えるメディアクエリ（`max-width: 420px`）
+
+---
+
+## テスト手順（ローカル）
+1) dev 起動（Windows PowerShell）
+```powershell
+npm run dev -- --webpack
+```
+
+2) ブラウザで確認
+- `http://localhost:3000/result/<runId>` を開く
+- Chrome DevTools → Device toolbar → iPhone 12/13/14/15 相当で確認
+- 文字が薄くない/横スクロール無し/ボタン押しやすい
+
+---
+
+## 注意（壊さない）
+- エンジン・採点・localStorage・telemetry の挙動は一切変更しない
+- 依存パッケージ追加しない
+- 既存クラス名がある場合は尊重し、最小変更で適用する（CSS変数/共通クラス中心）
