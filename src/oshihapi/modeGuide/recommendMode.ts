@@ -192,7 +192,7 @@ function clamp01to5(n?: number): number | null {
   return clamp(Math.round(n), 0, 5);
 }
 
-function pushIf(cond: any, arr: string[], v: string) {
+function pushIf(cond: boolean, arr: string[], v: string) {
   if (cond) arr.push(v);
 }
 
@@ -200,10 +200,10 @@ function dedupe(arr: string[]): string[] {
   return [...new Set(arr)];
 }
 
-function countNonNull(v: any): number {
+function countNonNull(v: unknown): number {
   return v === undefined || v === null ? 0 : 1;
 }
 
-function countNonZero(v: any): number {
+function countNonZero(v: unknown): number {
   return typeof v === "number" && Number.isFinite(v) && v !== 0 ? 1 : 0;
 }
