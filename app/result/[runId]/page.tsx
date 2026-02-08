@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import DecisionScale from "@/components/DecisionScale";
 import { merch_v2_ja } from "@/src/oshihapi/merch_v2_ja";
@@ -25,14 +25,25 @@ const decisionSubcopy: Record<string, string> = {
   SKIP: "今回は見送りでOK。次の推し活に回そう。",
 };
 
+const TELEMETRY_INCLUDE_PRICE_KEY = "oshihapi_telemetry_include_price";
+const TELEMETRY_INCLUDE_ITEM_NAME_KEY = "oshihapi_telemetry_include_item_name";
+
 export default function ResultPage() {
   const router = useRouter();
   const params = useParams<{ runId: string }>();
   const [toast, setToast] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<FeedbackImmediate | undefined>(undefined);
-  const [telemetryOptIn, setTelemetryOptIn] = useState(false);
-  const [skipPrice, setSkipPrice] = useState(true);
-  const [skipItemName, setSkipItemName] = useState(true);
+  const [telemetryOptIn, setTelemetryOptIn] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(TELEMETRY_OPT_IN_KEY) === "true";
+  });
+  const [includePrice, setIncludePrice] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(TELEMETRY_INCLUDE_PRICE_KEY) === "true";
+  });
+  const [includeItemName, setIncludeItemName] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(TELEMETRY_INCLUDE_ITEM_NAME_KEY) === "true";
+  });
 
   const runId = params?.runId;
   const run = useMemo<DecisionRun | undefined>(() => {
@@ -40,15 +51,10 @@ export default function ResultPage() {
     return findRun(runId);
   }, [runId]);
 
-  useEffect(() => {
-    setFeedback(run?.feedback_immediate);
-  }, [run]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const stored = window.localStorage.getItem(TELEMETRY_OPT_IN_KEY);
-    setTelemetryOptIn(stored === "true");
-  }, []);
+  const [feedbackOverride, setFeedbackOverride] = useState<FeedbackImmediate | undefined>(
+    undefined,
+  );
+  const feedback = feedbackOverride ?? run?.feedback_immediate;
 
   const decisionScale = useMemo(() => {
     if (!run) return "wait";
@@ -128,12 +134,12 @@ export default function ResultPage() {
       ...current,
       feedback_immediate: value,
     }));
-    setFeedback(nextRun?.feedback_immediate ?? value);
+    setFeedbackOverride(nextRun?.feedback_immediate ?? value);
     if (telemetryOptIn) {
       void sendTelemetry("l1_feedback", run, {
         label: value,
-        includePrice: !skipPrice,
-        includeItemName: !skipItemName,
+        includePrice,
+        includeItemName,
       });
     }
   };
@@ -255,32 +261,43 @@ export default function ResultPage() {
         <p className="mt-2 text-sm text-zinc-500">
           個人が特定される情報は送信されません。いつでも送信内容を選べます。
         </p>
+        <p className="mt-2 text-sm text-zinc-500">
+          チェックしない場合、価格・商品名は送信されません。
+        </p>
         <div className="mt-4 flex flex-col gap-3 text-sm text-zinc-600">
           <label className="flex items-center gap-2">
             <input
               type="checkbox"
-              checked={skipPrice}
-              onChange={(event) => setSkipPrice(event.target.checked)}
+              checked={includePrice}
+              onChange={(event) => {
+                const next = event.target.checked;
+                setIncludePrice(next);
+                window.localStorage.setItem(TELEMETRY_INCLUDE_PRICE_KEY, String(next));
+              }}
               className="h-4 w-4 rounded border-zinc-300 text-pink-600"
             />
-            価格を送らない
+            価格を送る（任意）
           </label>
           <label className="flex items-center gap-2">
             <input
               type="checkbox"
-              checked={skipItemName}
-              onChange={(event) => setSkipItemName(event.target.checked)}
+              checked={includeItemName}
+              onChange={(event) => {
+                const next = event.target.checked;
+                setIncludeItemName(next);
+                window.localStorage.setItem(TELEMETRY_INCLUDE_ITEM_NAME_KEY, String(next));
+              }}
               className="h-4 w-4 rounded border-zinc-300 text-pink-600"
             />
-            商品名を送らない
+            商品名を送る（任意）
           </label>
         </div>
         <button
           type="button"
           onClick={async () => {
             const ok = await sendTelemetry("run_export", run, {
-              includePrice: !skipPrice,
-              includeItemName: !skipItemName,
+              includePrice,
+              includeItemName,
             });
             if (ok) {
               window.localStorage.setItem(TELEMETRY_OPT_IN_KEY, "true");
