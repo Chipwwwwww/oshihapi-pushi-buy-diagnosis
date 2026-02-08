@@ -1,0 +1,108 @@
+# Codex PR（緊急）：Vercel ビルドエラー修正 + Home UI を「以前の見た目」に戻しつつ iPhone の瑕疵だけ直す（MVP-first）
+
+ユーザー報告（スクショ）
+1) Vercel build が TypeScript error で失敗：
+   - ./app/flow/FlowClient.tsx:299:19
+   - `isSelected` prop が InputHTMLAttributes に存在しない（＝型/コンポーネントの使い方が壊れてる）
+2) 最新UIが「超醜い」+ 一部の文字が消える（おすすめカードの濃い帯が文字を潰している/コントラスト不足 or overflow）
+3) 以前のUIは良かったが iPhone だけ軽微な瑕疵（safe-area/可読性）だった → “そこだけ” を直したい
+
+ゴール（優先順）
+A. **Vercel build を通す（最優先）**
+B. Home（/）の見た目を「以前の良い状態」に寄せて戻す（デザインを大きく変えない）
+C. iPhone の瑕疵だけピンポイント修正（safe-area / resultのDecisionScaleの崩れ等）
+D. 「文字が消える」問題を確実に解消（overflow/opacity/色）
+
+制約
+- 外部依存追加しない
+- MVP: backend増やさない
+- 可能なら Tailwind utility を優先し、globals.css の強い全域スタイルは避ける
+- Codex 環境で next が入らず lint/dev が動かない場合でも、**型エラーは確実に直す**（Vercelがビルドするため）
+
+---
+
+## 1) Vercel build エラー修正（必須）
+ファイル：`app/flow/FlowClient.tsx`（ログの行: 299 周辺）
+
+状況：
+- JSXで `isSelected={...}` を渡しているが、受け側が「input属性型」(InputHTMLAttributes) になっているため TS が落ちている。
+
+修正方針（どちらか必ず採用。安全なのは(1)）
+
+(1) **`isSelected` を廃止し、標準の `checked`/`aria-checked` に置換**
+- もしそのコンポーネントが `<input ... />` をラップしているなら：
+  - `isSelected` を prop から消す
+  - 呼び出し側は `checked={answers[...] === option.id}` を使い、`onChange` で更新する
+  - クリックは `onChange` に寄せる（onClickでもOKだが、型/挙動がズレやすい）
+- スタイルは `className` を `checked` 状態で切り替える or `peer-checked` を使う
+
+(2) **本当に `isSelected` が必要なら、受け側コンポーネントの型を拡張**
+- 例：`type Props = Omit<React.InputHTMLAttributes<HTMLInputElement>,'type'> & { isSelected?: boolean; title: string; }`
+- ただし、HTML input に未知propを渡すと DOM 警告になるので、**必ず** `isSelected` は input にスプレッドしない（分離して使う）。
+
+Acceptance（この項目）
+- `npm run build`（Vercel）で TypeScript error が消える
+- 変更は FlowClient 周辺の選択UIのみ。挙動は以前と同等（選択できる）
+
+---
+
+## 2) Home UI を「以前の良い見た目」に戻す（過剰な osh-* helper を弱める）
+対象：
+- `app/page.tsx`（おすすめカード + モード選択）
+- `app/globals.css`（必要なら最小限に）
+
+症状（スクショの最新UI）：
+- 「迷ったらおすすめ」カードの濃い帯が高さ固定/overflow で文字を潰し、ラベルが消える
+- 全体の余白/フォント/カードがのっぺりして以前よりダサい
+
+修正方針：
+- 以前のUIに近い card/spacing/typography に戻す（大幅な新デザインは不要）
+- **おすすめカードの濃い帯は auto height + padding にし、overflow hidden を使わない**
+- チップは `flex-wrap` + `gap`、文字は 12px 未満にしない
+- mode radio card は “点だけ” にならないよう、indicator を peer-checked で確実に制御
+  - 未選択：空の丸（枠線）
+  - 選択：内側に点（塗りつぶし）
+  - 未選択で点が出ない（今ここが怪しい）
+
+CSS について：
+- globals.css の `osh-*` は残してよいが、**強すぎる**なら弱める：
+  - 文字色は body のみ。`p, small` など element selector に opacity/color を当てない
+  - `.osh-card` は border + shadow + bg を“以前の見た目”に寄せる（白地、薄い影）
+
+Acceptance（この項目）
+- Home（/）で「おすすめ帯」の文字が消えない（標準/説明が見える）
+- mode 選択の右端 indicator が正しく（未選択=空、選択=点）
+- Desktop でも余白/タイポが不自然でない
+
+---
+
+## 3) iPhone の瑕疵だけ残して修正（回帰を増やさない）
+- `viewport-fit=cover` は維持
+- safe-area は `padding-bottom: env(safe-area-inset-bottom)` を「ボタンが被る箇所」にのみ適用（全体適用しない）
+- DecisionScale はモバイルでラベルが潰れないよう wrap だけ入れる（デザインは触りすぎない）
+
+Acceptance
+- iPhone 12 幅（390x844）で横スクロールなし
+- 決定スケール、共有/フィードバックのテキストが読める
+
+---
+
+## 4) 実装後チェック（必ず PR に記載）
+Codex 環境で dev/lint が動かない場合でも、PR 説明に以下を書いてください：
+- 修正した Vercel build error の原因と修正内容
+- ローカル検証手順（Windows）：
+  - `npm ci`
+  - `npm run dev -- --webpack`
+  - iPhone 12 simulate のチェック箇条書き
+
+また、以下の簡易静的チェックを PR Notes に貼る：
+- globals.css に `@tailwind base/components/utilities` がある
+- `appearance:none` が input に当たっていない
+- おすすめ帯に overflow-hidden/固定heightがない（or 文字が潰れない）
+
+---
+
+## 受け入れ基準（最終）
+- ✅ Vercel がビルド成功（TypeScript error 0）
+- ✅ Home UI：文字が消えない / 以前の見た目に近い / モード選択のindicator正常
+- ✅ Mobile：横スクロールなし、主要テキスト読める
