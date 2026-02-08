@@ -1,0 +1,86 @@
+# Codex PR（緊急）：UI を「元の良い見た目」に完全復帰（iPhone対応は後回し）
+
+ユーザー要望（最優先）
+- 「今のPC UIが超醜い」ので、まず **元の“良い見た目”に戻す**。
+- iPhone の瑕疵（safe-area 等）は **後で**。今は触らない/戻す。
+- ただし、Vercel build を壊さない（現状 build ✅ を維持）。
+
+ゴール
+A) 見た目を「元の良いUI」に戻す（PC/スマホ共に以前のデザイン基調）
+B) 直近の大改造（mobile-first tokens / osh-* helpers / globals.css 変更）を **巻き戻す**
+C) Vercel build は通す（TypeScript error 0）
+D) iPhone safe-area などの特殊対応は “一旦取り除く or 最小化” して良い（後で別PR）
+
+制約
+- 外部依存追加なし
+- 大規模な新デザイン提案はしない（“戻す”が目的）
+- 変更は「revert/restore」中心。必要なら build だけ保つために最小修正を追加。
+
+---
+
+## 手順（必ずこの順）
+
+### 1) 「良い見た目」だったコミットを特定
+以下の条件で `git log` / `git reflog` から探す：
+- UI が崩れ始めたコミットメッセージ例：
+  - "mobile-first design tokens"
+  - "globals.css"
+  - "osh-"
+  - "DecisionScale styling"
+  - "safe-area"
+  - "radio card peer"
+- 逆に「良かった状態」はそれら導入前のコミット。
+
+やること：
+- `git log --oneline --decorate -n 60` を見て、上記キーワードを含む連続した変更群（UI大改造）を特定する。
+- その範囲をメモ（SHAのリスト or 連続コミットなら範囲指定）。
+
+### 2) UI大改造のコミット群を revert（巻き戻し）
+方針：
+- 「良いUI」→「今」の間に入った “見た目大改造” だけを `git revert` する。
+- build を壊す可能性があるコミット（FlowClient TS 修正など）は revert しない/後で再適用。
+
+実施（例）：
+- 連続コミットなら：
+  - `git revert --no-commit <oldestBadSHA>^..<newestBadSHA>`
+  - その後 `git commit -m "revert: restore original UI look (pre-mobile-tokens)"`
+- ばらけているなら：
+  - `git revert --no-commit <sha1> <sha2> <sha3> ...`
+  - `git commit ...`
+
+revert 対象の目安：
+- `app/globals.css` の大幅変更（tokens/osh-* helpers/element selectors）
+- `app/page.tsx` のおすすめカード/モード選択の大改造
+- `DecisionScale` 見た目の大改造（もし“良いUI”から逸脱しているなら）
+- safe-area padding を強く入れた修正（今回は後回し＝戻してOK）
+
+### 3) build を維持する（必要なら最小修正）
+重要：
+- 直近で修正した TypeScript build error（例：FlowClient の `isSelected` 問題）は **維持**。
+- もし revert に巻き込まれて build が落ちたら、ここで “buildだけ” を最小修正で復活させる。
+
+必須チェック：
+- `npm run build` が通ること（Vercel基準）
+- TS error 0
+
+### 4) 目視で「元の良い見た目」に戻ったか確認（最低限）
+Codex 環境で `next` が動かない場合は、以下をPRに書く：
+- どのコミット群を revert したか（SHA list）
+- ローカル検証手順（Windows）
+- Before/After の比較（可能ならスクショ）
+
+---
+
+## Acceptance（受け入れ基準）
+- ✅ PC で “元の良い見た目” に戻っている（カード/余白/タイポが以前の感じ）
+- ✅ 「迷ったらおすすめ」の帯が変に太くない・安っぽくない・文字が潰れない
+- ✅ モード選択のUIが以前の見た目（カード/ラジオが自然）
+- ✅ Vercel build 成功（`npm run build` ✅ / TS error 0）
+- ✅ iPhone safe-area/padding などの特殊対応はこのPRでは追わない（戻してOK）
+
+---
+
+## PR 説明に必ず書くこと
+- revert したコミット一覧（SHA）
+- `npm run build` の結果（成功）
+- ローカルでの確認方法（Windows: `npm run dev -- --webpack`）
