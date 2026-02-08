@@ -29,3 +29,18 @@ export function saveRun(run: DecisionRun): DecisionRun[] {
 export function findRun(runId: string): DecisionRun | undefined {
   return loadRuns().find((run) => run.runId === runId);
 }
+
+export function updateRun(
+  runId: string,
+  updater: (run: DecisionRun) => DecisionRun,
+): DecisionRun | undefined {
+  if (typeof window === "undefined") return undefined;
+  const runs = loadRuns();
+  const index = runs.findIndex((run) => run.runId === runId);
+  if (index === -1) return undefined;
+  const nextRun = updater(runs[index]);
+  const nextRuns = [...runs];
+  nextRuns[index] = nextRun;
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextRuns));
+  return nextRun;
+}

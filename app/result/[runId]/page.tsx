@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import type { DecisionRun } from "@/src/oshihapi/model";
-import { findRun } from "@/src/oshihapi/runStorage";
+import type { DecisionRun, FeedbackImmediate } from "@/src/oshihapi/model";
+import { findRun, updateRun } from "@/src/oshihapi/runStorage";
 
 const decisionLabels: Record<string, string> = {
   BUY: "買う",
@@ -15,6 +15,7 @@ export default function ResultPage() {
   const router = useRouter();
   const params = useParams<{ runId: string }>();
   const [copied, setCopied] = useState(false);
+  const [feedback, setFeedback] = useState<FeedbackImmediate | undefined>(undefined);
 
   const runId = params?.runId;
   const run = useMemo<DecisionRun | undefined>(() => {
@@ -22,15 +23,46 @@ export default function ResultPage() {
     return findRun(runId);
   }, [runId]);
 
+  useEffect(() => {
+    setFeedback(run?.feedback_immediate);
+  }, [run]);
+
+  const logActionClick = (actionId: string) => {
+    if (!runId) return;
+    updateRun(runId, (current) => ({
+      ...current,
+      behavior: {
+        ...(current.behavior ?? {
+          time_total_ms: 0,
+          time_per_q_ms: [],
+          num_changes: 0,
+          num_backtracks: 0,
+          actions_clicked: [],
+        }),
+        actions_clicked: [...(current.behavior?.actions_clicked ?? []), actionId],
+      },
+    }));
+  };
+
   const handleCopy = async () => {
     if (!run) return;
     try {
       await navigator.clipboard.writeText(run.output.shareText);
       setCopied(true);
+      logActionClick("copy_share_text");
       setTimeout(() => setCopied(false), 1500);
     } catch {
       setCopied(false);
     }
+  };
+
+  const handleFeedback = (value: FeedbackImmediate) => {
+    if (!runId) return;
+    const nextRun = updateRun(runId, (current) => ({
+      ...current,
+      feedback_immediate: value,
+    }));
+    setFeedback(nextRun?.feedback_immediate ?? value);
   };
 
   if (!run) {
@@ -39,13 +71,22 @@ export default function ResultPage() {
         <p className="text-sm text-zinc-500">
           結果が見つかりませんでした。ホームからもう一度お試しください。
         </p>
-        <button
-          type="button"
-          onClick={() => router.push("/")}
-          className="mt-4 rounded-full bg-zinc-900 px-5 py-2 text-sm font-semibold text-white"
-        >
-          Homeへ戻る
-        </button>
+        <div className="mt-4 flex flex-col gap-3 md:flex-row">
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="rounded-full bg-zinc-900 px-5 py-2 text-sm font-semibold text-white"
+          >
+            Homeへ戻る
+          </button>
+          <button
+            type="button"
+            onClick={() => router.push("/history")}
+            className="rounded-full border border-zinc-300 px-5 py-2 text-sm font-semibold text-zinc-600"
+          >
+            履歴を見る
+          </button>
+        </div>
       </div>
     );
   }
@@ -82,6 +123,7 @@ export default function ResultPage() {
                   href={action.linkOut.url}
                   target="_blank"
                   rel="noreferrer"
+                  onClick={() => logActionClick(`link:${action.id}`)}
                   className="mt-3 inline-flex rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white"
                 >
                   {action.linkOut.label}
@@ -107,8 +149,35 @@ export default function ResultPage() {
           onClick={handleCopy}
           className="mt-4 rounded-full bg-zinc-900 px-5 py-2 text-sm font-semibold text-white"
         >
-          {copied ? "コピーしました" : "共有テキストをコピー"}
+          共有テキストをコピー
         </button>
+      </section>
+
+      <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <h2 className="text-base font-semibold text-zinc-800">
+          このあとどうした？
+        </h2>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {[
+            { id: "bought", label: "買った" },
+            { id: "hold", label: "保留" },
+            { id: "not_bought", label: "買わなかった" },
+            { id: "not_yet", label: "まだ" },
+          ].map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => handleFeedback(option.id as FeedbackImmediate)}
+              className={`rounded-xl border px-4 py-3 text-sm font-semibold transition ${
+                feedback === option.id
+                  ? "border-pink-500 bg-pink-50 text-pink-700"
+                  : "border-zinc-200 bg-white text-zinc-700 hover:border-pink-300"
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       </section>
 
       <section className="flex flex-col gap-3 md:flex-row">
@@ -127,6 +196,12 @@ export default function ResultPage() {
           履歴を見る
         </button>
       </section>
+
+      {copied ? (
+        <div className="fixed bottom-6 left-1/2 z-50 w-[90%] max-w-sm -translate-x-1/2 rounded-full bg-zinc-900 px-5 py-3 text-center text-sm font-semibold text-white shadow-lg">
+          コピーしました
+        </div>
+      ) : null}
     </div>
   );
 }
