@@ -52,7 +52,7 @@ const itemKindOptions: { value: ItemKind; label: string }[] = [
 
 export default function Home() {
   const router = useRouter();
-  const [mode, setMode] = useState<Mode>("urgent");
+  const [mode, setMode] = useState<Mode>("short");
   const [itemName, setItemName] = useState("");
   const [priceYen, setPriceYen] = useState("");
   const [deadline, setDeadline] = useState<DeadlineValue>("unknown");
@@ -60,9 +60,11 @@ export default function Home() {
 
   const modeDescription = useMemo(
     () =>
-      mode === "urgent"
+      mode === "short"
         ? "急いで決めたい人向け（短め）"
-        : "比較しながら決めたい人向け（標準）",
+        : mode === "medium"
+          ? "比較しながら決めたい人向け（標準）"
+          : "AIに深掘り相談したい人向け（長診断）",
     [mode],
   );
 
@@ -96,12 +98,12 @@ export default function Home() {
       <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4">
           <p className="text-sm font-semibold text-zinc-700">モード</p>
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-3">
             <button
               type="button"
-              onClick={() => setMode("urgent")}
+              onClick={() => setMode("short")}
               className={`rounded-xl border px-4 py-3 text-left transition ${
-                mode === "urgent"
+                mode === "short"
                   ? "border-pink-500 bg-pink-50 text-pink-700"
                   : "border-zinc-200 bg-white text-zinc-600 hover:border-pink-300"
               }`}
@@ -111,15 +113,29 @@ export default function Home() {
             </button>
             <button
               type="button"
-              onClick={() => setMode("normal")}
+              onClick={() => setMode("medium")}
               className={`rounded-xl border px-4 py-3 text-left transition ${
-                mode === "normal"
+                mode === "medium"
                   ? "border-indigo-500 bg-indigo-50 text-indigo-700"
                   : "border-zinc-200 bg-white text-zinc-600 hover:border-indigo-300"
               }`}
             >
-              <p className="text-base font-semibold">じっくり決める（60秒）</p>
+              <p className="text-base font-semibold">
+                じっくり決める（60秒〜2分）
+              </p>
               <p className="text-xs">比較しながら決めたい時に。</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("long")}
+              className={`rounded-xl border px-4 py-3 text-left transition ${
+                mode === "long"
+                  ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                  : "border-zinc-200 bg-white text-zinc-600 hover:border-emerald-300"
+              }`}
+            >
+              <p className="text-base font-semibold">AIに相談する（長診断）</p>
+              <p className="text-xs">深掘り用のプロンプトを作る。</p>
             </button>
           </div>
           <p className="text-xs text-zinc-500">{modeDescription}</p>

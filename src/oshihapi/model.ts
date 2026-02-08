@@ -1,5 +1,5 @@
 export type Locale = 'ja';
-export type Mode = 'urgent' | 'normal';
+export type Mode = 'short' | 'medium' | 'long';
 export type Category = 'merch';
 
 export type ItemKind = 'goods' | 'blind_draw' | 'used' | 'preorder' | 'ticket';
@@ -34,6 +34,8 @@ export type Question = {
   description?: string;
   required: boolean;
   urgentCore?: boolean;
+  standard?: boolean;
+  longOnly?: boolean;
 
   options?: Option[];
 
@@ -104,7 +106,7 @@ export type DecisionOutput = {
   shareText: string;
 };
 
-export type FeedbackImmediate = "bought" | "hold" | "not_bought" | "not_yet";
+export type FeedbackImmediate = "bought" | "waited" | "not_bought" | "unknown";
 
 export type BehaviorLog = {
   time_total_ms: number;
