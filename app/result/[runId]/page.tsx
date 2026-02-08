@@ -3,15 +3,24 @@
 import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import DecisionScale from "@/components/DecisionScale";
+import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
+import Card from "@/components/ui/Card";
+import RadioCard from "@/components/ui/RadioCard";
+import Toast from "@/components/ui/Toast";
+import {
+  bodyTextClass,
+  containerClass,
+  helperTextClass,
+  pageTitleClass,
+  sectionTitleClass,
+} from "@/components/ui/tokens";
 import { merch_v2_ja } from "@/src/oshihapi/merch_v2_ja";
 import { buildLongPrompt } from "@/src/oshihapi/promptBuilder";
 import type { DecisionRun, FeedbackImmediate } from "@/src/oshihapi/model";
 import { clamp, engineConfig, normalize01ToSigned } from "@/src/oshihapi/engineConfig";
 import { findRun, updateRun } from "@/src/oshihapi/runStorage";
-import {
-  sendTelemetry,
-  TELEMETRY_OPT_IN_KEY,
-} from "@/src/oshihapi/telemetryClient";
+import { sendTelemetry } from "@/src/oshihapi/telemetry";
 
 const decisionLabels: Record<string, string> = {
   BUY: "買う",
@@ -32,18 +41,15 @@ export default function ResultPage() {
   const router = useRouter();
   const params = useParams<{ runId: string }>();
   const [toast, setToast] = useState<string | null>(null);
-  const [telemetryOptIn, setTelemetryOptIn] = useState(() => {
+  const [localFeedback, setLocalFeedback] = useState<FeedbackImmediate | undefined>(
+    undefined,
+  );
+  const [telemetryOptIn, setTelemetryOptIn] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
-    return window.localStorage.getItem(TELEMETRY_OPT_IN_KEY) === "true";
+    return window.localStorage.getItem("oshihapi:telemetry_opt_in") === "true";
   });
-  const [includePrice, setIncludePrice] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.localStorage.getItem(TELEMETRY_INCLUDE_PRICE_KEY) === "true";
-  });
-  const [includeItemName, setIncludeItemName] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.localStorage.getItem(TELEMETRY_INCLUDE_ITEM_NAME_KEY) === "true";
-  });
+  const [skipPrice, setSkipPrice] = useState(true);
+  const [skipItemName, setSkipItemName] = useState(true);
 
   const runId = params?.runId;
   const run = useMemo<DecisionRun | undefined>(() => {
@@ -51,10 +57,7 @@ export default function ResultPage() {
     return findRun(runId);
   }, [runId]);
 
-  const [feedbackOverride, setFeedbackOverride] = useState<FeedbackImmediate | undefined>(
-    undefined,
-  );
-  const feedback = feedbackOverride ?? run?.feedback_immediate;
+  const feedback = localFeedback ?? run?.feedback_immediate;
 
   const decisionScale = useMemo(() => {
     if (!run) return "wait";
@@ -111,7 +114,7 @@ export default function ResultPage() {
     try {
       await navigator.clipboard.writeText(run.output.shareText);
       logActionClick("copy_share_text");
-      showToast("共有テキストをコピーしました");
+      showToast("コピーしました");
     } catch {
       showToast("コピーに失敗しました");
     }
@@ -122,7 +125,7 @@ export default function ResultPage() {
     try {
       await navigator.clipboard.writeText(longPrompt);
       logActionClick("copy_long_prompt");
-      showToast("AI相談用プロンプトをコピーしました");
+      showToast("コピーしました");
     } catch {
       showToast("コピーに失敗しました");
     }
@@ -134,92 +137,86 @@ export default function ResultPage() {
       ...current,
       feedback_immediate: value,
     }));
-    setFeedbackOverride(nextRun?.feedback_immediate ?? value);
-    if (telemetryOptIn) {
-      void sendTelemetry("l1_feedback", run, {
+    setLocalFeedback(nextRun?.feedback_immediate ?? value);
+    if (telemetryOptIn && run) {
+      sendTelemetry("l1_feedback", run, {
         label: value,
-        includePrice,
-        includeItemName,
+        includePrice: !skipPrice,
+        includeItemName: !skipItemName,
       });
     }
   };
 
   if (!run) {
     return (
-      <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col items-center justify-center px-6 py-10">
-        <p className="text-sm text-zinc-500">
+      <div
+        className={`${containerClass} flex min-h-screen flex-col items-center justify-center gap-4 py-10`}
+      >
+        <p className={helperTextClass}>
           結果が見つかりませんでした。ホームからもう一度お試しください。
         </p>
-        <div className="mt-4 flex flex-col gap-3 md:flex-row">
-          <button
-            type="button"
-            onClick={() => router.push("/")}
-            className="rounded-full bg-zinc-900 px-5 py-2 text-sm font-semibold text-white"
-          >
+        <div className="flex w-full flex-col gap-4">
+          <Button onClick={() => router.push("/")} className="w-full">
             Homeへ戻る
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="outline"
             onClick={() => router.push("/history")}
-            className="rounded-full border border-zinc-300 px-5 py-2 text-sm font-semibold text-zinc-600"
+            className="w-full rounded-xl"
           >
             履歴を見る
-          </button>
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-8 px-6 py-10">
-      <header className="flex flex-col gap-2">
-        <p className="text-sm font-semibold text-pink-600">診断結果</p>
-        <h1 className="text-3xl font-bold text-zinc-900">
-          {decisionLabels[run.output.decision]}
-        </h1>
-        <p className="text-sm text-zinc-500">{decisionSubcopy[run.output.decision]}</p>
+    <div className={`${containerClass} flex min-h-screen flex-col gap-6 py-10`}>
+      <header className="space-y-4">
+        <p className="text-sm font-semibold text-accent">診断結果</p>
+        <div className="space-y-2">
+          <h1 className={pageTitleClass}>{decisionLabels[run.output.decision]}</h1>
+          <p className={bodyTextClass}>{decisionSubcopy[run.output.decision]}</p>
+        </div>
+        <Badge variant="primary">信頼度 {run.output.confidence}%</Badge>
       </header>
 
       <DecisionScale decision={decisionScale} index={decisionIndex} />
 
-      <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <h2 className="text-base font-semibold text-zinc-800">今すぐやる</h2>
-        <ul className="mt-4 grid gap-3 text-sm text-zinc-600">
+      <Card className="space-y-4">
+        <h2 className={sectionTitleClass}>今すぐやる</h2>
+        <ul className="grid gap-4">
           {run.output.actions.map((action) => (
-            <li key={action.id} className="rounded-xl border border-zinc-200 p-4">
-              <p className="text-sm text-zinc-700">{action.text}</p>
+            <li key={action.id} className="rounded-2xl border border-border p-4">
+              <p className={bodyTextClass}>{action.text}</p>
               {action.linkOut ? (
-                <a
-                  href={action.linkOut.url}
-                  target="_blank"
-                  rel="noreferrer"
+                <Button
                   onClick={() => logActionClick(`link:${action.id}`)}
-                  className="mt-3 inline-flex rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white"
+                  className="mt-4 w-full rounded-xl"
                 >
                   {action.linkOut.label}
-                </a>
+                </Button>
               ) : null}
             </li>
           ))}
         </ul>
-      </section>
+      </Card>
 
-      <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <h2 className="text-base font-semibold text-zinc-800">理由</h2>
-        <div className="mt-4 grid gap-3">
+      <Card className="space-y-4">
+        <h2 className={sectionTitleClass}>理由</h2>
+        <div className="grid gap-4">
           {run.output.reasons.map((reason) => (
-            <div key={reason.id} className="rounded-xl border border-zinc-200 p-4">
-              <p className="text-sm text-zinc-700">{reason.text}</p>
+            <div key={reason.id} className="rounded-2xl border border-border p-4">
+              <p className={bodyTextClass}>{reason.text}</p>
             </div>
           ))}
         </div>
-      </section>
+      </Card>
 
-      <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
-        <div className="flex flex-col gap-2">
-          <h2 className="text-base font-semibold text-emerald-900">
-            AIに相談する（プロンプトをコピー）
-          </h2>
+      <Card className="space-y-4 border-emerald-200 bg-emerald-50">
+        <div className="space-y-2">
+          <h2 className={sectionTitleClass}>AIに相談する（プロンプト）</h2>
           <p className="text-sm text-emerald-700">
             {run.mode === "long"
               ? "長診断の内容をまとめたプロンプトです。"
@@ -229,139 +226,104 @@ export default function ResultPage() {
         <textarea
           readOnly
           value={longPrompt}
-          className="mt-4 min-h-[180px] w-full rounded-xl border border-emerald-200 bg-white px-4 py-3 text-xs text-emerald-900"
+          className="min-h-[180px] w-full rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm text-emerald-900"
         />
-        <button
-          type="button"
+        <Button
           onClick={handleCopyPrompt}
-          className="mt-4 inline-flex rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white"
+          className="w-full rounded-xl bg-emerald-600 text-white hover:bg-emerald-700"
         >
           プロンプトをコピー
-        </button>
-      </section>
+        </Button>
+      </Card>
 
-      <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <h2 className="text-base font-semibold text-zinc-800">共有テキスト</h2>
-        <p className="mt-3 whitespace-pre-line text-sm text-zinc-600">
+      <Card className="space-y-4">
+        <h2 className={sectionTitleClass}>共有テキスト</h2>
+        <p className="whitespace-pre-line text-sm text-muted-foreground">
           {run.output.shareText}
         </p>
-        <button
-          type="button"
-          onClick={handleCopyShare}
-          className="mt-4 rounded-full bg-zinc-900 px-5 py-2 text-sm font-semibold text-white"
-        >
+        <Button onClick={handleCopyShare} className="w-full rounded-xl">
           共有テキストをコピー
-        </button>
-      </section>
+        </Button>
+      </Card>
 
-      <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <h2 className="text-base font-semibold text-zinc-800">
-          学習のために匿名データを送信
-        </h2>
-        <p className="mt-2 text-sm text-zinc-500">
-          個人が特定される情報は送信されません。いつでも送信内容を選べます。
-        </p>
-        <p className="mt-2 text-sm text-zinc-500">
-          チェックしない場合、価格・商品名は送信されません。
-        </p>
-        <div className="mt-4 flex flex-col gap-3 text-sm text-zinc-600">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={includePrice}
-              onChange={(event) => {
-                const next = event.target.checked;
-                setIncludePrice(next);
-                window.localStorage.setItem(TELEMETRY_INCLUDE_PRICE_KEY, String(next));
-              }}
-              className="h-4 w-4 rounded border-zinc-300 text-pink-600"
-            />
-            価格を送る（任意）
-          </label>
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={includeItemName}
-              onChange={(event) => {
-                const next = event.target.checked;
-                setIncludeItemName(next);
-                window.localStorage.setItem(TELEMETRY_INCLUDE_ITEM_NAME_KEY, String(next));
-              }}
-              className="h-4 w-4 rounded border-zinc-300 text-pink-600"
-            />
-            商品名を送る（任意）
-          </label>
-        </div>
-        <button
-          type="button"
-          onClick={async () => {
-            const ok = await sendTelemetry("run_export", run, {
-              includePrice,
-              includeItemName,
-            });
-            if (ok) {
-              window.localStorage.setItem(TELEMETRY_OPT_IN_KEY, "true");
-              setTelemetryOptIn(true);
-              showToast("匿名データを送信しました");
-            } else {
-              showToast("送信に失敗しました");
-            }
-          }}
-          className="mt-4 inline-flex rounded-full bg-pink-600 px-5 py-2 text-sm font-semibold text-white"
-        >
-          匿名データを送信する
-        </button>
-      </section>
-
-      <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <h2 className="text-base font-semibold text-zinc-800">
-          このあとどうした？
-        </h2>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+      <Card className="space-y-4">
+        <h2 className={sectionTitleClass}>このあとどうした？</h2>
+        <div className="grid gap-4 sm:grid-cols-2">
           {[
             { id: "bought", label: "買った" },
             { id: "waited", label: "保留した" },
             { id: "not_bought", label: "買わなかった" },
             { id: "unknown", label: "まだ" },
           ].map((option) => (
-            <button
+            <RadioCard
               key={option.id}
-              type="button"
+              title={option.label}
+              isSelected={feedback === option.id}
               onClick={() => handleFeedback(option.id as FeedbackImmediate)}
-              className={`rounded-xl border px-4 py-3 text-sm font-semibold transition ${
-                feedback === option.id
-                  ? "border-pink-500 bg-pink-50 text-pink-700"
-                  : "border-zinc-200 bg-white text-zinc-700 hover:border-pink-300"
-              }`}
-            >
-              {option.label}
-            </button>
+            />
           ))}
         </div>
-      </section>
+      </Card>
 
-      <section className="flex flex-col gap-3 md:flex-row">
-        <button
-          type="button"
+      <Card className="space-y-4">
+        <h2 className={sectionTitleClass}>学習のために匿名データを送信</h2>
+        <p className={helperTextClass}>
+          個人が特定される情報は送信されません。いつでも設定を変更できます。
+        </p>
+        <label className="flex items-center justify-between gap-4 text-sm text-foreground">
+          <span>匿名データ送信に協力する</span>
+          <input
+            type="checkbox"
+            checked={telemetryOptIn}
+            onChange={(event) => {
+              const nextValue = event.target.checked;
+              setTelemetryOptIn(nextValue);
+              if (typeof window !== "undefined") {
+                window.localStorage.setItem(
+                  "oshihapi:telemetry_opt_in",
+                  String(nextValue),
+                );
+              }
+            }}
+            className="h-5 w-5 rounded border border-border text-primary"
+          />
+        </label>
+        <div className="grid gap-3 text-sm text-muted-foreground">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={skipPrice}
+              onChange={(event) => setSkipPrice(event.target.checked)}
+              className="h-4 w-4 rounded border border-border text-primary"
+            />
+            価格を送らない
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={skipItemName}
+              onChange={(event) => setSkipItemName(event.target.checked)}
+              className="h-4 w-4 rounded border border-border text-primary"
+            />
+            商品名を送らない
+          </label>
+        </div>
+      </Card>
+
+      <div className="grid gap-4">
+        <Button
+          variant="outline"
           onClick={() => router.push("/")}
-          className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-600"
+          className="w-full rounded-xl"
         >
           もう一度診断
-        </button>
-        <button
-          type="button"
-          onClick={() => router.push("/history")}
-          className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white"
-        >
+        </Button>
+        <Button onClick={() => router.push("/history")} className="w-full rounded-xl">
           履歴を見る
-        </button>
-      </section>
+        </Button>
+      </div>
 
-      {toast ? (
-        <div className="fixed bottom-6 left-1/2 z-50 w-[90%] max-w-sm -translate-x-1/2 rounded-full bg-zinc-900 px-5 py-3 text-center text-sm font-semibold text-white shadow-lg">
-          {toast}
-        </div>
-      ) : null}
+      {toast ? <Toast message={toast} /> : null}
     </div>
   );
 }

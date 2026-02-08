@@ -25,14 +25,21 @@ export default function DecisionScale({ decision, index, className }: DecisionSc
   const t = LABEL[decision];
 
   return (
-    <div className={["rounded-2xl border bg-white p-4 shadow-sm", className].filter(Boolean).join(" ")}>
-      <div className="flex items-start justify-between gap-3">
+    <div
+      className={[
+        "rounded-2xl border border-border bg-card p-4 shadow-sm",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-sm font-medium text-neutral-500">診断結果</div>
-          <div className="mt-1 text-2xl font-bold tracking-tight">{t.top}</div>
-          <div className="mt-1 text-sm text-neutral-600">{t.sub}</div>
+          <div className="text-sm font-medium text-muted-foreground">診断結果</div>
+          <div className="mt-1 text-2xl font-semibold tracking-tight">{t.top}</div>
+          <div className="mt-1 text-sm text-muted-foreground">{t.sub}</div>
         </div>
-        <div className="text-right text-xs text-neutral-500">
+        <div className="text-right text-xs text-muted-foreground">
           <div>判定の傾き</div>
           <div className="mt-1 font-medium">{Math.round(clamped * 100)}%</div>
         </div>
@@ -41,12 +48,12 @@ export default function DecisionScale({ decision, index, className }: DecisionSc
       <div className="mt-4">
         <div className="relative h-12">
           {/* line */}
-          <div className="absolute left-0 right-0 top-6 h-1 rounded-full bg-neutral-200" />
+          <div className="absolute left-0 right-0 top-6 h-1 rounded-full bg-muted" />
 
           {/* ticks */}
-          <div className="absolute left-0 top-4 h-5 w-px bg-neutral-300" />
-          <div className="absolute left-1/2 top-4 h-5 w-px -translate-x-1/2 bg-neutral-300" />
-          <div className="absolute right-0 top-4 h-5 w-px bg-neutral-300" />
+          <div className="absolute left-0 top-4 h-5 w-px bg-border" />
+          <div className="absolute left-1/2 top-4 h-5 w-px -translate-x-1/2 bg-border" />
+          <div className="absolute right-0 top-4 h-5 w-px bg-border" />
 
           {/* pointer */}
           <div
@@ -54,15 +61,15 @@ export default function DecisionScale({ decision, index, className }: DecisionSc
             style={{ left: `${pos}%` }}
           >
             <div className="flex flex-col items-center">
-              <div className="rounded-full border bg-white px-2 py-1 text-xs font-medium shadow-sm">
+              <div className="rounded-full border border-border bg-card px-2 py-1 text-xs font-medium shadow-sm">
                 {t.top}
               </div>
-              <div className="h-0 w-0 border-l-8 border-r-8 border-t-10 border-l-transparent border-r-transparent border-t-red-500" />
+              <div className="h-0 w-0 border-l-8 border-r-8 border-t-10 border-l-transparent border-r-transparent border-t-foreground" />
             </div>
           </div>
         </div>
 
-        <div className="mt-1 flex justify-between text-xs text-neutral-500">
+        <div className="mt-1 flex justify-between text-xs text-muted-foreground">
           <span>やめる</span>
           <span>保留</span>
           <span>買う</span>
