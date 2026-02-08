@@ -1,0 +1,67 @@
+# Objective
+Make UI visually polished and consistent (mobile-first JP). No behavior regressions.
+
+# Must-do strategy
+1) Implement a tiny design system: tokens + primitives
+2) Rebuild pages using ONLY primitives to ensure consistency
+3) Add missing states: disabled/loading/empty + copy feedback
+
+# Files / locations
+- Tokens:
+  - app/globals.css: CSS variables for colors, radius, shadow
+  - components/ui/tokens.ts: container width, spacing, typography class presets
+- Primitives in components/ui/:
+  - Button.tsx (primary, ghost, disabled, loading)
+  - Card.tsx
+  - Badge.tsx
+  - RadioCard.tsx
+  - Progress.tsx
+  - Toast.tsx or InlineNotice.tsx (for copy success)
+- Apply to pages:
+  - app/page.tsx
+  - app/flow/page.tsx
+  - app/result/[runId]/page.tsx
+  - app/history/page.tsx
+
+# Visual rules (strict)
+- Container: max width 520px centered; px-4
+- Spacing: use 8px system only (gap/space-y 2/4/6/8)
+- Card: rounded-2xl, border, shadow-sm, consistent padding
+- Typography:
+  - page title: text-2xl font-semibold leading-snug
+  - section title: text-lg font-semibold
+  - body: text-base leading-7
+  - helper: text-sm text-muted
+- Interactive: tap targets >= 44px
+
+# Page requirements
+Home:
+- Mode selection as 3 mode cards with short JP descriptions
+- Optional inputs section in Card
+- Primary CTA; friendly JP microcopy
+
+Flow:
+- Top progress + back
+- Single question card; big RadioCard options; Next sticky at bottom
+- Next disabled until answered
+
+Result:
+- Hero: outcome + short summary line + confidence badge
+- DecisionScale meter: やめる—保留—買う with marker
+- Cards for Actions, Reasons, Share text (copy), Long mode: AI prompt (copy)
+- L1 feedback buttons; store to localStorage run record
+
+History:
+- Empty state (JP)
+- List as cards; outcome badge; link to result
+
+# Copy feedback (must)
+All copy buttons must show "コピーしました" via toast/inline notice.
+
+# Accessibility
+- Labels for inputs, visible focus ring, reasonable contrast
+
+# Acceptance criteria
+- Consistent look across Home/Flow/Result/History on mobile
+- No broken navigation; runs save/load correctly
+- No heavy new deps / no backend
