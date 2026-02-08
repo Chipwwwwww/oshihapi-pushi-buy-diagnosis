@@ -1,15 +1,12 @@
 import { Suspense } from "react";
 import FlowClient from "./FlowClient";
-import { containerClass, helperTextClass } from "@/components/ui/tokens";
 
 export default function FlowPage() {
   return (
     <Suspense
       fallback={
-        <div
-          className={`${containerClass} flex min-h-screen flex-col items-center justify-center py-10`}
-        >
-          <p className={helperTextClass}>読み込み中...</p>
+        <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col items-center justify-center px-6 py-10 text-sm text-zinc-500">
+          読み込み中...
         </div>
       }
     >

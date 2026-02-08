@@ -1,26 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import DecisionScale from "@/components/DecisionScale";
-import Badge from "@/components/ui/Badge";
-import Button from "@/components/ui/Button";
-import Card from "@/components/ui/Card";
-import RadioCard from "@/components/ui/RadioCard";
-import Toast from "@/components/ui/Toast";
-import {
-  bodyTextClass,
-  containerClass,
-  helperTextClass,
-  pageTitleClass,
-  sectionTitleClass,
-} from "@/components/ui/tokens";
 import { merch_v2_ja } from "@/src/oshihapi/merch_v2_ja";
 import { buildLongPrompt } from "@/src/oshihapi/promptBuilder";
 import type { DecisionRun, FeedbackImmediate } from "@/src/oshihapi/model";
 import { clamp, engineConfig, normalize01ToSigned } from "@/src/oshihapi/engineConfig";
 import { findRun, updateRun } from "@/src/oshihapi/runStorage";
-import { sendTelemetry, TELEMETRY_OPT_IN_KEY } from "@/src/oshihapi/telemetryClient";
 
 const decisionLabels: Record<string, string> = {
   BUY: "買う",
@@ -38,23 +25,7 @@ export default function ResultPage() {
   const router = useRouter();
   const params = useParams<{ runId: string }>();
   const [toast, setToast] = useState<string | null>(null);
-  const [localFeedback, setLocalFeedback] = useState<FeedbackImmediate | undefined>(
-    undefined,
-  );
-  const [telemetryOptIn, setTelemetryOptIn] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    const legacyValue =
-      window.localStorage.getItem("oshihapi:telemetry_opt_in") === "true";
-    const nextValue = window.localStorage.getItem(TELEMETRY_OPT_IN_KEY) === "true";
-    if (legacyValue && !nextValue) {
-      window.localStorage.setItem(TELEMETRY_OPT_IN_KEY, "true");
-    }
-    return legacyValue || nextValue;
-  });
-  const [telemetrySubmitting, setTelemetrySubmitting] = useState(false);
-  const [telemetrySubmitted, setTelemetrySubmitted] = useState(false);
-  const [skipPrice, setSkipPrice] = useState(true);
-  const [skipItemName, setSkipItemName] = useState(true);
+  const [feedback, setFeedback] = useState<FeedbackImmediate | undefined>(undefined);
 
   const runId = params?.runId;
   const run = useMemo<DecisionRun | undefined>(() => {
@@ -62,7 +33,9 @@ export default function ResultPage() {
     return findRun(runId);
   }, [runId]);
 
-  const feedback = localFeedback ?? run?.feedback_immediate;
+  useEffect(() => {
+    setFeedback(run?.feedback_immediate);
+  }, [run]);
 
   const decisionScale = useMemo(() => {
     if (!run) return "wait";
@@ -119,7 +92,7 @@ export default function ResultPage() {
     try {
       await navigator.clipboard.writeText(run.output.shareText);
       logActionClick("copy_share_text");
-      showToast("コピーしました");
+      showToast("共有テキストをコピーしました");
     } catch {
       showToast("コピーに失敗しました");
     }
@@ -130,116 +103,98 @@ export default function ResultPage() {
     try {
       await navigator.clipboard.writeText(longPrompt);
       logActionClick("copy_long_prompt");
-      showToast("コピーしました");
+      showToast("AI相談用プロンプトをコピーしました");
     } catch {
       showToast("コピーに失敗しました");
     }
   };
 
   const handleFeedback = (value: FeedbackImmediate) => {
-    if (!runId || !run) return;
+    if (!runId) return;
     const nextRun = updateRun(runId, (current) => ({
       ...current,
       feedback_immediate: value,
     }));
-    setLocalFeedback(nextRun?.feedback_immediate ?? value);
-  };
-
-  const handleTelemetrySubmit = async () => {
-    if (!run || telemetrySubmitting || telemetrySubmitted || !telemetryOptIn) return;
-    setTelemetrySubmitting(true);
-    try {
-      const result = await sendTelemetry("run_export", run, {
-        l1Label: feedback,
-        includePrice: !skipPrice,
-        includeItemName: !skipItemName,
-      });
-      if (result.ok) {
-        setTelemetrySubmitted(true);
-        showToast("送信しました（匿名）");
-      } else {
-        const hint = result.hint ? ` (${result.hint})` : "";
-        const errorText = result.error ? `: ${result.error}${hint}` : "";
-        showToast(`送信に失敗しました${errorText}`);
-      }
-    } catch {
-      showToast("送信に失敗しました。時間をおいて再試行してください。");
-    } finally {
-      setTelemetrySubmitting(false);
-    }
+    setFeedback(nextRun?.feedback_immediate ?? value);
   };
 
   if (!run) {
     return (
-      <div
-        className={`page ${containerClass} flex min-h-screen flex-col items-center justify-center gap-4 py-10`}
-      >
-        <p className={`${helperTextClass} osh-muted`}>
+      <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col items-center justify-center px-6 py-10">
+        <p className="text-sm text-zinc-500">
           結果が見つかりませんでした。ホームからもう一度お試しください。
         </p>
-        <div className="flex w-full flex-col gap-4">
-          <Button onClick={() => router.push("/")} className="w-full">
+        <div className="mt-4 flex flex-col gap-3 md:flex-row">
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="rounded-full bg-zinc-900 px-5 py-2 text-sm font-semibold text-white"
+          >
             Homeへ戻る
-          </Button>
-          <Button
-            variant="outline"
+          </button>
+          <button
+            type="button"
             onClick={() => router.push("/history")}
-            className="w-full rounded-xl"
+            className="rounded-full border border-zinc-300 px-5 py-2 text-sm font-semibold text-zinc-600"
           >
             履歴を見る
-          </Button>
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`page ${containerClass} flex min-h-screen flex-col gap-6 py-10`}>
-      <header className="space-y-4">
-        <p className="text-sm font-semibold text-accent">診断結果</p>
-        <div className="space-y-2">
-          <h1 className={pageTitleClass}>{decisionLabels[run.output.decision]}</h1>
-          <p className={bodyTextClass}>{decisionSubcopy[run.output.decision]}</p>
-        </div>
-        <Badge variant="primary">信頼度 {run.output.confidence}%</Badge>
+    <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-8 px-6 py-10">
+      <header className="flex flex-col gap-2">
+        <p className="text-sm font-semibold text-pink-600">診断結果</p>
+        <h1 className="text-3xl font-bold text-zinc-900">
+          {decisionLabels[run.output.decision]}
+        </h1>
+        <p className="text-sm text-zinc-500">{decisionSubcopy[run.output.decision]}</p>
       </header>
 
       <DecisionScale decision={decisionScale} index={decisionIndex} />
 
-      <Card className="space-y-4">
-        <h2 className={sectionTitleClass}>今すぐやる</h2>
-        <ul className="grid gap-4">
+      <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <h2 className="text-base font-semibold text-zinc-800">今すぐやる</h2>
+        <ul className="mt-4 grid gap-3 text-sm text-zinc-600">
           {run.output.actions.map((action) => (
-            <li key={action.id} className="rounded-2xl border border-border p-4">
-              <p className={bodyTextClass}>{action.text}</p>
+            <li key={action.id} className="rounded-xl border border-zinc-200 p-4">
+              <p className="text-sm text-zinc-700">{action.text}</p>
               {action.linkOut ? (
-                <Button
+                <a
+                  href={action.linkOut.url}
+                  target="_blank"
+                  rel="noreferrer"
                   onClick={() => logActionClick(`link:${action.id}`)}
-                  className="mt-4 w-full rounded-xl"
+                  className="mt-3 inline-flex rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white"
                 >
                   {action.linkOut.label}
-                </Button>
+                </a>
               ) : null}
             </li>
           ))}
         </ul>
-      </Card>
+      </section>
 
-      <Card className="space-y-4">
-        <h2 className={sectionTitleClass}>理由</h2>
-        <div className="grid gap-4">
+      <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <h2 className="text-base font-semibold text-zinc-800">理由</h2>
+        <div className="mt-4 grid gap-3">
           {run.output.reasons.map((reason) => (
-            <div key={reason.id} className="rounded-2xl border border-border p-4">
-              <p className={bodyTextClass}>{reason.text}</p>
+            <div key={reason.id} className="rounded-xl border border-zinc-200 p-4">
+              <p className="text-sm text-zinc-700">{reason.text}</p>
             </div>
           ))}
         </div>
-      </Card>
+      </section>
 
-      <Card className="space-y-4 border-emerald-200 bg-emerald-50">
-        <div className="space-y-2">
-          <h2 className={sectionTitleClass}>AIに相談する（プロンプト）</h2>
-          <p className="text-sm osh-muted">
+      <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
+        <div className="flex flex-col gap-2">
+          <h2 className="text-base font-semibold text-emerald-900">
+            AIに相談する（プロンプトをコピー）
+          </h2>
+          <p className="text-sm text-emerald-700">
             {run.mode === "long"
               ? "長診断の内容をまとめたプロンプトです。"
               : "もっと深掘りしたいときに使えます。"}
@@ -248,108 +203,80 @@ export default function ResultPage() {
         <textarea
           readOnly
           value={longPrompt}
-          className="min-h-[180px] w-full rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm text-emerald-900"
+          className="mt-4 min-h-[180px] w-full rounded-xl border border-emerald-200 bg-white px-4 py-3 text-xs text-emerald-900"
         />
-        <Button
+        <button
+          type="button"
           onClick={handleCopyPrompt}
-          className="w-full rounded-xl bg-emerald-600 text-white hover:bg-emerald-700"
+          className="mt-4 inline-flex rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white"
         >
           プロンプトをコピー
-        </Button>
-      </Card>
+        </button>
+      </section>
 
-      <Card className="space-y-4">
-        <h2 className={sectionTitleClass}>共有テキスト</h2>
-        <p className="whitespace-pre-line text-sm osh-muted">{run.output.shareText}</p>
-        <Button onClick={handleCopyShare} className="w-full rounded-xl">
+      <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <h2 className="text-base font-semibold text-zinc-800">共有テキスト</h2>
+        <p className="mt-3 whitespace-pre-line text-sm text-zinc-600">
+          {run.output.shareText}
+        </p>
+        <button
+          type="button"
+          onClick={handleCopyShare}
+          className="mt-4 rounded-full bg-zinc-900 px-5 py-2 text-sm font-semibold text-white"
+        >
           共有テキストをコピー
-        </Button>
-      </Card>
+        </button>
+      </section>
 
-      <Card className="space-y-4">
-        <h2 className={sectionTitleClass}>このあとどうした？</h2>
-        <div className="grid gap-4 sm:grid-cols-2">
+      <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <h2 className="text-base font-semibold text-zinc-800">
+          このあとどうした？
+        </h2>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {[
             { id: "bought", label: "買った" },
             { id: "waited", label: "保留した" },
             { id: "not_bought", label: "買わなかった" },
             { id: "unknown", label: "まだ" },
           ].map((option) => (
-            <RadioCard
+            <button
               key={option.id}
-              title={option.label}
-              name="feedback"
-              value={option.id}
-              checked={feedback === option.id}
-              onChange={() => handleFeedback(option.id as FeedbackImmediate)}
-            />
+              type="button"
+              onClick={() => handleFeedback(option.id as FeedbackImmediate)}
+              className={`rounded-xl border px-4 py-3 text-sm font-semibold transition ${
+                feedback === option.id
+                  ? "border-pink-500 bg-pink-50 text-pink-700"
+                  : "border-zinc-200 bg-white text-zinc-700 hover:border-pink-300"
+              }`}
+            >
+              {option.label}
+            </button>
           ))}
         </div>
-      </Card>
+      </section>
 
-      <Card className="space-y-4">
-        <h2 className={sectionTitleClass}>学習のために匿名データを送信</h2>
-        <p className={`${helperTextClass} osh-muted`}>
-          個人が特定される情報は送信されません。いつでも設定を変更できます。
-        </p>
-        <label className="flex items-center justify-between gap-4 text-sm text-foreground">
-          <span>匿名データ送信に協力する</span>
-          <input
-            type="checkbox"
-            checked={telemetryOptIn}
-            onChange={(event) => {
-              const nextValue = event.target.checked;
-              setTelemetryOptIn(nextValue);
-              if (typeof window !== "undefined") {
-                window.localStorage.setItem(TELEMETRY_OPT_IN_KEY, String(nextValue));
-              }
-            }}
-            className="h-5 w-5 rounded border border-border text-primary"
-          />
-        </label>
-        <div className="grid gap-3 text-sm osh-muted">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={skipPrice}
-              onChange={(event) => setSkipPrice(event.target.checked)}
-              className="h-4 w-4 rounded border border-border text-primary"
-            />
-            価格を送らない
-          </label>
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={skipItemName}
-              onChange={(event) => setSkipItemName(event.target.checked)}
-              className="h-4 w-4 rounded border border-border text-primary"
-            />
-            商品名を送らない
-          </label>
-        </div>
-        <Button
-          onClick={handleTelemetrySubmit}
-          className="w-full rounded-xl"
-          disabled={!telemetryOptIn || telemetrySubmitting || telemetrySubmitted}
-        >
-          {telemetrySubmitted ? "送信済み" : "送信する"}
-        </Button>
-      </Card>
-
-      <div className="grid gap-4">
-        <Button
-          variant="outline"
+      <section className="flex flex-col gap-3 md:flex-row">
+        <button
+          type="button"
           onClick={() => router.push("/")}
-          className="w-full rounded-xl"
+          className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-600"
         >
           もう一度診断
-        </Button>
-        <Button onClick={() => router.push("/history")} className="w-full rounded-xl">
+        </button>
+        <button
+          type="button"
+          onClick={() => router.push("/history")}
+          className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white"
+        >
           履歴を見る
-        </Button>
-      </div>
+        </button>
+      </section>
 
-      {toast ? <Toast message={toast} /> : null}
+      {toast ? (
+        <div className="fixed bottom-6 left-1/2 z-50 w-[90%] max-w-sm -translate-x-1/2 rounded-full bg-zinc-900 px-5 py-3 text-center text-sm font-semibold text-white shadow-lg">
+          {toast}
+        </div>
+      ) : null}
     </div>
   );
 }
