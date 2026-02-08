@@ -3,6 +3,12 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { InputMeta, ItemKind, Mode } from "@/src/oshihapi/model";
+import {
+  MODE_LABELS,
+  SCENARIO_CARDS_JA,
+  SITUATION_CHIPS_JA,
+  recommendMode,
+} from "@/src/oshihapi/modeGuide";
 
 const deadlineOptions = [
   { value: "today", label: "今日" },
@@ -50,6 +56,13 @@ const itemKindOptions: { value: ItemKind; label: string }[] = [
   { value: "ticket", label: "チケット" },
 ];
 
+const deadlineLabelMap = new Map(
+  deadlineOptions.map((option) => [option.value, option.label] as const),
+);
+const itemKindLabelMap = new Map(
+  itemKindOptions.map((option) => [option.value, option.label] as const),
+);
+
 export default function Home() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("short");
@@ -58,27 +71,56 @@ export default function Home() {
   const [deadline, setDeadline] = useState<DeadlineValue>("unknown");
   const [itemKind, setItemKind] = useState<ItemKind>("goods");
 
-  const modeDescription = useMemo(
+  const parsedPriceYen = useMemo(() => parsePriceYen(priceYen), [priceYen]);
+  const recommendation = useMemo(
     () =>
-      mode === "short"
-        ? "急いで決めたい人向け（短め）"
-        : mode === "medium"
-          ? "比較しながら決めたい人向け（標準）"
-          : "AIに深掘り相談したい人向け（長診断）",
-    [mode],
+      recommendMode({
+        itemName: itemName.trim() || undefined,
+        priceYen: parsedPriceYen,
+        deadline,
+        itemKind,
+      }),
+    [itemName, parsedPriceYen, deadline, itemKind],
   );
+
+  const getModeDescription = (targetMode: Mode) =>
+    targetMode === "short"
+      ? "急いで決めたい人向け（短め）"
+      : targetMode === "medium"
+        ? "比較しながら決めたい人向け（標準）"
+        : "AIに深掘り相談したい人向け（長診断）";
+
+  const modeDescription = useMemo(() => getModeDescription(mode), [mode]);
 
   const handleStart = () => {
     const params = new URLSearchParams();
     params.set("mode", mode);
     if (itemName.trim()) params.set("itemName", itemName.trim());
-    const parsedPrice = parsePriceYen(priceYen);
-    if (parsedPrice !== undefined) params.set("priceYen", String(parsedPrice));
+    if (parsedPriceYen !== undefined) {
+      params.set("priceYen", String(parsedPriceYen));
+    }
     const normalizedDeadline = parseDeadlineValue(deadline);
     if (normalizedDeadline) params.set("deadline", normalizedDeadline);
     const normalizedItemKind = parseItemKindValue(itemKind);
     if (normalizedItemKind) params.set("itemKind", normalizedItemKind);
     router.push(`/flow?${params.toString()}`);
+  };
+
+  const handleSelectMode = (nextMode: Mode) => {
+    setMode(nextMode);
+  };
+
+  const handleApplyScenario = (scenario: typeof SCENARIO_CARDS_JA[number]) => {
+    setMode(scenario.mode);
+    if (!scenario.preset) return;
+    setItemName(scenario.preset.itemName ?? "");
+    setPriceYen(
+      scenario.preset.priceYen !== undefined
+        ? String(scenario.preset.priceYen)
+        : "",
+    );
+    setDeadline(scenario.preset.deadline ?? "unknown");
+    setItemKind(scenario.preset.itemKind ?? "goods");
   };
 
   return (
@@ -97,14 +139,51 @@ export default function Home() {
 
       <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold text-zinc-800">
+              迷ったらおすすめ
+            </h2>
+            <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-600">
+              信頼度 {recommendation.confidence}%
+            </span>
+          </div>
+          <div className="flex flex-col gap-3 rounded-2xl border border-zinc-100 bg-zinc-50 p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm text-zinc-500">おすすめモード</span>
+              <span className="rounded-full bg-pink-100 px-3 py-1 text-sm font-semibold text-pink-700">
+                {MODE_LABELS[recommendation.mode]}
+              </span>
+              <span className="text-xs text-zinc-500">
+                {getModeDescription(recommendation.mode)}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {recommendation.reasonChips.map((reason) => (
+                <span
+                  key={reason}
+                  className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs text-zinc-600"
+                >
+                  {reason}
+                </span>
+              ))}
+            </div>
+            {recommendation.followUp ? (
+              <p className="text-xs text-amber-600">{recommendation.followUp}</p>
+            ) : null}
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-4">
           <p className="text-sm font-semibold text-zinc-700">モード</p>
           <div className="grid gap-3 md:grid-cols-3">
             <button
               type="button"
-              onClick={() => setMode("short")}
-              className={`rounded-xl border px-4 py-3 text-left transition ${
+              onClick={() => handleSelectMode("short")}
+              className={`rounded-2xl border px-4 py-3 text-left shadow-sm transition ${
                 mode === "short"
-                  ? "border-pink-500 bg-pink-50 text-pink-700"
+                  ? "border-pink-500 bg-pink-50 text-pink-700 shadow-md"
                   : "border-zinc-200 bg-white text-zinc-600 hover:border-pink-300"
               }`}
             >
@@ -113,10 +192,10 @@ export default function Home() {
             </button>
             <button
               type="button"
-              onClick={() => setMode("medium")}
-              className={`rounded-xl border px-4 py-3 text-left transition ${
+              onClick={() => handleSelectMode("medium")}
+              className={`rounded-2xl border px-4 py-3 text-left shadow-sm transition ${
                 mode === "medium"
-                  ? "border-indigo-500 bg-indigo-50 text-indigo-700"
+                  ? "border-indigo-500 bg-indigo-50 text-indigo-700 shadow-md"
                   : "border-zinc-200 bg-white text-zinc-600 hover:border-indigo-300"
               }`}
             >
@@ -127,10 +206,10 @@ export default function Home() {
             </button>
             <button
               type="button"
-              onClick={() => setMode("long")}
-              className={`rounded-xl border px-4 py-3 text-left transition ${
+              onClick={() => handleSelectMode("long")}
+              className={`rounded-2xl border px-4 py-3 text-left shadow-sm transition ${
                 mode === "long"
-                  ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                  ? "border-emerald-500 bg-emerald-50 text-emerald-700 shadow-md"
                   : "border-zinc-200 bg-white text-zinc-600 hover:border-emerald-300"
               }`}
             >
@@ -139,6 +218,78 @@ export default function Home() {
             </button>
           </div>
           <p className="text-xs text-zinc-500">{modeDescription}</p>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-4">
+          <h2 className="text-base font-semibold text-zinc-800">状況から選ぶ</h2>
+          <div className="-mx-2 flex gap-2 overflow-x-auto px-2 pb-1">
+            {SITUATION_CHIPS_JA.map((chip) => (
+              <button
+                key={chip.id}
+                type="button"
+                onClick={() => handleSelectMode(chip.mode)}
+                className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm transition ${
+                  mode === chip.mode
+                    ? "border-pink-400 bg-pink-50 text-pink-700"
+                    : "border-zinc-200 bg-white text-zinc-600 hover:border-pink-300"
+                }`}
+              >
+                {chip.label}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-zinc-500">
+            チップをタップするとモードが切り替わります。
+          </p>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-4">
+          <h2 className="text-base font-semibold text-zinc-800">例から選ぶ</h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            {SCENARIO_CARDS_JA.map((scenario) => (
+              <button
+                key={scenario.id}
+                type="button"
+                onClick={() => handleApplyScenario(scenario)}
+                className="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-4 text-left shadow-sm transition hover:border-pink-300 hover:shadow-md"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-base font-semibold text-zinc-800">
+                    {scenario.title}
+                  </p>
+                  <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-600">
+                    {MODE_LABELS[scenario.mode]}
+                  </span>
+                </div>
+                <p className="text-sm text-zinc-600">{scenario.description}</p>
+                {scenario.preset ? (
+                  <div className="flex flex-wrap gap-2 text-xs text-zinc-500">
+                    {scenario.preset.priceYen ? (
+                      <span>¥{scenario.preset.priceYen.toLocaleString()}</span>
+                    ) : null}
+                    {scenario.preset.deadline ? (
+                      <span>
+                        締切:{" "}
+                        {deadlineLabelMap.get(scenario.preset.deadline) ??
+                          scenario.preset.deadline}
+                      </span>
+                    ) : null}
+                    {scenario.preset.itemKind ? (
+                      <span>
+                        種別:{" "}
+                        {itemKindLabelMap.get(scenario.preset.itemKind) ??
+                          scenario.preset.itemKind}
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
+              </button>
+            ))}
+          </div>
         </div>
       </section>
 
