@@ -6,14 +6,17 @@ export type TelemetryEvent = "run_export" | "l1_feedback";
 export type TelemetryOptions = {
   includePrice?: boolean;
   includeItemName?: boolean;
-  label?: string;
+  l1Label?: string;
 };
 
 export type TelemetryResponse = {
   ok: boolean;
+  id?: string;
+  createdAt?: string;
   error?: string;
   hint?: string;
   detail?: string;
+  missing?: string[];
 };
 
 const SESSION_KEY = "oshihapi_session_id";
@@ -90,11 +93,11 @@ export async function sendTelemetry(
   const sessionId = getOrCreateSessionId();
   if (!sessionId) return { ok: false, error: "no_session" };
 
-  const payload = buildTelemetryPayloadFromRun(run, options);
+  const runPayload = buildTelemetryPayloadFromRun(run, options);
   const data = {
     event,
-    ...payload,
-    ...(options?.label ? { label: options.label } : {}),
+    ...runPayload,
+    ...(options?.l1Label ? { l1Label: options.l1Label } : {}),
   };
 
   const response = await fetch("/api/telemetry", {
@@ -109,9 +112,23 @@ export async function sendTelemetry(
     }),
   });
 
-  const payload = (await response
+  const responsePayload = (await response
     .json()
     .catch(() => ({ ok: response.ok }))) as TelemetryResponse;
 
-  return response.ok ? { ok: true } : { ok: false, ...payload };
+  if (response.ok) {
+    return {
+      ok: true,
+      id: responsePayload.id,
+      createdAt: responsePayload.createdAt,
+    };
+  }
+
+  return {
+    ok: false,
+    error: responsePayload.error ?? "unknown_error",
+    hint: responsePayload.hint,
+    detail: responsePayload.detail,
+    missing: responsePayload.missing,
+  };
 }

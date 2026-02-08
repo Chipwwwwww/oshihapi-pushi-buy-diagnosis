@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "eslint": "^9.39.2",
     "next": "16.1.6",
     "pg": "^8.13.1",
     "react": "19.2.3",
@@ -19,7 +20,6 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "eslint": "^9.39.2",
     "eslint-config-next": "^16.1.6",
     "tailwindcss": "^4",
     "typescript": "^5"
