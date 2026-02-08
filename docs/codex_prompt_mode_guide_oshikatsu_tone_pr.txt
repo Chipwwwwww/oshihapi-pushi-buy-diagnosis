@@ -1,0 +1,29 @@
+# Codex PR タスク: Homeのモードガイドを「推し活トーン」に差し替える
+
+## Goal
+Home（app/page.tsx）で表示している「状況チップ」「例カード」「モードカード文言」を
+推し活口吻のデータに差し替える。
+
+## Files already available (added in repo)
+- src/oshihapi/modeGuide/situationChips_ja_oshikatsu.ts
+- src/oshihapi/modeGuide/scenarios_ja_oshikatsu.ts
+- src/oshihapi/modeGuide/modeCopy_ja_oshikatsu.ts
+
+## What to change
+1) Homeで import を差し替える
+- SITUATION_CHIPS_JA -> SITUATION_CHIPS_JA_OSHIKATSU
+- SCENARIO_CARDS_JA -> SCENARIO_CARDS_JA_OSHIKATSU
+
+2) Homeでモード説明文言も差し替え（もしMODE_COPY_JAを使っているなら）
+- MODE_COPY_JA -> MODE_COPY_JA_OSHIKATSU
+- MODE_CONFLICT_TIP_JA -> MODE_CONFLICT_TIP_JA_OSHIKATSU（表示している場合）
+
+3) UIの見た目は変えず、文言だけ更新（差分を小さく）
+
+## Acceptance Criteria
+- Homeに表示されるチップ/カードの文言が推し活トーンに変わる
+- TypeScriptエラーなし
+- npm run dev -- --webpack で起動できる
+
+## Note
+- 既存のmode選択/クエリ遷移ロジックは変更しない（最小PR）
