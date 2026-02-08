@@ -205,3 +205,27 @@ Next.js + TypeScriptで「オシハピ｜推し買い診断」を実装してく
 - 相場導線はGoogle site検索リンクでOK（メルカリ/駿河屋/ヤフオク）
 まずHome→Flow→Resultを最短で動かし、次にshare、最後にhistoryを追加してください。
 ```
+
+## Next PR（Codex用）: Friend Test + ML data foundation（質問は増やさない）
+
+P0: build must stay green（npm run build が通ること）
+
+P1: 友達テスト最低限（MVPを壊さず改善）
+1) 結果ページに 1タップフィードバック（L1）を追加：
+   - UI文言：このあとどうした？（買った / 保留 / 買わなかった / まだ）
+   - runStorage に feedback_immediate を保存（runId に紐付け）
+
+2) 行動ログ（behavior）を保存（まずは localStorage のみ）：
+   - time_total_ms
+   - time_per_q_ms[]
+   - num_changes（選び直し回数）
+   - num_backtracks（戻る回数）
+   - actions_clicked（copy/share/links など）
+
+3) ガード強化：
+   - /history：履歴0件の表示（「まだ履歴がありません」）
+   - /result/[runId]：該当 run が無い場合の表示（戻る導線）
+
+4) コピーUX改善：
+   - navigator.clipboard 成功時に軽いトースト表示
+
