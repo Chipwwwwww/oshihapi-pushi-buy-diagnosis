@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type {
   AnswerValue,
+  BehaviorLog,
   DecisionRun,
   InputMeta,
   ItemKind,
@@ -82,8 +83,21 @@ export default function FlowPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
   const [submitting, setSubmitting] = useState(false);
+  const startTimeRef = useRef<number>(Date.now());
+  const questionStartRef = useRef<number>(Date.now());
+  const timePerQuestionRef = useRef<number[]>([]);
+  const numChangesRef = useRef(0);
+  const numBacktracksRef = useRef(0);
 
   const currentQuestion = questions[currentIndex];
+
+  useEffect(() => {
+    startTimeRef.current = Date.now();
+    questionStartRef.current = Date.now();
+    timePerQuestionRef.current = Array.from({ length: questions.length }, () => 0);
+    numChangesRef.current = 0;
+    numBacktracksRef.current = 0;
+  }, [questions.length]);
 
   const normalizedAnswers = useMemo(() => {
     const next = { ...answers };
@@ -112,19 +126,52 @@ export default function FlowPage() {
     return value != null;
   };
 
+  const recordQuestionTime = (index: number) => {
+    const elapsed = Date.now() - questionStartRef.current;
+    if (elapsed < 0) return;
+    const bucket = timePerQuestionRef.current[index] ?? 0;
+    timePerQuestionRef.current[index] = bucket + elapsed;
+    questionStartRef.current = Date.now();
+  };
+
+  const updateAnswer = (questionId: string, value: AnswerValue) => {
+    setAnswers((prev) => {
+      const prevValue = prev[questionId];
+      const isSame =
+        Array.isArray(prevValue) && Array.isArray(value)
+          ? prevValue.length === value.length &&
+            prevValue.every((entry, idx) => entry === value[idx])
+          : prevValue === value;
+      if (prevValue !== undefined && !isSame) {
+        numChangesRef.current += 1;
+      }
+      return { ...prev, [questionId]: value };
+    });
+  };
+
   const handleNext = () => {
     if (!currentQuestion) return;
     if (currentIndex < questions.length - 1) {
+      recordQuestionTime(currentIndex);
       setCurrentIndex((prev) => prev + 1);
       return;
     }
 
+    recordQuestionTime(currentIndex);
     const runId = crypto.randomUUID();
     const output = evaluate({
       questionSet: { ...merch_v2_ja, questions },
       meta: { itemName, priceYen, deadline, itemKind },
       answers: normalizedAnswers,
     });
+
+    const behavior: BehaviorLog = {
+      time_total_ms: Date.now() - startTimeRef.current,
+      time_per_q_ms: timePerQuestionRef.current,
+      num_changes: numChangesRef.current,
+      num_backtracks: numBacktracksRef.current,
+      actions_clicked: [],
+    };
 
     const run: DecisionRun = {
       runId,
@@ -135,6 +182,7 @@ export default function FlowPage() {
       meta: { itemName, priceYen, deadline, itemKind },
       answers: normalizedAnswers,
       output,
+      behavior,
     };
 
     setSubmitting(true);
@@ -146,6 +194,8 @@ export default function FlowPage() {
     if (currentIndex === 0) {
       router.push("/");
     } else {
+      recordQuestionTime(currentIndex);
+      numBacktracksRef.current += 1;
       setCurrentIndex((prev) => prev - 1);
     }
   };
@@ -213,10 +263,7 @@ export default function FlowPage() {
                     : currentQuestion.defaultValue ?? currentQuestion.min ?? 0) as number
                 }
                 onChange={(event) =>
-                  setAnswers((prev) => ({
-                    ...prev,
-                    [currentQuestion.id]: Number(event.target.value),
-                  }))
+                  updateAnswer(currentQuestion.id, Number(event.target.value))
                 }
                 className="w-full accent-pink-500"
               />
@@ -232,9 +279,7 @@ export default function FlowPage() {
                 <button
                   key={option.id}
                   type="button"
-                  onClick={() =>
-                    setAnswers((prev) => ({ ...prev, [currentQuestion.id]: option.id }))
-                  }
+                  onClick={() => updateAnswer(currentQuestion.id, option.id)}
                   className={`rounded-xl border px-4 py-3 text-left text-sm transition ${
                     answers[currentQuestion.id] === option.id
                       ? "border-pink-500 bg-pink-50 text-pink-700"

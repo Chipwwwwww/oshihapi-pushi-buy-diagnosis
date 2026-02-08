@@ -82,6 +82,8 @@ export type DecisionRun = {
   meta: InputMeta;
   answers: Record<string, AnswerValue>;
   output: DecisionOutput;
+  feedback_immediate?: FeedbackImmediate;
+  behavior?: BehaviorLog;
 };
 
 export type ReasonItem = { id: string; text: string; severity?: 'info'|'warn'|'strong' };
@@ -100,4 +102,14 @@ export type DecisionOutput = {
     note: string;
   };
   shareText: string;
+};
+
+export type FeedbackImmediate = "bought" | "hold" | "not_bought" | "not_yet";
+
+export type BehaviorLog = {
+  time_total_ms: number;
+  time_per_q_ms: number[];
+  num_changes: number;
+  num_backtracks: number;
+  actions_clicked: string[];
 };
