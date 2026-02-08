@@ -1,0 +1,94 @@
+# Codex PR 任務：修正「手機響應式改版後 UI 變怪 / 文字消失」回歸（MVP-first）
+
+狀況（來自使用者回報）
+- Desktop 看起來也開始怪：部分小字/標籤在深色區塊上「幾乎看不到」或像消失。
+- Mobile 更嚴重：字級/間距/卡片布局與對比失衡、閱讀困難。
+- 使用者提供截圖：深色卡片內標籤對比不足、部分描述文字像被吃掉。
+
+核心目標
+- 讓手機與桌面都恢復「可讀、穩定、不破版」。
+- 保留 safe-area（viewport-fit=cover）與必要的改善，但避免全域 CSS 破壞 Tailwind/既有樣式。
+- 不新增外部依賴；不引入後端；最小變更修回歸。
+
+高機率根因（請在 code 中驗證）
+1) `app/globals.css` 內 Tailwind directives 遺失或順序不對（會導致 utility class 整體失效/怪異）
+2) globals.css 定義了太泛用的 class 名稱（例如 `.container`, `.card`, `.muted`, `.button`, `.badge` 等）
+   → 可能覆蓋 Tailwind 的同名 class 或其他元件 class，造成大範圍 UI 回歸
+3) globals.css 對 element selector（例如 `p, small, a, button`）套了不當的 opacity / color
+   → 導致「字幕消失」：文字顏色與背景過近、或透明度太低
+4) 深色區塊內的 tag/chip 沒有做「反相」樣式（dark bg + dark text）
+
+---
+
+## 變更任務（按優先順序）
+
+### A) 修復 globals.css：把「全域破壞性」降到最低
+檔案：`app/globals.css`
+
+1) 確認並保留 Tailwind 指令（若專案有用 Tailwind）
+檔案最上方應存在：
+- `@tailwind base;`
+- `@tailwind components;`
+- `@tailwind utilities;`
+
+2) 避免 class 撞名：把自訂 helper class 全部加前綴 `osh-`
+將以下（或同類）class 全站改名：
+- `.container` -> `.osh-container`
+- `.card` -> `.osh-card`
+- `.muted` -> `.osh-muted`
+- `.btn` / `.button` -> `.osh-btn`
+- `.badge` / `.tag` / `.chip` -> `.osh-chip`
+- `.scale` / `.decision-scale` -> `.osh-scale`（若有）
+
+3) 全域 selector 收斂
+只允許：
+- `html, body { ... }` 做字體/背景/預設文字顏色
+- `* { box-sizing: border-box; }`（可選）
+禁止在全域對 `p, small, a, button, input` 套：
+- 低 opacity（例如 0.6 以下）
+- `color: var(--muted)` 這種會在深色背景失效的色
+- `filter`, `mix-blend-mode`, `all: unset` 等破壞性 reset
+
+4) 針對「深色卡片內的標籤/字幕消失」做明確樣式
+新增 `.osh-chip`（或等價）：
+- 在深色背景上：文字使用淺色（例如 `color: rgba(255,255,255,0.92)`）
+- 背景用半透明白或更亮的深色（例如 `background: rgba(255,255,255,0.12)`）
+- 不要用過低透明度
+
+### B) 更新引用處：改用新前綴 class（避免撞名）
+範圍：
+- `app/result/[runId]/page.tsx`
+- `app/page.tsx`（首頁）
+- `app/flow/page.tsx`（若有用到 container/card/muted）
+- `components/DecisionScale.tsx`（或同等元件）
+- 其他任何使用 `.container/.card/.muted/.badge/.btn` 的檔案
+
+做法：
+- 全 repo 搜尋並替換 className 字串（不要改 Tailwind 的 `container` utility；只改你自訂那個）
+- 將 `.container`（你自訂的）換成 `.osh-container`
+- `.card` -> `.osh-card`
+- `.muted` -> `.osh-muted`
+- `.badge/tag/chip` -> `.osh-chip`
+
+### C) DecisionScale：確保 mobile 不擠爆、不看不見
+- 小螢幕（<= 420px）：
+  - label 允許換行或縮到合理字級（不要小於 12px）
+  - 不要 absolute 導致 overflow-x
+- marker/刻度必須有對比：不要灰到看不到
+- `prefers-reduced-motion`：避免強動畫影響閱讀（可選）
+
+---
+
+## 驗收（必做）
+本機（Windows）：
+- `npm run dev -- --webpack`
+- 手機模擬（Chrome DevTools iPhone 12 / 390x844）：
+  - 無水平捲動（no overflow-x）
+  - 深色區塊內標籤/字幕可讀（不消失）
+  - Result 頁主結論與信賴度/傾き可讀
+  - DecisionScale 三段標籤清楚（やめる/保留/買う）
+Desktop（>=1280px）：
+- 首頁、flow、result 都不破版、字體正常
+
+備註（關於測試環境）
+- 若 Codex 環境 npm registry 403 無法安裝依賴，請在 PR Notes 清楚記錄（含 `npm config get registry` 與 403 URL），但仍要完成 code 修復與可在使用者本機驗收的步驟。
