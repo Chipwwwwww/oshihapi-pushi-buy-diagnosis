@@ -52,6 +52,10 @@ export function buildTelemetryPayloadFromRun(
     locale: run.locale,
     category: run.category,
     mode: run.mode,
+    privacy: {
+      includePrice,
+      includeItemName,
+    },
     meta,
     answersSummary,
     behavior: run.behavior,

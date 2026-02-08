@@ -20,7 +20,7 @@ import { buildLongPrompt } from "@/src/oshihapi/promptBuilder";
 import type { DecisionRun, FeedbackImmediate } from "@/src/oshihapi/model";
 import { clamp, engineConfig, normalize01ToSigned } from "@/src/oshihapi/engineConfig";
 import { findRun, updateRun } from "@/src/oshihapi/runStorage";
-import { sendTelemetry } from "@/src/oshihapi/telemetry";
+import { sendTelemetry } from "@/src/oshihapi/telemetryClient";
 
 const decisionLabels: Record<string, string> = {
   BUY: "買う",
@@ -34,9 +34,6 @@ const decisionSubcopy: Record<string, string> = {
   SKIP: "今回は見送りでOK。次の推し活に回そう。",
 };
 
-const TELEMETRY_INCLUDE_PRICE_KEY = "oshihapi_telemetry_include_price";
-const TELEMETRY_INCLUDE_ITEM_NAME_KEY = "oshihapi_telemetry_include_item_name";
-
 export default function ResultPage() {
   const router = useRouter();
   const params = useParams<{ runId: string }>();
@@ -48,6 +45,8 @@ export default function ResultPage() {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("oshihapi:telemetry_opt_in") === "true";
   });
+  const [telemetrySubmitting, setTelemetrySubmitting] = useState(false);
+  const [telemetrySubmitted, setTelemetrySubmitted] = useState(false);
   const [skipPrice, setSkipPrice] = useState(true);
   const [skipItemName, setSkipItemName] = useState(true);
 
@@ -138,12 +137,27 @@ export default function ResultPage() {
       feedback_immediate: value,
     }));
     setLocalFeedback(nextRun?.feedback_immediate ?? value);
-    if (telemetryOptIn && run) {
-      sendTelemetry("l1_feedback", run, {
-        label: value,
+  };
+
+  const handleTelemetrySubmit = async () => {
+    if (!run || telemetrySubmitting || telemetrySubmitted || !telemetryOptIn) return;
+    setTelemetrySubmitting(true);
+    try {
+      const success = await sendTelemetry("run_export", run, {
+        label: feedback,
         includePrice: !skipPrice,
         includeItemName: !skipItemName,
       });
+      if (success) {
+        setTelemetrySubmitted(true);
+        showToast("送信しました。ご協力ありがとうございます！");
+      } else {
+        showToast("送信に失敗しました。時間をおいて再試行してください。");
+      }
+    } catch {
+      showToast("送信に失敗しました。時間をおいて再試行してください。");
+    } finally {
+      setTelemetrySubmitting(false);
     }
   };
 
@@ -308,6 +322,13 @@ export default function ResultPage() {
             商品名を送らない
           </label>
         </div>
+        <Button
+          onClick={handleTelemetrySubmit}
+          className="w-full rounded-xl"
+          disabled={!telemetryOptIn || telemetrySubmitting || telemetrySubmitted}
+        >
+          {telemetrySubmitted ? "送信済み" : "送信する"}
+        </Button>
       </Card>
 
       <div className="grid gap-4">
