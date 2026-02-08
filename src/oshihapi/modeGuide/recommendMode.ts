@@ -71,8 +71,12 @@ export function recommendMode(input: ModeRecommendInput): ModeRecommendOutput {
 
   // ---- decision ----
   // Conflicts: urgent + high impact => medium now, suggest long follow-up.
-  const isUrgent = urgency >= 6 || (hoursLeft !== null && hoursLeft <= MODE_GUIDE_CONFIG.urgentHours);
-  const isHighImpact = impact >= 7 || (price >= MODE_GUIDE_CONFIG.veryHighPriceYen) || (travel >= MODE_GUIDE_CONFIG.travelVeryHighYen);
+  const isUrgent =
+    urgency >= 6 || (hoursLeft !== null && hoursLeft <= MODE_GUIDE_CONFIG.urgentHours);
+  const isHighImpact =
+    impact >= 7 ||
+    price >= MODE_GUIDE_CONFIG.veryHighPriceYen ||
+    travel >= MODE_GUIDE_CONFIG.travelVeryHighYen;
 
   const reasons: string[] = [];
   let mode: Mode = "medium";
@@ -81,7 +85,11 @@ export function recommendMode(input: ModeRecommendInput): ModeRecommendOutput {
   if (isUrgent && !isHighImpact) {
     mode = "short";
     pushIf(isInStore, reasons, "店頭/会場で目の前");
-    pushIf(hoursLeft !== null && hoursLeft <= MODE_GUIDE_CONFIG.urgentHours, reasons, "締切が近い");
+    pushIf(
+      hoursLeft !== null && hoursLeft <= MODE_GUIDE_CONFIG.urgentHours,
+      reasons,
+      "締切が近い"
+    );
     pushIf(isLimited, reasons, "焦りが入りやすい");
     reasons.push("まず仮判定");
   } else if (!isUrgent && (isHighImpact || complexity >= 6)) {
@@ -107,7 +115,13 @@ export function recommendMode(input: ModeRecommendInput): ModeRecommendOutput {
     pushIf(isLimited, reasons, "限定で焦りやすい");
     pushIf(hasResaleOption, reasons, "リセール/中古で逃げ道あり");
     if (reReleaseLikelihood && reReleaseLikelihood !== "unknown") {
-      reasons.push(reReleaseLikelihood === "high" ? "再販期待あり" : reReleaseLikelihood === "mid" ? "再販は半々" : "再販は低そう");
+      reasons.push(
+        reReleaseLikelihood === "high"
+          ? "再販期待あり"
+          : reReleaseLikelihood === "mid"
+            ? "再販は半々"
+            : "再販は低そう"
+      );
     }
     if (reasons.length < 3) reasons.push("保留条件を作れる");
   }
@@ -128,7 +142,8 @@ export function recommendMode(input: ModeRecommendInput): ModeRecommendOutput {
     countNonNull(excitement0to5) +
     countNonNull(pastRegret0to5);
 
-  const rawConfidence = 55 + Math.min(25, signalCount * 3) + Math.min(10, Math.max(0, weighted / 5));
+  const rawConfidence =
+    55 + Math.min(25, signalCount * 3) + Math.min(10, Math.max(0, weighted / 5));
   const confidencePct = clamp(
     Math.round(rawConfidence),
     MODE_GUIDE_CONFIG.confidence.min,
@@ -192,7 +207,8 @@ function clamp01to5(n?: number): number | null {
   return clamp(Math.round(n), 0, 5);
 }
 
-function pushIf(cond: boolean, arr: string[], v: string) {
+// ✅ FIX: allow optional boolean so callers can pass boolean | undefined safely
+function pushIf(cond: boolean | undefined, arr: string[], v: string) {
   if (cond) arr.push(v);
 }
 
