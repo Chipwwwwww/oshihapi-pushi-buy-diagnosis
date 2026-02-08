@@ -9,6 +9,12 @@ npm ci
 npm run build
 npm run dev -- --webpack
 
+## Local setup
+1. `.env.local` を作成し、`POSTGRES_URL_NON_POOLING=...` を設定する。
+2. `npm run dev -- --webpack` を再起動する。
+3. `GET /api/telemetry/health` を叩いて `{ ok: true }` を確認する。
+4. 下の Neon SQL を実行して telemetry_runs の追加を確認する。
+
 ## Neonで確認
 SELECT id, created_at, session_id, source, data
 FROM telemetry_runs
