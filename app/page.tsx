@@ -152,7 +152,7 @@ export default function Home() {
           <h2 className={sectionTitleClass}>迷ったらおすすめ</h2>
           <Badge variant="accent">信頼度 {recommendation.confidence}%</Badge>
         </div>
-        <div className="space-y-4 rounded-2xl border border-border bg-muted p-4">
+        <div className="space-y-3 rounded-2xl border border-border bg-card p-4 shadow-sm">
           <div className="flex flex-wrap items-center gap-2">
             <span className={helperTextClass}>おすすめモード</span>
             <Badge variant="primary">{MODE_LABELS[recommendation.mode]}</Badge>
@@ -162,7 +162,7 @@ export default function Home() {
           </div>
           <div className="flex flex-wrap gap-2">
             {recommendation.reasonChips.map((reason) => (
-              <span key={reason} className="osh-chip osh-chip--inverse">
+              <span key={reason} className="osh-chip">
                 {reason}
               </span>
             ))}

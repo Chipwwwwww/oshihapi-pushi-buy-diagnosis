@@ -278,8 +278,10 @@ export default function ResultPage() {
             <RadioCard
               key={option.id}
               title={option.label}
-              isSelected={feedback === option.id}
-              onClick={() => handleFeedback(option.id as FeedbackImmediate)}
+              name="feedback"
+              value={option.id}
+              checked={feedback === option.id}
+              onChange={() => handleFeedback(option.id as FeedbackImmediate)}
             />
           ))}
         </div>
