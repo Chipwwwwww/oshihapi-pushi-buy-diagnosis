@@ -174,7 +174,7 @@ export default function ResultPage() {
       <div
         className={`page ${containerClass} flex min-h-screen flex-col items-center justify-center gap-4 py-10`}
       >
-        <p className={`${helperTextClass} muted`}>
+        <p className={`${helperTextClass} osh-muted`}>
           結果が見つかりませんでした。ホームからもう一度お試しください。
         </p>
         <div className="flex w-full flex-col gap-4">
@@ -239,7 +239,7 @@ export default function ResultPage() {
       <Card className="space-y-4 border-emerald-200 bg-emerald-50">
         <div className="space-y-2">
           <h2 className={sectionTitleClass}>AIに相談する（プロンプト）</h2>
-          <p className="text-sm muted">
+          <p className="text-sm osh-muted">
             {run.mode === "long"
               ? "長診断の内容をまとめたプロンプトです。"
               : "もっと深掘りしたいときに使えます。"}
@@ -260,7 +260,7 @@ export default function ResultPage() {
 
       <Card className="space-y-4">
         <h2 className={sectionTitleClass}>共有テキスト</h2>
-        <p className="whitespace-pre-line text-sm muted">{run.output.shareText}</p>
+        <p className="whitespace-pre-line text-sm osh-muted">{run.output.shareText}</p>
         <Button onClick={handleCopyShare} className="w-full rounded-xl">
           共有テキストをコピー
         </Button>
@@ -287,7 +287,7 @@ export default function ResultPage() {
 
       <Card className="space-y-4">
         <h2 className={sectionTitleClass}>学習のために匿名データを送信</h2>
-        <p className={`${helperTextClass} muted`}>
+        <p className={`${helperTextClass} osh-muted`}>
           個人が特定される情報は送信されません。いつでも設定を変更できます。
         </p>
         <label className="flex items-center justify-between gap-4 text-sm text-foreground">
@@ -305,7 +305,7 @@ export default function ResultPage() {
             className="h-5 w-5 rounded border border-border text-primary"
           />
         </label>
-        <div className="grid gap-3 text-sm muted">
+        <div className="grid gap-3 text-sm osh-muted">
           <label className="flex items-center gap-2">
             <input
               type="checkbox"
