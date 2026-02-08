@@ -20,6 +20,7 @@ import { buildLongPrompt } from "@/src/oshihapi/promptBuilder";
 import type { DecisionRun, FeedbackImmediate } from "@/src/oshihapi/model";
 import { clamp, engineConfig, normalize01ToSigned } from "@/src/oshihapi/engineConfig";
 import { findRun, updateRun } from "@/src/oshihapi/runStorage";
+import { sendTelemetry } from "@/src/oshihapi/telemetry";
 
 const decisionLabels: Record<string, string> = {
   BUY: "買う",
@@ -40,6 +41,12 @@ export default function ResultPage() {
   const [localFeedback, setLocalFeedback] = useState<FeedbackImmediate | undefined>(
     undefined,
   );
+  const [telemetryOptIn, setTelemetryOptIn] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("oshihapi:telemetry_opt_in") === "true";
+  });
+  const [skipPrice, setSkipPrice] = useState(true);
+  const [skipItemName, setSkipItemName] = useState(true);
 
   const runId = params?.runId;
   const run = useMemo<DecisionRun | undefined>(() => {
@@ -128,6 +135,13 @@ export default function ResultPage() {
       feedback_immediate: value,
     }));
     setLocalFeedback(nextRun?.feedback_immediate ?? value);
+    if (telemetryOptIn && run) {
+      sendTelemetry("l1_feedback", run, {
+        label: value,
+        includePrice: !skipPrice,
+        includeItemName: !skipItemName,
+      });
+    }
   };
 
   if (!run) {
@@ -245,6 +259,51 @@ export default function ResultPage() {
               onClick={() => handleFeedback(option.id as FeedbackImmediate)}
             />
           ))}
+        </div>
+      </Card>
+
+      <Card className="space-y-4">
+        <h2 className={sectionTitleClass}>学習のために匿名データを送信</h2>
+        <p className={helperTextClass}>
+          個人が特定される情報は送信されません。いつでも設定を変更できます。
+        </p>
+        <label className="flex items-center justify-between gap-4 text-sm text-foreground">
+          <span>匿名データ送信に協力する</span>
+          <input
+            type="checkbox"
+            checked={telemetryOptIn}
+            onChange={(event) => {
+              const nextValue = event.target.checked;
+              setTelemetryOptIn(nextValue);
+              if (typeof window !== "undefined") {
+                window.localStorage.setItem(
+                  "oshihapi:telemetry_opt_in",
+                  String(nextValue),
+                );
+              }
+            }}
+            className="h-5 w-5 rounded border border-border text-primary"
+          />
+        </label>
+        <div className="grid gap-3 text-sm text-muted-foreground">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={skipPrice}
+              onChange={(event) => setSkipPrice(event.target.checked)}
+              className="h-4 w-4 rounded border border-border text-primary"
+            />
+            価格を送らない
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={skipItemName}
+              onChange={(event) => setSkipItemName(event.target.checked)}
+              className="h-4 w-4 rounded border border-border text-primary"
+            />
+            商品名を送らない
+          </label>
         </div>
       </Card>
 
