@@ -1,0 +1,58 @@
+【操作手順（急・中・長 統合＋結果UI）】
+
+你會做兩件事：
+A) 先把“文件/元件”放進 repo（我們先提供檔案）
+B) 再交給 Codex 依據 prompt 產出 PR（改 UI + 新增長診斷 prompt）
+
+---
+
+A) 下載什麼？
+1) 下載本次打包的 zip：oshihapi_next_bundle.zip
+   - 內含 components/DecisionScale.tsx
+   - docs/*（設計文件、Codex 指令、備忘）
+
+2) 解壓縮後，把內容複製進你的 repo 對應資料夾（PowerShell 指令下面有）
+
+---
+
+B) PowerShell 要下什麼？
+```powershell
+cd C:\Users\User\dev\oshihapi-pushi-buy-diagnosis
+git pull origin main
+git checkout -b feature/urgent-medium-long
+
+# 把 zip 解壓到 Downloads\oshihapi_next_bundle\ 之類的資料夾後：
+mkdir components -Force
+mkdir docs -Force
+
+Copy-Item "$env:USERPROFILE\Downloads\oshihapi_next_bundle\components\DecisionScale.tsx" .\components\ -Force
+Copy-Item "$env:USERPROFILE\Downloads\oshihapi_next_bundle\docs\*" .\docs\ -Force
+
+git add components docs
+git commit -m "docs+ui: add DecisionScale and urgent/medium/long docs"
+git push -u origin feature/urgent-medium-long
+```
+
+---
+
+C) Codex 要怎麼做？
+1) 在 Codex Web 選 repo：Chipwwwwww/oshihapi-pushi-buy-diagnosis
+2) 選分支：feature/urgent-medium-long
+3) 打開 docs/codex_prompt_next_pr.txt，把內容整段貼給 Codex
+4) 讓它開 PR（目標 merge 回 main）
+
+---
+
+D) 你本機怎麼驗收？
+```powershell
+git checkout main
+git pull origin main
+npm ci
+npm run build
+npm run dev
+```
+
+測試：
+- 跑短/中模式各一輪，看結果頁 DecisionScale 是否顯示
+- 長模式：是否有 AI prompt，是否能複製
+- L1 回饋按下後，重新整理/去 history 是否仍保存
