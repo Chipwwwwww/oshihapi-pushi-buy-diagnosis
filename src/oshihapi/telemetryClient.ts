@@ -9,6 +9,13 @@ export type TelemetryOptions = {
   label?: string;
 };
 
+export type TelemetryResponse = {
+  ok: boolean;
+  error?: string;
+  hint?: string;
+  detail?: string;
+};
+
 const SESSION_KEY = "oshihapi_session_id";
 export const TELEMETRY_OPT_IN_KEY = "oshihapi_telemetry_opt_in";
 
@@ -78,10 +85,10 @@ export async function sendTelemetry(
   event: TelemetryEvent,
   run: DecisionRun,
   options?: TelemetryOptions,
-): Promise<boolean> {
-  if (typeof window === "undefined") return false;
+): Promise<TelemetryResponse> {
+  if (typeof window === "undefined") return { ok: false, error: "no_window" };
   const sessionId = getOrCreateSessionId();
-  if (!sessionId) return false;
+  if (!sessionId) return { ok: false, error: "no_session" };
 
   const payload = buildTelemetryPayloadFromRun(run, options);
   const data = {
@@ -102,5 +109,9 @@ export async function sendTelemetry(
     }),
   });
 
-  return response.ok;
+  const payload = (await response
+    .json()
+    .catch(() => ({ ok: response.ok }))) as TelemetryResponse;
+
+  return response.ok ? { ok: true } : { ok: false, ...payload };
 }

@@ -149,16 +149,20 @@ export default function ResultPage() {
     if (!run || telemetrySubmitting || telemetrySubmitted || !telemetryOptIn) return;
     setTelemetrySubmitting(true);
     try {
-      const success = await sendTelemetry("run_export", run, {
+      const result = await sendTelemetry("run_export", run, {
         label: feedback,
         includePrice: !skipPrice,
         includeItemName: !skipItemName,
       });
-      if (success) {
+      if (result.ok) {
         setTelemetrySubmitted(true);
         showToast("送信しました。ご協力ありがとうございます！");
       } else {
-        showToast("送信に失敗しました。時間をおいて再試行してください。");
+        const hint = result.hint ?? result.detail;
+        const suffix = result.error
+          ? `: ${result.error}${hint ? ` (${hint})` : ""}`
+          : "";
+        showToast(`送信に失敗しました${suffix}`);
       }
     } catch {
       showToast("送信に失敗しました。時間をおいて再試行してください。");
