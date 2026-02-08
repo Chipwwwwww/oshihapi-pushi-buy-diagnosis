@@ -162,9 +162,9 @@ export default function Home() {
           </div>
           <div className="flex flex-wrap gap-2">
             {recommendation.reasonChips.map((reason) => (
-              <Badge key={reason} variant="outline">
+              <span key={reason} className="osh-chip osh-chip--inverse">
                 {reason}
-              </Badge>
+              </span>
             ))}
           </div>
           {recommendation.followUp ? (
@@ -179,20 +179,26 @@ export default function Home() {
           <RadioCard
             title="急いで決める（30秒）"
             description="時間がなくてもサクッと判断。"
-            isSelected={mode === "short"}
-            onClick={() => handleSelectMode("short")}
+            name="mode"
+            value="short"
+            checked={mode === "short"}
+            onChange={() => handleSelectMode("short")}
           />
           <RadioCard
             title="じっくり決める（60秒〜2分）"
             description="比較しながら安心して決めたいとき。"
-            isSelected={mode === "medium"}
-            onClick={() => handleSelectMode("medium")}
+            name="mode"
+            value="medium"
+            checked={mode === "medium"}
+            onChange={() => handleSelectMode("medium")}
           />
           <RadioCard
             title="AIに相談する（長診断）"
             description="深掘り用プロンプトも作って相談。"
-            isSelected={mode === "long"}
-            onClick={() => handleSelectMode("long")}
+            name="mode"
+            value="long"
+            checked={mode === "long"}
+            onChange={() => handleSelectMode("long")}
           />
         </div>
         <p className={helperTextClass}>{modeDescription}</p>
@@ -227,8 +233,10 @@ export default function Home() {
               key={scenario.id}
               title={scenario.title}
               description={scenario.description}
-              isSelected={mode === scenario.mode}
-              onClick={() => handleApplyScenario(scenario)}
+              name="mode"
+              value={scenario.mode}
+              checked={mode === scenario.mode}
+              onChange={() => handleApplyScenario(scenario)}
               footer={
                 scenario.preset ? (
                   <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
