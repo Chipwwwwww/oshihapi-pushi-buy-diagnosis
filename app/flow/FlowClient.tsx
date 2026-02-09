@@ -330,20 +330,20 @@ export default function FlowPage() {
                   <>
                     {currentQuestion.options.map((option) => {
                       const isSelected = selectedValues.includes(option.id);
-                      const isAtLimit = isMaxed && !isSelected;
+                      const disabled = isMaxed && !isSelected;
                       return (
                         <button
                           key={option.id}
                           type="button"
                           onClick={() => toggle(option.id)}
-                          disabled={isAtLimit}
+                          disabled={disabled}
                           className={[
                             "flex min-h-[44px] w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition",
                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:focus-visible:ring-pink-400/50",
                             isSelected
                               ? "border-primary/70 bg-primary/10 text-foreground shadow-sm ring-2 ring-primary/30 dark:border-pink-400/60 dark:bg-white/10 dark:text-zinc-50 dark:ring-pink-400/60"
                               : "border-border bg-card text-foreground hover:border-primary/40 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50 dark:hover:border-pink-400/40",
-                            isAtLimit ? "cursor-not-allowed opacity-60" : "",
+                            disabled ? "cursor-not-allowed opacity-60" : "",
                           ]
                             .filter(Boolean)
                             .join(" ")}
