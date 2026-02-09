@@ -1,0 +1,92 @@
+﻿# Codex PR Task: Dark mode redesign to "Midnight Glass" (iOS + desktop), keep Light unchanged
+Date: 2026-02-10
+Branch target: feature/urgent-medium-long
+
+## Context / Problem
+Dark mode on iPhone (especially Messenger in-app browser) is still ugly and hard to read:
+- Mixed dark background with bright white cards and white form fields (inputs/selects) looks inconsistent and harsh.
+- Secondary text is too dim; mode cards and chips are hard to read.
+- Radio selected state is not obvious.
+
+User confirmed Light mode looks correct. Dark needs a coherent visual system.
+
+## Goal (MVP)
+- Keep Light mode UI visually unchanged (do not alter Light colors/shadows/layout).
+- Make Dark mode cohesive, readable, and "oshi-friendly" (night vibe, soft layers, clear selection).
+- Minimal refactor: prefer adding dark: variants and small reusable utility classes.
+
+## Design Direction: "Midnight Glass"
+- Page background (dark): deep navy-black, not pure black.
+- Cards/fields (dark): subtle translucent surfaces (no blur), soft border.
+- Text hierarchy (dark): primary bright, secondary still readable.
+- Accent: keep brand pink for selection/focus (推し活 feels).
+
+### Suggested dark palette (use Tailwind, no hard dependency on custom tokens)
+- Page bg: dark:bg-[#0B0F1A] (or near)
+- Card/Field surface: dark:bg-white/5 to dark:bg-white/7
+- Borders: dark:border-white/10
+- Primary text: dark:text-zinc-50
+- Secondary text: dark:text-zinc-300
+- Placeholder: dark:placeholder:text-zinc-500
+- Accent: pink (existing brand) for focus/selected ring
+
+## Implementation Plan
+### 1) Global background and form color-scheme (safe)
+- Ensure Dark mode pages use a consistent background:
+  - In app/page.tsx wrapper (and any shared wrapper), add: dark:bg-[#0B0F1A]
+  - Do NOT change Light background.
+- In app/globals.css, consider setting:
+  - html { color-scheme: light dark; } (optional but helps UA defaults)
+  - Keep existing iOS text-size-adjust + 100dvh + safe-bottom helper.
+
+### 2) Fix Home page mixed surfaces (highest priority)
+In app/page.tsx:
+- Replace any dark-mode "light cards" (bg-white without proper dark: override) with:
+  - bg-white border border-slate-200 text-slate-900
+  - dark:bg-white/6 dark:border-white/10 dark:text-zinc-50
+- For secondary texts inside cards:
+  - text-slate-600
+  - dark:text-zinc-300
+- Chips/pills inside cards:
+  - bg-slate-100 text-slate-700 border border-slate-200
+  - dark:bg-white/6 dark:text-zinc-200 dark:border-white/10
+
+### 3) Mode option cards (radio list)
+Ensure ALL options (short/medium/long) share the same dark surface (no white cards).
+- Unselected:
+  - dark:bg-white/6 dark:border-white/10 dark:text-zinc-50
+- Selected:
+  - add ring + border with accent:
+    - dark:ring-1 dark:ring-pink-400/50 dark:border-pink-400/40
+- Make radio indicator visible in dark:
+  - unselected circle: border-white/30
+  - selected dot: bg-pink-400 (or text-pink-400) with sufficient contrast
+
+### 4) Inputs / Selects in dark (must not be white)
+Search for inputs/selects in Home and common UI components.
+Preferred: update shared components if present (e.g. components/ui/input.tsx, select.tsx)
+- Keep Light classes identical.
+- Add dark: variants:
+  - dark:bg-white/6 dark:border-white/10 dark:text-zinc-50
+  - dark:placeholder:text-zinc-500
+  - focus-visible:ring-pink-400/40 in dark
+If no shared component, update the Home page inputs directly.
+
+### 5) Do not break desktop Light
+- Only add dark: classes or add new utility classes that only apply in dark.
+- No layout changes except safe-bottom class if needed.
+
+## Acceptance Criteria
+- Light mode (desktop + mobile): visually unchanged from current feature branch.
+- Dark mode (iPhone Safari + Messenger in-app):
+  - No bright white cards/fields on dark background (unless explicitly intended).
+  - All sections readable: 「迷ったらおすすめ」「モードを選ぶ」「入力（任意）」 and their contents.
+  - Selected mode is obvious (accent ring/border + clear radio dot).
+  - Inputs/selects are dark-surface, not white.
+  - No content hidden behind iOS bottom bars (safe-area ok).
+- npm run build passes.
+
+## Required screenshots for PR
+- Desktop Home (Light) unchanged
+- iPhone Home (Dark) before/after
+- iPhone Home (Dark) showing mode list + inputs
