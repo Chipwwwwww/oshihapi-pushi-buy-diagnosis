@@ -337,61 +337,62 @@ export default function FlowPage() {
                   : [];
                 const maxSelect =
                   currentQuestion.maxSelect ?? Number.POSITIVE_INFINITY;
-                return currentQuestion.options.map((option) => {
-                  const isSelected = selectedValues.includes(option.id);
-                  const isAtLimit =
-                    selectedValues.length >= maxSelect && !isSelected;
-                  return (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() =>
-                        updateMultiAnswer(
-                          currentQuestion.id,
-                          option.id,
-                          maxSelect,
-                        )
-                      }
-                      disabled={isAtLimit}
-                      className={[
-                        "flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:focus-visible:ring-pink-400/40",
-                        isSelected
-                          ? "border-primary/70 bg-primary/5 text-foreground shadow-sm dark:border-pink-400/40 dark:bg-white/8 dark:text-zinc-50 dark:ring-1 dark:ring-pink-400/50"
-                          : "border-border bg-card text-foreground hover:border-primary/40 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50 dark:hover:border-pink-400/40",
-                        isAtLimit ? "cursor-not-allowed opacity-60" : "",
-                      ]
-                        .filter(Boolean)
-                        .join(" ")}
-                    >
-                      <span className="text-base font-semibold">
-                        {option.label}
-                      </span>
-                      <span
-                        className={[
-                          "flex h-5 w-5 items-center justify-center rounded border-2",
-                          isSelected
-                            ? "border-primary bg-primary text-white dark:border-pink-400 dark:bg-pink-400"
-                            : "border-muted-foreground text-transparent dark:border-white/30",
-                        ]
-                          .filter(Boolean)
-                          .join(" ")}
-                      >
-                        ✓
-                      </span>
-                    </button>
-                  );
-                });
+                const isMaxed =
+                  Number.isFinite(maxSelect) && selectedValues.length >= maxSelect;
+                return (
+                  <>
+                    {currentQuestion.options.map((option) => {
+                      const isSelected = selectedValues.includes(option.id);
+                      const isAtLimit = isMaxed && !isSelected;
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() =>
+                            updateMultiAnswer(
+                              currentQuestion.id,
+                              option.id,
+                              maxSelect,
+                            )
+                          }
+                          disabled={isAtLimit}
+                          className={[
+                            "flex min-h-[44px] w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:focus-visible:ring-pink-400/50",
+                            isSelected
+                              ? "border-primary/70 bg-primary/10 text-foreground shadow-sm ring-2 ring-primary/30 dark:border-pink-400/60 dark:bg-white/10 dark:text-zinc-50 dark:ring-pink-400/60"
+                              : "border-border bg-card text-foreground hover:border-primary/40 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50 dark:hover:border-pink-400/40",
+                            isAtLimit ? "cursor-not-allowed opacity-60" : "",
+                          ]
+                            .filter(Boolean)
+                            .join(" ")}
+                        >
+                          <span className="text-base font-semibold">
+                            {option.label}
+                          </span>
+                          <span
+                            className={[
+                              "flex h-5 w-5 items-center justify-center rounded border-2",
+                              isSelected
+                                ? "border-primary bg-primary text-white dark:border-pink-400 dark:bg-pink-400"
+                                : "border-muted-foreground text-transparent dark:border-white/30",
+                            ]
+                              .filter(Boolean)
+                              .join(" ")}
+                          >
+                            ✓
+                          </span>
+                        </button>
+                      );
+                    })}
+                    {typeof currentQuestion.maxSelect === "number" && isMaxed ? (
+                      <p className={helperTextClass}>
+                        いま{currentQuestion.maxSelect}つ選んでるよ。入れ替えるならどれか外してね。
+                      </p>
+                    ) : null}
+                  </>
+                );
               })()}
-              {typeof currentQuestion.maxSelect === "number" ? (
-                <p className={helperTextClass}>
-                  選択数:{" "}
-                  {Array.isArray(answers[currentQuestion.id])
-                    ? answers[currentQuestion.id].length
-                    : 0}
-                  /{currentQuestion.maxSelect}
-                </p>
-              ) : null}
             </div>
           ) : null}
           {currentQuestion.type === "text" ? (

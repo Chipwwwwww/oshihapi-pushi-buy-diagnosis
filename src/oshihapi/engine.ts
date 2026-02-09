@@ -143,7 +143,7 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
   if (impulseFlag && !futureUseFlag) {
     extraActions.push({
       id: 'future_use_alt',
-      text: '飾る/使う未来がないなら「写真で満足」や「小物だけ」もアリ。',
+      text: 'まず「置き場所」を1分で決めよ。無理なら写真で満足／小物だけもアリ。',
     });
   }
   if (trendOrVagueFlag) {
