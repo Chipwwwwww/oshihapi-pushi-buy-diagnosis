@@ -1,10 +1,12 @@
 import type {
   AnswerValue,
+  ActionItem,
   Decision,
   DecisionOutput,
   EngineConfig,
   InputMeta,
   QuestionSet,
+  ReasonItem,
   ScoreDimension,
 } from './model';
 import { engineConfig as defaultConfig, normalize01ToSigned, clamp } from './engineConfig';
@@ -44,6 +46,18 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
 
   const scores = initScores();
   const tags: string[] = [];
+  const motivesAnswer = input.answers.q_motives_multi;
+  const motives = Array.isArray(motivesAnswer)
+    ? motivesAnswer.filter((entry): entry is string => typeof entry === 'string')
+    : [];
+  const impulseShortRaw = input.answers.q_impulse_axis_short;
+  const impulseShort =
+    typeof impulseShortRaw === 'number' && Number.isFinite(impulseShortRaw)
+      ? impulseShortRaw
+      : null;
+  const impulseFlag = motives.includes('rush') || (impulseShort !== null && impulseShort >= 4);
+  const futureUseFlag = motives.includes('use');
+  const trendOrVagueFlag = motives.includes('trend') || motives.includes('vague');
 
   // Walk questions and apply deltas
   for (const q of input.questionSet.questions) {
@@ -88,6 +102,12 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
 
   // Unknowns push toward THINK (reduce magnitude)
   scoreSigned = scoreSigned * (1 - Math.min(0.35, unknownPenalty / 100));
+  if (impulseFlag) {
+    const impulseNudge = 0.08;
+    if (scoreSigned < config.thresholds.buy + 0.2) {
+      scoreSigned -= impulseNudge;
+    }
+  }
 
   let decision: Decision = 'THINK';
   if (scoreSigned >= config.thresholds.buy) decision = 'BUY';
@@ -105,8 +125,35 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
   const method = decideMerchMethod({ tags, scores, goal, popularity });
   const blindDrawCap = method.method === 'BLIND_DRAW' ? method.cap : undefined;
 
-  const reasons = pickReasons({ meta: input.meta, tags, scores, decision, blindDrawCap });
-  const actions = pickActions({ meta: input.meta, tags, scores, decision, blindDrawCap });
+  const reasonsBase = pickReasons({ meta: input.meta, tags, scores, decision, blindDrawCap });
+  const actionsBase = pickActions({ meta: input.meta, tags, scores, decision, blindDrawCap });
+  const extraReasons: ReasonItem[] = [];
+  const extraActions: ActionItem[] = [];
+  if (impulseFlag) {
+    extraReasons.push({
+      id: 'impulse_rush',
+      severity: 'info',
+      text: '「買えた快感」が主役の時、満足が短命になりやすいかも。',
+    });
+    extraActions.push({
+      id: 'cooldown_10min',
+      text: '10分だけクールダウン（カート保持）→ その後もう一回だけ判断しよ。',
+    });
+  }
+  if (impulseFlag && !futureUseFlag) {
+    extraActions.push({
+      id: 'future_use_alt',
+      text: '飾る/使う未来がないなら「写真で満足」や「小物だけ」もアリ。',
+    });
+  }
+  if (trendOrVagueFlag) {
+    extraActions.push({
+      id: 'trend_market',
+      text: 'まず相場を5分だけ見る（新品で焦らなくてOK）。',
+    });
+  }
+  const reasons = [...extraReasons, ...reasonsBase].slice(0, 6);
+  const actions = [...extraActions, ...actionsBase].slice(0, 3);
 
   // Confidence
   const confidence = clamp(

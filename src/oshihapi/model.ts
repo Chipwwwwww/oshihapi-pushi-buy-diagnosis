@@ -36,8 +36,10 @@ export type Question = {
   urgentCore?: boolean;
   standard?: boolean;
   longOnly?: boolean;
+  shortOnly?: boolean;
 
   options?: Option[];
+  maxSelect?: number;
 
   min?: number;
   max?: number;

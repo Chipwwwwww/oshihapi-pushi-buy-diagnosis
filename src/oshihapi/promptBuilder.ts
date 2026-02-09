@@ -28,6 +28,12 @@ function formatAnswerValue(questionId: string, run: DecisionRun, questionSet: Qu
     const option = question.options.find((opt) => opt.id === value);
     return option ? option.label : String(value);
   }
+  if (question.type === 'multi' && question.options && Array.isArray(value)) {
+    const labels = value
+      .map((entry) => question.options?.find((opt) => opt.id === entry)?.label ?? entry)
+      .filter(Boolean);
+    return labels.length ? labels.join(' / ') : undefined;
+  }
   if (question.type === 'scale' || question.type === 'number') {
     return `${value}`;
   }
@@ -107,10 +113,18 @@ export function buildLongPrompt({
   const interactions = buildInteractions(run);
   const checklist = buildChecklist(run);
   const note = formatAnswerValue('q_long_note', run, questionSet);
+  const motives = formatAnswerValue('q_motives_multi', run, questionSet);
+  const impulseAxis = formatAnswerValue('q_impulse_axis_short', run, questionSet);
   const item = meta.itemName ? `「${meta.itemName}」` : "この購入";
   const kind = meta.itemKind ? itemKindLabel[meta.itemKind] ?? meta.itemKind : '不明';
   const price = meta.priceYen ? `${meta.priceYen}円` : '不明';
   const deadline = meta.deadline ?? '未定';
+  const motiveBlock = `## 購入動機（複数選択）
+- ${motives || "（未回答）"}`;
+  const impulseBlock = impulseAxis
+    ? `## 欲しさの軸（ショート）
+- ${impulseAxis}（0=未来寄り / 5=快感寄り）`
+    : "";
 
   return `あなたは推し活の購買判断を整理するアシスタントです。
 以下の情報を読み、迷っている点を整理して、次に取るべき行動を具体的に提案してください。
@@ -133,6 +147,10 @@ ${interactions}
 
 ## 次に確認すべきチェックリスト
 ${checklist}
+
+${motiveBlock}
+
+${impulseBlock}
 
 ## 相談したいポイント
 ${note || "（特になし）"}
