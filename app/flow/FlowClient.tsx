@@ -172,29 +172,6 @@ export default function FlowPage() {
     });
   };
 
-  const updateMultiAnswer = (
-    questionId: string,
-    optionId: string,
-    maxSelect: number,
-  ) => {
-    setAnswers((prev) => {
-      const prevValue = Array.isArray(prev[questionId]) ? prev[questionId] : [];
-      let nextValue = prevValue;
-      if (prevValue.includes(optionId)) {
-        nextValue = prevValue.filter((entry) => entry !== optionId);
-      } else if (prevValue.length < maxSelect) {
-        nextValue = [...prevValue, optionId];
-      }
-      const isSame =
-        prevValue.length === nextValue.length &&
-        prevValue.every((entry, idx) => entry === nextValue[idx]);
-      if (prev[questionId] !== undefined && !isSame) {
-        numChangesRef.current += 1;
-      }
-      return { ...prev, [questionId]: nextValue };
-    });
-  };
-
   const handleNext = () => {
     if (!currentQuestion) return;
     if (currentIndex < questions.length - 1) {
@@ -332,13 +309,23 @@ export default function FlowPage() {
           {currentQuestion.type === "multi" && currentQuestion.options ? (
             <div className="grid gap-3">
               {(() => {
-                const selectedValues = Array.isArray(answers[currentQuestion.id])
-                  ? answers[currentQuestion.id]
+                const raw = answers[currentQuestion.id];
+                const selectedValues: string[] = Array.isArray(raw)
+                  ? raw.filter((value): value is string => typeof value === "string")
                   : [];
                 const maxSelect =
                   currentQuestion.maxSelect ?? Number.POSITIVE_INFINITY;
                 const isMaxed =
                   Number.isFinite(maxSelect) && selectedValues.length >= maxSelect;
+                const toggle = (value: string) => {
+                  const next = selectedValues.includes(value)
+                    ? selectedValues.filter((entry) => entry !== value)
+                    : [...selectedValues, value];
+
+                  if (Number.isFinite(maxSelect) && next.length > maxSelect) return;
+
+                  updateAnswer(currentQuestion.id, next);
+                };
                 return (
                   <>
                     {currentQuestion.options.map((option) => {
@@ -348,13 +335,7 @@ export default function FlowPage() {
                         <button
                           key={option.id}
                           type="button"
-                          onClick={() =>
-                            updateMultiAnswer(
-                              currentQuestion.id,
-                              option.id,
-                              maxSelect,
-                            )
-                          }
+                          onClick={() => toggle(option.id)}
                           disabled={isAtLimit}
                           className={[
                             "flex min-h-[44px] w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition",

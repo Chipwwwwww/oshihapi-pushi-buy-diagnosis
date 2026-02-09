@@ -75,7 +75,7 @@ export type InputMeta = {
   itemKind?: ItemKind;
 };
 
-export type AnswerValue = string | number | string[];
+export type AnswerValue = string | number | boolean | null | string[];
 
 export type DecisionRun = {
   runId: string;
