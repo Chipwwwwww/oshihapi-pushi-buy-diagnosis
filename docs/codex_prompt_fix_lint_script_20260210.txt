@@ -1,0 +1,18 @@
+PR Title
+- Fix lint script: remove invalid "lint" directory argument
+
+Problem
+- CI fails on `npm run lint` with:
+  Invalid project directory provided, no such directory: /workspace/.../lint
+- Root cause: package.json `scripts.lint` passes "lint" as a directory to `next lint`, but the repo has no ./lint folder.
+
+Change
+- Update package.json:
+  - Replace scripts.lint with `next lint`
+  - (Optional safer variant) `next lint --dir app --dir src --dir components`
+- Do not add a new /lint folder. Fix the script instead.
+- Keep all other scripts unchanged.
+
+Acceptance Criteria
+- `npm run lint` succeeds in CI
+- Works locally on Windows as well

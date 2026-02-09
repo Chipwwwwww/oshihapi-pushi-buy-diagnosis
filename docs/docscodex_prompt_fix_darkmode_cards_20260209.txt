@@ -1,0 +1,62 @@
+# Codex PR Task: Fix Dark Mode readability (iOS Safari + in-app browser)
+Date: 2026-02-09
+
+## Problem
+When iPhone is in Dark Mode (especially inside Messenger in-app browser), Home UI becomes unreadable:
+- Card headings (e.g. 「迷ったらおすすめ」「モードを選ぶ」) become too faint on a light card background
+- Many texts appear washed out due to dark text styles applied inside light surfaces
+
+User confirmed: switching iPhone to Light mode makes UI correct.
+=> Dark mode styling is incomplete / conflicting.
+
+## Goal
+- Keep Light mode appearance identical to current baseline.
+- In Dark mode, make card surfaces + text contrast readable and consistent on iPhone (and generally).
+- Minimal changes: do NOT refactor whole design system.
+
+## Scope (MVP)
+- Must fix Home page (app/page.tsx) card readability.
+- Add a small iOS-only global CSS patch for viewport/safe-area/text-size-adjust.
+
+## Implementation (Tailwind)
+### 1) Home page card surfaces
+In app/page.tsx, for main cards/sections:
+- add: bg-white dark:bg-zinc-900
+- add: border border-slate-200 dark:border-zinc-800
+- ensure card container sets: text-slate-900 dark:text-zinc-50
+
+For secondary texts:
+- text-slate-600 dark:text-zinc-300
+
+For chips/pills:
+- bg-slate-100 text-slate-700
+- dark:bg-zinc-800 dark:text-zinc-200
+
+Important:
+- Avoid using "dark:text-slate-300" inside a "bg-white" card.
+- If any card MUST remain bg-white even in dark, then force its inner text to stay dark:
+  text-slate-900 dark:text-slate-900 (only for that card)
+But preferred: make cards dark in dark mode.
+
+### 2) iOS-only global CSS patch
+In app/globals.css add:
+
+@supports (-webkit-touch-callout: none) {
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  body { min-height: 100dvh; }
+  .safe-bottom { padding-bottom: calc(env(safe-area-inset-bottom) + 12px); }
+}
+
+Then apply "safe-bottom" on the outermost Home wrapper container in app/page.tsx (or a stable wrapper used by pages).
+
+## Acceptance Criteria
+- Light mode (desktop + mobile): visually unchanged.
+- Dark mode on iPhone Safari + Messenger in-app:
+  - 「迷ったらおすすめ」「モードを選ぶ」「状況から選ぶ」「例から選ぶ」「入力（任意）」 are readable
+  - No light text on light cards
+  - No bottom CTA/content hidden behind iOS bottom bar
+- Build passes: npm run build
+
+## Required screenshots
+- Home (Light) before/after unchanged
+- Home (Dark) on iPhone: before unreadable, after readable

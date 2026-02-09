@@ -1,0 +1,109 @@
+PR Title
+- Add “買いたい理由” (multi-select, max 3) + Short “欲しさ軸” (0–5) + multi renderer + evaluate flags + copyable long prompt
+
+Context / Why
+- Target users are Japanese ACG / 推し活. Many decisions are driven by “買えた瞬間の快感（脳汁）” as well as support/use/FOMO.
+- Capture motives safely (non-judgmental) and output better reasons/actions.
+- Short mode must stay ~30s, so use a single 0–5 axis there (instead of multi-select).
+
+Constraints (MUST)
+- MVP-first, minimal changes; do not add backend dependencies.
+- No login, no PII. localStorage only.
+- Telemetry remains opt-in and OFF by default. Do not add new telemetry fields in this PR.
+- Japanese UI copy: friendly like a friend; no shame, no preaching. Avoid words like 衝動買い/ダメ/無駄.
+- Windows dev command stays: `npm run dev -- --webpack`.
+
+Baseline / Branch
+- Start from tag: baseline/ui-good-20260209 (do NOT regress the baseline UI).
+
+Scope (files)
+1) Question bank
+- src/oshihapi/merch_v2_ja.ts
+  A) Medium/Long: add MULTI question
+    - id: q_motives_multi
+    - kind/type: "multi"
+    - title (JP): 今「買いたい理由」ってどれ？（複数選択OK）
+    - helper (JP): 最大3つまで。正解はないよ。
+    - maxSelect: 3
+    - options (value -> label):
+      - rush: 買えた瞬間の快感がほしい（脳汁）
+      - support: 推しを応援したい（気持ち）
+      - use: 飾りたい／使いたい（未来がある）
+      - fomo: 限定・締切が怖い（FOMO）
+      - bonus: 特典が本体（特典目的）
+      - trend: みんな買ってる／流行ってる（空気）
+      - vague: なんとなく（説明できない）
+  B) Short: add SCALE question (0-5)
+    - id: q_impulse_axis_short
+    - kind/type: "scale" (0-5, step=1)
+    - title (JP): 今の欲しさ、どっち寄り？
+    - helper (JP): 直感でOK。30秒で終わるやつ。
+    - anchors:
+      - 0: 未来（飾る/使う）寄り
+      - 5: 買う瞬間の快感寄り
+  C) Mode routing
+    - Short: show q_impulse_axis_short; DO NOT show q_motives_multi.
+    - Medium/Long: show q_motives_multi (prefer early/urgent); q_impulse_axis_short optional (only if already in the flow, otherwise keep it Short-only).
+
+2) Flow UI: add multi renderer
+- app/flow/page.tsx (keep minimal; extracting components is optional but not required)
+  A) Add rendering support for question kind/type "multi".
+  B) UI must be mobile-friendly and iOS Dark readable:
+     - Use “checkbox chips” (button-like pills).
+     - Tap target >= 44px height.
+     - Selected state must be obvious in Dark (ring + bg + check icon).
+  C) Enforce maxSelect
+     - If selectedCount == maxSelect, disable unselected chips.
+     - Show helper message only when maxed:
+       JP: いま3つ選んでるよ。入れ替えるならどれか外してね。
+  D) Answer value shape
+     - Store multi answers as string[] of option values.
+     - Back/Next must work with multi answers.
+
+3) Types / Storage compatibility
+- src/oshihapi/runStorage.ts (and wherever answer type is defined)
+  - Extend AnswerValue union to include string[].
+  - Ensure JSON load is backward-compatible (old runs without these answers must not crash).
+  - Ensure result/history pages do not crash when encountering array answers.
+
+4) Decision engine rules
+- src/oshihapi/evaluate.ts
+  A) Read answers
+     - motives = answer(q_motives_multi) as string[] || []
+     - impulseShort = answer(q_impulse_axis_short) as number | null
+  B) Derive flags
+     - impulseFlag = motives includes "rush" OR (impulseShort != null && impulseShort >= 4)
+     - futureUseFlag = motives includes "use"
+     - trendOrVagueFlag = motives includes "trend" OR "vague"
+  C) Add reasons/actions (Japanese, friendly)
+     1) If impulseFlag:
+        - Reason: 「買えた快感」が主役の時、満足が短命になりやすいかも。
+        - Action: 10分だけクールダウン（カート保持）→ その後もう一回だけ判断しよ。
+        - Bias slightly toward HOLD (e.g., small score penalty or downgrade BUY->HOLD unless very strong BUY).
+     2) If impulseFlag AND NOT futureUseFlag:
+        - Action: まず「置き場所」を1分で決めよ。無理なら写真で満足／小物だけもアリ。
+     3) If trendOrVagueFlag:
+        - Action: まず相場を5分だけ見る（新品で焦らなくてOK）。
+  D) Do not introduce new external APIs. Actions are plain text.
+
+5) Long diagnosis prompt (copyable)
+- src/oshihapi/promptBuilder.ts
+  - Include motive summary and axis if available:
+    - 購入動機（複数選択）: <labels joined by / >
+    - 欲しさ軸（0-5）: <n>（0=未来寄り, 5=快感寄り）※回答がある時だけ
+  - Keep it compact and easy to copy.
+  - Do NOT include sensitive fields unless already present in current design (and still no new telemetry).
+
+Acceptance Criteria
+1) Short mode shows q_impulse_axis_short and remains fast; does NOT show q_motives_multi.
+2) Medium/Long shows q_motives_multi; max 3 enforced; selection feedback text shows at max.
+3) Selecting “rush” OR axis>=4 adds cooldown reason/action, and can bias toward HOLD appropriately.
+4) Selecting “trend” or “vague” adds the “相場5分” action.
+5) If impulseFlag and not futureUseFlag, adds the “置き場所” action.
+6) History/result pages load runs with multi answers without crashing; old runs still load.
+7) iOS Dark (Safari + Messenger in-app): chips readable, selected state obvious, no white surfaces regressions.
+
+Non-goals
+- No backend changes.
+- No telemetry schema changes.
+- No large refactor or design-token system.

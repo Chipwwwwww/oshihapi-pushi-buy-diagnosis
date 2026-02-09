@@ -1,0 +1,93 @@
+PR Title
+- Add “purchase rush” motives (multi-select) + short-mode impulse axis
+
+Context / Why
+- Target users are Japanese ACG / oshi-katsu.
+- Many decisions are driven by “買えた瞬間の快感（脳汁）” (purchase rush).
+- Capture it safely (non-judgmental) and output better reasons/actions.
+- Short mode must stay ~30s, so use a single scale axis there.
+
+Constraints (MUST)
+- MVP-first, minimal changes; do not add backend dependencies.
+- No login, no PII. localStorage only.
+- Telemetry remains opt-in and off by default; do not send anything unless user explicitly opts in.
+- Keep Japanese UI copy friendly (like a friend), not preachy, no shame.
+- Windows dev must continue to work with: `npm run dev -- --webpack`.
+
+Scope
+A) Question bank (src/oshihapi/merch_v2_ja.ts)
+1) Medium/Long: add MULTI-SELECT question
+- id: q_motives_multi
+- kind/type: "multi"
+- title (JP): 今「買いたい理由」ってどれ？（複数選択OK）
+- helper (JP): 最大3つまで。正解はないよ。
+- maxSelect: 3
+- options (value -> label):
+  - rush: 買えた瞬間の快感がほしい（脳汁）
+  - support: 推しを応援したい（気持ち）
+  - use: 飾りたい／使いたい（未来がある）
+  - fomo: 限定・締切が怖い（FOMO）
+  - bonus: 特典が本体（特典目的）
+  - trend: みんな買ってる／流行ってる（空気）
+  - vague: なんとなく（説明できない）
+
+2) Short: add SCALE axis (0-5)
+- id: q_impulse_axis_short
+- kind/type: "scale" (0-5)
+- title (JP): 今の欲しさ、どっち寄り？
+- anchors:
+  - 0: 未来（飾る/使う）寄り
+  - 5: 買う瞬間の快感寄り
+- Use ONLY in Short mode. (Do not show q_motives_multi in Short.)
+
+B) Flow UI (app/flow/page.tsx and/or components)
+- Add rendering support for question kind/type "multi".
+- UI: checkbox chips or simple checkbox list (mobile-friendly, dark-mode OK).
+- Enforce maxSelect=3:
+  - If user already selected 3, disable remaining options and show helper:
+    JP: いま3つ選んでるよ。入れ替えるならどれか外してね。
+- Store answer as string[] (array of option values).
+
+C) Types / Storage
+- Update answer type union to support string[].
+- Ensure old runs load (backward-compatible).
+- Ensure result/history pages do not crash.
+
+D) Evaluate logic (src/oshihapi/evaluate.ts)
+- Read:
+  - motives = answer(q_motives_multi) as string[] OR []
+  - impulseShort = answer(q_impulse_axis_short) as number OR null
+- Derive flags:
+  - impulseFlag = motives includes "rush" OR (impulseShort != null && impulseShort >= 4)
+  - futureUseFlag = motives includes "use"
+  - trendOrVagueFlag = motives includes "trend" or "vague"
+- Rules (small score nudges + reasons/actions):
+  1) If impulseFlag:
+     - Reason (JP): 「買えた快感」が主役の時、満足が短命になりやすいかも。
+     - Action (JP): 10分だけクールダウン（カート保持）→ その後もう一回だけ判断しよ。
+     - Bias slightly toward HOLD unless other strong BUY signals exist.
+  2) If impulseFlag AND NOT futureUseFlag:
+     - Action (JP): 飾る/使う未来がないなら「写真で満足」や「小物だけ」もアリ。
+  3) If trendOrVagueFlag:
+     - Action (JP): まず相場を5分だけ見る（新品で焦らなくてOK）。
+
+Tone requirements
+- Friendly, like a friend; do not shame the user.
+- Avoid words like 衝動買い/ダメ/無駄.
+
+E) Long diagnosis prompt (src/oshihapi/promptBuilder.ts)
+- Include:
+  - 購入動機（複数選択）: rush, support, use, ...
+  - 欲しさ軸（Short） if available
+- Keep it compact and copyable.
+
+Acceptance Criteria
+1) Short mode shows q_impulse_axis_short; does NOT show q_motives_multi.
+2) Medium/Long shows q_motives_multi with max 3 selections enforced.
+3) Selecting “rush” reliably adds the cooldown reason/action and can bias toward HOLD appropriately.
+4) History/result pages can load runs with multi answers without crash.
+5) Dark mode: chips are readable and selected state is obvious (iOS Safari + Messenger in-app).
+
+Non-goals
+- No backend changes.
+- No new telemetry fields required (keep existing opt-in model).

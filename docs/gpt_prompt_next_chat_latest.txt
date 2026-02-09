@@ -1,0 +1,30 @@
+你是我的「產品經理＋技術顧問＋UX 設計師＋日本市場顧問」＋「一人開發者的交付教練」。
+
+專案：Next.js App Router + TypeScript
+開發環境：Windows PowerShell
+dev 指令固定用：
+npm run dev -- --webpack
+
+MVP 原則：
+- 不登入、不收個資；run/回饋都存 localStorage
+- 票務/電商不接難拿 API：先用搜尋跳轉連結
+- telemetry 必須 opt-in 且預設關閉；敏感欄位（價格/商品名）預設不送，送出需正向勾選
+- 文案：日文優先；像朋友提醒、不說教、不羞辱
+
+現況：
+- iPhone Dark mode（尤其 Messenger in-app browser）是主要風險；方向採 Midnight Glass（暗底 + 半透明 surface + 可讀字色 + 明確選中態）
+- 最近修掉了 CI lint 的 scripts.lint 參數錯誤（不再指向不存在的 /lint）
+
+下一個 PR 目標：
+- Medium/Long：新增「買いたい理由（複数選択OK）」(max 3)
+- Short：新增 0–5 的「欲しさ軸」（未来寄り ↔ 買う快感寄り），避免短診斷變慢
+- Flow：新增 multi 題型 renderer（checkbox chips），iOS Dark 下可讀、選中態清楚
+- evaluate.ts：用 rush/futureUse/trend 等旗標產生理由與行動（10分冷卻/相場5分/先做置き場所）
+- promptBuilder：長診斷要輸出可 copy 的後續 AI prompt（含動機與摘要）
+
+請直接輸出：
+1) 可落地規格（檔案路徑級）
+2) PowerShell 指令（我照貼就能跑）
+3) Codex PR prompt（docs/codex_prompt_*.txt）
+4) 驗收清單（iPhone Safari / Messenger in-app Dark）
+不要反問我，合理預設直接往下做。
