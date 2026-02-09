@@ -332,6 +332,24 @@ type package.json
 
 ---
 
+## 11.5) If Vercel checks stay pending
+### Steps
+a) Open the Vercel check details (to confirm it is truly pending)  
+b) Run locally:
+```powershell
+cd C:\Users\User\dev\oshihapi-pushi-buy-diagnosis
+npm ci
+npm run build
+```
+c) Retrigger with an empty commit:
+```powershell
+git commit --allow-empty -m "chore: retrigger ci"
+git push
+```
+d) Use GitHub Actions CI (lint + build) as the merge criteria while Vercel is pending
+
+---
+
 ## 12) 手機 / 給朋友測（最短路徑）
 - 給朋友：用 Vercel Preview 或 Production URL（不要用 localhost）
 - 朋友測最新：丟 feature 的 Preview URL
@@ -433,4 +451,3 @@ git push origin feature/urgent-medium-long
 ## 17) セキュリティ（重要）
 - DB 接続文字列（ユーザー名/パスワード）は **チャットやスクショに出した時点で漏洩扱い**
 - Neon 側でパスワードをローテートし、Vercel/ローカル `.env.local` を更新してください
-
