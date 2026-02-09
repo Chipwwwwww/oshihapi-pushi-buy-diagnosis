@@ -123,6 +123,7 @@ export const merch_v2_ja: QuestionSet = {
       id: 'q_impulse_axis_short',
       type: 'scale',
       title: '今の欲しさ、どっち寄り？',
+      description: '直感でOK。30秒で終わるやつ。',
       required: true,
       urgentCore: false,
       standard: false,

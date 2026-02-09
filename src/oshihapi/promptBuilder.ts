@@ -119,11 +119,9 @@ export function buildLongPrompt({
   const kind = meta.itemKind ? itemKindLabel[meta.itemKind] ?? meta.itemKind : '不明';
   const price = meta.priceYen ? `${meta.priceYen}円` : '不明';
   const deadline = meta.deadline ?? '未定';
-  const motiveBlock = `## 購入動機（複数選択）
-- ${motives || "（未回答）"}`;
-  const impulseBlock = impulseAxis
-    ? `## 欲しさの軸（ショート）
-- ${impulseAxis}（0=未来寄り / 5=快感寄り）`
+  const motiveLine = `- 購入動機（複数選択）: ${motives || "（未回答）"}`;
+  const impulseLine = impulseAxis
+    ? `- 欲しさ軸（0-5）: ${impulseAxis}（0=未来寄り, 5=快感寄り）`
     : "";
 
   return `あなたは推し活の購買判断を整理するアシスタントです。
@@ -138,6 +136,8 @@ export function buildLongPrompt({
 
 ## 回答サマリー
 ${answerSummary || "（回答サマリーなし）"}
+${motiveLine}
+${impulseLine ? `\n${impulseLine}` : ""}
 
 ## 指標サマリー（α..θ）
 ${scoreSummary}
@@ -147,10 +147,6 @@ ${interactions}
 
 ## 次に確認すべきチェックリスト
 ${checklist}
-
-${motiveBlock}
-
-${impulseBlock}
 
 ## 相談したいポイント
 ${note || "（特になし）"}
