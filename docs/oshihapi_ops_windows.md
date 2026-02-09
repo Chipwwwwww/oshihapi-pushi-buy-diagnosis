@@ -350,6 +350,23 @@ d) Use GitHub Actions CI (lint + build) as the merge criteria while Vercel is pe
 
 ---
 
+## 11.6) Vercel checks stuck (Waiting for status...)
+### Steps
+a) First, run local checks to confirm the code is OK:
+```powershell
+cd C:\Users\User\dev\oshihapi-pushi-buy-diagnosis
+npm ci
+npm run build
+```
+b) Re-trigger checks via an empty commit:
+```powershell
+git commit --allow-empty -m "chore: retrigger ci"
+git push
+```
+c) If branch protection requires Vercel checks, adjust required checks to prefer GitHub Actions CI (if permitted)
+
+---
+
 ## 12) 手機 / 給朋友測（最短路徑）
 - 給朋友：用 Vercel Preview 或 Production URL（不要用 localhost）
 - 朋友測最新：丟 feature 的 Preview URL
