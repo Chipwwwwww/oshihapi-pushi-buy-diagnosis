@@ -16,7 +16,6 @@ import RadioCard from "@/components/ui/RadioCard";
 import {
   bodyTextClass,
   containerClass,
-  helperTextClass,
   inputBaseClass,
   pageTitleClass,
   sectionTitleClass,
@@ -136,7 +135,9 @@ export default function Home() {
   };
 
   return (
-    <div className={`${containerClass} flex min-h-screen flex-col gap-8 py-10`}>
+    <div
+      className={`${containerClass} safe-bottom flex min-h-screen flex-col gap-8 py-10`}
+    >
       <header className="flex flex-col gap-2">
         <p className="text-sm font-semibold uppercase tracking-widest text-accent">
           オシハピ
@@ -147,33 +148,41 @@ export default function Home() {
         </p>
       </header>
 
-      <Card className="space-y-4">
+      <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50">
         <div className="flex items-center justify-between">
           <h2 className={sectionTitleClass}>迷ったらおすすめ</h2>
           <Badge variant="accent">信頼度 {recommendation.confidence}%</Badge>
         </div>
-        <div className="space-y-4 rounded-2xl border border-border bg-muted p-4">
+        <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-100 p-4 text-slate-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50">
           <div className="flex flex-wrap items-center gap-2">
-            <span className={helperTextClass}>おすすめモード</span>
+            <span className="text-sm text-slate-600 dark:text-zinc-300">
+              おすすめモード
+            </span>
             <Badge variant="primary">{MODE_LABELS[recommendation.mode]}</Badge>
-            <span className={helperTextClass}>
+            <span className="text-sm text-slate-600 dark:text-zinc-300">
               {getModeDescription(recommendation.mode)}
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
             {recommendation.reasonChips.map((reason) => (
-              <Badge key={reason} variant="outline">
+              <Badge
+                key={reason}
+                variant="outline"
+                className="border-slate-200 bg-slate-100 text-slate-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+              >
                 {reason}
               </Badge>
             ))}
           </div>
           {recommendation.followUp ? (
-            <p className="text-sm text-amber-700">{recommendation.followUp}</p>
+            <p className="text-sm text-amber-700 dark:text-amber-300">
+              {recommendation.followUp}
+            </p>
           ) : null}
         </div>
       </Card>
 
-      <Card className="space-y-4">
+      <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50">
         <h2 className={sectionTitleClass}>モードを選ぶ</h2>
         <div className="grid gap-4">
           <RadioCard
@@ -195,13 +204,15 @@ export default function Home() {
             onClick={() => handleSelectMode("long")}
           />
         </div>
-        <p className={helperTextClass}>{modeDescription}</p>
+        <p className="text-sm text-slate-600 dark:text-zinc-300">
+          {modeDescription}
+        </p>
       </Card>
 
-      <Card className="space-y-4">
+      <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50">
         <div className="flex flex-col gap-2">
           <h2 className={sectionTitleClass}>状況から選ぶ</h2>
-          <p className={helperTextClass}>
+          <p className="text-sm text-slate-600 dark:text-zinc-300">
             チップをタップするとモードが切り替わります。
           </p>
         </div>
@@ -211,7 +222,11 @@ export default function Home() {
               key={chip.id}
               variant={mode === chip.mode ? "primary" : "outline"}
               onClick={() => handleSelectMode(chip.mode)}
-              className="rounded-full px-4"
+              className={
+                mode === chip.mode
+                  ? "rounded-full px-4"
+                  : "rounded-full border-slate-200 bg-slate-100 px-4 text-slate-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+              }
             >
               {chip.label}
             </Button>
@@ -219,7 +234,7 @@ export default function Home() {
         </div>
       </Card>
 
-      <Card className="space-y-4">
+      <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50">
         <h2 className={sectionTitleClass}>例から選ぶ</h2>
         <div className="grid gap-4">
           {SCENARIO_CARDS_JA.map((scenario) => (
@@ -231,7 +246,7 @@ export default function Home() {
               onClick={() => handleApplyScenario(scenario)}
               footer={
                 scenario.preset ? (
-                  <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                  <div className="flex flex-wrap gap-2 text-xs text-slate-600 dark:text-zinc-300">
                     {scenario.preset.priceYen ? (
                       <span>¥{scenario.preset.priceYen.toLocaleString()}</span>
                     ) : null}
@@ -257,7 +272,7 @@ export default function Home() {
         </div>
       </Card>
 
-      <Card className="space-y-4">
+      <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50">
         <h2 className={sectionTitleClass}>入力（任意）</h2>
         <div className="grid gap-4">
           <label className="grid gap-2 text-sm font-semibold text-foreground">
@@ -315,7 +330,7 @@ export default function Home() {
         <Button onClick={handleStart} className="w-full text-base">
           診断をはじめる
         </Button>
-        <p className={helperTextClass}>
+        <p className="text-sm text-slate-600 dark:text-zinc-300">
           迷ったらまずは短診断でOK。途中で戻ることもできます。
         </p>
       </div>
