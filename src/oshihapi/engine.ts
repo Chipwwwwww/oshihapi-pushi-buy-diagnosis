@@ -133,7 +133,7 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     extraReasons.push({
       id: 'impulse_rush',
       severity: 'info',
-      text: '「買えた快感」が主役の時、満足が短命になりやすいかも。',
+      text: '「買えた快感」が主役の時、満足がすぐ落ち着くこともあるかも。',
     });
     extraActions.push({
       id: 'cooldown_10min',
