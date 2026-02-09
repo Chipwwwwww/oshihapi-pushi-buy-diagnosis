@@ -89,9 +89,10 @@ export default function FlowPage() {
   const questions = useMemo(() => {
     return merch_v2_ja.questions.filter((q) => {
       const isStandard = q.standard ?? q.required ?? false;
-      if (mode === "short") return q.urgentCore;
-      if (mode === "medium") return q.urgentCore || isStandard;
-      return q.urgentCore || isStandard || q.longOnly;
+      const isShortOnly = q.shortOnly ?? false;
+      if (mode === "short") return q.urgentCore || isShortOnly;
+      if (mode === "medium") return !isShortOnly && (q.urgentCore || isStandard);
+      return !isShortOnly && (q.urgentCore || isStandard || q.longOnly);
     });
   }, [mode]);
 
@@ -142,6 +143,9 @@ export default function FlowPage() {
     if (question.type === "text") {
       return typeof value === "string" && value.trim().length > 0;
     }
+    if (question.type === "multi") {
+      return Array.isArray(value) && value.length > 0;
+    }
     return value != null;
   };
 
@@ -165,6 +169,29 @@ export default function FlowPage() {
         numChangesRef.current += 1;
       }
       return { ...prev, [questionId]: value };
+    });
+  };
+
+  const updateMultiAnswer = (
+    questionId: string,
+    optionId: string,
+    maxSelect: number,
+  ) => {
+    setAnswers((prev) => {
+      const prevValue = Array.isArray(prev[questionId]) ? prev[questionId] : [];
+      let nextValue = prevValue;
+      if (prevValue.includes(optionId)) {
+        nextValue = prevValue.filter((entry) => entry !== optionId);
+      } else if (prevValue.length < maxSelect) {
+        nextValue = [...prevValue, optionId];
+      }
+      const isSame =
+        prevValue.length === nextValue.length &&
+        prevValue.every((entry, idx) => entry === nextValue[idx]);
+      if (prev[questionId] !== undefined && !isSame) {
+        numChangesRef.current += 1;
+      }
+      return { ...prev, [questionId]: nextValue };
     });
   };
 
@@ -300,6 +327,71 @@ export default function FlowPage() {
                   onClick={() => updateAnswer(currentQuestion.id, option.id)}
                 />
               ))}
+            </div>
+          ) : null}
+          {currentQuestion.type === "multi" && currentQuestion.options ? (
+            <div className="grid gap-3">
+              {(() => {
+                const selectedValues = Array.isArray(answers[currentQuestion.id])
+                  ? answers[currentQuestion.id]
+                  : [];
+                const maxSelect =
+                  currentQuestion.maxSelect ?? Number.POSITIVE_INFINITY;
+                return currentQuestion.options.map((option) => {
+                  const isSelected = selectedValues.includes(option.id);
+                  const isAtLimit =
+                    selectedValues.length >= maxSelect && !isSelected;
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() =>
+                        updateMultiAnswer(
+                          currentQuestion.id,
+                          option.id,
+                          maxSelect,
+                        )
+                      }
+                      disabled={isAtLimit}
+                      className={[
+                        "flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:focus-visible:ring-pink-400/40",
+                        isSelected
+                          ? "border-primary/70 bg-primary/5 text-foreground shadow-sm dark:border-pink-400/40 dark:bg-white/8 dark:text-zinc-50 dark:ring-1 dark:ring-pink-400/50"
+                          : "border-border bg-card text-foreground hover:border-primary/40 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50 dark:hover:border-pink-400/40",
+                        isAtLimit ? "cursor-not-allowed opacity-60" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                    >
+                      <span className="text-base font-semibold">
+                        {option.label}
+                      </span>
+                      <span
+                        className={[
+                          "flex h-5 w-5 items-center justify-center rounded border-2",
+                          isSelected
+                            ? "border-primary bg-primary text-white dark:border-pink-400 dark:bg-pink-400"
+                            : "border-muted-foreground text-transparent dark:border-white/30",
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
+                      >
+                        ✓
+                      </span>
+                    </button>
+                  );
+                });
+              })()}
+              {typeof currentQuestion.maxSelect === "number" ? (
+                <p className={helperTextClass}>
+                  選択数:{" "}
+                  {Array.isArray(answers[currentQuestion.id])
+                    ? answers[currentQuestion.id].length
+                    : 0}
+                  /{currentQuestion.maxSelect}
+                </p>
+              ) : null}
             </div>
           ) : null}
           {currentQuestion.type === "text" ? (
