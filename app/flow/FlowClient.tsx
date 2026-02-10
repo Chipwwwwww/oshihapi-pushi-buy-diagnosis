@@ -365,6 +365,7 @@ export default function FlowPage() {
                   key={option.id}
                   title={option.label}
                   isSelected={answers[currentQuestion.id] === option.id}
+                  type="button"
                   onClick={() => updateAnswer(currentQuestion.id, option.id)}
                 />
               ))}
