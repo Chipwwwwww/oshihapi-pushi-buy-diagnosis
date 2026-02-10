@@ -1,0 +1,194 @@
+# Codex PR Prompt — B強化版：結果の「見せ方」を多様化（判定3つは固定）
+_date: 2026-02-10_
+
+## 目的（Bのみ）
+- 判定の軸は固定：買う / 保留 / やめる（= decision enumは変えない）
+- 下の指針（やめる-保留-買う）も固定（位置・ロジック不変更）
+- ただし、結果ページの最上部の大きい見出し（今は「保留」等）を
+  “状況に応じた主headline” に置き換える（例：相場を見てから保留）
+- さらに「別の言い方（N）」を押すと、同じ判定のまま別headline候補を展開表示（0〜5件、状況に応じて）
+- 旧run（localStorageに保存済み）でもクラッシュしない（presentationが無い場合はフォールバック）
+
+## 非交渉条件（プロジェクトルール）
+- npm run build ✅ が合格（devが動くだけは不可）
+- Telemetry/送信はopt-in（ただし本PRは送信機能を触らない）
+- 大規模リファクタ禁止：最小diff / 最小リスク
+
+## 変更範囲（このPRでやる/やらない）
+やる：
+- 結果の “presentation layer” 追加（headline/badge/alternatives）
+- Result UI 反映（主headline + 判定badge + 別の言い方トグル）
+- headlineライブラリ（候補文言多数）と選択ルール（安定hash）
+
+やらない：
+- フィードバック送信/Neon/DB（A）
+- 外部マーケットリンク（C）
+- AI API統合（E）
+
+---
+
+## 実装方針（最小diffで）
+### 1) headlineライブラリ追加
+新規：src/oshihapi/headlineLibrary.ts（命名は既存に合わせてOK）
+- export type PrimaryTag = 'PRICECHECK'|'COOLDOWN'|'SPACE'|'BUDGETCAP'|'RERELEASE'|'PRIORITY'|'RISK'|'TOTALCOST'|'TIMING'|'GENERAL'
+- export type DecisionKey = 'buy'|'hold'|'skip'（既存のenum/型に合わせる）
+- export const HEADLINES: Record<DecisionKey, Record<PrimaryTag, string[]>>
+  - 各tagに 3〜6個程度の短い候補（iPhoneで改行しにくい長さ）
+  - 20全角文字を超える候補は入れない（または後段でフィルタ）
+
+候補例（最低限これらを含めつつ、さらに増やしてOK）：
+HOLD/PRICECHECK:
+- 相場を見てから保留
+- 相場チェックしてから保留
+- 相場が落ち着くまで保留
+HOLD/COOLDOWN:
+- 24時間だけ保留
+- いったん寝かせる（24h）
+- 明日もう一度見る
+HOLD/SPACE:
+- 置き場所を決めてから保留
+- 飾る場所が作れたら買う（保留）
+- 片付けてから判断（保留）
+HOLD/BUDGETCAP:
+- 上限を決めてから保留
+- 上限内なら買う（いったん保留）
+- 総額を出してから保留
+HOLD/RERELEASE:
+- 再販待ちで保留
+- 再入荷の様子見で保留
+- 次の波まで待つ（保留）
+HOLD/PRIORITY:
+- 優先度を並べて保留
+- 候補を比較して保留
+- 今月の順位を見て保留
+HOLD/RISK:
+- 状態確認してから保留
+- 不安が残るので保留
+- 付属品を確認して保留
+HOLD/TOTALCOST:
+- 送料込みで再計算（保留）
+- 総額が出るまで保留
+- 配送条件を確認して保留
+HOLD/TIMING:
+- 締め日を見て保留
+- タイミング待ちで保留
+- 来月の余裕で判断（保留）
+HOLD/GENERAL:
+- いったん保留（条件が整ったら再検討）
+- 条件が揃ったら買う
+- 落ち着いてから決める
+
+BUY（buy）は単調回避：
+BUY/BUDGETCAP:
+- 上限内なら買ってOK
+- 予算内で納得：買う
+BUY/PRICECHECK:
+- 相場より良いので買う
+- 今の価格なら買い
+BUY/PRIORITY:
+- 推し優先度が高い：買う
+- 満足度が高そう：買う
+BUY/GENERAL:
+- 条件クリア：買う寄り
+- 迷いが少ない：買う
+
+SKIP（skip/やめる）も刺さりすぎない：
+SKIP/PRICECHECK:
+- 相場が高いので見送り
+- 高騰中なので今回は見送り
+- 今はプレ値：見送り
+SKIP/SPACE:
+- 置き場所が厳しいので見送り
+- 今は抱えない（見送り）
+SKIP/RISK:
+- リスクが読めないので見送り
+- 状態が不安なので見送り
+SKIP/PRIORITY:
+- 優先度が低いので見送り
+- 今は“別の候補”を優先
+SKIP/GENERAL:
+- 今回は見送る（条件が変わったら）
+- 今じゃないので見送り
+
+※ 日本語注意：
+- 「燙角/冷角」などCN用語は使わない
+- 「相場が高い/落ち着いてる」「高騰/プレ値」を使う
+
+### 2) プレゼン生成（主headline + alternatives + badge）
+新規：src/oshihapi/decisionPresentation.ts（命名は既存に合わせてOK）
+- export function buildPresentation(args): {
+    decisionLabel: '買う'|'保留'|'やめる'（既存UIに合わせる）
+    headline: string
+    badge: string            // 例：判定：保留
+    note?: string            // 例：※判定は変わりません
+    alternatives?: string[]  // 0〜5
+    tags?: string[]          // 表示は任意（デバッグ用）
+  }
+
+#### タグ判定（actions優先）
+- actions（「今すぐやる」リスト）を最優先でテキスト化して解析
+- actionsが弱い場合のみ reasons/flags を補助に使う
+- keyword → tag の例：
+  PRICECHECK: 相場 / 中古 / 通販
+  COOLDOWN: 24時間 / クールダウン / 寝かせ
+  SPACE: 置き場所 / 収納 / 飾る
+  BUDGETCAP: 上限 / 予算 / 支払い
+  RERELEASE: 再販 / 再入荷
+  PRIORITY: 優先度 / 候補 / 比較
+  RISK: 真贋 / 状態 / 不安 / 付属品
+  TOTALCOST: 送料 / 総額 / 関税 / 配送
+  TIMING: 締め日 / 来月 / タイミング
+  GENERAL: fallback
+
+#### 安定した選択（毎回ランダム禁止）
+- runId（または createdAt）から簡易hashを作り、候補indexを決める
+- main headline: primaryTag候補から hash%len
+- alternatives:
+  - GENERALだけなら alternatives を付けない（ボタンも出さない）
+  - primaryTag から 1〜2個 + secondaryTags から各1個（最大5）
+  - headline重複排除、mainと同じもの除外
+  - 表示順も hash で安定化
+
+#### 長さフィルタ
+- 20全角文字を超えるものは落とす（または短い別候補に置換）
+
+### 3) evaluate() に presentation を添付（後方互換）
+- src/oshihapi/evaluate.ts（または該当箇所）
+- 既存の戻り値に presentation を追加するだけ（既存フィールド変更しない）
+- 旧runの復元時に presentation が無くてもUIが落ちないようにする
+
+### 4) Result UI 変更（最小）
+- app/result/[runId]/page.tsx（該当コンポーネントでもOK）
+- 変更点：
+  1) 大きい見出し：presentation.headline を表示（無ければ従来ラベル）
+  2) 信頼度付近に小pill：presentation.badge（無ければ `判定：{従来ラベル}`）
+  3) 「別の言い方（N）」トグル：
+     - alternatives がある時だけ表示
+     - 展開すると alternatives をリスト表示
+     - クリックすると “表示しているheadline” だけ差し替え（判定/指針は変えない）
+     - UI注記：`※判定は変わりません`
+- iPhone dark mode 前提で可読性担保（既存のMidnight Glassに合わせる）
+
+### 5) 型と安全性
+- alternatives が無い/空でも問題なし
+- actions が string/object 混在でも安全にテキスト化
+- build が通ること最優先
+
+---
+
+## 受け入れ基準（Acceptance）
+- npm run build ✅
+- iPhone Safari + Messenger in-app dark mode：
+  - 主headlineが状況で変わる（相場/24h/置き場所 等）
+  - badge「判定：保留」が見える
+  - alternatives があるときだけ「別の言い方（N）」が出る
+  - alternatives を選んでも判定/指針は変わらない
+  - 同じrunをリロードしても headline と alternatives 順序が変わらない（安定hash）
+- 旧run（presentation無し）でも落ちない（フォールバック表示）
+
+---
+
+## 追加：パスが違う場合の探索（Codex内で実施）
+- “診断結果”“信頼度”“今すぐやる” で Result UI を検索
+- “evaluate(” と “runStorage” でロジックを検索
+- 似たファイルがあれば最小diffで適用
