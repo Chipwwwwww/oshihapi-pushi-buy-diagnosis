@@ -1,0 +1,76 @@
+﻿[PR GOAL]
+Solve: "保留が多すぎて役に立たない" perception AND actually reduce HOLD rate in a transparent, user-controlled way.
+Do BOTH in one PR:
+(A) UI: de-duplicate verdict, make hero & gauge pointer more prominent, reduce harsh X.
+(B) Logic: Add “決め切り度” (慎重/標準/即決) to shrink/expand HOLD band; add /history summary counts.
+
+[NON-NEGOTIABLE]
+- Must pass `npm run build`.
+- Minimal diff, no unrelated refactors.
+- Default behavior must remain identical to current (標準 = current).
+- App Router + TypeScript. Keep styling consistent with existing approach.
+
+========================================
+A) UI IMPROVEMENTS (Result screen)
+========================================
+Target: result page UI on mobile.
+1) Hero (top headline area)
+- Make the main headline more prominent (font size/weight/spacing/contrast).
+- Keep dark mode readable (use existing theme tokens; avoid pure red text).
+- Remove redundant chip "判定：保留" (keep 信頼度 chip; optional: keep 傾き chip).
+- Keep “別の言い方” accordion.
+
+2) Reduce repetition below
+- The lower "診断結果 / 保留" area feels repetitive/heavy.
+- Shrink the big "保留" text there OR change that card title to something like "判定の詳細" / "傾き" / "根拠" so we don't say "診断結果" twice.
+- If there is a large red X icon for HOLD: significantly reduce its size/visual weight.
+  Prefer a neutral icon for HOLD (⏸ / … / △) instead of ✕, because ✕ reads like "やめる".
+  If keeping ✕, it must look subtle and not dominant.
+
+3) Make gauge pointer more prominent
+- Increase pointer triangle size + contrast.
+- Add a thin vertical marker line at the pointer position (optional but recommended).
+- Ensure labels remain readable on mobile.
+
+========================================
+B) DECISIVENESS (Hold-band control) + HISTORY SUMMARY
+========================================
+Goal: Reduce HOLD frequency without breaking neutrality by making it USER-CONTROLLED and transparent.
+
+1) Add setting: 決め切り度 (3 levels)
+- 慎重 / 標準 / 即決
+- Default: 標準
+- Persist in localStorage.
+- Place control in the earliest reasonable place (home or flow start) with minimal UI:
+  segmented control or small selector.
+- Show chosen level on result page (small note): "決め切り度: 標準（変更可）" for transparency.
+
+2) Engine change (minimal, safe)
+- Locate verdict mapping logic (score/tilt -> やめる/保留/買う).
+- Implement HOLD band scaling using multipliers:
+  慎重: 1.25
+  標準: 1.00 (must match current)
+  即決: 0.75
+- Additionally incorporate mode:
+  urgent mode => smaller HOLD band than long mode
+  (Example multipliers: urgent 0.85, standard 1.00, long 1.10)
+- Combine as: holdBand = baseHoldBand * decisivenessMultiplier * modeMultiplier
+- Backward compatibility: if old runs missing fields, treat as 標準.
+
+3) Persist per run (recommended)
+- Store selected 決め切り度 and mode in the saved run record so history can summarize accurately.
+
+4) /history summary
+- Add a simple summary at top:
+  counts of verdicts: 買う / 保留 / やめる + percentages.
+- Optional: show counts grouped by 決め切り度 (if stored per run), but keep minimal.
+
+========================================
+Acceptance checklist
+========================================
+- `npm run build` passes.
+- On iPhone viewport:
+  - Hero headline is clearly primary.
+  - First screen shows fewer repeated "保留" (no redundant 判定 chip).
+  - Gauge pointer is visible at a glance.
+- With 決め切り度=即決, HOLD rate decreases vs 標準 for similar inputs (verify via /history summary).
