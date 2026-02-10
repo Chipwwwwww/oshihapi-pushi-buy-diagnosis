@@ -295,9 +295,9 @@ export default function ResultPage() {
   return (
     <div className={`${containerClass} flex min-h-screen flex-col gap-6 py-10`}>
       <header className="space-y-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
-        <p className="text-sm font-semibold text-accent">診断結果</p>
+        <p className="text-sm font-semibold tracking-wide text-accent">診断サマリー</p>
         <div className="space-y-2">
-          <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:text-4xl">{headline}</h1>
+          <h1 className="text-4xl font-black leading-tight tracking-tight text-foreground sm:text-5xl">{headline}</h1>
           <p className={`${bodyTextClass} text-foreground/90`}>{decisionSubcopy[run.output.decision]}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

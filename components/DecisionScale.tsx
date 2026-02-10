@@ -14,7 +14,7 @@ export type DecisionScaleProps = {
 
 const LABEL = {
   no: { top: "やめる", sub: "今回は見送ろう" },
-  wait: { top: "保留", sub: "条件が揃ったら買う" },
+  wait: { top: "様子見", sub: "条件が揃ったら買う" },
   buy: { top: "買う", sub: "買ってOK（上限だけ決めて）" },
 } as const;
 
@@ -56,7 +56,7 @@ export default function DecisionScale({ decision, index, className }: DecisionSc
           <div className="absolute right-0 top-4 h-5 w-px bg-border" />
 
           <div
-            className="absolute bottom-1 top-4 w-px -translate-x-1/2 bg-foreground/70 transition-all duration-300"
+            className="absolute bottom-0 top-3 w-[2px] -translate-x-1/2 bg-foreground/85 transition-all duration-300"
             style={{ left: `${pos}%` }}
           />
 
@@ -69,7 +69,7 @@ export default function DecisionScale({ decision, index, className }: DecisionSc
               <div className="rounded-full border border-foreground/30 bg-card px-3 py-1 text-xs font-semibold text-foreground shadow-sm">
                 {t.top}
               </div>
-              <div className="h-0 w-0 border-l-[10px] border-r-[10px] border-t-[14px] border-l-transparent border-r-transparent border-t-foreground" />
+              <div className="h-0 w-0 border-l-[12px] border-r-[12px] border-t-[16px] border-l-transparent border-r-transparent border-t-foreground" />
             </div>
           </div>
         </div>
