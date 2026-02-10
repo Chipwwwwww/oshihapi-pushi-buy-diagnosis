@@ -1,0 +1,47 @@
+﻿You are working on a Next.js App Router + TypeScript repo. Make minimal-diff changes. Must pass `npm run build`.
+
+Goal:
+Fix “保留が多すぎて役に立たない” by doing BOTH:
+(A) UI: de-duplicate and improve emphasis (hero + pointer), reduce harshness of HOLD icon, reduce repeated “保留”.
+(B) Logic: Add user-controlled “決め切り度” (慎重 / 標準 / 即決) to shrink/expand HOLD band transparently, default 標準 = current behavior. Add /history summary counts.
+
+Non-negotiable:
+- `npm run build` must pass.
+- Minimal diff, no unrelated refactors.
+- Default behavior must remain identical (標準 = current).
+- Store setting in localStorage.
+- UI must contain the exact Japanese labels: 「決め切り度」「慎重」「標準」「即決」 so we can fingerprint with git grep.
+
+A) Result UI improvements (mobile-first)
+1) Hero section:
+- Make headline more prominent (size/weight/spacing/contrast).
+- Remove redundant chip “判定：保留” (keep 信頼度 chip; optional keep 傾き).
+2) Reduce repetition:
+- Lower card currently repeats “診断結果 / 保留”. Reduce visual weight of the big verdict text OR rename card to “判定の詳細/根拠/傾き” to avoid repeating “診断結果”.
+- If there is a big red X icon for HOLD, shrink it significantly OR replace with a neutral icon (⏸ or …). X reads like “やめる”.
+3) Gauge pointer:
+- Make pointer more prominent (bigger triangle, higher contrast).
+- Optional: add thin vertical marker line at pointer position.
+
+B) Decisiveness setting + engine change
+1) Add “決め切り度” selector (慎重/標準/即決)
+- Put it on the earliest reasonable screen (home or flow start) with minimal UI (segmented buttons).
+- Persist to localStorage.
+- Show chosen level on result page (small note): “決め切り度: 標準（変更可）”.
+2) HOLD band scaling
+- Locate verdict mapping logic (score/tilt -> やめる/保留/買う).
+- Implement: holdBand = baseHoldBand * decisivenessMultiplier * modeMultiplier
+  - decisivenessMultiplier: 慎重=1.25, 標準=1.00, 即決=0.75
+  - modeMultiplier: urgent=0.85, default=1.00, long=1.10 (only if modes exist; keep minimal)
+- Backward compatible: if old runs missing fields, treat as 標準.
+- Store decisiveness in saved run so history can summarize.
+
+C) /history summary
+- At top of history page, show counts + percentages of verdicts: 買う / 保留 / やめる.
+- Optional: breakdown by 決め切り度 if stored (keep minimal).
+
+Acceptance:
+- `npm run build` passes.
+- `git grep -n "決め切り度|慎重|標準|即決" -- app src` finds matches.
+- On mobile, first screen repeats “保留” less and pointer is clearly visible.
+- Setting 即決 reduces HOLD frequency vs 標準 (verify via /history summary).
