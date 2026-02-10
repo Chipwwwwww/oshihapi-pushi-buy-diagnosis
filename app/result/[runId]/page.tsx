@@ -21,6 +21,10 @@ import { buildLongPrompt } from "@/src/oshihapi/promptBuilder";
 import type { DecisionRun, FeedbackImmediate } from "@/src/oshihapi/model";
 import { buildPresentation } from "@/src/oshihapi/decisionPresentation";
 import { clamp, engineConfig, normalize01ToSigned } from "@/src/oshihapi/engineConfig";
+import {
+  isPlatformMarketAction,
+  neutralizeMarketAction,
+} from "@/src/oshihapi/neutralizePlatformActions";
 import { findRun, updateRun } from "@/src/oshihapi/runStorage";
 import { sendTelemetry, TELEMETRY_OPT_IN_KEY } from "@/src/oshihapi/telemetryClient";
 
@@ -52,6 +56,34 @@ function getDefaultSearchWord(run: DecisionRun): string {
     .filter(Boolean)
     .join(" ");
   return merged;
+}
+
+function getActionLink(action: DecisionRun["output"]["actions"][number]): {
+  label: string;
+  href: string;
+} | null {
+  const legacyAction = action as {
+    linkOut?: { label?: string; url?: string; href?: string };
+    label?: string;
+    title?: string;
+    url?: string;
+    href?: string;
+  };
+
+  const label =
+    legacyAction.linkOut?.label ??
+    legacyAction.label ??
+    legacyAction.title ??
+    null;
+  const href =
+    legacyAction.linkOut?.url ??
+    legacyAction.linkOut?.href ??
+    legacyAction.url ??
+    legacyAction.href ??
+    null;
+
+  if (!label || !href) return null;
+  return { label, href };
 }
 
 export default function ResultPage() {
@@ -102,6 +134,17 @@ export default function ResultPage() {
 
   const defaultSearchWord = useMemo(() => (run ? getDefaultSearchWord(run) : ""), [run]);
   const showBecausePricecheck = presentation?.tags?.includes("PRICECHECK") === true;
+  const hasPlatformMarketAction = useMemo(
+    () => run?.output.actions.some((action) => isPlatformMarketAction(action)) ?? false,
+    [run],
+  );
+  const displayActions = useMemo(
+    () =>
+      run?.output.actions.map((action) =>
+        isPlatformMarketAction(action) ? neutralizeMarketAction(action) : action,
+      ) ?? [],
+    [run],
+  );
   useEffect(() => {
     setShowAlternatives(false);
     setSelectedHeadline(null);
@@ -286,19 +329,23 @@ export default function ResultPage() {
       <Card className="space-y-4">
         <h2 className={sectionTitleClass}>今すぐやる</h2>
         <ul className="grid gap-4">
-          {run.output.actions.map((action) => (
-            <li key={action.id} className="rounded-2xl border border-border p-4">
+          {displayActions.map((action) => {
+            const actionLink = getActionLink(action);
+            return (
+              <li key={action.id} className="rounded-2xl border border-border p-4">
               <p className={bodyTextClass}>{action.text}</p>
-              {action.linkOut ? (
-                <Button
-                  onClick={() => logActionClick(`link:${action.id}`)}
-                  className="mt-4 w-full rounded-xl"
-                >
-                  {action.linkOut.label}
-                </Button>
-              ) : null}
-            </li>
-          ))}
+                {actionLink ? (
+                  <a
+                    href={actionLink.href}
+                    onClick={() => logActionClick(`link:${action.id}`)}
+                    className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+                  >
+                    {actionLink.label}
+                  </a>
+                ) : null}
+              </li>
+            );
+          })}
         </ul>
       </Card>
 
@@ -345,11 +392,13 @@ export default function ResultPage() {
         </Button>
       </Card>
 
-      <MarketCheckCard
-        runId={run.runId}
-        defaultSearchWord={defaultSearchWord}
-        showBecausePricecheck={showBecausePricecheck}
-      />
+      <div id="market-check" style={{ scrollMarginTop: "96px" }}>
+        <MarketCheckCard
+          runId={run.runId}
+          defaultSearchWord={defaultSearchWord}
+          showBecausePricecheck={showBecausePricecheck || hasPlatformMarketAction}
+        />
+      </div>
 
       <Card className="space-y-4">
         <h2 className={sectionTitleClass}>このあとどうした？</h2>
