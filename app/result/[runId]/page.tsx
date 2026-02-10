@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import DecisionScale from "@/components/DecisionScale";
+import MarketCheckCard from "@/components/MarketCheckCard";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -34,6 +35,24 @@ const decisionSubcopy: Record<string, string> = {
   THINK: "今は保留でOK。条件が整ったらまた検討しよう。",
   SKIP: "今回は見送りでOK。次の推し活に回そう。",
 };
+
+function getDefaultSearchWord(run: DecisionRun): string {
+  const itemName = run.meta.itemName?.trim();
+  if (itemName) return itemName;
+
+  const item = (run.answers.item ?? {}) as Record<string, string | undefined>;
+  const candidates = [
+    item.name,
+    run.answers.series,
+    run.answers.character,
+    run.answers.type,
+  ];
+  const merged = candidates
+    .map((value) => (typeof value === "string" ? value.trim() : ""))
+    .filter(Boolean)
+    .join(" ");
+  return merged;
+}
 
 export default function ResultPage() {
   const router = useRouter();
@@ -81,6 +100,8 @@ export default function ResultPage() {
     );
   }, [run]);
 
+  const defaultSearchWord = useMemo(() => (run ? getDefaultSearchWord(run) : ""), [run]);
+  const showBecausePricecheck = presentation?.tags?.includes("PRICECHECK") === true;
   useEffect(() => {
     setShowAlternatives(false);
     setSelectedHeadline(null);
@@ -323,6 +344,12 @@ export default function ResultPage() {
           共有テキストをコピー
         </Button>
       </Card>
+
+      <MarketCheckCard
+        runId={run.runId}
+        defaultSearchWord={defaultSearchWord}
+        showBecausePricecheck={showBecausePricecheck}
+      />
 
       <Card className="space-y-4">
         <h2 className={sectionTitleClass}>このあとどうした？</h2>
