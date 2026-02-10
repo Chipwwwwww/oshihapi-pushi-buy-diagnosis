@@ -1,0 +1,35 @@
+﻿[PR GOAL]
+Fix desktop layout on result page WITHOUT changing mobile UI and WITHOUT refactoring structure.
+Minimal diff. Must pass `npm run build`.
+
+Context:
+Current desktop layout feels "weird" when content stretches too wide. We want simple centered container + max width.
+DO NOT introduce sticky sidebar, DO NOT extract reusable components, DO NOT reorder blocks.
+
+Target file(s):
+- app/result/[runId]/page.tsx (primary)
+Optional (only if truly needed):
+- components/DecisionScale.tsx (only to clamp width on desktop)
+
+What to change (minimal):
+1) Add a centered max-width wrapper for the whole result page content:
+   - Use Tailwind like: `mx-auto w-full max-w-2xl md:max-w-3xl lg:max-w-4xl px-4 md:px-6`
+   - Ensure mobile remains same (no desktop-only grid/sticky).
+
+2) Clamp specific ultra-wide parts on desktop:
+   - Hero summary block: add `max-w-3xl` (desktop) while keeping full width on mobile.
+   - DecisionScale container: add `max-w-3xl` (desktop) to avoid an ultra-wide scale line.
+
+3) Keep layout order EXACTLY the same:
+   - Do not move "今すぐやる" card to sidebar.
+   - Do not change the card grouping/stacking logic.
+   - Only width/spacing constraints.
+
+4) Acceptance:
+   - On desktop (>=1024px), content is centered and not edge-to-edge.
+   - On mobile, UI is unchanged.
+   - `npm run build` passes.
+
+Notes:
+- No new components unless absolutely unavoidable.
+- No CSS refactors. Use existing tokens/styles.
