@@ -292,12 +292,38 @@ export default function ResultPage() {
     );
   }
 
+  const actionsCard = (
+    <Card className="space-y-4">
+      <h2 className={sectionTitleClass}>今すぐやる</h2>
+      <ul className="grid gap-4">
+        {displayActions.map((action) => {
+          const actionLink = getActionLink(action);
+          return (
+            <li key={action.id} className="rounded-2xl border border-border p-4">
+              <p className={bodyTextClass}>{action.text}</p>
+              {actionLink ? (
+                <a
+                  href={actionLink.href}
+                  onClick={() => logActionClick(`link:${action.id}`)}
+                  className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+                >
+                  {actionLink.label}
+                </a>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+    </Card>
+  );
+
   return (
-    <div className={`${containerClass} flex min-h-screen flex-col gap-6 py-10`}>
-      <header className="space-y-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
-        <p className="text-sm font-semibold text-accent">診断結果</p>
+    <div className={`${containerClass} min-h-screen py-10`}>
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 sm:px-6 lg:px-8">
+      <header className="space-y-4 rounded-2xl border border-border bg-card p-4 shadow-sm lg:max-w-3xl">
+        <p className="text-sm font-semibold tracking-wide text-accent">診断サマリー</p>
         <div className="space-y-2">
-          <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:text-4xl">{headline}</h1>
+          <h1 className="text-4xl font-black leading-tight tracking-tight text-foreground sm:text-5xl">{headline}</h1>
           <p className={`${bodyTextClass} text-foreground/90`}>{decisionSubcopy[run.output.decision]}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -310,11 +336,11 @@ export default function ResultPage() {
           決め切り度: {decisivenessLabels[run.decisiveness ?? "standard"]}（変更可）
         </p>
         {alternatives.length > 0 ? (
-          <div className="space-y-2 rounded-2xl border border-border bg-card/90 p-3">
+          <div className="space-y-2 rounded-2xl border border-border bg-card/90 p-3 lg:max-w-2xl">
             <Button
               variant="ghost"
               onClick={() => setShowAlternatives((prev) => !prev)}
-              className="h-auto w-full justify-between rounded-xl px-3 py-2 text-sm"
+              className="h-auto w-full justify-between rounded-xl px-3 py-2 text-sm lg:px-2 lg:py-1.5"
             >
               <span>別の言い方（{alternatives.length}）</span>
               <span>{showAlternatives ? "閉じる" : "開く"}</span>
@@ -339,30 +365,19 @@ export default function ResultPage() {
         ) : null}
       </header>
 
-      <DecisionScale decision={decisionScale} index={decisionIndex} />
+      <div className="space-y-6 lg:hidden">
+        <DecisionScale decision={decisionScale} index={decisionIndex} />
+        {actionsCard}
+      </div>
 
-      <Card className="space-y-4">
-        <h2 className={sectionTitleClass}>今すぐやる</h2>
-        <ul className="grid gap-4">
-          {displayActions.map((action) => {
-            const actionLink = getActionLink(action);
-            return (
-              <li key={action.id} className="rounded-2xl border border-border p-4">
-              <p className={bodyTextClass}>{action.text}</p>
-                {actionLink ? (
-                  <a
-                    href={actionLink.href}
-                    onClick={() => logActionClick(`link:${action.id}`)}
-                    className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
-                  >
-                    {actionLink.label}
-                  </a>
-                ) : null}
-              </li>
-            );
-          })}
-        </ul>
-      </Card>
+      <div className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-6">
+        <div className="space-y-6">
+          <DecisionScale decision={decisionScale} index={decisionIndex} className="max-w-3xl" />
+        </div>
+        <aside className="lg:sticky lg:top-6 lg:self-start">
+          {actionsCard}
+        </aside>
+      </div>
 
       <Card className="space-y-4">
         <h2 className={sectionTitleClass}>理由</h2>
@@ -504,6 +519,7 @@ export default function ResultPage() {
       </div>
 
       {toast ? <Toast message={toast} /> : null}
+      </div>
     </div>
   );
 }
