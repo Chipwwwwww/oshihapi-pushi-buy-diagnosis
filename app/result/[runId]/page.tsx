@@ -44,6 +44,13 @@ function getDefaultSearchWord(run: DecisionRun): string {
   const itemName = run.meta.itemName?.trim();
   if (itemName) return itemName;
 
+  if (run.useCase === "game_billing") {
+    const billingType = typeof run.gameBillingAnswers?.gb_q2_type === "string"
+      ? run.gameBillingAnswers.gb_q2_type
+      : "";
+    return [itemName, billingType].filter(Boolean).join(" ").trim();
+  }
+
   const item = (run.answers.item ?? {}) as Record<string, string | undefined>;
   const candidates = [
     item.name,
@@ -178,6 +185,9 @@ export default function ResultPage() {
 
   const longPrompt = useMemo(() => {
     if (!run) return "";
+    if (run.useCase === "game_billing") {
+      return "ゲーム課金（中立）v1では、結果カードの情報チェックを使って評価・天井・内容を確認してください。";
+    }
     return buildLongPrompt({ run, questionSet: merch_v2_ja });
   }, [run]);
 
@@ -396,7 +406,14 @@ export default function ResultPage() {
         <MarketCheckCard
           runId={run.runId}
           defaultSearchWord={defaultSearchWord}
-          showBecausePricecheck={showBecausePricecheck || hasPlatformMarketAction}
+          showBecausePricecheck={showBecausePricecheck || hasPlatformMarketAction || run.useCase === "game_billing"}
+          title={run.useCase === "game_billing" ? "情報チェック（評価・天井など）" : undefined}
+          description={run.useCase === "game_billing" ? "※判定は変わりません。外部で情報を確認してから決めましょう。" : undefined}
+          placeholder={
+            run.useCase === "game_billing"
+              ? "ゲーム名 + 施策名（例：◯◯ 限定ガチャ 評価 / ◯◯ 天井）"
+              : undefined
+          }
         />
       </div>
 

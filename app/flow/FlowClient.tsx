@@ -13,6 +13,7 @@ import type {
 } from "@/src/oshihapi/model";
 import { merch_v2_ja } from "@/src/oshihapi/merch_v2_ja";
 import { evaluate } from "@/src/oshihapi/engine";
+import { evaluateGameBillingV1, getGameBillingQuestions } from "@/src/oshihapi/gameBillingNeutralV1";
 import { saveRun } from "@/src/oshihapi/runStorage";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -34,13 +35,14 @@ const DEADLINE_VALUES = [
   "in1week",
   "unknown",
 ] as const;
-const ITEM_KIND_VALUES = [
+const ITEM_KIND_VALUES: ItemKind[] = [
   "goods",
   "blind_draw",
   "used",
   "preorder",
   "ticket",
-] as const;
+  "game_billing",
+];
 
 type DeadlineValue = NonNullable<InputMeta["deadline"]>;
 
@@ -86,7 +88,14 @@ export default function FlowPage() {
   const deadline = parseDeadline(searchParams.get("deadline"));
   const itemKind = parseItemKind(searchParams.get("itemKind"));
 
+  const useCase = itemKind === "game_billing" ? "game_billing" : "merch";
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
+
   const questions = useMemo(() => {
+    if (useCase === "game_billing") {
+      return getGameBillingQuestions(mode, answers);
+    }
     return merch_v2_ja.questions.filter((q) => {
       const isStandard = q.standard ?? q.required ?? false;
       const isShortOnly = q.shortOnly ?? false;
@@ -94,10 +103,8 @@ export default function FlowPage() {
       if (mode === "medium") return !isShortOnly && (q.urgentCore || isStandard);
       return !isShortOnly && (q.urgentCore || isStandard || q.longOnly);
     });
-  }, [mode]);
+  }, [answers, mode, useCase]);
 
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
   const [submitting, setSubmitting] = useState(false);
   const startTimeRef = useRef<number>(0);
   const questionStartRef = useRef<number>(0);
@@ -182,11 +189,60 @@ export default function FlowPage() {
 
     recordQuestionTime(currentIndex);
     const runId = crypto.randomUUID();
-    const output = evaluate({
-      questionSet: { ...merch_v2_ja, questions },
-      meta: { itemName, priceYen, deadline, itemKind },
-      answers: normalizedAnswers,
-    });
+    const output =
+      useCase === "game_billing"
+        ? (() => {
+            const gameOutput = evaluateGameBillingV1(normalizedAnswers);
+            const decisionLabel: "買う" | "保留" | "やめる" =
+              gameOutput.decision === "BUY"
+                ? "買う"
+                : gameOutput.decision === "SKIP"
+                  ? "やめる"
+                  : "保留";
+
+            return {
+              decision: gameOutput.decision,
+              confidence: 70,
+              score: Math.max(-1, Math.min(1, gameOutput.score / 12)),
+              scoreSummary: {
+                desire: 50,
+                affordability: 50,
+                urgency: 50,
+                rarity: 50,
+                restockChance: 50,
+                regretRisk: 50,
+                impulse: 50,
+                opportunityCost: 50,
+              },
+              reasons: gameOutput.reasons.map((text, index) => ({ id: `gb_reason_${index + 1}`, text })),
+              actions: gameOutput.nextActions.map((text, index) => ({ id: `gb_action_${index + 1}`, text })),
+              merchMethod: {
+                method: "PASS" as const,
+                note: "ゲーム課金（中立）v1",
+              },
+              shareText: [
+                `判定: ${decisionLabels[gameOutput.decision]}`,
+                ...gameOutput.reasons,
+              ].join("\n"),
+              presentation: {
+                decisionLabel,
+                headline:
+                  gameOutput.decision === "BUY"
+                    ? "条件がそろっているので進められそう"
+                    : gameOutput.decision === "SKIP"
+                      ? "今回は見送っても大丈夫"
+                      : "いったん保留で様子を見るのが安心",
+                badge: `判定：${decisionLabels[gameOutput.decision]}`,
+                note: "※判定は変わりません",
+                tags: ["GAME_BILLING"],
+              },
+            };
+          })()
+        : evaluate({
+            questionSet: { ...merch_v2_ja, questions },
+            meta: { itemName, priceYen, deadline, itemKind },
+            answers: normalizedAnswers,
+          });
 
     const behavior: BehaviorLog = {
       time_total_ms: Date.now() - startTimeRef.current,
@@ -201,9 +257,11 @@ export default function FlowPage() {
       createdAt: Date.now(),
       locale: "ja",
       category: "merch",
+      useCase,
       mode,
       meta: { itemName, priceYen, deadline, itemKind },
       answers: normalizedAnswers,
+      gameBillingAnswers: useCase === "game_billing" ? normalizedAnswers : undefined,
       output,
       behavior,
     };

@@ -88,6 +88,11 @@ export default function HistoryPage() {
                     <p className={helperTextClass}>
                       {run.meta.itemName ?? "（商品名なし）"}
                     </p>
+                    {run.useCase === "game_billing" ? (
+                      <p className="inline-flex rounded-full border border-border bg-muted px-3 py-1 text-xs font-semibold text-foreground">
+                        種別: ゲーム課金
+                      </p>
+                    ) : null}
                   </div>
                 </Card>
               </Link>

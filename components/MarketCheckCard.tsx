@@ -18,6 +18,9 @@ type MarketCheckCardProps = {
   runId: string;
   defaultSearchWord: string;
   showBecausePricecheck?: boolean;
+  title?: string;
+  description?: string;
+  placeholder?: string;
 };
 
 const marketLevelOptions: { value: MarketLevel; label: string }[] = [
@@ -43,6 +46,9 @@ export default function MarketCheckCard({
   runId,
   defaultSearchWord,
   showBecausePricecheck = false,
+  title = "相場チェック（外で確認）",
+  description = "※判定は変わりません",
+  placeholder = "作品名 + キャラ名 + 種別（例：ブルアカ ミカ 1/7 フィギュア）",
 }: MarketCheckCardProps) {
   const existingMemo = useMemo(() => getMarketMemo(runId), [runId]);
   const [searchWord, setSearchWord] = useState(existingMemo?.searchWord ?? defaultSearchWord);
@@ -116,8 +122,8 @@ export default function MarketCheckCard({
   return (
     <Card className="space-y-4">
       <div className="space-y-1">
-        <h2 className={sectionTitleClass}>相場チェック（外で確認）</h2>
-        <p className={helperTextClass}>※判定は変わりません</p>
+        <h2 className={sectionTitleClass}>{title}</h2>
+        <p className={helperTextClass}>{description}</p>
       </div>
 
       <div className="space-y-2">
@@ -128,7 +134,7 @@ export default function MarketCheckCard({
           id="market-search-word"
           ref={inputRef}
           type="text"
-          placeholder="作品名 + キャラ名 + 種別（例：ブルアカ ミカ 1/7 フィギュア）"
+          placeholder={placeholder}
           className={inputBaseClass}
           value={searchWord}
           onChange={(event) => {

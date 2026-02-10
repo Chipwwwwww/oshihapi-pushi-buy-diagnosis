@@ -1,8 +1,9 @@
 export type Locale = 'ja';
 export type Mode = 'short' | 'medium' | 'long';
 export type Category = 'merch';
+export type UseCase = 'merch' | 'game_billing';
 
-export type ItemKind = 'goods' | 'blind_draw' | 'used' | 'preorder' | 'ticket';
+export type ItemKind = 'goods' | 'blind_draw' | 'used' | 'preorder' | 'ticket' | 'game_billing';
 
 export type QuestionType = 'single' | 'multi' | 'scale' | 'number' | 'text';
 
@@ -82,9 +83,11 @@ export type DecisionRun = {
   createdAt: number;
   locale: Locale;
   category: Category;
+  useCase?: UseCase;
   mode: Mode;
   meta: InputMeta;
   answers: Record<string, AnswerValue>;
+  gameBillingAnswers?: Record<string, AnswerValue>;
   output: DecisionOutput;
   feedback_immediate?: FeedbackImmediate;
   behavior?: BehaviorLog;
