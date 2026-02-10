@@ -106,6 +106,17 @@ export type DecisionOutput = {
     note: string;
   };
   shareText: string;
+  presentation?: DecisionPresentation;
+};
+
+
+export type DecisionPresentation = {
+  decisionLabel: '買う' | '保留' | 'やめる';
+  headline: string;
+  badge: string;
+  note?: string;
+  alternatives?: string[];
+  tags?: string[];
 };
 
 export type FeedbackImmediate = "bought" | "waited" | "not_bought" | "unknown";

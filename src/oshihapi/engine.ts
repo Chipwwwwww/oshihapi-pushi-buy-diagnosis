@@ -12,6 +12,7 @@ import type {
 import { engineConfig as defaultConfig, normalize01ToSigned, clamp } from './engineConfig';
 import { pickReasons, pickActions, buildShareText } from './reasonRules';
 import { decideMerchMethod } from './merchMethod';
+import { buildPresentation } from './decisionPresentation';
 
 type EvaluateInput = {
   config?: EngineConfig;
@@ -164,6 +165,11 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
 
   const decisionJa = decision === 'BUY' ? '買う' : decision === 'SKIP' ? 'やめる' : '保留';
   const shareText = buildShareText(decisionJa, reasons);
+  const presentation = buildPresentation({
+    decision,
+    actions,
+    reasons,
+  });
 
   return {
     decision,
@@ -178,5 +184,6 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
       note: method.note,
     },
     shareText,
+    presentation,
   };
 }
