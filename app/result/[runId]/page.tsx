@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import DecisionScale from "@/components/DecisionScale";
 import Badge from "@/components/ui/Badge";
@@ -18,6 +18,7 @@ import {
 import { merch_v2_ja } from "@/src/oshihapi/merch_v2_ja";
 import { buildLongPrompt } from "@/src/oshihapi/promptBuilder";
 import type { DecisionRun, FeedbackImmediate } from "@/src/oshihapi/model";
+import { buildPresentation } from "@/src/oshihapi/decisionPresentation";
 import { clamp, engineConfig, normalize01ToSigned } from "@/src/oshihapi/engineConfig";
 import { findRun, updateRun } from "@/src/oshihapi/runStorage";
 import { sendTelemetry, TELEMETRY_OPT_IN_KEY } from "@/src/oshihapi/telemetryClient";
@@ -55,6 +56,8 @@ export default function ResultPage() {
   const [telemetrySubmitted, setTelemetrySubmitted] = useState(false);
   const [skipPrice, setSkipPrice] = useState(true);
   const [skipItemName, setSkipItemName] = useState(true);
+  const [showAlternatives, setShowAlternatives] = useState(false);
+  const [selectedHeadline, setSelectedHeadline] = useState<string | null>(null);
 
   const runId = params?.runId;
   const run = useMemo<DecisionRun | undefined>(() => {
@@ -63,6 +66,28 @@ export default function ResultPage() {
   }, [runId]);
 
   const feedback = localFeedback ?? run?.feedback_immediate;
+
+  const presentation = useMemo(() => {
+    if (!run) return undefined;
+    return (
+      run.output.presentation ??
+      buildPresentation({
+        decision: run.output.decision,
+        runId: run.runId,
+        createdAt: run.createdAt,
+        actions: run.output.actions,
+        reasons: run.output.reasons,
+      })
+    );
+  }, [run]);
+
+  useEffect(() => {
+    setShowAlternatives(false);
+    setSelectedHeadline(null);
+  }, [runId]);
+
+  const headline = selectedHeadline ?? presentation?.headline ?? decisionLabels[run?.output.decision ?? "THINK"];
+  const alternatives = presentation?.alternatives ?? [];
 
   const decisionScale = useMemo(() => {
     if (!run) return "wait";
@@ -198,10 +223,41 @@ export default function ResultPage() {
       <header className="space-y-4">
         <p className="text-sm font-semibold text-accent">診断結果</p>
         <div className="space-y-2">
-          <h1 className={pageTitleClass}>{decisionLabels[run.output.decision]}</h1>
+          <h1 className={pageTitleClass}>{headline}</h1>
           <p className={bodyTextClass}>{decisionSubcopy[run.output.decision]}</p>
         </div>
-        <Badge variant="primary">信頼度 {run.output.confidence}%</Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="primary">信頼度 {run.output.confidence}%</Badge>
+          <Badge variant="outline">{presentation?.badge ?? `判定：${decisionLabels[run.output.decision]}`}</Badge>
+        </div>
+        {alternatives.length > 0 ? (
+          <div className="space-y-2 rounded-2xl border border-border bg-card/90 p-3">
+            <Button
+              variant="ghost"
+              onClick={() => setShowAlternatives((prev) => !prev)}
+              className="h-auto w-full justify-between rounded-xl px-3 py-2 text-sm"
+            >
+              <span>別の言い方（{alternatives.length}）</span>
+              <span>{showAlternatives ? "閉じる" : "開く"}</span>
+            </Button>
+            {showAlternatives ? (
+              <ul className="grid gap-2">
+                {alternatives.map((alt) => (
+                  <li key={alt}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedHeadline(alt)}
+                      className="w-full rounded-xl border border-border bg-background px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
+                    >
+                      {alt}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            <p className={helperTextClass}>{presentation?.note ?? "※判定は変わりません"}</p>
+          </div>
+        ) : null}
       </header>
 
       <DecisionScale decision={decisionScale} index={decisionIndex} />
