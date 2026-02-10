@@ -296,8 +296,10 @@ export default function FlowPage() {
                 <RadioCard
                   key={option.id}
                   title={option.label}
-                  isSelected={answers[currentQuestion.id] === option.id}
-                  onClick={() => updateAnswer(currentQuestion.id, option.id)}
+                  name={`question-${currentQuestion.id}`}
+                  value={option.id}
+                  checked={answers[currentQuestion.id] === option.id}
+                  onChange={() => updateAnswer(currentQuestion.id, option.id)}
                 />
               ))}
             </div>
@@ -319,7 +321,7 @@ export default function FlowPage() {
         </p>
       </Card>
 
-      <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 py-4 backdrop-blur">
+      <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] backdrop-blur">
         <div className={`${containerClass} flex items-center gap-4`}>
           <Button
             variant="outline"

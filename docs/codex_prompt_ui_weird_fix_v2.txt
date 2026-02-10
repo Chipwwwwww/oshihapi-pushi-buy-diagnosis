@@ -1,0 +1,99 @@
+# Codex PR：UI が「変・読みにくい」最終修正（ホーム/モード選択/おすすめカード）— MVP優先
+
+ユーザー報告（スクショあり）
+- ホーム画面の「モードを選ぶ」で、右端のラジオが “点” だけになり、未選択でも点が出る（見た目が壊れてる）。
+- 「迷ったらおすすめ」カード内のチップ/タグの配置が窮屈・一部読みにくい（特にモバイル）。
+- 直近の globals.css / osh-* helpers の導入で全体が不安定になった可能性。
+
+ゴール
+- ラジオUIを “未選択=空の丸 / 選択=塗りつぶし” に戻す（カード全体クリックは維持）。
+- おすすめカード内のチップ（締切/予算など）を読みやすく、折り返しOKにする。
+- モバイル（<=420px）で破綻しない（overflow-x なし）。
+
+重要ルール
+- 可能な限り Tailwind utility / peer を使い、globals.css に form control の見た目を直接当てない。
+- globals.css の element selector（input/button 等）で appearance:none を当てない。もし存在したら除去。
+- 既存の osh-* prefix は維持（衝突防止のため）。ただし helper の中身が強すぎるなら弱める。
+
+---
+
+## 作業手順（必ずこの順）
+
+### 1) 「点だけラジオ」原因を特定して修正
+対象：
+- `app/page.tsx`（ホームのモード選択UI）
+- もし共通コンポーネントなら `components/*`（ModeCard / RadioCard など）
+- `app/globals.css`（input/radio/appearance を触っていないか）
+
+A. globals.css を確認
+- `input`, `button`, `select`, `textarea` に対して `appearance: none;` / `-webkit-appearance: none;` / `outline: none;` を当てていたら削除。
+  ラジオが “点だけ” になる典型原因（MDN/StackOverflowでも報告あり）。
+
+B. モード選択を「peer方式のラジオカード」に統一（推奨）
+- input は `sr-only peer` にし、見た目はカード側で `peer-checked` を使う。
+- 右端のインジケータは div で描画：
+  - 未選択：円の枠線のみ
+  - 選択：内側に塗りつぶし点
+
+例（実装指針、コピペして適用してOK）：
+- `<label className="... osh-card ... cursor-pointer">`
+- `<input type="radio" name="mode" value="short" className="sr-only peer" ... />`
+- 右端 indicator:
+  - outer: `h-4 w-4 rounded-full border border-slate-400 flex items-center justify-center`
+  - inner: `h-2 w-2 rounded-full bg-slate-900 opacity-0 peer-checked:opacity-100`
+
+カード本体：
+- base: `flex items-start justify-between gap-3`
+- checked: `peer-checked:ring-2 peer-checked:ring-slate-900 peer-checked:bg-slate-50`
+- hover: `hover:bg-slate-50`
+- focus: `focus-within:ring-2 focus-within:ring-slate-400`
+
+※ 既存の osh-card を使って良いが、カード内の配置は Tailwind utilities で整える。
+
+### 2) 「迷ったらおすすめ」カードのチップを読みやすく（折り返し & 対比）
+対象：
+- `app/page.tsx`（recommendation card 部分）
+- `app/globals.css` の `.osh-chip`（または類似）
+
+要件：
+- チップ行は `flex-wrap: wrap` + `gap` を入れる（はみ出し防止）
+- 暗い面（dark panel）上では chip を反転（text明るく、bg少し明るく）
+- 文字が薄すぎる/小さすぎるのを避ける（12px未満にしない）
+
+実装：
+- chip container: `className="flex flex-wrap gap-2"`
+- chip: `className="osh-chip"`（osh-chip 自体に padding/rounded/contrast を定義）
+- dark panel 内は `osh-chip` が見えること（最低コントラスト）
+
+### 3) モバイル崩れ（overflow-x）を潰す
+- 390x844（iPhone 12）で横スクロールが出ないこと。
+- 特に DecisionScale / recommended card 内の横幅固定があれば撤去。
+- `.osh-container` は `padding-inline` を確保し、max-widthは適正に（例：960px程度）。
+
+---
+
+## 受け入れ基準（Acceptance）
+- ホーム「モードを選ぶ」：
+  - 未選択：空の丸（枠線）
+  - 選択：中に塗りつぶし点
+  - クリック領域：カード全体で切替可能
+  - キーボード操作：Tabでフォーカス、Spaceで選択できる
+- 「迷ったらおすすめ」：
+  - チップが読める（薄すぎない/背景と同化しない）
+  - チップは折り返しOK、はみ出さない
+- モバイル：
+  - iPhone12幅で横スクロール無し
+  - 文字サイズ/行間が極端に崩れない
+- globals.css：
+  - @tailwind directives は保持
+  - input等への破壊的な全体指定が無い
+
+---
+
+## テスト（ローカルでユーザーが実施）
+Windows:
+- `npm run dev -- --webpack`
+- Chrome DevTools iPhone12（390x844）で確認：ホーム/flow/result
+
+Codex環境で npm が 403 等で動かない場合：
+- PR Notes に「環境都合で実行不可」を記録し、ローカル検証手順を必ず書く
