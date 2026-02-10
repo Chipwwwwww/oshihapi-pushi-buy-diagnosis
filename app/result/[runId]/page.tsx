@@ -293,8 +293,10 @@ export default function ResultPage() {
   }
 
   return (
-    <div className={`${containerClass} flex min-h-screen flex-col gap-6 py-10`}>
-      <header className="space-y-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
+    <div
+      className={`${containerClass} mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-6 px-4 py-10 md:max-w-3xl md:px-6 lg:max-w-4xl`}
+    >
+      <header className="w-full space-y-4 rounded-2xl border border-border bg-card p-4 shadow-sm lg:max-w-3xl">
         <p className="text-sm font-semibold tracking-wide text-accent">診断サマリー</p>
         <div className="space-y-2">
           <h1 className="text-4xl font-black leading-tight tracking-tight text-foreground sm:text-5xl">{headline}</h1>
@@ -339,7 +341,11 @@ export default function ResultPage() {
         ) : null}
       </header>
 
-      <DecisionScale decision={decisionScale} index={decisionIndex} />
+      <DecisionScale
+        decision={decisionScale}
+        index={decisionIndex}
+        className="w-full lg:max-w-3xl"
+      />
 
       <Card className="space-y-4">
         <h2 className={sectionTitleClass}>今すぐやる</h2>
