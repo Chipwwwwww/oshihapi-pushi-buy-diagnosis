@@ -1,8 +1,10 @@
 export type Locale = 'ja';
 export type Mode = 'short' | 'medium' | 'long';
+export type Decisiveness = 'careful' | 'standard' | 'quick';
 export type Category = 'merch';
+export type UseCase = 'merch' | 'game_billing';
 
-export type ItemKind = 'goods' | 'blind_draw' | 'used' | 'preorder' | 'ticket';
+export type ItemKind = 'goods' | 'blind_draw' | 'used' | 'preorder' | 'ticket' | 'game_billing';
 
 export type QuestionType = 'single' | 'multi' | 'scale' | 'number' | 'text';
 
@@ -36,8 +38,10 @@ export type Question = {
   urgentCore?: boolean;
   standard?: boolean;
   longOnly?: boolean;
+  shortOnly?: boolean;
 
   options?: Option[];
+  maxSelect?: number;
 
   min?: number;
   max?: number;
@@ -73,16 +77,19 @@ export type InputMeta = {
   itemKind?: ItemKind;
 };
 
-export type AnswerValue = string | number | string[];
+export type AnswerValue = string | number | boolean | null | string[];
 
 export type DecisionRun = {
   runId: string;
   createdAt: number;
   locale: Locale;
   category: Category;
+  useCase?: UseCase;
   mode: Mode;
+  decisiveness?: Decisiveness;
   meta: InputMeta;
   answers: Record<string, AnswerValue>;
+  gameBillingAnswers?: Record<string, AnswerValue>;
   output: DecisionOutput;
   feedback_immediate?: FeedbackImmediate;
   behavior?: BehaviorLog;
@@ -104,6 +111,17 @@ export type DecisionOutput = {
     note: string;
   };
   shareText: string;
+  presentation?: DecisionPresentation;
+};
+
+
+export type DecisionPresentation = {
+  decisionLabel: '買う' | '保留' | 'やめる';
+  headline: string;
+  badge: string;
+  note?: string;
+  alternatives?: string[];
+  tags?: string[];
 };
 
 export type FeedbackImmediate = "bought" | "waited" | "not_bought" | "unknown";

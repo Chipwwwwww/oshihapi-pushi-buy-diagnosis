@@ -6,6 +6,7 @@ import type {
   AnswerValue,
   BehaviorLog,
   DecisionRun,
+  Decisiveness,
   InputMeta,
   ItemKind,
   Mode,
@@ -13,7 +14,9 @@ import type {
 } from "@/src/oshihapi/model";
 import { merch_v2_ja } from "@/src/oshihapi/merch_v2_ja";
 import { evaluate } from "@/src/oshihapi/engine";
+import { evaluateGameBillingV1, getGameBillingQuestions } from "@/src/oshihapi/gameBillingNeutralV1";
 import { saveRun } from "@/src/oshihapi/runStorage";
+import { parseDecisiveness } from "@/src/oshihapi/decisiveness";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Progress from "@/components/ui/Progress";
@@ -34,13 +37,14 @@ const DEADLINE_VALUES = [
   "in1week",
   "unknown",
 ] as const;
-const ITEM_KIND_VALUES = [
+const ITEM_KIND_VALUES: ItemKind[] = [
   "goods",
   "blind_draw",
   "used",
   "preorder",
   "ticket",
-] as const;
+  "game_billing",
+];
 
 type DeadlineValue = NonNullable<InputMeta["deadline"]>;
 
@@ -85,18 +89,25 @@ export default function FlowPage() {
   const priceYen = parsePriceYen(searchParams.get("priceYen"));
   const deadline = parseDeadline(searchParams.get("deadline"));
   const itemKind = parseItemKind(searchParams.get("itemKind"));
+  const decisiveness: Decisiveness = parseDecisiveness(searchParams.get("decisiveness"));
 
-  const questions = useMemo(() => {
-    return merch_v2_ja.questions.filter((q) => {
-      const isStandard = q.standard ?? q.required ?? false;
-      if (mode === "short") return q.urgentCore;
-      if (mode === "medium") return q.urgentCore || isStandard;
-      return q.urgentCore || isStandard || q.longOnly;
-    });
-  }, [mode]);
-
+  const useCase = itemKind === "game_billing" ? "game_billing" : "merch";
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
+
+  const questions = useMemo(() => {
+    if (useCase === "game_billing") {
+      return getGameBillingQuestions(mode, answers);
+    }
+    return merch_v2_ja.questions.filter((q) => {
+      const isStandard = q.standard ?? q.required ?? false;
+      const isShortOnly = q.shortOnly ?? false;
+      if (mode === "short") return q.urgentCore || isShortOnly;
+      if (mode === "medium") return !isShortOnly && (q.urgentCore || isStandard);
+      return !isShortOnly && (q.urgentCore || isStandard || q.longOnly);
+    });
+  }, [answers, mode, useCase]);
+
   const [submitting, setSubmitting] = useState(false);
   const startTimeRef = useRef<number>(0);
   const questionStartRef = useRef<number>(0);
@@ -142,6 +153,9 @@ export default function FlowPage() {
     if (question.type === "text") {
       return typeof value === "string" && value.trim().length > 0;
     }
+    if (question.type === "multi") {
+      return Array.isArray(value) && value.length > 0;
+    }
     return value != null;
   };
 
@@ -178,11 +192,62 @@ export default function FlowPage() {
 
     recordQuestionTime(currentIndex);
     const runId = crypto.randomUUID();
-    const output = evaluate({
-      questionSet: { ...merch_v2_ja, questions },
-      meta: { itemName, priceYen, deadline, itemKind },
-      answers: normalizedAnswers,
-    });
+    const output =
+      useCase === "game_billing"
+        ? (() => {
+            const gameOutput = evaluateGameBillingV1(normalizedAnswers);
+            const decisionLabel: "買う" | "保留" | "やめる" =
+              gameOutput.decision === "BUY"
+                ? "買う"
+                : gameOutput.decision === "SKIP"
+                  ? "やめる"
+                  : "保留";
+
+            return {
+              decision: gameOutput.decision,
+              confidence: 70,
+              score: Math.max(-1, Math.min(1, gameOutput.score / 12)),
+              scoreSummary: {
+                desire: 50,
+                affordability: 50,
+                urgency: 50,
+                rarity: 50,
+                restockChance: 50,
+                regretRisk: 50,
+                impulse: 50,
+                opportunityCost: 50,
+              },
+              reasons: gameOutput.reasons.map((text, index) => ({ id: `gb_reason_${index + 1}`, text })),
+              actions: gameOutput.nextActions.map((text, index) => ({ id: `gb_action_${index + 1}`, text })),
+              merchMethod: {
+                method: "PASS" as const,
+                note: "ゲーム課金（中立）v1",
+              },
+              shareText: [
+                `判定: ${decisionLabels[gameOutput.decision]}`,
+                ...gameOutput.reasons,
+              ].join("\n"),
+              presentation: {
+                decisionLabel,
+                headline:
+                  gameOutput.decision === "BUY"
+                    ? "条件がそろっているので進められそう"
+                    : gameOutput.decision === "SKIP"
+                      ? "今回は見送っても大丈夫"
+                      : "いったん保留で様子を見るのが安心",
+                badge: `判定：${decisionLabels[gameOutput.decision]}`,
+                note: "※判定は変わりません",
+                tags: ["GAME_BILLING"],
+              },
+            };
+          })()
+        : evaluate({
+            questionSet: { ...merch_v2_ja, questions },
+            meta: { itemName, priceYen, deadline, itemKind },
+            answers: normalizedAnswers,
+            mode,
+            decisiveness,
+          });
 
     const behavior: BehaviorLog = {
       time_total_ms: Date.now() - startTimeRef.current,
@@ -197,9 +262,12 @@ export default function FlowPage() {
       createdAt: Date.now(),
       locale: "ja",
       category: "merch",
+      useCase,
       mode,
+      decisiveness,
       meta: { itemName, priceYen, deadline, itemKind },
       answers: normalizedAnswers,
+      gameBillingAnswers: useCase === "game_billing" ? normalizedAnswers : undefined,
       output,
       behavior,
     };
@@ -302,6 +370,76 @@ export default function FlowPage() {
                   onChange={() => updateAnswer(currentQuestion.id, option.id)}
                 />
               ))}
+            </div>
+          ) : null}
+          {currentQuestion.type === "multi" && currentQuestion.options ? (
+            <div className="grid gap-3">
+              {(() => {
+                const raw = answers[currentQuestion.id];
+                const selectedValues: string[] = Array.isArray(raw)
+                  ? raw.filter((value): value is string => typeof value === "string")
+                  : [];
+                const maxSelect =
+                  currentQuestion.maxSelect ?? Number.POSITIVE_INFINITY;
+                const isMaxed =
+                  Number.isFinite(maxSelect) && selectedValues.length >= maxSelect;
+                const toggle = (value: string) => {
+                  const next = selectedValues.includes(value)
+                    ? selectedValues.filter((entry) => entry !== value)
+                    : [...selectedValues, value];
+
+                  if (Number.isFinite(maxSelect) && next.length > maxSelect) return;
+
+                  updateAnswer(currentQuestion.id, next);
+                };
+                return (
+                  <>
+                    {currentQuestion.options.map((option) => {
+                      const isSelected = selectedValues.includes(option.id);
+                      const disabled = isMaxed && !isSelected;
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() => toggle(option.id)}
+                          disabled={disabled}
+                          className={[
+                            "flex min-h-[44px] w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:focus-visible:ring-pink-400/50",
+                            isSelected
+                              ? "border-primary/70 bg-primary/10 text-foreground shadow-sm ring-2 ring-primary/30 dark:border-pink-400/60 dark:bg-white/10 dark:text-zinc-50 dark:ring-pink-400/60"
+                              : "border-border bg-card text-foreground hover:border-primary/40 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50 dark:hover:border-pink-400/40",
+                            disabled ? "cursor-not-allowed opacity-60" : "",
+                          ]
+                            .filter(Boolean)
+                            .join(" ")}
+                        >
+                          <span className="text-base font-semibold">
+                            {option.label}
+                          </span>
+                          <span
+                            className={[
+                              "flex h-5 w-5 items-center justify-center rounded border-2",
+                              isSelected
+                                ? "border-primary bg-primary text-white dark:border-pink-400 dark:bg-pink-400"
+                                : "border-muted-foreground text-transparent dark:border-white/30",
+                            ]
+                              .filter(Boolean)
+                              .join(" ")}
+                          >
+                            ✓
+                          </span>
+                        </button>
+                      );
+                    })}
+                    {typeof currentQuestion.maxSelect === "number" && isMaxed ? (
+                      <p className={helperTextClass}>
+                        いま{currentQuestion.maxSelect}つ選んでるよ。入れ替えるならどれか外してね。
+                      </p>
+                    ) : null}
+                  </>
+                );
+              })()}
             </div>
           ) : null}
           {currentQuestion.type === "text" ? (

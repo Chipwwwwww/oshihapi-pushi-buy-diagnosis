@@ -1,55 +1,52 @@
-import type { InputHTMLAttributes, ReactNode } from "react";
+import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-type RadioCardProps = Omit<
-  InputHTMLAttributes<HTMLInputElement>,
-  "type" | "children" | "className"
-> & {
+type RadioCardProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   title: string;
   description?: string;
+  isSelected?: boolean;
   footer?: ReactNode;
-  className?: string;
 };
 
 export default function RadioCard({
   title,
   description,
+  isSelected = false,
   footer,
   className = "",
   ...props
 }: RadioCardProps) {
   return (
-    <label className={["group block cursor-pointer", className].join(" ")}>
-      <input type="radio" className="peer sr-only" {...props} />
-      <div
-        className={[
-          "osh-card flex min-h-11 w-full items-start justify-between gap-3 transition",
-          "group-hover:bg-slate-50",
-          "peer-checked:bg-slate-50 peer-checked:ring-2 peer-checked:ring-slate-900",
-          "peer-focus-visible:ring-2 peer-focus-visible:ring-slate-400",
-        ]
-          .filter(Boolean)
-          .join(" ")}
-      >
-        <div className="flex flex-1 flex-col gap-1">
-          <p className="text-base font-semibold text-foreground">{title}</p>
-          {description ? (
-            <p className="text-sm leading-6 text-muted-foreground">
-              {description}
-            </p>
-          ) : null}
-          {footer}
-        </div>
+    <button
+      type="button"
+      className={[
+        "flex w-full min-h-11 flex-col gap-2 rounded-2xl border px-4 py-4 text-left transition",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:focus-visible:ring-pink-400/40",
+        isSelected
+          ? "border-primary/70 bg-primary/5 text-foreground shadow-sm dark:border-pink-400/40 dark:bg-white/8 dark:text-zinc-50 dark:ring-1 dark:ring-pink-400/50"
+          : "border-border bg-card text-foreground hover:border-primary/40 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50 dark:hover:border-pink-400/40",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      {...props}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-base font-semibold">{title}</p>
         <span
-          aria-hidden="true"
           className={[
-            "relative mt-1 flex h-4 w-4 items-center justify-center rounded-full border border-slate-400",
-            "after:block after:h-2 after:w-2 after:rounded-full after:bg-slate-900 after:opacity-0 after:content-['']",
-            "peer-checked:border-slate-900 peer-checked:after:opacity-100",
+            "h-3.5 w-3.5 rounded-full border-2",
+            isSelected
+              ? "border-primary bg-primary dark:border-pink-400 dark:bg-pink-400"
+              : "border-muted-foreground dark:border-white/30",
           ]
             .filter(Boolean)
             .join(" ")}
         />
       </div>
-    </label>
+      {description ? (
+        <p className="text-sm leading-6 text-muted-foreground">{description}</p>
+      ) : null}
+      {footer}
+    </button>
   );
 }

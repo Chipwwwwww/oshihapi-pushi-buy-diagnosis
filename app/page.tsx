@@ -2,13 +2,19 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { InputMeta, ItemKind, Mode } from "@/src/oshihapi/model";
+import type { Decisiveness, InputMeta, ItemKind, Mode } from "@/src/oshihapi/model";
 import {
   MODE_LABELS,
   SCENARIO_CARDS_JA,
   SITUATION_CHIPS_JA,
   recommendMode,
 } from "@/src/oshihapi/modeGuide";
+import {
+  DECISIVENESS_STORAGE_KEY,
+  decisivenessLabels,
+  decisivenessOptions,
+  parseDecisiveness,
+} from "@/src/oshihapi/decisiveness";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -39,6 +45,7 @@ const ITEM_KIND_VALUES: ItemKind[] = [
   "used",
   "preorder",
   "ticket",
+  "game_billing",
 ];
 
 const isDeadlineValue = (value: string): value is DeadlineValue =>
@@ -66,6 +73,7 @@ const itemKindOptions: { value: ItemKind; label: string }[] = [
   { value: "used", label: "中古" },
   { value: "preorder", label: "予約" },
   { value: "ticket", label: "チケット" },
+  { value: "game_billing", label: "ゲーム課金" },
 ];
 
 const deadlineLabelMap = new Map(
@@ -82,6 +90,10 @@ export default function Home() {
   const [priceYen, setPriceYen] = useState("");
   const [deadline, setDeadline] = useState<DeadlineValue>("unknown");
   const [itemKind, setItemKind] = useState<ItemKind>("goods");
+  const [decisiveness, setDecisiveness] = useState<Decisiveness>(() => {
+    if (typeof window === "undefined") return "standard";
+    return parseDecisiveness(window.localStorage.getItem(DECISIVENESS_STORAGE_KEY));
+  });
 
   const parsedPriceYen = useMemo(() => parsePriceYen(priceYen), [priceYen]);
   const recommendation = useMemo(
@@ -103,6 +115,10 @@ export default function Home() {
         : "AIに深掘り相談したい人向け（長診断）";
 
   const modeDescription = useMemo(() => getModeDescription(mode), [mode]);
+  const itemNamePlaceholder =
+    itemKind === "game_billing"
+      ? "例：限定ガチャ10連 / 月パス / コラボスキン"
+      : "例：推しアクスタ 2025";
 
   const handleStart = () => {
     const params = new URLSearchParams();
@@ -115,6 +131,7 @@ export default function Home() {
     if (normalizedDeadline) params.set("deadline", normalizedDeadline);
     const normalizedItemKind = parseItemKindValue(itemKind);
     if (normalizedItemKind) params.set("itemKind", normalizedItemKind);
+    params.set("decisiveness", decisiveness);
     router.push(`/flow?${params.toString()}`);
   };
 
@@ -136,7 +153,9 @@ export default function Home() {
   };
 
   return (
-    <div className={`${containerClass} flex min-h-screen flex-col gap-8 py-10`}>
+    <div
+      className={`${containerClass} safe-bottom flex min-h-screen flex-col gap-8 py-10 bg-transparent dark:bg-[#0b0f1a]`}
+    >
       <header className="flex flex-col gap-2">
         <p className="text-sm font-semibold uppercase tracking-widest text-accent">
           オシハピ
@@ -147,67 +166,95 @@ export default function Home() {
         </p>
       </header>
 
-      <Card className="space-y-4">
+      <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
         <div className="flex items-center justify-between">
           <h2 className={sectionTitleClass}>迷ったらおすすめ</h2>
           <Badge variant="accent">信頼度 {recommendation.confidence}%</Badge>
         </div>
-        <div className="space-y-3 rounded-2xl border border-border bg-card p-4 shadow-sm">
+        <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-100 p-4 text-slate-900 dark:border-white/10 dark:bg-white/7 dark:text-zinc-50">
           <div className="flex flex-wrap items-center gap-2">
-            <span className={helperTextClass}>おすすめモード</span>
+            <span className="text-sm text-slate-600 dark:text-zinc-300">
+              おすすめモード
+            </span>
             <Badge variant="primary">{MODE_LABELS[recommendation.mode]}</Badge>
-            <span className={helperTextClass}>
+            <span className="text-sm text-slate-600 dark:text-zinc-300">
               {getModeDescription(recommendation.mode)}
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
             {recommendation.reasonChips.map((reason) => (
-              <span key={reason} className="osh-chip">
+              <Badge
+                key={reason}
+                variant="outline"
+                className="border-slate-200 bg-slate-100 text-slate-700 dark:border-white/10 dark:bg-white/6 dark:text-zinc-200"
+              >
                 {reason}
-              </span>
+              </Badge>
             ))}
           </div>
           {recommendation.followUp ? (
-            <p className="text-sm text-amber-700">{recommendation.followUp}</p>
+            <p className="text-sm text-amber-700 dark:text-amber-300">
+              {recommendation.followUp}
+            </p>
           ) : null}
         </div>
       </Card>
 
-      <Card className="space-y-4">
+      <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
         <h2 className={sectionTitleClass}>モードを選ぶ</h2>
         <div className="grid gap-4">
           <RadioCard
             title="急いで決める（30秒）"
             description="時間がなくてもサクッと判断。"
-            name="mode"
-            value="short"
-            checked={mode === "short"}
-            onChange={() => handleSelectMode("short")}
+            isSelected={mode === "short"}
+            onClick={() => handleSelectMode("short")}
           />
           <RadioCard
             title="じっくり決める（60秒〜2分）"
             description="比較しながら安心して決めたいとき。"
-            name="mode"
-            value="medium"
-            checked={mode === "medium"}
-            onChange={() => handleSelectMode("medium")}
+            isSelected={mode === "medium"}
+            onClick={() => handleSelectMode("medium")}
           />
           <RadioCard
             title="AIに相談する（長診断）"
             description="深掘り用プロンプトも作って相談。"
-            name="mode"
-            value="long"
-            checked={mode === "long"}
-            onChange={() => handleSelectMode("long")}
+            isSelected={mode === "long"}
+            onClick={() => handleSelectMode("long")}
           />
         </div>
-        <p className={helperTextClass}>{modeDescription}</p>
+        <p className="text-sm text-slate-600 dark:text-zinc-300">
+          {modeDescription}
+        </p>
       </Card>
 
-      <Card className="space-y-4">
+      <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
+        <h2 className={sectionTitleClass}>決め切り度</h2>
+        <div className="grid grid-cols-3 gap-2">
+          {decisivenessOptions.map((option) => (
+            <Button
+              key={option.value}
+              variant={decisiveness === option.value ? "primary" : "outline"}
+              onClick={() => {
+                setDecisiveness(option.value);
+                if (typeof window !== "undefined") {
+                  window.localStorage.setItem(DECISIVENESS_STORAGE_KEY, option.value);
+                }
+              }}
+              className="rounded-xl px-2"
+            >
+              {option.label}
+            </Button>
+          ))}
+        </div>
+        <p className={helperTextClass}>
+          いまは「{decisivenessLabels[decisiveness]}」。標準は従来と同じ判定です。
+        </p>
+      </Card>
+
+      <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
         <div className="flex flex-col gap-2">
           <h2 className={sectionTitleClass}>状況から選ぶ</h2>
-          <p className={helperTextClass}>
+          <p className="text-sm text-slate-600 dark:text-zinc-300">
             チップをタップするとモードが切り替わります。
           </p>
         </div>
@@ -217,7 +264,11 @@ export default function Home() {
               key={chip.id}
               variant={mode === chip.mode ? "primary" : "outline"}
               onClick={() => handleSelectMode(chip.mode)}
-              className="rounded-full px-4"
+              className={
+                mode === chip.mode
+                  ? "rounded-full px-4"
+                  : "rounded-full border-slate-200 bg-slate-100 px-4 text-slate-700 dark:border-white/10 dark:bg-white/6 dark:text-zinc-200"
+              }
             >
               {chip.label}
             </Button>
@@ -225,7 +276,7 @@ export default function Home() {
         </div>
       </Card>
 
-      <Card className="space-y-4">
+      <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
         <h2 className={sectionTitleClass}>例から選ぶ</h2>
         <div className="grid gap-4">
           {SCENARIO_CARDS_JA.map((scenario) => (
@@ -233,13 +284,11 @@ export default function Home() {
               key={scenario.id}
               title={scenario.title}
               description={scenario.description}
-              name="mode"
-              value={scenario.mode}
-              checked={mode === scenario.mode}
-              onChange={() => handleApplyScenario(scenario)}
+              isSelected={mode === scenario.mode}
+              onClick={() => handleApplyScenario(scenario)}
               footer={
                 scenario.preset ? (
-                  <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                  <div className="flex flex-wrap gap-2 text-xs text-slate-600 dark:text-zinc-300">
                     {scenario.preset.priceYen ? (
                       <span>¥{scenario.preset.priceYen.toLocaleString()}</span>
                     ) : null}
@@ -265,7 +314,7 @@ export default function Home() {
         </div>
       </Card>
 
-      <Card className="space-y-4">
+      <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
         <h2 className={sectionTitleClass}>入力（任意）</h2>
         <div className="grid gap-4">
           <label className="grid gap-2 text-sm font-semibold text-foreground">
@@ -274,7 +323,7 @@ export default function Home() {
               value={itemName}
               onChange={(event) => setItemName(event.target.value)}
               className={inputBaseClass}
-              placeholder="例：推しアクスタ 2025"
+              placeholder={itemNamePlaceholder}
             />
           </label>
           <label className="grid gap-2 text-sm font-semibold text-foreground">
@@ -323,7 +372,7 @@ export default function Home() {
         <Button onClick={handleStart} className="w-full text-base">
           診断をはじめる
         </Button>
-        <p className={helperTextClass}>
+        <p className="text-sm text-slate-600 dark:text-zinc-300">
           迷ったらまずは短診断でOK。途中で戻ることもできます。
         </p>
       </div>

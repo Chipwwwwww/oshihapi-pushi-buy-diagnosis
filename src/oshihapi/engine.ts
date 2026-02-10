@@ -1,15 +1,20 @@
 import type {
   AnswerValue,
+  ActionItem,
   Decision,
   DecisionOutput,
+  Decisiveness,
   EngineConfig,
   InputMeta,
+  Mode,
   QuestionSet,
+  ReasonItem,
   ScoreDimension,
 } from './model';
 import { engineConfig as defaultConfig, normalize01ToSigned, clamp } from './engineConfig';
 import { pickReasons, pickActions, buildShareText } from './reasonRules';
 import { decideMerchMethod } from './merchMethod';
+import { buildPresentation } from './decisionPresentation';
 
 type EvaluateInput = {
   config?: EngineConfig;
@@ -17,6 +22,21 @@ type EvaluateInput = {
   meta: InputMeta;
   // answers: questionId -> (optionId | number for scale)
   answers: Record<string, AnswerValue>;
+  mode?: Mode;
+  decisiveness?: Decisiveness;
+};
+
+
+const decisivenessMultiplierMap: Record<Decisiveness, number> = {
+  careful: 1.25,
+  standard: 1,
+  quick: 0.75,
+};
+
+const modeMultiplierMap: Record<Mode, number> = {
+  short: 0.85,
+  medium: 1,
+  long: 1.1,
 };
 
 function initScores(): Record<ScoreDimension, number> {
@@ -44,6 +64,18 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
 
   const scores = initScores();
   const tags: string[] = [];
+  const motivesAnswer = input.answers.q_motives_multi;
+  const motives = Array.isArray(motivesAnswer)
+    ? motivesAnswer.filter((entry): entry is string => typeof entry === 'string')
+    : [];
+  const impulseShortRaw = input.answers.q_impulse_axis_short;
+  const impulseShort =
+    typeof impulseShortRaw === 'number' && Number.isFinite(impulseShortRaw)
+      ? impulseShortRaw
+      : null;
+  const impulseFlag = motives.includes('rush') || (impulseShort !== null && impulseShort >= 4);
+  const futureUseFlag = motives.includes('use');
+  const trendOrVagueFlag = motives.includes('trend') || motives.includes('vague');
 
   // Walk questions and apply deltas
   for (const q of input.questionSet.questions) {
@@ -88,10 +120,24 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
 
   // Unknowns push toward THINK (reduce magnitude)
   scoreSigned = scoreSigned * (1 - Math.min(0.35, unknownPenalty / 100));
+  if (impulseFlag) {
+    const impulseNudge = 0.08;
+    if (scoreSigned < config.thresholds.buy + 0.2) {
+      scoreSigned -= impulseNudge;
+    }
+  }
+
+  const decisiveness = input.decisiveness ?? 'standard';
+  const mode = input.mode ?? 'medium';
+  const holdBandBase = Math.max(Math.abs(config.thresholds.buy), Math.abs(config.thresholds.skip));
+  const holdBand =
+    holdBandBase *
+    (decisivenessMultiplierMap[decisiveness] ?? decisivenessMultiplierMap.standard) *
+    (modeMultiplierMap[mode] ?? modeMultiplierMap.medium);
 
   let decision: Decision = 'THINK';
-  if (scoreSigned >= config.thresholds.buy) decision = 'BUY';
-  else if (scoreSigned <= config.thresholds.skip) decision = 'SKIP';
+  if (scoreSigned >= holdBand) decision = 'BUY';
+  else if (scoreSigned <= -holdBand) decision = 'SKIP';
 
   // Determine goal/popularity from tags
   const goal =
@@ -105,8 +151,35 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
   const method = decideMerchMethod({ tags, scores, goal, popularity });
   const blindDrawCap = method.method === 'BLIND_DRAW' ? method.cap : undefined;
 
-  const reasons = pickReasons({ meta: input.meta, tags, scores, decision, blindDrawCap });
-  const actions = pickActions({ meta: input.meta, tags, scores, decision, blindDrawCap });
+  const reasonsBase = pickReasons({ meta: input.meta, tags, scores, decision, blindDrawCap });
+  const actionsBase = pickActions({ meta: input.meta, tags, scores, decision, blindDrawCap });
+  const extraReasons: ReasonItem[] = [];
+  const extraActions: ActionItem[] = [];
+  if (impulseFlag) {
+    extraReasons.push({
+      id: 'impulse_rush',
+      severity: 'info',
+      text: '「買えた快感」が主役の時、満足がすぐ落ち着くこともあるかも。',
+    });
+    extraActions.push({
+      id: 'cooldown_10min',
+      text: '10分だけクールダウン（カート保持）→ その後もう一回だけ判断しよ。',
+    });
+  }
+  if (impulseFlag && !futureUseFlag) {
+    extraActions.push({
+      id: 'future_use_alt',
+      text: 'まず「置き場所」を1分で決めよ。無理なら写真で満足／小物だけもアリ。',
+    });
+  }
+  if (trendOrVagueFlag) {
+    extraActions.push({
+      id: 'trend_market',
+      text: 'まず相場を5分だけ見る（新品で焦らなくてOK）。',
+    });
+  }
+  const reasons = [...extraReasons, ...reasonsBase].slice(0, 6);
+  const actions = [...extraActions, ...actionsBase].slice(0, 3);
 
   // Confidence
   const confidence = clamp(
@@ -117,6 +190,11 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
 
   const decisionJa = decision === 'BUY' ? '買う' : decision === 'SKIP' ? 'やめる' : '保留';
   const shareText = buildShareText(decisionJa, reasons);
+  const presentation = buildPresentation({
+    decision,
+    actions,
+    reasons,
+  });
 
   return {
     decision,
@@ -131,5 +209,6 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
       note: method.note,
     },
     shareText,
+    presentation,
   };
 }
