@@ -1,5 +1,6 @@
 export type Locale = 'ja';
 export type Mode = 'short' | 'medium' | 'long';
+export type Decisiveness = 'careful' | 'standard' | 'quick';
 export type Category = 'merch';
 export type UseCase = 'merch' | 'game_billing';
 
@@ -85,6 +86,7 @@ export type DecisionRun = {
   category: Category;
   useCase?: UseCase;
   mode: Mode;
+  decisiveness?: Decisiveness;
   meta: InputMeta;
   answers: Record<string, AnswerValue>;
   gameBillingAnswers?: Record<string, AnswerValue>;

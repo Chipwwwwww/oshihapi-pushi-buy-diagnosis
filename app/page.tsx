@@ -2,13 +2,19 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { InputMeta, ItemKind, Mode } from "@/src/oshihapi/model";
+import type { Decisiveness, InputMeta, ItemKind, Mode } from "@/src/oshihapi/model";
 import {
   MODE_LABELS,
   SCENARIO_CARDS_JA,
   SITUATION_CHIPS_JA,
   recommendMode,
 } from "@/src/oshihapi/modeGuide";
+import {
+  DECISIVENESS_STORAGE_KEY,
+  decisivenessLabels,
+  decisivenessOptions,
+  parseDecisiveness,
+} from "@/src/oshihapi/decisiveness";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -16,6 +22,7 @@ import RadioCard from "@/components/ui/RadioCard";
 import {
   bodyTextClass,
   containerClass,
+  helperTextClass,
   inputBaseClass,
   pageTitleClass,
   sectionTitleClass,
@@ -83,6 +90,10 @@ export default function Home() {
   const [priceYen, setPriceYen] = useState("");
   const [deadline, setDeadline] = useState<DeadlineValue>("unknown");
   const [itemKind, setItemKind] = useState<ItemKind>("goods");
+  const [decisiveness, setDecisiveness] = useState<Decisiveness>(() => {
+    if (typeof window === "undefined") return "standard";
+    return parseDecisiveness(window.localStorage.getItem(DECISIVENESS_STORAGE_KEY));
+  });
 
   const parsedPriceYen = useMemo(() => parsePriceYen(priceYen), [priceYen]);
   const recommendation = useMemo(
@@ -120,6 +131,7 @@ export default function Home() {
     if (normalizedDeadline) params.set("deadline", normalizedDeadline);
     const normalizedItemKind = parseItemKindValue(itemKind);
     if (normalizedItemKind) params.set("itemKind", normalizedItemKind);
+    params.set("decisiveness", decisiveness);
     router.push(`/flow?${params.toString()}`);
   };
 
@@ -212,6 +224,30 @@ export default function Home() {
         </div>
         <p className="text-sm text-slate-600 dark:text-zinc-300">
           {modeDescription}
+        </p>
+      </Card>
+
+      <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
+        <h2 className={sectionTitleClass}>決め切り度</h2>
+        <div className="grid grid-cols-3 gap-2">
+          {decisivenessOptions.map((option) => (
+            <Button
+              key={option.value}
+              variant={decisiveness === option.value ? "primary" : "outline"}
+              onClick={() => {
+                setDecisiveness(option.value);
+                if (typeof window !== "undefined") {
+                  window.localStorage.setItem(DECISIVENESS_STORAGE_KEY, option.value);
+                }
+              }}
+              className="rounded-xl px-2"
+            >
+              {option.label}
+            </Button>
+          ))}
+        </div>
+        <p className={helperTextClass}>
+          いまは「{decisivenessLabels[decisiveness]}」。標準は従来と同じ判定です。
         </p>
       </Card>
 
