@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { DecisionRun } from "@/src/oshihapi/model";
+import { loadMarketMemos } from "@/src/oshihapi/marketMemoStorage";
 import { loadRuns } from "@/src/oshihapi/runStorage";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -38,9 +39,16 @@ const decisionLabels: Record<string, string> = {
   SKIP: "やめる",
 };
 
+const marketLevelLabels: Record<string, string> = {
+  high: "高騰",
+  normal: "ふつう",
+  calm: "落ち着いてる",
+};
+
 export default function HistoryPage() {
   const router = useRouter();
   const [runs] = useState<DecisionRun[]>(() => loadRuns());
+  const [marketMemos] = useState(() => loadMarketMemos());
 
   const hasRuns = useMemo(() => runs.length > 0, [runs]);
 
@@ -72,6 +80,11 @@ export default function HistoryPage() {
                     <p className="text-lg font-semibold text-foreground">
                       {decisionLabels[run.output.decision]}
                     </p>
+                    {marketMemos[run.runId] ? (
+                      <p className="inline-flex rounded-full border border-border bg-muted px-3 py-1 text-xs font-semibold text-foreground">
+                        相場: {marketLevelLabels[marketMemos[run.runId].level]}
+                      </p>
+                    ) : null}
                     <p className={helperTextClass}>
                       {run.meta.itemName ?? "（商品名なし）"}
                     </p>
