@@ -1,4 +1,4 @@
-$ErrorActionPreference = "Stop"
+﻿$ErrorActionPreference = "Stop"
 
 function Invoke-CheckedCommand {
   param(
@@ -9,7 +9,7 @@ function Invoke-CheckedCommand {
   Write-Host "Running: $Command $($Arguments -join ' ')"
   & $Command @Arguments
   if ($LASTEXITCODE -ne 0) {
-    throw "Command failed with exit code $LASTEXITCODE: $Command $($Arguments -join ' ')"
+    throw "Command failed with exit code ${LASTEXITCODE}: $Command $($Arguments -join ' ')"
   }
 }
 
@@ -50,3 +50,4 @@ Invoke-CheckedCommand npm run build
 
 Write-Host "Starting dev server on port 3000"
 Invoke-CheckedCommand npm run dev -- --webpack -p 3000
+
