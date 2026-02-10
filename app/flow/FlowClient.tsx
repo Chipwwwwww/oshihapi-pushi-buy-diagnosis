@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -76,9 +76,9 @@ const parseItemKind = (value: string | null): InputMeta["itemKind"] => {
 };
 
 const decisionLabels: Record<string, string> = {
-  BUY: "買う",
-  THINK: "保留",
-  SKIP: "やめる",
+  BUY: "鞎瑯?",
+  THINK: "靽?",
+  SKIP: "????,
 };
 
 export default function FlowPage() {
@@ -196,12 +196,12 @@ export default function FlowPage() {
       useCase === "game_billing"
         ? (() => {
             const gameOutput = evaluateGameBillingV1(normalizedAnswers);
-            const decisionLabel: "買う" | "保留" | "やめる" =
+            const decisionLabel: "鞎瑯?" | "靽?" | "???? =
               gameOutput.decision === "BUY"
-                ? "買う"
+                ? "鞎瑯?"
                 : gameOutput.decision === "SKIP"
-                  ? "やめる"
-                  : "保留";
+                  ? "????
+                  : "靽?";
 
             return {
               decision: gameOutput.decision,
@@ -221,22 +221,22 @@ export default function FlowPage() {
               actions: gameOutput.nextActions.map((text, index) => ({ id: `gb_action_${index + 1}`, text })),
               merchMethod: {
                 method: "PASS" as const,
-                note: "ゲーム課金（中立）v1",
+                note: "?脯?玨??銝剔?嚗1",
               },
               shareText: [
-                `判定: ${decisionLabels[gameOutput.decision]}`,
+                `?文?: ${decisionLabels[gameOutput.decision]}`,
                 ...gameOutput.reasons,
               ].join("\n"),
               presentation: {
                 decisionLabel,
                 headline:
                   gameOutput.decision === "BUY"
-                    ? "条件がそろっているので進められそう"
+                    ? "?∩辣????艾???折脯?????"
                     : gameOutput.decision === "SKIP"
-                      ? "今回は見送っても大丈夫"
-                      : "いったん保留で様子を見るのが安心",
-                badge: `判定：${decisionLabels[gameOutput.decision]}`,
-                note: "※判定は変わりません",
+                      ? "隞??航???艾?憭找?憭?
+                      : "???靽??扳?摮?閬??柴?摰?",
+                badge: `?文?嚗?{decisionLabels[gameOutput.decision]}`,
+                note: "?餃摰憭????",
                 tags: ["GAME_BILLING"],
               },
             };
@@ -290,10 +290,9 @@ export default function FlowPage() {
   if (!currentQuestion) {
     return (
       <div className={`${containerClass} flex min-h-screen flex-col items-center justify-center gap-4 py-10`}>
-        <p className={helperTextClass}>質問が見つかりませんでした。</p>
+        <p className={helperTextClass}>鞈芸????扎?????扼???/p>
         <Button onClick={() => router.push("/")} className="w-full">
-          Homeへ戻る
-        </Button>
+          Home?豢??        </Button>
       </div>
     );
   }
@@ -303,20 +302,20 @@ export default function FlowPage() {
       <header className="space-y-4">
         <div className="flex items-center justify-between">
           <Button variant="ghost" onClick={handleBack} className="px-3">
-            戻る
+            ?颯?
           </Button>
           <p className={helperTextClass}>
             {currentIndex + 1}/{questions.length}
           </p>
         </div>
         <div className="space-y-2">
-          <p className="text-sm font-semibold text-accent">質問フロー</p>
+          <p className="text-sm font-semibold text-accent">鞈芸????/p>
           <h1 className={pageTitleClass}>
             {mode === "short"
-              ? "急いで診断"
+              ? "?乓??扯那??
               : mode === "medium"
-                ? "じっくり診断"
-                : "AIに相談する長診断"}
+                ? "???閮箸"
+                : "AI?怎隢??閮箸"}
           </h1>
         </div>
         <Progress value={currentIndex + 1} max={questions.length} />
@@ -334,8 +333,8 @@ export default function FlowPage() {
           {currentQuestion.type === "scale" ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>{currentQuestion.leftLabel ?? "低い"}</span>
-                <span>{currentQuestion.rightLabel ?? "高い"}</span>
+                <span>{currentQuestion.leftLabel ?? "雿?"}</span>
+                <span>{currentQuestion.rightLabel ?? "擃?"}</span>
               </div>
               <input
                 type="range"
@@ -353,7 +352,7 @@ export default function FlowPage() {
                 className="w-full accent-primary"
               />
               <p className={helperTextClass}>
-                選択値: {answers[currentQuestion.id]}
+                ?豢??? {answers[currentQuestion.id]}
               </p>
             </div>
           ) : null}
@@ -366,8 +365,8 @@ export default function FlowPage() {
                   title={option.label}
                   name={`question-${currentQuestion.id}`}
                   value={option.id}
-                  checked={answers[currentQuestion.id] === option.id}
-                  onChange={() => updateAnswer(currentQuestion.id, option.id)}
+                  isSelected={answers[currentQuestion.id] === option.id}
+                  onClick={() => updateAnswer(currentQuestion.id, option.id)}
                 />
               ))}
             </div>
@@ -427,15 +426,13 @@ export default function FlowPage() {
                               .filter(Boolean)
                               .join(" ")}
                           >
-                            ✓
-                          </span>
+                            ??                          </span>
                         </button>
                       );
                     })}
                     {typeof currentQuestion.maxSelect === "number" && isMaxed ? (
                       <p className={helperTextClass}>
-                        いま{currentQuestion.maxSelect}つ選んでるよ。入れ替えるならどれか外してね。
-                      </p>
+                        ?{currentQuestion.maxSelect}?日????????芥??押?????准?                      </p>
                     ) : null}
                   </>
                 );
@@ -446,7 +443,7 @@ export default function FlowPage() {
             <textarea
               value={String(answers[currentQuestion.id] ?? "")}
               onChange={(event) => updateAnswer(currentQuestion.id, event.target.value)}
-              placeholder="例：予算とのバランスが不安、再販情報が知りたい"
+              placeholder="靘?鈭??具??喋??摰?鞎拇??晞??乓???"
               className={`${inputBaseClass} min-h-[140px]`}
             />
           ) : null}
@@ -455,7 +452,7 @@ export default function FlowPage() {
 
       <Card className="space-y-2">
         <p className={helperTextClass}>
-          判断の表示例：{decisionLabels.BUY} / {decisionLabels.THINK} / {decisionLabels.SKIP}
+          ?斗?株”蝷箔?嚗decisionLabels.BUY} / {decisionLabels.THINK} / {decisionLabels.SKIP}
         </p>
       </Card>
 
@@ -466,7 +463,7 @@ export default function FlowPage() {
             onClick={handleBack}
             className="flex-1 rounded-xl"
           >
-            戻る
+            ?颯?
           </Button>
           <Button
             onClick={handleNext}
@@ -474,10 +471,11 @@ export default function FlowPage() {
             isLoading={submitting}
             className="flex-1 rounded-xl text-base"
           >
-            {currentIndex === questions.length - 1 ? "結果を見る" : "次へ"}
+            {currentIndex === questions.length - 1 ? "蝯????? : "甈～"}
           </Button>
         </div>
       </div>
     </div>
   );
 }
+
