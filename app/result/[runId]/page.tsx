@@ -370,10 +370,10 @@ export default function ResultPage() {
         </div>
       </Card>
 
-      <Card className="space-y-4 border-emerald-200 bg-emerald-50">
+      <Card className="space-y-4 border-emerald-200 bg-emerald-50 dark:ring-1 dark:ring-white/10">
         <div className="space-y-2">
-          <h2 className={sectionTitleClass}>AIに相談する（プロンプト）</h2>
-          <p className="text-sm text-emerald-700">
+          <h2 className="text-lg font-semibold text-emerald-900">AIに相談する（プロンプト）</h2>
+          <p className="text-sm text-emerald-800">
             {run.mode === "long"
               ? "長診断の内容をまとめたプロンプトです。"
               : "もっと深掘りしたいときに使えます。"}
