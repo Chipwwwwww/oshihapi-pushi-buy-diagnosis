@@ -38,6 +38,7 @@ const ITEM_KIND_VALUES: ItemKind[] = [
   "used",
   "preorder",
   "ticket",
+  "game_billing",
 ];
 
 const isDeadlineValue = (value: string): value is DeadlineValue =>
@@ -65,6 +66,7 @@ const itemKindOptions: { value: ItemKind; label: string }[] = [
   { value: "used", label: "中古" },
   { value: "preorder", label: "予約" },
   { value: "ticket", label: "チケット" },
+  { value: "game_billing", label: "ゲーム課金" },
 ];
 
 const deadlineLabelMap = new Map(
@@ -102,6 +104,10 @@ export default function Home() {
         : "AIに深掘り相談したい人向け（長診断）";
 
   const modeDescription = useMemo(() => getModeDescription(mode), [mode]);
+  const itemNamePlaceholder =
+    itemKind === "game_billing"
+      ? "例：限定ガチャ10連 / 月パス / コラボスキン"
+      : "例：推しアクスタ 2025";
 
   const handleStart = () => {
     const params = new URLSearchParams();
@@ -281,7 +287,7 @@ export default function Home() {
               value={itemName}
               onChange={(event) => setItemName(event.target.value)}
               className={inputBaseClass}
-              placeholder="例：推しアクスタ 2025"
+              placeholder={itemNamePlaceholder}
             />
           </label>
           <label className="grid gap-2 text-sm font-semibold text-foreground">

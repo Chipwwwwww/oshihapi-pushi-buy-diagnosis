@@ -17,6 +17,7 @@ const itemKindLabel: Record<string, string> = {
   used: "中古",
   preorder: "予約",
   ticket: "チケット",
+  game_billing: "ゲーム課金",
 };
 
 function formatAnswerValue(questionId: string, run: DecisionRun, questionSet: QuestionSet) {
