@@ -53,6 +53,10 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+.osh-container {
+  @apply mx-auto w-full max-w-3xl px-4 md:px-6;
+}
+
 @supports (-webkit-touch-callout: none) {
   html {
     -webkit-text-size-adjust: 100%;
