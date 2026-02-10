@@ -3,8 +3,10 @@ import type {
   ActionItem,
   Decision,
   DecisionOutput,
+  Decisiveness,
   EngineConfig,
   InputMeta,
+  Mode,
   QuestionSet,
   ReasonItem,
   ScoreDimension,
@@ -20,6 +22,21 @@ type EvaluateInput = {
   meta: InputMeta;
   // answers: questionId -> (optionId | number for scale)
   answers: Record<string, AnswerValue>;
+  mode?: Mode;
+  decisiveness?: Decisiveness;
+};
+
+
+const decisivenessMultiplierMap: Record<Decisiveness, number> = {
+  careful: 1.25,
+  standard: 1,
+  quick: 0.75,
+};
+
+const modeMultiplierMap: Record<Mode, number> = {
+  short: 0.85,
+  medium: 1,
+  long: 1.1,
 };
 
 function initScores(): Record<ScoreDimension, number> {
@@ -110,9 +127,17 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     }
   }
 
+  const decisiveness = input.decisiveness ?? 'standard';
+  const mode = input.mode ?? 'medium';
+  const holdBandBase = Math.max(Math.abs(config.thresholds.buy), Math.abs(config.thresholds.skip));
+  const holdBand =
+    holdBandBase *
+    (decisivenessMultiplierMap[decisiveness] ?? decisivenessMultiplierMap.standard) *
+    (modeMultiplierMap[mode] ?? modeMultiplierMap.medium);
+
   let decision: Decision = 'THINK';
-  if (scoreSigned >= config.thresholds.buy) decision = 'BUY';
-  else if (scoreSigned <= config.thresholds.skip) decision = 'SKIP';
+  if (scoreSigned >= holdBand) decision = 'BUY';
+  else if (scoreSigned <= -holdBand) decision = 'SKIP';
 
   // Determine goal/popularity from tags
   const goal =

@@ -35,8 +35,8 @@ export default function DecisionScale({ decision, index, className }: DecisionSc
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-sm font-medium text-muted-foreground">診断結果</div>
-          <div className="mt-1 text-2xl font-semibold tracking-tight">{t.top}</div>
+          <div className="text-sm font-medium text-muted-foreground">判定の詳細</div>
+          <div className="mt-1 text-xl font-semibold tracking-tight">{t.top}</div>
           <div className="mt-1 text-sm text-muted-foreground">{t.sub}</div>
         </div>
         <div className="text-right text-xs text-muted-foreground">
@@ -55,16 +55,21 @@ export default function DecisionScale({ decision, index, className }: DecisionSc
           <div className="absolute left-1/2 top-4 h-5 w-px -translate-x-1/2 bg-border" />
           <div className="absolute right-0 top-4 h-5 w-px bg-border" />
 
+          <div
+            className="absolute bottom-1 top-4 w-px -translate-x-1/2 bg-foreground/70 transition-all duration-300"
+            style={{ left: `${pos}%` }}
+          />
+
           {/* pointer */}
           <div
             className="absolute top-0 -translate-x-1/2 transition-all duration-300"
             style={{ left: `${pos}%` }}
           >
             <div className="flex flex-col items-center">
-              <div className="rounded-full border border-border bg-card px-2 py-1 text-xs font-medium shadow-sm">
+              <div className="rounded-full border border-foreground/30 bg-card px-3 py-1 text-xs font-semibold text-foreground shadow-sm">
                 {t.top}
               </div>
-              <div className="h-0 w-0 border-l-8 border-r-8 border-t-10 border-l-transparent border-r-transparent border-t-foreground" />
+              <div className="h-0 w-0 border-l-[10px] border-r-[10px] border-t-[14px] border-l-transparent border-r-transparent border-t-foreground" />
             </div>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { DecisionRun } from "@/src/oshihapi/model";
+import { decisivenessLabels } from "@/src/oshihapi/decisiveness";
 import { loadMarketMemos } from "@/src/oshihapi/marketMemoStorage";
 import { loadRuns } from "@/src/oshihapi/runStorage";
 import Badge from "@/components/ui/Badge";
@@ -45,12 +46,27 @@ const marketLevelLabels: Record<string, string> = {
   calm: "落ち着いてる",
 };
 
+function formatPercent(count: number, total: number) {
+  if (total <= 0) return "0%";
+  return `${Math.round((count / total) * 100)}%`;
+}
+
 export default function HistoryPage() {
   const router = useRouter();
   const [runs] = useState<DecisionRun[]>(() => loadRuns());
   const [marketMemos] = useState(() => loadMarketMemos());
 
   const hasRuns = useMemo(() => runs.length > 0, [runs]);
+  const summary = useMemo(() => {
+    const counts = { BUY: 0, THINK: 0, SKIP: 0 } as const;
+    const mutable = { ...counts };
+    for (const run of runs) {
+      if (run.output.decision === "BUY" || run.output.decision === "THINK" || run.output.decision === "SKIP") {
+        mutable[run.output.decision] += 1;
+      }
+    }
+    return mutable;
+  }, [runs]);
 
   return (
     <div className={`${containerClass} flex min-h-screen flex-col gap-6 py-10`}>
@@ -59,6 +75,26 @@ export default function HistoryPage() {
         <h1 className={pageTitleClass}>診断履歴</h1>
         <p className={helperTextClass}>直近20件まで表示されます。</p>
       </header>
+
+      {hasRuns ? (
+        <Card className="space-y-3">
+          <h2 className={sectionTitleClass}>集計</h2>
+          <div className="grid grid-cols-3 gap-2 text-sm">
+            <div className="rounded-xl border border-border bg-muted/40 p-3">
+              <p className="text-muted-foreground">買う</p>
+              <p className="text-base font-semibold">{summary.BUY}件 ({formatPercent(summary.BUY, runs.length)})</p>
+            </div>
+            <div className="rounded-xl border border-border bg-muted/40 p-3">
+              <p className="text-muted-foreground">保留</p>
+              <p className="text-base font-semibold">{summary.THINK}件 ({formatPercent(summary.THINK, runs.length)})</p>
+            </div>
+            <div className="rounded-xl border border-border bg-muted/40 p-3">
+              <p className="text-muted-foreground">やめる</p>
+              <p className="text-base font-semibold">{summary.SKIP}件 ({formatPercent(summary.SKIP, runs.length)})</p>
+            </div>
+          </div>
+        </Card>
+      ) : null}
 
       {!hasRuns ? (
         <Card className="border-dashed text-center">
@@ -88,11 +124,16 @@ export default function HistoryPage() {
                     <p className={helperTextClass}>
                       {run.meta.itemName ?? "（商品名なし）"}
                     </p>
-                    {run.useCase === "game_billing" ? (
+                    <div className="flex flex-wrap gap-2">
                       <p className="inline-flex rounded-full border border-border bg-muted px-3 py-1 text-xs font-semibold text-foreground">
-                        種別: ゲーム課金
+                        決め切り度: {decisivenessLabels[run.decisiveness ?? "standard"]}
                       </p>
-                    ) : null}
+                      {run.useCase === "game_billing" ? (
+                        <p className="inline-flex rounded-full border border-border bg-muted px-3 py-1 text-xs font-semibold text-foreground">
+                          種別: ゲーム課金
+                        </p>
+                      ) : null}
+                    </div>
                   </div>
                 </Card>
               </Link>

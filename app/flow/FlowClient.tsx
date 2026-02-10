@@ -6,6 +6,7 @@ import type {
   AnswerValue,
   BehaviorLog,
   DecisionRun,
+  Decisiveness,
   InputMeta,
   ItemKind,
   Mode,
@@ -15,6 +16,7 @@ import { merch_v2_ja } from "@/src/oshihapi/merch_v2_ja";
 import { evaluate } from "@/src/oshihapi/engine";
 import { evaluateGameBillingV1, getGameBillingQuestions } from "@/src/oshihapi/gameBillingNeutralV1";
 import { saveRun } from "@/src/oshihapi/runStorage";
+import { parseDecisiveness } from "@/src/oshihapi/decisiveness";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Progress from "@/components/ui/Progress";
@@ -87,6 +89,7 @@ export default function FlowPage() {
   const priceYen = parsePriceYen(searchParams.get("priceYen"));
   const deadline = parseDeadline(searchParams.get("deadline"));
   const itemKind = parseItemKind(searchParams.get("itemKind"));
+  const decisiveness: Decisiveness = parseDecisiveness(searchParams.get("decisiveness"));
 
   const useCase = itemKind === "game_billing" ? "game_billing" : "merch";
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -242,6 +245,8 @@ export default function FlowPage() {
             questionSet: { ...merch_v2_ja, questions },
             meta: { itemName, priceYen, deadline, itemKind },
             answers: normalizedAnswers,
+            mode,
+            decisiveness,
           });
 
     const behavior: BehaviorLog = {
@@ -259,6 +264,7 @@ export default function FlowPage() {
       category: "merch",
       useCase,
       mode,
+      decisiveness,
       meta: { itemName, priceYen, deadline, itemKind },
       answers: normalizedAnswers,
       gameBillingAnswers: useCase === "game_billing" ? normalizedAnswers : undefined,

@@ -13,12 +13,12 @@ import {
   bodyTextClass,
   containerClass,
   helperTextClass,
-  pageTitleClass,
   sectionTitleClass,
 } from "@/components/ui/tokens";
 import { merch_v2_ja } from "@/src/oshihapi/merch_v2_ja";
 import { buildLongPrompt } from "@/src/oshihapi/promptBuilder";
 import type { DecisionRun, FeedbackImmediate } from "@/src/oshihapi/model";
+import { decisivenessLabels } from "@/src/oshihapi/decisiveness";
 import { buildPresentation } from "@/src/oshihapi/decisionPresentation";
 import { clamp, engineConfig, normalize01ToSigned } from "@/src/oshihapi/engineConfig";
 import {
@@ -294,16 +294,21 @@ export default function ResultPage() {
 
   return (
     <div className={`${containerClass} flex min-h-screen flex-col gap-6 py-10`}>
-      <header className="space-y-4">
+      <header className="space-y-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
         <p className="text-sm font-semibold text-accent">診断結果</p>
         <div className="space-y-2">
-          <h1 className={pageTitleClass}>{headline}</h1>
-          <p className={bodyTextClass}>{decisionSubcopy[run.output.decision]}</p>
+          <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:text-4xl">{headline}</h1>
+          <p className={`${bodyTextClass} text-foreground/90`}>{decisionSubcopy[run.output.decision]}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="primary">信頼度 {run.output.confidence}%</Badge>
-          <Badge variant="outline">{presentation?.badge ?? `判定：${decisionLabels[run.output.decision]}`}</Badge>
+          {presentation?.badge && !presentation.badge.includes("判定") ? (
+            <Badge variant="outline">{presentation.badge}</Badge>
+          ) : null}
         </div>
+        <p className={helperTextClass}>
+          決め切り度: {decisivenessLabels[run.decisiveness ?? "standard"]}（変更可）
+        </p>
         {alternatives.length > 0 ? (
           <div className="space-y-2 rounded-2xl border border-border bg-card/90 p-3">
             <Button
