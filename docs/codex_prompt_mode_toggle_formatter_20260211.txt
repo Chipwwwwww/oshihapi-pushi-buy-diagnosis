@@ -1,0 +1,38 @@
+﻿PR Goal
+- Add result presentation Mode (ver0=standard, ver1=kawaii, ver2=oshi) using src/oshihapi/modes/mode_dictionary.ts.
+- IMPORTANT: Mode MUST NOT change decision logic, question routing, verdict/waitType/reasonTags semantics, or nextActions selection.
+- Must pass: npm run build ✅
+
+Single source of truth
+- docs/mode_branch_report_latest.md (invariants + branch dictionary)
+- src/oshihapi/modes/mode_dictionary.ts (mode data)
+
+Implementation (minimal diff)
+1) Add formatter helper
+   - Create: src/oshihapi/modes/formatResultByMode.ts
+   - Input: { runId, verdict, waitType?, reasons[], reasonTags[], actions[], mode }
+   - Output: { sticker, shareTextX280, shareTextDmShort }
+   - Steps:
+     a) Determine primaryTag by scanning MODE_PRIORITY_TAGS[verdict] against reasonTags.
+     b) Resolve scenarioKey with SCENARIO_RESOLUTION.resolve(verdict, waitType, primaryTag).
+     c) Pick sticker deterministically from MODE_DICTIONARY[mode].stickers[scenarioKey] using a stable hash of runId (no Math.random).
+     d) Build share text from MODE_DICTIONARY[mode].text.templates (x_280, dm_short) by replacing:
+        {verdict} {waitType} {reasons} {actions} {sticker} {emoji} {kaomoji}
+     e) Enforce mode constraints:
+        - emoji/kaomoji limits and allowed lists
+        - forbiddenSubstrings: if triggered, fallback sticker to MODE_DICTIONARY.standard (same scenarioKey) and strip disallowed tokens.
+
+2) Wire into result page (presentation only)
+   - Update: app/result/[runId]/page.tsx
+   - Add Mode toggle (標準 / かわいい / 推し活用語)
+   - Default mode = standard; persist in localStorage key "oshihapi:mode"
+   - Show disclaimer text from MODE_DICTIONARY[mode].labels.disclaimer
+   - Copy button copies shareTextX280
+
+3) Ensure invariants
+   - Switching mode must not change verdict, waitType, reasons, reasonTags, or actions.
+   - Only the presentation layer (sticker/templates/microcopy) changes.
+
+Verification
+- npm run build
+- Manual: open a result runId, toggle modes, confirm verdict/reasons/actions unchanged.
