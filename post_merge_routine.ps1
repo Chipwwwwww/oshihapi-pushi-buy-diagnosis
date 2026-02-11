@@ -33,6 +33,8 @@ param(
   [string]$VercelEnv = 'production',
   [int]$VercelWaitTimeoutSec = 180,
   [int]$VercelPollIntervalSec = 5,
+  [int]$VercelRetries = 12,
+  [int]$VercelRetryDelaySec = 10,
 
   [int]$DevPort = 3000,
   [int[]]$KillPorts = @(3000,3001,3002),
@@ -223,37 +225,41 @@ function Ensure-GitRemoteParity([switch]$SkipAutoPush) {
 
 function Resolve-VercelProdHost([string]$ProvidedValue) {
   $hostFile = '.\ops\vercel_prod_host.txt'
-  $sampleFile = '.\ops\vercel_prod_host.sample.txt'
   $target = ''
 
-  if (-not [string]::IsNullOrWhiteSpace($ProvidedValue)) {
-    $target = $ProvidedValue.Trim()
-  }
-  if ([string]::IsNullOrWhiteSpace($target) -and -not [string]::IsNullOrWhiteSpace($env:OSH_VERCEL_PROD_HOST)) {
-    $target = $env:OSH_VERCEL_PROD_HOST.Trim()
+  if (-not [string]::IsNullOrWhiteSpace($env:OSH_VERCEL_PROD_HOST)) {
+    $target = $env:OSH_VERCEL_PROD_HOST
   }
   if ([string]::IsNullOrWhiteSpace($target) -and (Test-Path $hostFile)) {
     $line = Get-Content -Path $hostFile -TotalCount 1 -ErrorAction SilentlyContinue
     if (-not [string]::IsNullOrWhiteSpace($line)) {
-      $target = $line.Trim()
+      $target = $line
     }
   }
+  if ([string]::IsNullOrWhiteSpace($target) -and -not [string]::IsNullOrWhiteSpace($ProvidedValue)) {
+    $target = $ProvidedValue
+  }
 
-  $setupHint = "Vercel → Project → Deployments → click latest Production (Current) deployment → Domains → copy stable production domain. Paste host only into ops/vercel_prod_host.txt (example: oshihapi-pushi-buy-diagnosis.vercel.app)."
+  if (-not [string]::IsNullOrWhiteSpace($target)) {
+    $target = $target.Trim()
+    if ($target -match '^https?://') {
+      $target = $target -replace '^https?://', ''
+    }
+    $target = $target.Trim().TrimEnd('/')
+  }
+
+  $setupHint = "Set OSH_VERCEL_PROD_HOST with: setx OSH_VERCEL_PROD_HOST `"your-prod-host.vercel.app`"`nOR create ops/vercel_prod_host.txt and put the production host on the first line.`nIn Vercel UI: Deployment Details → Domains → choose Production domain (e.g. project.vercel.app)."
   if ([string]::IsNullOrWhiteSpace($target)) {
-    if ((Test-Path $sampleFile) -and (-not (Test-Path $hostFile))) {
-      throw ("Missing Vercel production host. Run: Copy-Item .\ops\vercel_prod_host.sample.txt .\ops\vercel_prod_host.txt, edit first line, then rerun .\post_merge_routine.ps1. {0}" -f $setupHint)
-    }
-    throw ("Missing Vercel production host. Set OSH_VERCEL_PROD_HOST or ops/vercel_prod_host.txt. {0}" -f $setupHint)
-  }
-
-  if ($target -match 'https?://' -or $target.Contains('/')) {
-    throw "Invalid Vercel host '$target'. Use host only (no https://, no path)."
+    throw ("Missing Vercel production host. {0}" -f $setupHint)
   }
 
   $upper = $target.ToUpperInvariant()
-  if ($target.Contains('<') -or $target.Contains('>') -or $upper.Contains('YOUR_PROD_HOST') -or $upper.Contains('PASTE_')) {
+  if ($target.Contains('<') -or $target.Contains('>') -or $upper.Contains('YOUR-PROD-HOST') -or $upper.Contains('YOUR_PROD_HOST') -or $upper.Contains('PASTE_')) {
     throw ("Vercel host looks like placeholder: '$target'. {0}" -f $setupHint)
+  }
+
+  if ($target.Contains('/')) {
+    throw "Invalid Vercel host '$target'. Use host only (no path)."
   }
 
   if ($target -notmatch '^[A-Za-z0-9.-]+$' -or $target -notmatch '\.') {
@@ -263,57 +269,64 @@ function Resolve-VercelProdHost([string]$ProvidedValue) {
   return $target
 }
 
-function Wait-VercelCommitParity([string]$TargetHost, [string]$LocalSha, [string]$ExpectedEnv, [switch]$AllowPreview, [int]$TimeoutSec = 180, [int]$PollIntervalSec = 5) {
-  $deadline = (Get-Date).AddSeconds($TimeoutSec)
+function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$ExpectedEnv, [switch]$AllowPreview, [int]$Retries = 12, [int]$RetryDelaySec = 10) {
+  [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+  $url = "https://$ProdHost/api/version"
   $lastError = ''
-  $attempt = 0
 
-  while ((Get-Date) -lt $deadline) {
-    $attempt++
-    $ts = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
-    $url = "https://$TargetHost/api/version?ts=$ts"
-
+  for ($attempt = 1; $attempt -le $Retries; $attempt++) {
     try {
       $ver = Invoke-RestMethod -Uri $url -TimeoutSec 10 -Headers @{ 'Cache-Control'='no-cache'; 'Pragma'='no-cache' }
       $verSha = ''
       if ($null -ne $ver.commitSha) { $verSha = [string]$ver.commitSha }
       $verEnv = ''
       if ($null -ne $ver.vercelEnv) { $verEnv = [string]$ver.vercelEnv }
-      $verDeploymentId = ''
-      if ($null -ne $ver.deploymentId) { $verDeploymentId = [string]$ver.deploymentId }
-
-      Write-Host ("Waiting for Vercel production to catch up… vercel={0} local={1} (env={2})" -f $verSha, $LocalSha, $verEnv) -ForegroundColor DarkGray
 
       if (-not $AllowPreview -and $verEnv -eq 'preview') {
-        throw "Host '$TargetHost' is preview (vercelEnv=preview). Likely using preview hash domain. Use stable production domain or rerun with -AllowPreviewHost."
+        throw "Host '$ProdHost' is preview (vercelEnv=preview). Use Production domain from Vercel Deployment Details → Domains, or rerun with -AllowPreviewHost."
       }
 
       if ($ExpectedEnv -ne 'any' -and -not [string]::IsNullOrWhiteSpace($verEnv) -and $verEnv -ne $ExpectedEnv) {
-        throw ("Vercel environment mismatch: expected={0} actual={1} host={2}." -f $ExpectedEnv, $verEnv, $TargetHost)
-      }
-
-      if (-not [string]::IsNullOrWhiteSpace($verSha) -and $verSha -ne 'unknown' -and $verSha -eq $LocalSha) {
-        Write-Host "" 
-        Write-Host ("VERCEL == LOCAL ✅ {0}" -f $LocalSha) -ForegroundColor Green
-        Write-Host ("DeploymentId: {0}" -f $verDeploymentId) -ForegroundColor Green
-        return
+        throw ("Vercel environment mismatch: expected={0} actual={1} host={2}." -f $ExpectedEnv, $verEnv, $ProdHost)
       }
 
       if ([string]::IsNullOrWhiteSpace($verSha) -or $verSha -eq 'unknown') {
-        Write-Host 'Hint: /api/version commitSha is empty/unknown; still waiting (system env/runtime propagation may still be in progress).' -ForegroundColor Yellow
+        throw "Parity gate failed: /api/version is not returning commitSha. Check app/api/version/route.ts and VERCEL_GIT_COMMIT_SHA environment on Vercel."
       }
-    } catch {
-      $lastError = $_.Exception.Message
-      if ($attempt -eq 1) {
-        throw ("Cannot reach https://{0}/api/version. Check domain and whether production deployment is live. Error: {1}" -f $TargetHost, $lastError)
-      }
-      Write-Host ("Retrying Vercel check after error: {0}" -f $lastError) -ForegroundColor Yellow
-    }
 
-    Start-Sleep -Seconds $PollIntervalSec
+      if ($verSha -ne $LocalSha) {
+        throw ("VERCEL MISMATCH: vercel={0} local={1} (vercelEnv={2})`nWait for production deployment to finish, or ensure prod host points to Production not Preview." -f $verSha, $LocalSha, $verEnv)
+      }
+
+      Write-Host ("VERCEL == LOCAL ✅ ({0}) (vercelEnv={1})" -f $LocalSha, $verEnv) -ForegroundColor Green
+      return
+    } catch {
+      $msg = $_.Exception.Message
+      $statusCode = $null
+      if ($_.Exception.PSObject.Properties['Response'] -and $_.Exception.Response -and $_.Exception.Response.PSObject.Properties['StatusCode']) {
+        $statusCode = [int]$_.Exception.Response.StatusCode
+      }
+
+      $lastError = $msg
+      if ($msg.StartsWith('VERCEL MISMATCH:') -or $msg.StartsWith('Parity gate failed:') -or $msg.StartsWith('Host ') -or $msg.StartsWith('Vercel environment mismatch:')) {
+        throw
+      }
+
+      if ($statusCode -eq 404) {
+        Write-Host ("Vercel parity check: /api/version returned 404 (attempt {0}/{1}); retrying in {2}s..." -f $attempt, $Retries, $RetryDelaySec) -ForegroundColor Yellow
+      } elseif ($attempt -lt $Retries) {
+        Write-Host ("Vercel parity check failed (attempt {0}/{1}): {2}. Retrying in {3}s..." -f $attempt, $Retries, $msg, $RetryDelaySec) -ForegroundColor Yellow
+      }
+
+      if ($attempt -lt $Retries) {
+        Start-Sleep -Seconds $RetryDelaySec
+        continue
+      }
+    }
   }
 
-  throw "Vercel still not on this commit. Open Vercel Deployments, ensure production deployment succeeded, or wait/redeploy, then rerun .\post_merge_routine.ps1."
+  throw ("Vercel parity gate failed after {0} attempt(s). Last error: {1}`nCheck https://{2}/api/version and confirm Production deployment includes /api/version." -f $Retries, $lastError, $ProdHost)
 }
 
 Write-Section "Boot"
@@ -435,9 +448,12 @@ if (-not $SkipBuild) {
 Write-Section "Vercel parity gate (Production == Local)"
 $runVercelParity = (-not $SkipVercelParity) -or $RequireVercelSameCommit
 if ($runVercelParity) {
+  if (-not (Test-Path '.\app\api\version\route.ts')) {
+    throw 'Missing app/api/version/route.ts (required for parity gate).'
+  }
   $localSha = Ensure-GitRemoteParity -SkipAutoPush:$SkipPush
   $vercelHost = Resolve-VercelProdHost -ProvidedValue $VercelProdUrlOrHost
-  Wait-VercelCommitParity -TargetHost $vercelHost -LocalSha $localSha -ExpectedEnv $VercelEnv -AllowPreview:$AllowPreviewHost -TimeoutSec $VercelWaitTimeoutSec -PollIntervalSec $VercelPollIntervalSec
+  Wait-VercelCommitParity -ProdHost $vercelHost -LocalSha $localSha -ExpectedEnv $VercelEnv -AllowPreview:$AllowPreviewHost -Retries $VercelRetries -RetryDelaySec $VercelRetryDelaySec
 } else {
   Write-Host 'SkipVercelParity enabled.' -ForegroundColor Yellow
 }
