@@ -175,7 +175,13 @@ npm run dev -- --webpack
 .\post_merge_routine.ps1
 ```
 
-> ⚠️ 一定要加 `./`（PowerShell 需要 `./` 才會執行目前資料夾腳本）。
+> ⚠️ 一定要加 `.\`（PowerShell 需要 `.\` 才會執行目前資料夾腳本）。
+
+#### Where to copy Production domain host
+1. Vercel → Project → **Deployments**。
+2. 點最新一筆 **Production (Current)** deployment。
+3. 到 **Domains** 區塊，複製穩定 production domain host。
+4. 只貼 host（例如 `your-app.vercel.app`），不要包含 `https://` 或 `/path`。
 
 腳本預設會做硬性檢查：
 - 本機 `HEAD` 和遠端上游 commit 一致（必要時自動 `git push`，可用 `-SkipPush` 關掉）
