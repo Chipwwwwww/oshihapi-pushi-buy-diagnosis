@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { DecisionRun } from "@/src/oshihapi/model";
 import { decisivenessLabels } from "@/src/oshihapi/decisiveness";
 import { loadMarketMemos } from "@/src/oshihapi/marketMemoStorage";
 import { loadRuns } from "@/src/oshihapi/runStorage";
+import { formatResultByMode } from "@/src/oshihapi/modes/formatResultByMode";
+import { MODE_DICTIONARY, ResultMode, Verdict } from "@/src/oshihapi/modes/mode_dictionary";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -55,6 +57,22 @@ export default function HistoryPage() {
   const router = useRouter();
   const [runs] = useState<DecisionRun[]>(() => loadRuns());
   const [marketMemos] = useState(() => loadMarketMemos());
+  const [resultMode, setResultMode] = useState<ResultMode>("standard");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const savedMode = window.localStorage.getItem("oshihapi:mode");
+    if (savedMode === "standard" || savedMode === "kawaii" || savedMode === "oshi") {
+      setResultMode(savedMode);
+    }
+  }, []);
+
+  const updateResultMode = (nextMode: ResultMode) => {
+    setResultMode(nextMode);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("oshihapi:mode", nextMode);
+    }
+  };
 
   const hasRuns = useMemo(() => runs.length > 0, [runs]);
   const summary = useMemo(() => {
@@ -75,6 +93,29 @@ export default function HistoryPage() {
         <h1 className={pageTitleClass}>診断履歴</h1>
         <p className={helperTextClass}>直近20件まで表示されます。</p>
       </header>
+
+      {hasRuns ? (
+        <Card className="space-y-4">
+          <h2 className={sectionTitleClass}>結果の表示モード</h2>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {([
+              ["standard", "標準"],
+              ["kawaii", "かわいい"],
+              ["oshi", "推し活用語"],
+            ] as [ResultMode, string][]).map(([mode, label]) => (
+              <Button
+                key={mode}
+                variant={resultMode === mode ? "primary" : "outline"}
+                onClick={() => updateResultMode(mode)}
+                className="w-full rounded-xl"
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+          <p className={helperTextClass}>{MODE_DICTIONARY[resultMode].labels.disclaimer}</p>
+        </Card>
+      ) : null}
 
       {hasRuns ? (
         <Card className="space-y-3">
@@ -105,17 +146,31 @@ export default function HistoryPage() {
         <section className="space-y-4">
           <h2 className={sectionTitleClass}>最近の診断</h2>
           <div className="grid gap-4">
-            {runs.map((run) => (
-              <Link key={run.runId} href={`/result/${run.runId}`} className="block">
+            {runs.map((run) => {
+              const outputExt = run.output as typeof run.output & {
+                waitType?: string;
+                reasonTags?: string[];
+              };
+              const formatted = formatResultByMode({
+                runId: run.runId,
+                verdict: run.output.decision as Verdict,
+                waitType: outputExt.waitType,
+                reasons: run.output.reasons.map((reason) => reason.text),
+                reasonTags: outputExt.reasonTags ?? [],
+                actions: run.output.actions.map((action) => action.text),
+                mode: resultMode,
+              });
+
+              return (
+                <Link key={run.runId} href={`/result/${run.runId}`} className="block">
                 <Card className="space-y-4 transition hover:border-primary/40">
                   <div className="flex items-center justify-between text-sm text-muted-foreground">
                     <span>{formatDate(run.createdAt)}</span>
                     <Badge variant="outline">衝動度: {impulseLabel(run)}</Badge>
                   </div>
                   <div className="space-y-2">
-                    <p className="text-lg font-semibold text-foreground">
-                      {decisionLabels[run.output.decision]}
-                    </p>
+                    <p className="text-lg font-semibold text-foreground">{formatted.sticker} {decisionLabels[run.output.decision]}</p>
+                    <p className="line-clamp-1 text-sm text-muted-foreground">{formatted.shareTextDmShort}</p>
                     {marketMemos[run.runId] ? (
                       <p className="inline-flex rounded-full border border-border bg-muted px-3 py-1 text-xs font-semibold text-foreground">
                         相場: {marketLevelLabels[marketMemos[run.runId].level]}
@@ -136,8 +191,9 @@ export default function HistoryPage() {
                     </div>
                   </div>
                 </Card>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         </section>
       )}

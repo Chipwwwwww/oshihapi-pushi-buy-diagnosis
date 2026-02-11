@@ -201,7 +201,7 @@ export default function Home() {
       </Card>
 
       <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
-        <h2 className={sectionTitleClass}>モードを選ぶ</h2>
+        <h2 className={sectionTitleClass}>診断コースを選ぶ</h2>
         <div className="grid gap-4">
           <RadioCard
             title="急いで決める（30秒）"
