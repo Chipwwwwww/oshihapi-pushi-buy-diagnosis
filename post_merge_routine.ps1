@@ -14,6 +14,7 @@ param(
   [switch]$SkipClean,
   [switch]$SkipKillPorts,
   [switch]$SkipNpmCi,
+  [switch]$SkipLint,
   [switch]$SkipBuild,
   [switch]$SkipDev,
   [switch]$ProdSmoke,
@@ -142,35 +143,22 @@ function Resolve-UpstreamRef() {
 }
 
 function Assert-NoConflictMarkers() {
-  $targets = @('app','src','components','ops')
-  $scanFiles = @()
-  foreach ($target in $targets) {
-    if (Test-Path ".\$target") {
-      $scanFiles += Get-ChildItem -Path ".\$target" -Recurse -File -ErrorAction SilentlyContinue
-    }
-  }
-  if (Test-Path '.\post_merge_routine.ps1') {
-    $scanFiles += Get-Item '.\post_merge_routine.ps1'
-  }
+  $regex = '^(<<<<<<< .+|=======|>>>>>>> .+)$'
+  $paths = @('app','src','components','ops','post_merge_routine.ps1')
+  $hits = (& git grep -n -I -E -- $regex -- @paths) 2>$null
+  $exitCode = $LASTEXITCODE
 
-  if ($scanFiles.Count -eq 0) { return }
-
-  $regex = '^(<<<<<<<|=======|>>>>>>>)'
-  $hits = @()
-  foreach ($file in $scanFiles) {
-    $matched = Select-String -Path $file.FullName -Pattern $regex -Encoding UTF8 -ErrorAction SilentlyContinue
-    if ($matched) {
-      $hits += $matched | ForEach-Object { "{0}:{1}:{2}" -f $_.Path, $_.LineNumber, ($_.Line.Trim()) }
-    }
-  }
-
-  if ($hits.Count -gt 0) {
+  if ($exitCode -eq 0) {
     Write-Host 'Conflict markers found (showing up to 20 hits):' -ForegroundColor Red
     foreach ($hit in ($hits | Select-Object -First 20)) {
       Write-Host $hit -ForegroundColor Red
     }
     throw 'Conflict markers detected. Resolve them before rerunning .\post_merge_routine.ps1.'
   }
+
+  if ($exitCode -eq 1) { return }
+
+  throw "Conflict marker scan failed (git grep exit=$exitCode)."
 }
 
 function Ensure-CleanWorkingTree() {
@@ -255,44 +243,49 @@ function Ensure-GitRemoteParity([switch]$SkipAutoPush) {
 function Resolve-VercelProdHost([string]$ProvidedValue) {
   $target = ''
 
-  if (-not [string]::IsNullOrWhiteSpace($env:OSH_VERCEL_PROD_HOST)) {
+  if (-not [string]::IsNullOrWhiteSpace($ProvidedValue)) {
+    $target = $ProvidedValue
+  } elseif (-not [string]::IsNullOrWhiteSpace($env:OSH_VERCEL_PROD_HOST)) {
     $target = $env:OSH_VERCEL_PROD_HOST
-  }
-
-  $hostFilePath = '.\ops\vercel_prod_host.txt'
-  if ([string]::IsNullOrWhiteSpace($target) -and (Test-Path $hostFilePath)) {
+  } else {
+    $hostFilePath = '.\ops\vercel_prod_host.txt'
+    if (Test-Path $hostFilePath) {
     $line = Get-Content -Path $hostFilePath -TotalCount 1 -ErrorAction SilentlyContinue
     if (-not [string]::IsNullOrWhiteSpace($line)) {
       $target = $line
     }
-  }
-
-  if ([string]::IsNullOrWhiteSpace($target) -and -not [string]::IsNullOrWhiteSpace($ProvidedValue)) {
-    $target = $ProvidedValue
+    }
   }
 
   if ([string]::IsNullOrWhiteSpace($target)) { return $null }
 
   $target = $target.Trim()
-  if ($target -match '^https?://') {
-    $target = $target -replace '^https?://', ''
-  }
+  $target = $target -replace '^https?://', ''
+  $target = ($target -split '[/?#]', 2)[0]
   $target = $target.Trim().TrimEnd('/')
 
-  if ($target.Contains('/')) {
-    throw "Invalid Vercel production host '$target'. Use host only (example: oshihapi-pushi-buy-diagnosis.vercel.app)."
-  }
-
-  if ($target -notmatch '^[A-Za-z0-9.-]+$' -or $target -notmatch '\.') {
+  if ($target -notmatch '^[A-Za-z0-9.-]+(:[0-9]+)?$') {
     throw "Invalid Vercel production host '$target'."
   }
 
   return $target
 }
 
+function Get-WebExceptionStatusCode([System.Exception]$Exception) {
+  $webException = $Exception -as [System.Net.WebException]
+  if (-not $webException -or -not $webException.Response) { return $null }
+
+  try {
+    return [int]$webException.Response.StatusCode
+  } catch {
+    return $null
+  }
+}
+
 function Invoke-VersionEndpoint([string]$ProdHost) {
   [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-  $url = "https://$ProdHost/api/version"
+  $epoch = [int][DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+  $url = "https://$ProdHost/api/version?t=$epoch"
   $response = Invoke-WebRequest -Uri $url -Method Get -Headers @{ 'Cache-Control'='no-cache'; 'Pragma'='no-cache' } -TimeoutSec 15 -ErrorAction Stop
 
   $body = $response.Content
@@ -306,6 +299,7 @@ function Invoke-VersionEndpoint([string]$ProdHost) {
   }
 
   return [PSCustomObject]@{
+    Url = $url
     StatusCode = [int]$response.StatusCode
     Json = $json
     Body = $body
@@ -313,8 +307,9 @@ function Invoke-VersionEndpoint([string]$ProdHost) {
 }
 
 function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$ExpectedEnv, [switch]$AllowPreview, [int]$MaxWaitSec = 180, [int]$PollIntervalSec = 5) {
-  $url = "https://$ProdHost/api/version"
+  $baseUrl = "https://$ProdHost/api/version"
   $started = Get-Date
+  $attempt = 0
 
   $result = [PSCustomObject]@{
     CommitSha = ''
@@ -331,18 +326,12 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
     }
 
     try {
+      $attempt++
       $versionResponse = Invoke-VersionEndpoint -ProdHost $ProdHost
       $result.StatusCode = $versionResponse.StatusCode
 
-      if ($versionResponse.StatusCode -eq 404) {
-        $message404 = 'Production deployment does not include /api/version yet (production not updated or wrong production branch).'
-        Write-Host ("$message404 waited=${elapsedSec}s/${MaxWaitSec}s") -ForegroundColor Yellow
-        Start-Sleep -Seconds $PollIntervalSec
-        continue
-      }
-
       if ($versionResponse.StatusCode -ne 200) {
-        throw ("Unexpected status {0} from {1}." -f $versionResponse.StatusCode, $url)
+        throw ("Unexpected status {0} from {1}." -f $versionResponse.StatusCode, $versionResponse.Url)
       }
 
       $json = $versionResponse.Json
@@ -355,6 +344,11 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
       $result.VercelEnv = $vercelEnvValue
       $result.VercelUrl = $vercelUrl
       $result.GitRef = $gitRef
+
+      if (-not [string]::IsNullOrWhiteSpace($vercelEnvValue) -and $vercelEnvValue -ne 'production') {
+        Write-Host ("Host '$ProdHost' returned vercelEnv='$vercelEnvValue' from /api/version; this domain might be preview.") -ForegroundColor Yellow
+        throw "Wrong Vercel domain/environment: expected production host but got vercelEnv='$vercelEnvValue'."
+      }
 
       if (-not $AllowPreview -and $vercelEnvValue -eq 'preview') {
         throw "Host '$ProdHost' is preview (vercelEnv=preview). Use Production domain or rerun with -AllowPreviewHost."
@@ -379,35 +373,29 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
       Write-Host ("VERCEL == LOCAL ✅ ({0}) (vercelEnv={1})" -f $LocalSha, $vercelEnvValue) -ForegroundColor Green
       return $result
     } catch {
-      $statusCode = $null
-      $responseBody = ''
-      if ($_.Exception.PSObject.Properties['Response'] -and $_.Exception.Response) {
-        try {
-          $statusCode = [int]$_.Exception.Response.StatusCode
-        } catch {}
-
-        try {
-          $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
-          $responseBody = $reader.ReadToEnd()
-          $reader.Close()
-        } catch {}
-      }
+      $statusCode = Get-WebExceptionStatusCode -Exception $_.Exception
 
       if ($statusCode -eq 404) {
         $result.StatusCode = 404
-        $message404 = 'Production deployment does not include /api/version yet (production not updated or wrong production branch).'
-        $shortErr = Shorten-Text -Text $responseBody -MaxLen 160
-        if (-not [string]::IsNullOrWhiteSpace($shortErr)) {
-          Write-Host ("$message404 waited=${elapsedSec}s/${MaxWaitSec}s detail=$shortErr") -ForegroundColor Yellow
-        } else {
-          Write-Host ("$message404 waited=${elapsedSec}s/${MaxWaitSec}s") -ForegroundColor Yellow
+        if ($attempt -eq 1) {
+          Write-Host ''
+          Write-Host 'FAIL-FAST: Production /api/version returned 404.' -ForegroundColor Red
+          Write-Host '- Meaning:' -ForegroundColor Yellow
+          Write-Host '  1) Production is still on an older deployment without /api/version' -ForegroundColor Yellow
+          Write-Host '  2) OR Production Branch is not the branch you just merged into' -ForegroundColor Yellow
+          Write-Host '  3) OR deployment failed / was rate-limited (Vercel api-deployments-free-per-day)' -ForegroundColor Yellow
+          Write-Host '- Next steps:' -ForegroundColor Cyan
+          Write-Host '  - Vercel Project > Settings > Git: confirm Production Branch = current branch' -ForegroundColor Cyan
+          Write-Host '  - Vercel Deployments: check latest Production deployment status' -ForegroundColor Cyan
+          Write-Host '  - If rate-limited: wait, upgrade plan, or reduce deployment frequency' -ForegroundColor Cyan
+          Write-Host '  - If CI checks failed: fix CI and redeploy' -ForegroundColor Cyan
+          throw "Vercel parity gate fail-fast: $baseUrl returned 404 on first attempt."
         }
-        Start-Sleep -Seconds $PollIntervalSec
-        continue
       }
 
-      $shortMsg = Shorten-Text -Text $_.Exception.Message -MaxLen 240
-      throw "Vercel parity gate failed while calling $url (status=$statusCode): $shortMsg"
+      Write-Host ("Vercel parity probe transient error (status=$statusCode) waited=${elapsedSec}s/${MaxWaitSec}s; retrying...") -ForegroundColor Yellow
+      Start-Sleep -Seconds $PollIntervalSec
+      continue
     }
   }
 
@@ -536,6 +524,17 @@ if ($SkipKillPorts) {
 Write-Section "Install (npm ci)"
 if (-not $SkipNpmCi) { Run 'npm' @('ci') }
 else { Write-Host 'SkipNpmCi enabled.' -ForegroundColor DarkGray }
+
+Write-Section "Lint (npm run lint)"
+if ($SkipLint) {
+  Write-Host 'SkipLint enabled.' -ForegroundColor DarkGray
+} else {
+  try {
+    Run 'npm' @('run','lint')
+  } catch {
+    throw 'Lint failed; fix before build/deploy'
+  }
+}
 
 Write-Section "Build (npm run build)"
 if (-not $SkipBuild) {

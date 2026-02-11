@@ -207,6 +207,14 @@ Copy-Item .\ops\vercel_prod_host.sample.txt .\ops\vercel_prod_host.txt
 - 先確認 Vercel **Production Branch** 設定正確
 - 或在 Vercel 把最新正確 deployment **Promote to Production**
 
+#### `/api/version` が 404 の意味
+這不是本機腳本壞掉；通常代表 Production 還沒提供含 `/api/version` 的 commit、Production Branch 設錯、或部署失敗／被 rate limit（例如 Vercel `api-deployments-free-per-day`）。
+
+快速確認（PowerShell）：
+```powershell
+$prod=(Get-Content .\ops\vercel_prod_host.txt|Select-Object -First 1).Trim(); irm "https://$prod/api/version?t=$([int][DateTimeOffset]::UtcNow.ToUnixTimeSeconds())" -TimeoutSec 10
+```
+
 #### Troubleshooting（常見錯誤）
 - `Working tree is not clean`：先 `git status --short`，commit/stash 後重跑。
 - `local diverged from origin/main`：先解 divergence（通常 `git pull --rebase` + 解衝突）再重跑。
