@@ -204,6 +204,7 @@ setx OSH_VERCEL_PROD_HOST "oshihapi-pushi-buy-diagnosis.vercel.app"    # 永久�
 1. 開啟 Vercel 專案後進到 **Deployments**。
 2. 點進最新一筆帶 **Production (Current)** 標籤的 deployment。
 3. 在 **Domains** 區塊複製穩定正式網域（不要用 preview hash 網域）。
+   - ⚠️ preview hash domain（例如 `*-git-*.vercel.app`）會變動，不可當作 parity gate host，否則會常常失敗。
 4. 把複製到的 host 寫到 `ops/vercel_prod_host.txt` 第一行（僅 host）。
 5. 或改用 `setx OSH_VERCEL_PROD_HOST "<host>"` 設為永久環境變數。
 
