@@ -119,6 +119,7 @@ export default function ResultPage() {
   const [showAlternatives, setShowAlternatives] = useState(false);
   const [selectedHeadline, setSelectedHeadline] = useState<string | null>(null);
   const [resultMode, setResultMode] = useState<ResultMode>("standard");
+  const [stickerOffset, setStickerOffset] = useState(0);
 
   const runId = params?.runId;
   const run = useMemo<DecisionRun | undefined>(() => {
@@ -173,6 +174,7 @@ export default function ResultPage() {
   useEffect(() => {
     setShowAlternatives(false);
     setSelectedHeadline(null);
+    setStickerOffset(0);
   }, [runId]);
 
   const headline = selectedHeadline ?? presentation?.headline ?? decisionLabels[run?.output.decision ?? "THINK"];
@@ -193,8 +195,9 @@ export default function ResultPage() {
       reasonTags: outputExt.reasonTags ?? [],
       actions: displayActions.map((action) => action.text),
       mode: resultMode,
+      stickerOffset,
     });
-  }, [displayActions, resultMode, run]);
+  }, [displayActions, resultMode, run, stickerOffset]);
 
   const decisionScale = useMemo(() => {
     if (!run) return "wait";
@@ -434,7 +437,7 @@ export default function ResultPage() {
       </Card>
 
       <Card className="space-y-4">
-        <h2 className={sectionTitleClass}>表示モード</h2>
+        <h2 className={sectionTitleClass}>結果の表示モード</h2>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           {([
             ["standard", "標準"],
@@ -456,11 +459,19 @@ export default function ResultPage() {
 
       <Card className="space-y-4">
         <h2 className={sectionTitleClass}>共有テキスト</h2>
+        <p className="text-3xl leading-none">{modeFormattedResult?.sticker ?? ""}</p>
         <p className="whitespace-pre-line text-sm text-muted-foreground">
           {modeFormattedResult?.shareTextX280 ?? run.output.shareText}
         </p>
+        <Button
+          variant="outline"
+          onClick={() => setStickerOffset((prev) => prev + 1)}
+          className="w-full rounded-xl"
+        >
+          コメントを変える
+        </Button>
         <Button onClick={handleCopyShare} className="w-full rounded-xl">
-          共有テキストをコピー
+          shareTextX280 をコピー
         </Button>
       </Card>
 
