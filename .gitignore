@@ -43,3 +43,6 @@ next-env.d.ts
 # Windows shortcuts
 *.lnk
 
+
+# local ops config
+ops/vercel_prod_host.txt
