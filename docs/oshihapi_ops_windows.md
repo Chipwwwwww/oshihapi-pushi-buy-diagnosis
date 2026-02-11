@@ -169,68 +169,56 @@ npm run dev -- --webpack
 ```
 
 
-### Vercel parity gate (Production == Local)
+### Vercel parity gate（Production == Local == origin/main）
 合併後只要跑一個命令：
 ```powershell
-.\post_merge_routine.ps1
+./post_merge_routine.ps1
 ```
 
-> ⚠️ 一定要加 `.\`（PowerShell 需要 `.\` 才會執行目前資料夾腳本）。
-
-#### Where to copy Production domain host
-1. Vercel → Project → **Deployments**。
-2. 點最新一筆 **Production (Current)** deployment。
-3. 到 **Domains** 區塊，複製穩定 production domain host。
-4. 只貼 host（例如 `your-app.vercel.app`），不要包含 `https://` 或 `/path`。
-
-腳本預設會做硬性檢查：
-- 本機 `HEAD` 和遠端上游 commit 一致（必要時自動 `git push`，可用 `-SkipPush` 關掉）
-- `https://<prod-host>/api/version` 的 `commitSha` 最終追上本機 `HEAD`
-- 預設要求 `vercelEnv=production`（若你故意用 preview host，需加 `-AllowPreviewHost`）
-- 會輪詢等待（預設 180 秒）Vercel 非同步部署完成
+> ⚠️ PowerShell 通常也可用 `.\post_merge_routine.ps1`，但文件統一示範 `./post_merge_routine.ps1`。
 
 #### 一次性設定（只做一次）
-先從 Vercel 取到**真正的 Production 網域**：
-- Vercel → Project → Deployments
-- 點最新的 **Production (Current)** deployment
-- Domains 區塊複製穩定 production domain（例如 `oshihapi-pushi-buy-diagnosis.vercel.app` 或你綁定的正式網域）
+1. Vercel Project → **Settings** → **Git**，確認 **Production Branch** 就是你平常 merge 的分支（通常是 `main`）。
+2. 設定 Production domain host（只放 host，不含 `https://`、不含 `/path`）：
 
-設定方式（二選一）：
+```powershell
+setx OSH_VERCEL_PROD_HOST "oshihapi-pushi-buy-diagnosis.vercel.app"
+```
+或：
 ```powershell
 Copy-Item .\ops\vercel_prod_host.sample.txt .\ops\vercel_prod_host.txt
-# 然後編輯 ops/vercel_prod_host.txt 第一行，只填 host（不能含 https:// 或 /path）
+# 編輯 ops/vercel_prod_host.txt 第一行，只填 host
 ```
-或
+
+#### 腳本做了什麼（重點）
+- `git fetch --all --prune`
+- 工作樹必須乾淨（dirty 直接 fail-fast）
+- 檢查本機與 `origin/main`（或 upstream）是否一致
+  - 若本機 ahead，且目前在 `main`、無 dirty、無 divergence，預設自動 push（可加 `-SkipPush` 關閉）
+- `npm ci` → `npm run build`（build 是硬性 gate）
+- 輪詢 `https://<prod-host>/api/version`（最多等待 `-VercelMaxWaitSec`，預設 180 秒）
+  - `404` 代表 Production 還沒更新到包含 `/api/version` 的 commit（或 Production Branch 設錯）
+  - `200` 會比對 `commitSha` 是否等於本機 `HEAD`
+- 印出：LOCAL SHA / ORIGIN SHA / VERCEL commitSha / VERCEL env
+- 寫入：`ops/parity_snapshot_latest.json`
+
+#### `/api/version` 回傳 404 代表什麼？
+代表「Production 還沒更新到含有此 endpoint 的版本」，不是單純本機問題。
+- 先確認 Vercel **Production Branch** 設定正確
+- 或在 Vercel 把最新正確 deployment **Promote to Production**
+
+#### Troubleshooting（常見錯誤）
+- `Working tree is not clean`：先 `git status --short`，commit/stash 後重跑。
+- `local diverged from origin/main`：先解 divergence（通常 `git pull --rebase` + 解衝突）再重跑。
+- `Production domain is not serving the commit that contains app/api/version/route.ts`：
+  - 檢查 Vercel Production Branch 是否等於 merge 目標分支
+  - 或手動 promote 最新 deployment 到 Production
+- `Vercel commit mismatch` timeout：通常是 Production deploy 還在跑或 deploy 失敗，去 Vercel Deployments 看狀態。
+
+#### 緊急暫時跳過 parity gate（不建議常態）
 ```powershell
-$env:OSH_VERCEL_PROD_HOST="oshihapi-pushi-buy-diagnosis.vercel.app"   # 目前 session 生效
-setx OSH_VERCEL_PROD_HOST "oshihapi-pushi-buy-diagnosis.vercel.app"    # 永久寫入使用者環境變數（新開視窗生效）
+./post_merge_routine.ps1 -SkipVercelParity
 ```
-
-#### 從 Vercel Deployment Details 複製 Production domain（詳細）
-1. 開啟 Vercel 專案後進到 **Deployments**。
-2. 點進最新一筆帶 **Production (Current)** 標籤的 deployment。
-3. 在 **Domains** 區塊複製穩定正式網域（不要用 preview hash 網域）。
-   - ⚠️ preview hash domain（例如 `*-git-*.vercel.app`）會變動，不可當作 parity gate host，否則會常常失敗。
-4. 把複製到的 host 寫到 `ops/vercel_prod_host.txt` 第一行（僅 host）。
-5. 或改用 `setx OSH_VERCEL_PROD_HOST "<host>"` 設為永久環境變數。
-
-
-#### 手動驗證 API 版本（一行指令）
-```powershell
-curl https://<host>/api/version
-```
-
-#### 常見錯誤對照
-- `Missing Vercel production host`：尚未設定 host，或還是 placeholder。
-- `vercelEnv=preview`：你貼到了 preview hash domain，請改成 Production (Current) 的穩定網域。
-- `Vercel still not on this commit`：部署尚未完成/失敗，去 Deployments 確認 production deploy 狀態，稍後重跑。
-- `Git operation in progress` / `Unmerged files detected`：先 `git status`，解完衝突或中止 merge/rebase/cherry-pick 後再跑。
-
-緊急時可暫時跳過 gate（不建議常態使用）：
-```powershell
-.\post_merge_routine.ps1 -SkipVercelParity
-```
-
 
 ⚠️ 重要：feature 併完後，最後一定要 merge 回 main（你自己的規則）
 ```powershell

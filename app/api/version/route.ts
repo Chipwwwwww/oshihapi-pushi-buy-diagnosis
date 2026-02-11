@@ -10,8 +10,8 @@ export async function GET() {
     {
       commitSha: commitSha || "unknown",
       vercelEnv: process.env.VERCEL_ENV ?? "",
-      deploymentId: process.env.VERCEL_DEPLOYMENT_ID ?? "",
-      buildId: process.env.VERCEL_BUILD_ID ?? "",
+      vercelUrl: process.env.VERCEL_URL ?? "",
+      gitRef: process.env.VERCEL_GIT_COMMIT_REF ?? process.env.GITHUB_REF_NAME ?? "",
     },
     {
       headers: {
