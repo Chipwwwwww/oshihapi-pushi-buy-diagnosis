@@ -45,6 +45,7 @@ Get-ChildItem -Recurse -Filter "codex_prompt*.txt" | Select-Object FullName
 - `app\api\telemetry\route.ts`（`POST /api/telemetry`）
 - `app\api\telemetry\health\route.ts`（`GET /api/telemetry/health`）
   - ※ 這裡會用到 `pg`：
+- `app\api\version\route.ts`（`GET /api/version`，給 Vercel parity gate 比對 commit）
   - build（TypeScript）：需要 `@types/pg`
   - runtime（Vercel Functions）：需要 `pg` 在 dependencies（不是 devDependencies）
 
@@ -68,6 +69,13 @@ Get-ChildItem -Recurse -Filter "codex_prompt*.txt" | Select-Object FullName
 ## 4) 共用元件（UI 呈現）
 - `C:\Users\User\dev\oshihapi-pushi-buy-diagnosis\components\`
   - `DecisionScale.tsx`（結果頁刻度尺）
+
+---
+
+## 4.5) Ops 腳本 / parity 設定
+- `post_merge_routine.ps1`（merge 後唯一入口腳本；含 Vercel parity gate）
+- `ops\vercel_prod_host.txt`（Production host，供 parity gate 使用）
+- `docs\retro_report_latest.txt`（最新回顧記錄）
 
 ---
 
@@ -130,6 +138,10 @@ C:\Users\User\dev\oshihapi-pushi-buy-diagnosis\
 - app/layout.tsx
 - app/api/telemetry/route.ts
 - app/api/telemetry/health/route.ts
+- app/api/version/route.ts
+- post_merge_routine.ps1
+- ops/vercel_prod_host.txt
+- docs/retro_report_latest.txt
 
 3) Core
 - src/oshihapi/engine.ts

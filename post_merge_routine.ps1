@@ -145,6 +145,20 @@ function Resolve-UpstreamRef() {
   return 'origin/main'
 }
 
+function Assert-NoConflictMarkers() {
+  $searchPaths = @('app','src','components','ops','post_merge_routine.ps1')
+  $matches = (& git grep -n --perl-regexp -- '^(<<<<<<<|=======|>>>>>>>)' -- @searchPaths) 2>$null
+  if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace(($matches -join "`n"))) {
+    Write-Host 'Conflict markers found:' -ForegroundColor Red
+    $matches | ForEach-Object { Write-Host $_ -ForegroundColor Red }
+    throw 'Conflict markers detected. Resolve them before rerunning .\post_merge_routine.ps1.'
+  }
+
+  if ($LASTEXITCODE -gt 1) {
+    throw 'Unable to scan files for conflict markers via git grep.'
+  }
+}
+
 function Ensure-GitRemoteParity([switch]$SkipAutoPush) {
   if (-not $gitOk) {
     throw "Vercel parity gate requires git repo context."
@@ -335,6 +349,8 @@ if ($gitOk) {
   if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace(($unmerged -join "`n"))) {
     throw "Unmerged files detected. Run git status and resolve conflicts before rerunning .\post_merge_routine.ps1."
   }
+
+  Assert-NoConflictMarkers
 
   $dirty = (& git status --porcelain) 2>$null
   if (-not $SkipPull -and $LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace(($dirty -join "`n"))) {

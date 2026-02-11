@@ -196,8 +196,16 @@ Copy-Item .\ops\vercel_prod_host.sample.txt .\ops\vercel_prod_host.txt
 ```
 或
 ```powershell
-$env:OSH_VERCEL_PROD_HOST="oshihapi-pushi-buy-diagnosis.vercel.app"
+$env:OSH_VERCEL_PROD_HOST="oshihapi-pushi-buy-diagnosis.vercel.app"   # 目前 session 生效
+setx OSH_VERCEL_PROD_HOST "oshihapi-pushi-buy-diagnosis.vercel.app"    # 永久寫入使用者環境變數（新開視窗生效）
 ```
+
+#### 從 Vercel Deployment Details 複製 Production domain（詳細）
+1. 開啟 Vercel 專案後進到 **Deployments**。
+2. 點進最新一筆帶 **Production (Current)** 標籤的 deployment。
+3. 在 **Domains** 區塊複製穩定正式網域（不要用 preview hash 網域）。
+4. 把複製到的 host 寫到 `ops/vercel_prod_host.txt` 第一行（僅 host）。
+5. 或改用 `setx OSH_VERCEL_PROD_HOST "<host>"` 設為永久環境變數。
 
 #### 常見錯誤對照
 - `Missing Vercel production host`：尚未設定 host，或還是 placeholder。
