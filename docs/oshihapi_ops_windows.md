@@ -169,22 +169,46 @@ npm run dev -- --webpack
 ```
 
 
-### Parity Gate (Vercel vs Local)【新增】
-合併後建議跑 production-equivalent 檢查，確保本機 commit 與 Vercel Production 一致：
+### Vercel parity gate (Production == Local)
+合併後只要跑一個命令：
 ```powershell
-.\post_merge_routine.ps1 -RequireVercelSameCommit -VercelEnv production -ProdSmoke
+.\post_merge_routine.ps1
 ```
 
-- `-ProdSmoke`：改用 `npm run start -- -p 3000`（非 dev server），更接近 production 行為。
-- `-RequireVercelSameCommit`：會比對本機 `git rev-parse HEAD` 與 `https://<prod>/api/version` 的 `commitSha`。
-- `-VercelEnv production|preview|any`：可明確要求環境，避免拿 Preview 跟 Production 比。
-- 如果不一致會直接失敗：`VERCEL MISMATCH: vercel=<sha> local=<sha>`。
-- UI parity 必須用 ProdSmoke，不要用 dev。
+> ⚠️ 一定要加 `./`（PowerShell 需要 `./` 才會執行目前資料夾腳本）。
 
-Vercel Production host 設定方式（擇一）：
-1. `ops/vercel_prod_host.txt`（單行 host，例如 `your-project.vercel.app`，不可填 `https://`、`/` 或 placeholder）
-2. 環境變數 `OSH_VERCEL_PROD_HOST`
-3. 執行時帶 `-VercelHost`（或舊參數 `-VercelProdUrlOrHost`）
+腳本預設會做硬性檢查：
+- 本機 `HEAD` 和遠端上游 commit 一致（必要時自動 `git push`，可用 `-SkipPush` 關掉）
+- `https://<prod-host>/api/version` 的 `commitSha` 最終追上本機 `HEAD`
+- 預設要求 `vercelEnv=production`（若你故意用 preview host，需加 `-AllowPreviewHost`）
+- 會輪詢等待（預設 180 秒）Vercel 非同步部署完成
+
+#### 一次性設定（只做一次）
+先從 Vercel 取到**真正的 Production 網域**：
+- Vercel → Project → Deployments
+- 點最新的 **Production (Current)** deployment
+- Domains 區塊複製穩定 production domain（例如 `oshihapi-pushi-buy-diagnosis.vercel.app` 或你綁定的正式網域）
+
+設定方式（二選一）：
+```powershell
+Copy-Item .\ops\vercel_prod_host.sample.txt .\ops\vercel_prod_host.txt
+# 然後編輯 ops/vercel_prod_host.txt 第一行，只填 host（不能含 https:// 或 /path）
+```
+或
+```powershell
+$env:OSH_VERCEL_PROD_HOST="oshihapi-pushi-buy-diagnosis.vercel.app"
+```
+
+#### 常見錯誤對照
+- `Missing Vercel production host`：尚未設定 host，或還是 placeholder。
+- `vercelEnv=preview`：你貼到了 preview hash domain，請改成 Production (Current) 的穩定網域。
+- `Vercel still not on this commit`：部署尚未完成/失敗，去 Deployments 確認 production deploy 狀態，稍後重跑。
+- `Git operation in progress` / `Unmerged files detected`：先 `git status`，解完衝突或中止 merge/rebase/cherry-pick 後再跑。
+
+緊急時可暫時跳過 gate（不建議常態使用）：
+```powershell
+.\post_merge_routine.ps1 -SkipVercelParity
+```
 
 
 ⚠️ 重要：feature 併完後，最後一定要 merge 回 main（你自己的規則）
