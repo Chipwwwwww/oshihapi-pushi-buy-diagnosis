@@ -179,7 +179,7 @@ npm run dev -- --webpack
 
 #### 一次性設定（只做一次）
 1. Vercel Project → **Settings** → **Git**，確認 **Production Branch** 就是你平常 merge 的分支（通常是 `main`）。
-2. 設定 Production domain host（只放 host，不含 `https://`、不含 `/path`）：
+2. 設定 Production domain host（建議只填 host；若誤貼 `https://` 或 `/path`，腳本會自動清理）：
 
 ```powershell
 setx OSH_VERCEL_PROD_HOST "oshihapi-pushi-buy-diagnosis.vercel.app"
@@ -203,9 +203,13 @@ Copy-Item .\ops\vercel_prod_host.sample.txt .\ops\vercel_prod_host.txt
 - 寫入：`ops/parity_snapshot_latest.json`
 
 #### `/api/version` 回傳 404 代表什麼？
-代表「Production 還沒更新到含有此 endpoint 的版本」，不是單純本機問題。
-- 先確認 Vercel **Production Branch** 設定正確
-- 或在 Vercel 把最新正確 deployment **Promote to Production**
+代表目前 **Production** 部署尚未包含 `/api/version`（不是單純本機問題）。請依序檢查：
+- Vercel → **Settings → Git → Production Branch** 是否等於你 merge 的分支
+- Vercel → **Deployments**（filter: **Production**）最新部署是否 `Ready`
+- GitHub required checks（尤其 lint）是否通過；失敗會阻擋 Production 部署
+- 是否誤用 preview 網址（請用真正 Production domain）
+
+修正後再重跑：`./post_merge_routine.ps1`
 
 #### Troubleshooting（常見錯誤）
 - `Working tree is not clean`：先 `git status --short`，commit/stash 後重跑。

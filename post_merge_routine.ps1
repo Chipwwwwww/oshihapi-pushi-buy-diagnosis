@@ -14,6 +14,7 @@ param(
   [switch]$SkipClean,
   [switch]$SkipKillPorts,
   [switch]$SkipNpmCi,
+  [switch]$SkipLint,
   [switch]$SkipBuild,
   [switch]$SkipDev,
   [switch]$ProdSmoke,
@@ -142,36 +143,22 @@ function Resolve-UpstreamRef() {
 }
 
 function Assert-NoConflictMarkers() {
-  $targets = @('app','src','components','ops')
-  $scanFiles = @()
-  foreach ($target in $targets) {
-    if (Test-Path ".\$target") {
-      $scanFiles += Get-ChildItem -Path ".\$target" -Recurse -File -ErrorAction SilentlyContinue
-    }
-  }
-  if (Test-Path '.\post_merge_routine.ps1') {
-    $scanFiles += Get-Item '.\post_merge_routine.ps1'
-  }
+  $pattern = '^(<<<<<<< .+|=======|>>>>>>> .+)$'
+  $hits = (& git grep -n -I -E -- $pattern -- .) 2>$null
 
-  if ($scanFiles.Count -eq 0) { return }
-
-  $regex = '^(<<<<<<<|=======|>>>>>>>)'
-  $hits = @()
-  foreach ($file in $scanFiles) {
-    $matched = Select-String -Path $file.FullName -Pattern $regex -Encoding UTF8 -ErrorAction SilentlyContinue
-    if ($matched) {
-      $hits += $matched | ForEach-Object { "{0}:{1}:{2}" -f $_.Path, $_.LineNumber, ($_.Line.Trim()) }
-    }
-  }
-
-  if ($hits.Count -gt 0) {
-    Write-Host 'Conflict markers found (showing up to 20 hits):' -ForegroundColor Red
+  if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace(($hits -join "`n"))) {
+    Write-Host 'Conflict markers found (start-of-line merge markers):' -ForegroundColor Red
     foreach ($hit in ($hits | Select-Object -First 20)) {
       Write-Host $hit -ForegroundColor Red
     }
     throw 'Conflict markers detected. Resolve them before rerunning .\post_merge_routine.ps1.'
   }
+
+  if ($LASTEXITCODE -gt 1) {
+    throw 'Conflict marker scan failed (git grep error).'
+  }
 }
+
 
 function Ensure-CleanWorkingTree() {
   $dirty = (& git status --porcelain) 2>$null
@@ -278,9 +265,14 @@ function Resolve-VercelProdHost([string]$ProvidedValue) {
     $target = $target -replace '^https?://', ''
   }
   $target = $target.Trim().TrimEnd('/')
-
   if ($target.Contains('/')) {
-    throw "Invalid Vercel production host '$target'. Use host only (example: oshihapi-pushi-buy-diagnosis.vercel.app)."
+    $target = $target.Split('/')[0]
+  }
+  if ($target.Contains('?')) {
+    $target = $target.Split('?')[0]
+  }
+  if ($target.Contains('#')) {
+    $target = $target.Split('#')[0]
   }
 
   if ($target -notmatch '^[A-Za-z0-9.-]+$' -or $target -notmatch '\.') {
@@ -313,7 +305,7 @@ function Invoke-VersionEndpoint([string]$ProdHost) {
 }
 
 function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$ExpectedEnv, [switch]$AllowPreview, [int]$MaxWaitSec = 180, [int]$PollIntervalSec = 5) {
-  $url = "https://$ProdHost/api/version"
+  $url = "https://{0}/api/version" -f $ProdHost
   $started = Get-Date
 
   $result = [PSCustomObject]@{
@@ -335,14 +327,26 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
       $result.StatusCode = $versionResponse.StatusCode
 
       if ($versionResponse.StatusCode -eq 404) {
-        $message404 = 'Production deployment does not include /api/version yet (production not updated or wrong production branch).'
-        Write-Host ("$message404 waited=${elapsedSec}s/${MaxWaitSec}s") -ForegroundColor Yellow
-        Start-Sleep -Seconds $PollIntervalSec
-        continue
+        $actionable404 = @"
+Production https://${ProdHost}/api/version returned 404.
+This means the current Production deployment does not include /api/version yet.
+Likely causes:
+- Vercel Settings -> Git -> Production Branch is not your merge target branch.
+- Required checks (for example GitHub Actions lint) are failing, so Production deploy is blocked.
+- You are checking a preview deployment/host instead of the true Production domain.
+What to check now:
+1) Vercel Project -> Settings -> Git -> Production Branch.
+2) Vercel Project -> Deployments, filter by Production, confirm latest deployment status is Ready.
+3) GitHub checks for the merge commit (lint/build) are green.
+After fixing, rerun .\post_merge_routine.ps1.
+"@
+        throw $actionable404.Trim()
       }
 
       if ($versionResponse.StatusCode -ne 200) {
-        throw ("Unexpected status {0} from {1}." -f $versionResponse.StatusCode, $url)
+        Write-Host ("Unexpected status {0} from {1}. waited={2}s/{3}s" -f $versionResponse.StatusCode, $url, $elapsedSec, $MaxWaitSec) -ForegroundColor Yellow
+        Start-Sleep -Seconds $PollIntervalSec
+        continue
       }
 
       $json = $versionResponse.Json
@@ -357,7 +361,7 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
       $result.GitRef = $gitRef
 
       if (-not $AllowPreview -and $vercelEnvValue -eq 'preview') {
-        throw "Host '$ProdHost' is preview (vercelEnv=preview). Use Production domain or rerun with -AllowPreviewHost."
+        throw ("Host '{0}' is preview (vercelEnv=preview). Use Production domain or rerun with -AllowPreviewHost." -f $ProdHost)
       }
 
       if ($ExpectedEnv -ne 'any' -and -not [string]::IsNullOrWhiteSpace($vercelEnvValue) -and $vercelEnvValue -ne $ExpectedEnv) {
@@ -365,13 +369,13 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
       }
 
       if ([string]::IsNullOrWhiteSpace($vercelSha) -or $vercelSha -eq 'unknown') {
-        Write-Host ("/api/version returned commitSha='$vercelSha'. waited=${elapsedSec}s/${MaxWaitSec}s") -ForegroundColor Yellow
+        Write-Host ("/api/version returned commitSha='{0}'. waited={1}s/{2}s" -f $vercelSha, $elapsedSec, $MaxWaitSec) -ForegroundColor Yellow
         Start-Sleep -Seconds $PollIntervalSec
         continue
       }
 
       if ($vercelSha -ne $LocalSha) {
-        Write-Host ("Vercel commit mismatch: local=$LocalSha vercel=$vercelSha waited=${elapsedSec}s/${MaxWaitSec}s") -ForegroundColor Yellow
+        Write-Host ("Vercel commit mismatch: local={0} vercel={1} waited={2}s/{3}s" -f $LocalSha, $vercelSha, $elapsedSec, $MaxWaitSec) -ForegroundColor Yellow
         Start-Sleep -Seconds $PollIntervalSec
         continue
       }
@@ -380,43 +384,39 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
       return $result
     } catch {
       $statusCode = $null
-      $responseBody = ''
       if ($_.Exception.PSObject.Properties['Response'] -and $_.Exception.Response) {
         try {
           $statusCode = [int]$_.Exception.Response.StatusCode
         } catch {}
-
-        try {
-          $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
-          $responseBody = $reader.ReadToEnd()
-          $reader.Close()
-        } catch {}
       }
 
       if ($statusCode -eq 404) {
-        $result.StatusCode = 404
-        $message404 = 'Production deployment does not include /api/version yet (production not updated or wrong production branch).'
-        $shortErr = Shorten-Text -Text $responseBody -MaxLen 160
-        if (-not [string]::IsNullOrWhiteSpace($shortErr)) {
-          Write-Host ("$message404 waited=${elapsedSec}s/${MaxWaitSec}s detail=$shortErr") -ForegroundColor Yellow
-        } else {
-          Write-Host ("$message404 waited=${elapsedSec}s/${MaxWaitSec}s") -ForegroundColor Yellow
-        }
-        Start-Sleep -Seconds $PollIntervalSec
-        continue
+        $actionable404 = @"
+Production https://${ProdHost}/api/version returned 404.
+This means the current Production deployment does not include /api/version yet.
+Likely causes:
+- Vercel Settings -> Git -> Production Branch is not your merge target branch.
+- Required checks (for example GitHub Actions lint) are failing, so Production deploy is blocked.
+- You are checking a preview deployment/host instead of the true Production domain.
+What to check now:
+1) Vercel Project -> Settings -> Git -> Production Branch.
+2) Vercel Project -> Deployments, filter by Production, confirm latest deployment status is Ready.
+3) GitHub checks for the merge commit (lint/build) are green.
+After fixing, rerun .\post_merge_routine.ps1.
+"@
+        throw $actionable404.Trim()
       }
 
       $shortMsg = Shorten-Text -Text $_.Exception.Message -MaxLen 240
-      throw "Vercel parity gate failed while calling $url (status=$statusCode): $shortMsg"
+      Write-Host ("Transient Vercel parity probe error at {0}: {1}. waited={2}s/{3}s" -f $url, $shortMsg, $elapsedSec, $MaxWaitSec) -ForegroundColor Yellow
+      Start-Sleep -Seconds $PollIntervalSec
+      continue
     }
-  }
-
-  if ($result.StatusCode -eq 404) {
-    throw "Production domain is not serving the commit that contains app/api/version/route.ts.`nFix: ensure Vercel Production Branch is the branch you merge into, or promote the latest deployment to Production."
   }
 
   throw ("Vercel parity timeout after {0}s. local={1}, vercel={2}, env={3}, host={4}" -f $MaxWaitSec, $LocalSha, $result.CommitSha, $result.VercelEnv, $ProdHost)
 }
+
 
 function Write-ParitySnapshot([string]$LocalSha, [string]$OriginSha, [string]$VercelSha, [string]$VercelEnvValue, [string]$ProdHost) {
   $snapshot = [ordered]@{
@@ -500,7 +500,7 @@ if ($Expect.Count -gt 0) {
     Write-Host ("Expect: {0} (scope={1})" -f $pat, $ExpectScope) -ForegroundColor Cyan
 
     if ($paths.Count -gt 0) {
-      & git grep -n -- "$pat" -- @paths | Out-Null
+      & git grep -n -- "$pat" -- $paths | Out-Null
     } else {
       & git grep -n -- "$pat" | Out-Null
     }
@@ -536,6 +536,18 @@ if ($SkipKillPorts) {
 Write-Section "Install (npm ci)"
 if (-not $SkipNpmCi) { Run 'npm' @('ci') }
 else { Write-Host 'SkipNpmCi enabled.' -ForegroundColor DarkGray }
+
+Write-Section "Lint (npm run lint)"
+if (-not $SkipLint) {
+  try {
+    Run 'npm' @('run','lint')
+    Write-Host 'LINT OK' -ForegroundColor Green
+  } catch {
+    throw "Lint failed. This can block required checks and prevent Vercel Production deployment parity. Fix lint issues, then rerun."
+  }
+} else {
+  Write-Host 'SkipLint enabled.' -ForegroundColor DarkGray
+}
 
 Write-Section "Build (npm run build)"
 if (-not $SkipBuild) {
