@@ -22,6 +22,12 @@
   - 更新 `.gitignore`：忽略 `*.lnk`
   - 本 repo 設定：`git config core.autocrlf false`（只影響此 repo）
 
+### ✅ Parity Gate（Production == Local）摘要（本次補充）
+- `post_merge_routine.ps1` 現在維持作為 merge 後唯一入口，預設執行 build 與 Vercel parity gate。
+- parity gate 會先驗證本機 commit 與 upstream 一致，再輪詢 `https://<prod-host>/api/version` 比對 `commitSha`。
+- 本次修正衝突標記誤判：`Assert-NoConflictMarkers` 改為只檢查**行首** `<<<<<<< / ======= / >>>>>>>`，避免腳本內說明文字被當成衝突。
+- 影響：在無衝突 repo 上，PowerShell 5.1 執行 `./post_merge_routine.ps1` 不會因誤判中止；若檔案真的含行首衝突標記仍會正確中止。
+
 ### 🟡 仍需做/確認（建議下一步）
 - [ ] 合併到 `main` → 拿到固定 Production URL（給朋友測更方便）
 - [ ] Telemetry 事件結構／匿名化規則：補齊 docs（價格 bucket、商品名 hash/不送）
