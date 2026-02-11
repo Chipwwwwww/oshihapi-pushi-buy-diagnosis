@@ -19,6 +19,9 @@ param(
   [switch]$SkipNpmCi,
   [switch]$SkipBuild,
   [switch]$SkipDev,
+  [switch]$ProdSmoke,
+  [switch]$RequireVercelSameCommit,
+  [string]$VercelProdUrlOrHost,
 
   [int]$DevPort = 3000,
   [int[]]$KillPorts = @(3000,3001,3002),
@@ -98,6 +101,68 @@ function Stop-Port([int]$Port) {
   } catch {}
 }
 
+function Resolve-VercelProdUrl([string]$ProvidedValue) {
+  $target = ""
+  if (-not [string]::IsNullOrWhiteSpace($ProvidedValue)) {
+    $target = $ProvidedValue.Trim()
+  }
+
+  if ([string]::IsNullOrWhiteSpace($target)) {
+    $hostFile = ".\ops\vercel_prod_host.txt"
+    if (Test-Path $hostFile) {
+      $line = Get-Content -Path $hostFile -TotalCount 1 -ErrorAction SilentlyContinue
+      if (-not [string]::IsNullOrWhiteSpace($line)) {
+        $target = $line.Trim()
+      }
+    }
+  }
+
+  if ([string]::IsNullOrWhiteSpace($target) -and -not [string]::IsNullOrWhiteSpace($env:OSH_VERCEL_PROD_HOST)) {
+    $target = $env:OSH_VERCEL_PROD_HOST.Trim()
+  }
+
+  if ([string]::IsNullOrWhiteSpace($target)) {
+    throw "Missing Vercel production host. Set -VercelProdUrlOrHost, or ops/vercel_prod_host.txt, or OSH_VERCEL_PROD_HOST."
+  }
+
+  if ($target -notmatch '^https?://') {
+    $target = "https://$target"
+  }
+
+  return $target.TrimEnd('/')
+}
+
+function Test-VercelSameCommit([string]$TargetUrl) {
+  if (-not $gitOk) {
+    throw "-RequireVercelSameCommit requires git repo."
+  }
+
+  $localSha = (& git rev-parse HEAD) 2>$null
+  if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($localSha)) {
+    throw "Unable to determine local commit SHA via git rev-parse HEAD."
+  }
+  $localSha = $localSha.Trim()
+
+  $endpoint = "$TargetUrl/api/version"
+  Write-Host ("Checking Vercel commit: {0}" -f $endpoint) -ForegroundColor DarkGray
+  $resp = Invoke-RestMethod -Uri $endpoint -TimeoutSec 10
+  $vercelSha = ""
+  if ($null -ne $resp -and $null -ne $resp.commitSha) {
+    $vercelSha = [string]$resp.commitSha
+  }
+  $vercelSha = $vercelSha.Trim()
+
+  if ([string]::IsNullOrWhiteSpace($vercelSha)) {
+    throw "Vercel /api/version did not return commitSha."
+  }
+
+  if ($vercelSha -ne $localSha) {
+    throw ("VERCEL MISMATCH: vercel={0} local={1}" -f $vercelSha, $localSha)
+  }
+
+  Write-Host ("Vercel commit gate: OK ({0})" -f $localSha) -ForegroundColor Green
+}
+
 Write-Section "Boot"
 $repoRoot = Ensure-RepoRoot
 Write-Host ("Time: {0}" -f (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")) -ForegroundColor Gray
@@ -168,6 +233,14 @@ if (-not $SkipPull) {
   Write-Host "SkipPull enabled." -ForegroundColor DarkGray
 }
 
+Write-Section "Optional: Vercel same commit gate"
+if ($RequireVercelSameCommit) {
+  $vercelUrl = Resolve-VercelProdUrl -ProvidedValue $VercelProdUrlOrHost
+  Test-VercelSameCommit -TargetUrl $vercelUrl
+} else {
+  Write-Host "Vercel same commit gate: (skipped)" -ForegroundColor DarkGray
+}
+
 Write-Section "Clean build artifacts"
 if (Test-Path ".\.next") {
   Write-Host "Removing .next directory" -ForegroundColor Yellow
@@ -191,10 +264,15 @@ if (-not $SkipBuild) {
   Write-Host "SkipBuild enabled." -ForegroundColor DarkGray
 }
 
-Write-Section "Dev server"
+Write-Section "Runtime server"
 if (-not $SkipDev) {
-  Write-Host ("Starting dev: npm run dev -- --webpack -p {0}" -f $DevPort) -ForegroundColor Cyan
-  Run "npm" @("run","dev","--","--webpack","-p","$DevPort")
+  if ($ProdSmoke) {
+    Write-Host ("Starting prod smoke: npx next start -p {0}" -f $DevPort) -ForegroundColor Cyan
+    Run "npx" @("next","start","-p","$DevPort")
+  } else {
+    Write-Host ("Starting dev: npm run dev -- --webpack -p {0}" -f $DevPort) -ForegroundColor Cyan
+    Run "npm" @("run","dev","--","--webpack","-p","$DevPort")
+  }
 } else {
   Write-Host "SkipDev enabled." -ForegroundColor DarkGray
 }
