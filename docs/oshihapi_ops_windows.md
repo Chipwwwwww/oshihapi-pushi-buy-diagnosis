@@ -172,17 +172,19 @@ npm run dev -- --webpack
 ### Parity Gate (Vercel vs Local)【新增】
 合併後建議跑 production-equivalent 檢查，確保本機 commit 與 Vercel Production 一致：
 ```powershell
-.\post_merge_routine.ps1 -RequireVercelSameCommit -ProdSmoke
+.\post_merge_routine.ps1 -RequireVercelSameCommit -VercelEnv production -ProdSmoke
 ```
 
-- `-ProdSmoke`：改用 `npx next start -p 3000`（非 dev server），更接近 production 行為。
+- `-ProdSmoke`：改用 `npm run start -- -p 3000`（非 dev server），更接近 production 行為。
 - `-RequireVercelSameCommit`：會比對本機 `git rev-parse HEAD` 與 `https://<prod>/api/version` 的 `commitSha`。
+- `-VercelEnv production|preview|any`：可明確要求環境，避免拿 Preview 跟 Production 比。
 - 如果不一致會直接失敗：`VERCEL MISMATCH: vercel=<sha> local=<sha>`。
+- UI parity 必須用 ProdSmoke，不要用 dev。
 
 Vercel Production host 設定方式（擇一）：
-1. `ops/vercel_prod_host.txt`（單行 host，例如 `your-project.vercel.app`）
+1. `ops/vercel_prod_host.txt`（單行 host，例如 `your-project.vercel.app`，不可填 `https://`、`/` 或 placeholder）
 2. 環境變數 `OSH_VERCEL_PROD_HOST`
-3. 執行時帶 `-VercelProdUrlOrHost`
+3. 執行時帶 `-VercelHost`（或舊參數 `-VercelProdUrlOrHost`）
 
 
 ⚠️ 重要：feature 併完後，最後一定要 merge 回 main（你自己的規則）
