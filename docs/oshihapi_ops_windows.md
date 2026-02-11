@@ -208,6 +208,12 @@ setx OSH_VERCEL_PROD_HOST "oshihapi-pushi-buy-diagnosis.vercel.app"    # 永久�
 4. 把複製到的 host 寫到 `ops/vercel_prod_host.txt` 第一行（僅 host）。
 5. 或改用 `setx OSH_VERCEL_PROD_HOST "<host>"` 設為永久環境變數。
 
+
+#### 手動驗證 API 版本（一行指令）
+```powershell
+curl https://<host>/api/version
+```
+
 #### 常見錯誤對照
 - `Missing Vercel production host`：尚未設定 host，或還是 placeholder。
 - `vercelEnv=preview`：你貼到了 preview hash domain，請改成 Production (Current) 的穩定網域。
