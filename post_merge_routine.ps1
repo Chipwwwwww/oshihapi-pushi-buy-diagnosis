@@ -1,18 +1,12 @@
 #requires -Version 5.1
-<#
-post_merge_routine.ps1 (universal single-file)
+<#!
+post_merge_routine.ps1
 
 Purpose
-- sync remote (ff-only) -> clean .next -> kill ports -> npm ci -> npm run build -> parity gate -> npm run dev -- --webpack -p 3000
-- print branch/commit
-- optional feature fingerprint check (-Expect) with scope (default: code = app/src)
-
-Examples
-  .\post_merge_routine.ps1
-  .\post_merge_routine.ps1 -SkipDev
-  .\post_merge_routine.ps1 -SkipVercelParity -SkipDev
-  .\post_merge_routine.ps1 -Expect game_billing -SkipDev
-  .\post_merge_routine.ps1 -Expect game_billing,"ゲーム課金" -ExpectScope code -SkipDev -SkipPull -SkipNpmCi -SkipBuild
+- Git parity preflight (origin/main by default)
+- Build-first gate (npm ci -> npm run build)
+- Vercel production parity gate via /api/version
+- Optional dev server start
 #>
 
 param(
@@ -33,10 +27,8 @@ param(
   [string]$VercelProdUrlOrHost,
   [ValidateSet('production','preview','any')]
   [string]$VercelEnv = 'production',
-  [int]$VercelWaitTimeoutSec = 180,
+  [int]$VercelMaxWaitSec = 180,
   [int]$VercelPollIntervalSec = 5,
-  [int]$VercelRetries = 12,
-  [int]$VercelRetryDelaySec = 10,
 
   [int]$DevPort = 3000,
   [int[]]$KillPorts = @(3000,3001,3002),
@@ -63,13 +55,6 @@ function Run([string]$Command, [string[]]$CmdArgs = @()) {
   if ($LASTEXITCODE -ne 0) { throw "Command failed (exit=${LASTEXITCODE}): $display" }
 }
 
-function TryRun([string]$Command, [string[]]$CmdArgs = @()) {
-  $display = if ($CmdArgs.Count -gt 0) { "$Command $($CmdArgs -join ' ')" } else { $Command }
-  Write-Host "Running: $display" -ForegroundColor DarkGray
-  & $Command @CmdArgs
-  return $LASTEXITCODE
-}
-
 function Ensure-RepoRoot() {
   $root = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
   Set-Location $root
@@ -85,6 +70,13 @@ function Get-GitValue([string[]]$Args, [string]$ErrorMessage) {
     throw $ErrorMessage
   }
   return ($value | Select-Object -First 1).Trim()
+}
+
+function Shorten-Text([string]$Text, [int]$MaxLen = 240) {
+  if ([string]::IsNullOrWhiteSpace($Text)) { return '' }
+  $flat = ($Text -replace "[\r\n]+", ' ').Trim()
+  if ($flat.Length -le $MaxLen) { return $flat }
+  return ($flat.Substring(0, $MaxLen) + '...')
 }
 
 function Stop-Port([int]$Port) {
@@ -108,8 +100,8 @@ function Stop-Port([int]$Port) {
 
   try {
     $lines = netstat -ano | Select-String -Pattern (":$Port\s") -ErrorAction SilentlyContinue
-    foreach ($l in $lines) {
-      $parts = ($l -replace "\s+", " ").Trim().Split(" ")
+    foreach ($line in $lines) {
+      $parts = ($line -replace "\s+", " ").Trim().Split(" ")
       if ($parts.Count -ge 5) {
         $pid = [int]$parts[-1]
         if ($pid -and $pid -ne 0) {
@@ -150,226 +142,300 @@ function Resolve-UpstreamRef() {
 }
 
 function Assert-NoConflictMarkers() {
-  $pathspecs = @()
-  $allowRoots = @('app','src','components','lib','ops')
-  foreach ($root in $allowRoots) {
-    if (Test-Path $root) { $pathspecs += $root }
+  $targets = @('app','src','components','ops')
+  $scanFiles = @()
+  foreach ($target in $targets) {
+    if (Test-Path ".\$target") {
+      $scanFiles += Get-ChildItem -Path ".\$target" -Recurse -File -ErrorAction SilentlyContinue
+    }
   }
   if (Test-Path '.\post_merge_routine.ps1') {
-    $pathspecs += 'post_merge_routine.ps1'
+    $scanFiles += Get-Item '.\post_merge_routine.ps1'
   }
 
-  if ($pathspecs.Count -eq 0) { return }
+  if ($scanFiles.Count -eq 0) { return }
 
-  $hits = (& git grep -n -I -e '<<<<<<<' -e '=======' -e '>>>>>>>' -- @pathspecs) 2>$null
-  if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne 1) {
-    throw 'Failed to run git grep for conflict marker guard.'
+  $regex = '^(<<<<<<<|=======|>>>>>>>)'
+  $hits = @()
+  foreach ($file in $scanFiles) {
+    $matched = Select-String -Path $file.FullName -Pattern $regex -Encoding UTF8 -ErrorAction SilentlyContinue
+    if ($matched) {
+      $hits += $matched | ForEach-Object { "{0}:{1}:{2}" -f $_.Path, $_.LineNumber, ($_.Line.Trim()) }
+    }
   }
 
-  if (-not [string]::IsNullOrWhiteSpace(($hits -join "`n"))) {
+  if ($hits.Count -gt 0) {
     Write-Host 'Conflict markers found (showing up to 20 hits):' -ForegroundColor Red
-    $limitedHits = @($hits | Select-Object -First 20)
-    foreach ($hit in $limitedHits) {
+    foreach ($hit in ($hits | Select-Object -First 20)) {
       Write-Host $hit -ForegroundColor Red
     }
     throw 'Conflict markers detected. Resolve them before rerunning .\post_merge_routine.ps1.'
   }
 }
 
-function Ensure-GitRemoteParity([switch]$SkipAutoPush) {
-  if (-not $gitOk) {
-    throw "Vercel parity gate requires git repo context."
+function Ensure-CleanWorkingTree() {
+  $dirty = (& git status --porcelain) 2>$null
+  if ($LASTEXITCODE -ne 0) {
+    throw 'Unable to inspect working tree (git status failed).'
   }
 
-  $branch = Get-GitValue -Args @('rev-parse','--abbrev-ref','HEAD') -ErrorMessage 'Unable to determine current branch.'
-  $upstreamRef = Resolve-UpstreamRef
-  $localSha = Get-GitValue -Args @('rev-parse','HEAD') -ErrorMessage 'Unable to determine local SHA via git rev-parse HEAD.'
-
-  $originSha = (& git rev-parse $upstreamRef) 2>$null
-  if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($originSha)) {
-    throw "Unable to determine remote SHA for '$upstreamRef'. Run git fetch origin and verify upstream."
+  if (-not [string]::IsNullOrWhiteSpace(($dirty -join "`n"))) {
+    throw "Working tree is not clean. Commit or stash local changes before running .\post_merge_routine.ps1.`nTip: git status --short"
   }
-  $originSha = ($originSha | Select-Object -First 1).Trim()
+}
 
-  if ($localSha -eq $originSha) {
-    Write-Host ("Git remote parity: OK ({0})" -f $localSha) -ForegroundColor Green
-    return $localSha
-  }
-
-  $countRaw = (& git rev-list --left-right --count "$upstreamRef...HEAD") 2>$null
+function Get-AheadBehind([string]$UpstreamRef) {
+  $countRaw = (& git rev-list --left-right --count "$UpstreamRef...HEAD") 2>$null
   if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($countRaw)) {
-    throw "Unable to compare local with '$upstreamRef'."
+    throw "Unable to compare local with '$UpstreamRef'."
   }
-  $parts = ($countRaw -replace "\s+", " ").Trim().Split(' ')
+
+  $parts = ($countRaw -replace "\s+", ' ').Trim().Split(' ')
   if ($parts.Count -lt 2) {
     throw "Unable to parse ahead/behind count from git rev-list output '$countRaw'."
   }
 
-  $behind = [int]$parts[0]
-  $ahead = [int]$parts[1]
+  return @([int]$parts[0], [int]$parts[1])
+}
+
+function Ensure-GitRemoteParity([switch]$SkipAutoPush) {
+  $branch = Get-GitValue -Args @('rev-parse','--abbrev-ref','HEAD') -ErrorMessage 'Unable to determine current branch.'
+  $upstreamRef = Resolve-UpstreamRef
+
+  $localSha = Get-GitValue -Args @('rev-parse','HEAD') -ErrorMessage 'Unable to determine local SHA via git rev-parse HEAD.'
+  $originSha = Get-GitValue -Args @('rev-parse',$upstreamRef) -ErrorMessage "Unable to determine remote SHA for '$upstreamRef'."
+
+  $pair = Get-AheadBehind -UpstreamRef $upstreamRef
+  $behind = $pair[0]
+  $ahead = $pair[1]
+
+  if ($behind -gt 0 -and $ahead -gt 0) {
+    throw ("Git parity failed: local diverged from {0} (behind={1}, ahead={2}). Fix with git pull --rebase, resolve conflicts, then rerun." -f $upstreamRef, $behind, $ahead)
+  }
+
   if ($behind -gt 0) {
-    throw ("Git parity failed: local diverged from {0} (behind={1}, ahead={2}). Resolve with git pull --rebase and fix conflicts, then rerun .\post_merge_routine.ps1." -f $upstreamRef, $behind, $ahead)
+    throw ("Git parity failed: local is behind {0} by {1} commit(s). Run git pull --ff-only (or rebase), then rerun." -f $upstreamRef, $behind)
   }
 
   if ($ahead -gt 0) {
     if ($SkipAutoPush) {
-      throw ("Git parity failed: local is ahead of {0} by {1} commit(s). Run git push, then rerun .\post_merge_routine.ps1." -f $upstreamRef, $ahead)
+      throw ("Git parity failed: local is ahead of {0} by {1} commit(s). Run git push, then rerun." -f $upstreamRef, $ahead)
     }
 
-    Write-Host ("Local is ahead of {0} by {1} commit(s); pushing..." -f $upstreamRef, $ahead) -ForegroundColor Yellow
-    if ($upstreamRef -eq 'origin/main' -and $branch -eq 'main') {
-      Run 'git' @('push','origin','main')
-    } elseif ($upstreamRef -eq 'origin/main') {
-      throw "No upstream configured for branch '$branch'. Set upstream or switch to main before auto-push."
-    } else {
-      Run 'git' @('push')
+    if ($branch -ne 'main') {
+      throw ("Auto-push blocked: current branch is '{0}'. Auto-push is allowed only on branch 'main'." -f $branch)
     }
 
-    Run 'git' @('fetch','origin','--prune')
-    $originShaAfter = Get-GitValue -Args @('rev-parse',$upstreamRef) -ErrorMessage "Unable to confirm remote SHA after push for '$upstreamRef'."
-    if ($originShaAfter -ne $localSha) {
-      throw ("Push completed but remote SHA still mismatched (local={0} remote={1})." -f $localSha, $originShaAfter)
-    }
+    Write-Host ("Local is ahead of {0} by {1} commit(s); auto-pushing main..." -f $upstreamRef, $ahead) -ForegroundColor Yellow
+    Run 'git' @('push','origin','main')
+    Run 'git' @('fetch','--all','--prune')
 
-    Write-Host ("Git remote parity: OK after push ({0})" -f $localSha) -ForegroundColor Green
-    return $localSha
+    $originSha = Get-GitValue -Args @('rev-parse',$upstreamRef) -ErrorMessage "Unable to determine remote SHA for '$upstreamRef' after push."
+    $pairAfter = Get-AheadBehind -UpstreamRef $upstreamRef
+    if ($pairAfter[0] -ne 0 -or $pairAfter[1] -ne 0) {
+      throw ("Auto-push completed but branch still not in parity with {0} (behind={1}, ahead={2})." -f $upstreamRef, $pairAfter[0], $pairAfter[1])
+    }
   }
 
-  throw ("Git parity failed unexpectedly: local={0}, remote={1}." -f $localSha, $originSha)
+  $localSha = Get-GitValue -Args @('rev-parse','HEAD') -ErrorMessage 'Unable to read local HEAD after parity check.'
+  $originSha = Get-GitValue -Args @('rev-parse',$upstreamRef) -ErrorMessage "Unable to read $upstreamRef after parity check."
+
+  if ($localSha -ne $originSha) {
+    throw ("Git parity failed unexpectedly: local={0}, remote={1}." -f $localSha, $originSha)
+  }
+
+  return [PSCustomObject]@{
+    Branch = $branch
+    UpstreamRef = $upstreamRef
+    LocalSha = $localSha
+    OriginSha = $originSha
+  }
 }
 
 function Resolve-VercelProdHost([string]$ProvidedValue) {
-  $hostFile = '.\ops\vercel_prod_host.txt'
   $target = ''
 
-  if (Test-Path $hostFile) {
-    $line = Get-Content -Path $hostFile -TotalCount 1 -ErrorAction SilentlyContinue
+  if (-not [string]::IsNullOrWhiteSpace($env:OSH_VERCEL_PROD_HOST)) {
+    $target = $env:OSH_VERCEL_PROD_HOST
+  }
+
+  $hostFilePath = '.\ops\vercel_prod_host.txt'
+  if ([string]::IsNullOrWhiteSpace($target) -and (Test-Path $hostFilePath)) {
+    $line = Get-Content -Path $hostFilePath -TotalCount 1 -ErrorAction SilentlyContinue
     if (-not [string]::IsNullOrWhiteSpace($line)) {
       $target = $line
     }
   }
-  if ([string]::IsNullOrWhiteSpace($target) -and -not [string]::IsNullOrWhiteSpace($env:OSH_VERCEL_PROD_HOST)) {
-    $target = $env:OSH_VERCEL_PROD_HOST
-  }
+
   if ([string]::IsNullOrWhiteSpace($target) -and -not [string]::IsNullOrWhiteSpace($ProvidedValue)) {
     $target = $ProvidedValue
   }
 
-  if (-not [string]::IsNullOrWhiteSpace($target)) {
-    $target = $target.Trim()
-    if ($target -match '^https?://') {
-      $target = $target -replace '^https?://', ''
-    }
-    $target = $target.Trim().TrimEnd('/')
-  }
+  if ([string]::IsNullOrWhiteSpace($target)) { return $null }
 
-  $setupHint = "Set OSH_VERCEL_PROD_HOST with: setx OSH_VERCEL_PROD_HOST `"your-prod-host.vercel.app`"`nOR create ops/vercel_prod_host.txt and put the production host on the first line.`nIn Vercel UI: Deployment Details → Domains → choose Production domain (e.g. project.vercel.app)."
-  if ([string]::IsNullOrWhiteSpace($target)) {
-    return $null
+  $target = $target.Trim()
+  if ($target -match '^https?://') {
+    $target = $target -replace '^https?://', ''
   }
-
-  $upper = $target.ToUpperInvariant()
-  if ($target.Contains('<') -or $target.Contains('>') -or $upper.Contains('YOUR-PROD-HOST') -or $upper.Contains('YOUR_PROD_HOST') -or $upper.Contains('PASTE') -or $upper.Contains('EXAMPLE')) {
-    throw ("Vercel host looks like placeholder: '$target'. {0}" -f $setupHint)
-  }
+  $target = $target.Trim().TrimEnd('/')
 
   if ($target.Contains('/')) {
-    throw "Invalid Vercel host '$target'. Use host only (no path)."
+    throw "Invalid Vercel production host '$target'. Use host only (example: oshihapi-pushi-buy-diagnosis.vercel.app)."
   }
 
   if ($target -notmatch '^[A-Za-z0-9.-]+$' -or $target -notmatch '\.') {
-    throw "Invalid Vercel host '$target'. Expected host like your-project.vercel.app"
+    throw "Invalid Vercel production host '$target'."
   }
 
   return $target
 }
 
-function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$ExpectedEnv, [switch]$AllowPreview, [int]$Retries = 12, [int]$RetryDelaySec = 10) {
+function Invoke-VersionEndpoint([string]$ProdHost) {
   [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+  $url = "https://$ProdHost/api/version"
+  $response = Invoke-WebRequest -Uri $url -Method Get -Headers @{ 'Cache-Control'='no-cache'; 'Pragma'='no-cache' } -TimeoutSec 15 -ErrorAction Stop
 
-  $url = ("https://{0}/api/version" -f $ProdHost)
-  $lastError = ''
-
-  for ($attempt = 1; $attempt -le $Retries; $attempt++) {
+  $body = $response.Content
+  $json = $null
+  if (-not [string]::IsNullOrWhiteSpace($body)) {
     try {
-      $ver = Invoke-RestMethod -Uri $url -TimeoutSec 10 -Headers @{ 'Cache-Control'='no-cache'; 'Pragma'='no-cache' }
-      $verSha = ''
-      if ($null -ne $ver.commitSha) { $verSha = [string]$ver.commitSha }
-      $verEnv = ''
-      if ($null -ne $ver.vercelEnv) { $verEnv = [string]$ver.vercelEnv }
-
-      if (-not $AllowPreview -and $verEnv -eq 'preview') {
-        throw "Host '$ProdHost' is preview (vercelEnv=preview). Use Production domain from Vercel Deployment Details → Domains, or rerun with -AllowPreviewHost."
-      }
-
-      if ($ExpectedEnv -ne 'any' -and -not [string]::IsNullOrWhiteSpace($verEnv) -and $verEnv -ne $ExpectedEnv) {
-        $lastError = ("Vercel environment mismatch: expected={0} actual={1} host={2}." -f $ExpectedEnv, $verEnv, $ProdHost)
-        if ($attempt -lt $Retries) {
-          Write-Host ("Vercel parity not ready (attempt {0}/{1}): {2}. Retrying in {3}s..." -f $attempt, $Retries, $lastError, $RetryDelaySec) -ForegroundColor Yellow
-          Start-Sleep -Seconds $RetryDelaySec
-          continue
-        }
-        break
-      }
-
-      if ([string]::IsNullOrWhiteSpace($verSha) -or $verSha -eq 'unknown') {
-        $lastError = 'Parity not ready: /api/version returned missing or unknown commitSha.'
-        if ($attempt -lt $Retries) {
-          Write-Host ("Vercel parity not ready (attempt {0}/{1}): {2} Retrying in {3}s..." -f $attempt, $Retries, $lastError, $RetryDelaySec) -ForegroundColor Yellow
-          Start-Sleep -Seconds $RetryDelaySec
-          continue
-        }
-        break
-      }
-
-      if ($verSha -ne $LocalSha) {
-        $lastError = ("Parity not ready: remote commitSha ({0}) != local HEAD ({1}) (vercelEnv={2})." -f $verSha, $LocalSha, $verEnv)
-        if ($attempt -lt $Retries) {
-          Write-Host ("Vercel parity not ready (attempt {0}/{1}): {2} Retrying in {3}s..." -f $attempt, $Retries, $lastError, $RetryDelaySec) -ForegroundColor Yellow
-          Start-Sleep -Seconds $RetryDelaySec
-          continue
-        }
-        break
-      }
-
-      Write-Host ("VERCEL == LOCAL ✅ ({0}) (vercelEnv={1})" -f $LocalSha, $verEnv) -ForegroundColor Green
-      return
+      $json = $body | ConvertFrom-Json
     } catch {
-      $msg = $_.Exception.Message
-      $statusCode = $null
-      if ($_.Exception.PSObject.Properties['Response'] -and $_.Exception.Response -and $_.Exception.Response.PSObject.Properties['StatusCode']) {
-        $statusCode = [int]$_.Exception.Response.StatusCode
-      }
-
-      $lastError = $msg
-      if ($msg.StartsWith('VERCEL MISMATCH:') -or $msg.StartsWith('Parity gate failed:') -or $msg.StartsWith('Host ') -or $msg.StartsWith('Vercel environment mismatch:')) {
-        throw
-      }
-
-      if ($statusCode -eq 404) {
-        $lastError = 'HTTP 404 from /api/version'
-        Write-Host (("Vercel parity check: /api/version returned 404 (attempt {0}/{1}); likely deployment missing route or wrong domain. " +
-          "Check Vercel Deployment Details -> Environment=Production and that the domain is production/current. Retrying in {2}s...") -f $attempt, $Retries, $RetryDelaySec) -ForegroundColor Yellow
-      } elseif ($attempt -lt $Retries) {
-        Write-Host ("Vercel parity check failed (attempt {0}/{1}): {2}. Retrying in {3}s..." -f $attempt, $Retries, $msg, $RetryDelaySec) -ForegroundColor Yellow
-      }
-
-      if ($attempt -lt $Retries) {
-        Start-Sleep -Seconds $RetryDelaySec
-        continue
-      }
+      throw "Unable to parse /api/version response JSON. Body=$((Shorten-Text $body 240))"
     }
   }
 
-  if ($lastError -eq 'HTTP 404 from /api/version') {
-    throw ("Vercel parity gate failed after {0} attempt(s): https://{1}/api/version is still 404.`nThis likely means the deployment you're hitting doesn't include the route yet or you're on the wrong domain.`nCheck Vercel Deployment Details -> Environment=Production and that the domain is production/current." -f $Retries, $ProdHost)
+  return [PSCustomObject]@{
+    StatusCode = [int]$response.StatusCode
+    Json = $json
+    Body = $body
+  }
+}
+
+function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$ExpectedEnv, [switch]$AllowPreview, [int]$MaxWaitSec = 180, [int]$PollIntervalSec = 5) {
+  $url = "https://$ProdHost/api/version"
+  $started = Get-Date
+
+  $result = [PSCustomObject]@{
+    CommitSha = ''
+    VercelEnv = ''
+    VercelUrl = ''
+    GitRef = ''
+    StatusCode = 0
   }
 
-  if ($lastError.StartsWith('Parity not ready: remote commitSha')) {
-    throw ("VERCEL MISMATCH after {0} attempt(s): {1}" -f $Retries, $lastError)
+  while ($true) {
+    $elapsedSec = [int]((Get-Date) - $started).TotalSeconds
+    if ($elapsedSec -gt $MaxWaitSec) {
+      break
+    }
+
+    try {
+      $versionResponse = Invoke-VersionEndpoint -ProdHost $ProdHost
+      $result.StatusCode = $versionResponse.StatusCode
+
+      if ($versionResponse.StatusCode -eq 404) {
+        $message404 = 'Production deployment does not include /api/version yet (production not updated or wrong production branch).'
+        Write-Host ("$message404 waited=${elapsedSec}s/${MaxWaitSec}s") -ForegroundColor Yellow
+        Start-Sleep -Seconds $PollIntervalSec
+        continue
+      }
+
+      if ($versionResponse.StatusCode -ne 200) {
+        throw ("Unexpected status {0} from {1}." -f $versionResponse.StatusCode, $url)
+      }
+
+      $json = $versionResponse.Json
+      $vercelSha = if ($json -and $json.commitSha) { [string]$json.commitSha } else { '' }
+      $vercelEnvValue = if ($json -and $json.vercelEnv) { [string]$json.vercelEnv } else { '' }
+      $vercelUrl = if ($json -and $json.vercelUrl) { [string]$json.vercelUrl } else { '' }
+      $gitRef = if ($json -and $json.gitRef) { [string]$json.gitRef } else { '' }
+
+      $result.CommitSha = $vercelSha
+      $result.VercelEnv = $vercelEnvValue
+      $result.VercelUrl = $vercelUrl
+      $result.GitRef = $gitRef
+
+      if (-not $AllowPreview -and $vercelEnvValue -eq 'preview') {
+        throw "Host '$ProdHost' is preview (vercelEnv=preview). Use Production domain or rerun with -AllowPreviewHost."
+      }
+
+      if ($ExpectedEnv -ne 'any' -and -not [string]::IsNullOrWhiteSpace($vercelEnvValue) -and $vercelEnvValue -ne $ExpectedEnv) {
+        throw ("Vercel environment mismatch: expected={0} actual={1} host={2}." -f $ExpectedEnv, $vercelEnvValue, $ProdHost)
+      }
+
+      if ([string]::IsNullOrWhiteSpace($vercelSha) -or $vercelSha -eq 'unknown') {
+        Write-Host ("/api/version returned commitSha='$vercelSha'. waited=${elapsedSec}s/${MaxWaitSec}s") -ForegroundColor Yellow
+        Start-Sleep -Seconds $PollIntervalSec
+        continue
+      }
+
+      if ($vercelSha -ne $LocalSha) {
+        Write-Host ("Vercel commit mismatch: local=$LocalSha vercel=$vercelSha waited=${elapsedSec}s/${MaxWaitSec}s") -ForegroundColor Yellow
+        Start-Sleep -Seconds $PollIntervalSec
+        continue
+      }
+
+      Write-Host ("VERCEL == LOCAL ✅ ({0}) (vercelEnv={1})" -f $LocalSha, $vercelEnvValue) -ForegroundColor Green
+      return $result
+    } catch {
+      $statusCode = $null
+      $responseBody = ''
+      if ($_.Exception.PSObject.Properties['Response'] -and $_.Exception.Response) {
+        try {
+          $statusCode = [int]$_.Exception.Response.StatusCode
+        } catch {}
+
+        try {
+          $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+          $responseBody = $reader.ReadToEnd()
+          $reader.Close()
+        } catch {}
+      }
+
+      if ($statusCode -eq 404) {
+        $result.StatusCode = 404
+        $message404 = 'Production deployment does not include /api/version yet (production not updated or wrong production branch).'
+        $shortErr = Shorten-Text -Text $responseBody -MaxLen 160
+        if (-not [string]::IsNullOrWhiteSpace($shortErr)) {
+          Write-Host ("$message404 waited=${elapsedSec}s/${MaxWaitSec}s detail=$shortErr") -ForegroundColor Yellow
+        } else {
+          Write-Host ("$message404 waited=${elapsedSec}s/${MaxWaitSec}s") -ForegroundColor Yellow
+        }
+        Start-Sleep -Seconds $PollIntervalSec
+        continue
+      }
+
+      $shortMsg = Shorten-Text -Text $_.Exception.Message -MaxLen 240
+      throw "Vercel parity gate failed while calling $url (status=$statusCode): $shortMsg"
+    }
   }
 
-  throw ("Vercel parity gate failed after {0} attempt(s). Last error: {1}`nCheck https://{2}/api/version and confirm Production deployment includes /api/version." -f $Retries, $lastError, $ProdHost)
+  if ($result.StatusCode -eq 404) {
+    throw "Production domain is not serving the commit that contains app/api/version/route.ts.`nFix: ensure Vercel Production Branch is the branch you merge into, or promote the latest deployment to Production."
+  }
+
+  throw ("Vercel parity timeout after {0}s. local={1}, vercel={2}, env={3}, host={4}" -f $MaxWaitSec, $LocalSha, $result.CommitSha, $result.VercelEnv, $ProdHost)
+}
+
+function Write-ParitySnapshot([string]$LocalSha, [string]$OriginSha, [string]$VercelSha, [string]$VercelEnvValue, [string]$ProdHost) {
+  $snapshot = [ordered]@{
+    timestamp = (Get-Date).ToString('o')
+    localSha = $LocalSha
+    originSha = $OriginSha
+    vercelCommitSha = $VercelSha
+    vercelEnv = $VercelEnvValue
+    productionHost = $ProdHost
+  }
+
+  $opsDir = '.\ops'
+  if (-not (Test-Path $opsDir)) {
+    New-Item -ItemType Directory -Path $opsDir -Force | Out-Null
+  }
+
+  $snapshotPath = Join-Path $opsDir 'parity_snapshot_latest.json'
+  ($snapshot | ConvertTo-Json -Depth 4) | Out-File -FilePath $snapshotPath -Encoding utf8
+  Write-Host ("Saved parity snapshot: {0}" -f $snapshotPath) -ForegroundColor Green
 }
 
 Write-Section "Boot"
@@ -384,44 +450,44 @@ if (Get-Command git -ErrorAction SilentlyContinue) {
   if ($LASTEXITCODE -eq 0 -and $isRepo -eq 'true') { $gitOk = $true }
 }
 
-if ($gitOk) {
-  $branch = (& git rev-parse --abbrev-ref HEAD) 2>$null
-  $commit = (& git rev-parse --short HEAD) 2>$null
-  $head = (& git log -1 --oneline) 2>$null
-  Write-Host ("Branch: {0}" -f $branch) -ForegroundColor Green
-  Write-Host ("Commit: {0}" -f $commit) -ForegroundColor Green
-  Write-Host ("Head:   {0}" -f $head) -ForegroundColor Green
-} else {
-  Write-Host 'Warning: git not available or not a git repo.' -ForegroundColor Yellow
+if (-not $gitOk) {
+  throw 'git is required for this routine (not a git repo or git not found).'
 }
 
-Write-Section "Git preflight guards"
-if ($gitOk) {
-  if (Test-GitOperationInProgress) {
-    throw "Git operation in progress (merge/rebase/cherry-pick). Run git status, resolve or abort, then rerun .\post_merge_routine.ps1."
-  }
+$branch = (& git rev-parse --abbrev-ref HEAD) 2>$null
+$commit = (& git rev-parse --short HEAD) 2>$null
+$head = (& git log -1 --oneline) 2>$null
+Write-Host ("Branch: {0}" -f $branch) -ForegroundColor Green
+Write-Host ("Commit: {0}" -f $commit) -ForegroundColor Green
+Write-Host ("Head:   {0}" -f $head) -ForegroundColor Green
 
-  $unmerged = (& git diff --name-only --diff-filter=U) 2>$null
-  if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace(($unmerged -join "`n"))) {
-    throw "Unmerged files detected. Run git status and resolve conflicts before rerunning .\post_merge_routine.ps1."
-  }
+Write-Section "Git preflight parity"
+if (Test-GitOperationInProgress) {
+  throw "Git operation in progress (merge/rebase/cherry-pick). Run git status, resolve or abort, then rerun .\post_merge_routine.ps1."
+}
 
-  Assert-NoConflictMarkers
+$unmerged = (& git diff --name-only --diff-filter=U) 2>$null
+if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace(($unmerged -join "`n"))) {
+  throw "Unmerged files detected. Run git status and resolve conflicts before rerunning .\post_merge_routine.ps1."
+}
 
-  $dirty = (& git status --porcelain) 2>$null
-  if (-not $SkipPull -and $LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace(($dirty -join "`n"))) {
-    Write-Host 'Warning: working tree has local changes and pull may fail. Commit or stash before running post_merge_routine.' -ForegroundColor Yellow
-  } else {
-    Write-Host 'Preflight: OK' -ForegroundColor Green
+Assert-NoConflictMarkers
+Ensure-CleanWorkingTree
+Run 'git' @('fetch','--all','--prune')
+
+if (-not $SkipPull) {
+  $upstream = Resolve-UpstreamRef
+  if (-not [string]::IsNullOrWhiteSpace($upstream)) {
+    Run 'git' @('pull','--ff-only')
   }
 } else {
-  Write-Host 'Preflight skipped (not a git repo).' -ForegroundColor DarkGray
+  Write-Host 'SkipPull enabled.' -ForegroundColor DarkGray
 }
+
+Write-Host 'Preflight: OK' -ForegroundColor Green
 
 Write-Section "Optional: feature fingerprint check"
 if ($Expect.Count -gt 0) {
-  if (-not $gitOk) { throw '-Expect requires git repo.' }
-
   $paths = @()
   switch ($ExpectScope) {
     'code' { $paths = @('app','src') }
@@ -448,23 +514,6 @@ if ($Expect.Count -gt 0) {
   Write-Host 'Expect check: (skipped)' -ForegroundColor DarkGray
 }
 
-Write-Section "Sync remote (ff-only)"
-if (-not $SkipPull) {
-  if ($gitOk) {
-    TryRun 'git' @('fetch','--all','--prune') | Out-Null
-    $up = (& git rev-parse --abbrev-ref --symbolic-full-name "@{u}") 2>$null
-    if ($LASTEXITCODE -eq 0 -and $up) {
-      Run 'git' @('pull','--ff-only')
-    } else {
-      Write-Host 'No upstream branch; skip git pull.' -ForegroundColor DarkGray
-    }
-  } else {
-    Write-Host 'Skip git sync (not a repo).' -ForegroundColor DarkGray
-  }
-} else {
-  Write-Host 'SkipPull enabled.' -ForegroundColor DarkGray
-}
-
 Write-Section "Clean build artifacts"
 if ($SkipClean) {
   Write-Host 'SkipClean enabled.' -ForegroundColor DarkGray
@@ -481,7 +530,7 @@ Write-Section "Kill ports"
 if ($SkipKillPorts) {
   Write-Host 'SkipKillPorts enabled.' -ForegroundColor DarkGray
 } else {
-  foreach ($p in $KillPorts) { Stop-Port -Port $p }
+  foreach ($port in $KillPorts) { Stop-Port -Port $port }
 }
 
 Write-Section "Install (npm ci)"
@@ -496,19 +545,39 @@ if (-not $SkipBuild) {
   Write-Host 'SkipBuild enabled.' -ForegroundColor DarkGray
 }
 
-Write-Section "Vercel parity gate (Production == Local)"
+Write-Section "Vercel parity gate (Production == Local == origin/main)"
 $runVercelParity = (-not $SkipVercelParity) -or $RequireVercelSameCommit
+$finalLocalSha = ''
+$finalOriginSha = ''
+$finalVercelSha = ''
+$finalVercelEnv = ''
+$productionDomainHost = ''
+
 if ($runVercelParity) {
   if (-not (Test-Path '.\app\api\version\route.ts')) {
     throw 'Missing local app/api/version/route.ts; Vercel parity gate requires it.'
   }
-  $localSha = Ensure-GitRemoteParity -SkipAutoPush:$SkipPush
-  $vercelHost = Resolve-VercelProdHost -ProvidedValue $VercelProdUrlOrHost
-  if ([string]::IsNullOrWhiteSpace($vercelHost)) {
-    throw "Missing Vercel production host. Set ops/vercel_prod_host.txt (first line host only, no https://, no path) or set OSH_VERCEL_PROD_HOST. In Vercel: Deployment Details -> Environment=Production (Current) -> Domains -> copy stable production host."
+
+  Ensure-CleanWorkingTree
+  $parityState = Ensure-GitRemoteParity -SkipAutoPush:$SkipPush
+  $finalLocalSha = $parityState.LocalSha
+  $finalOriginSha = $parityState.OriginSha
+
+  $productionDomainHost = Resolve-VercelProdHost -ProvidedValue $VercelProdUrlOrHost
+  if ([string]::IsNullOrWhiteSpace($productionDomainHost)) {
+    throw "Missing Vercel production host. Set OSH_VERCEL_PROD_HOST or ops/vercel_prod_host.txt (host only)."
   }
 
-  Wait-VercelCommitParity -ProdHost $vercelHost -LocalSha $localSha -ExpectedEnv $VercelEnv -AllowPreview:$AllowPreviewHost -Retries $VercelRetries -RetryDelaySec $VercelRetryDelaySec
+  $vercelState = Wait-VercelCommitParity -ProdHost $productionDomainHost -LocalSha $finalLocalSha -ExpectedEnv $VercelEnv -AllowPreview:$AllowPreviewHost -MaxWaitSec $VercelMaxWaitSec -PollIntervalSec $VercelPollIntervalSec
+  $finalVercelSha = $vercelState.CommitSha
+  $finalVercelEnv = $vercelState.VercelEnv
+
+  Write-Host ("LOCAL SHA:  {0}" -f $finalLocalSha) -ForegroundColor Green
+  Write-Host ("ORIGIN SHA: {0}" -f $finalOriginSha) -ForegroundColor Green
+  Write-Host ("VERCEL SHA: {0}" -f $finalVercelSha) -ForegroundColor Green
+  Write-Host ("VERCEL ENV: {0}" -f $finalVercelEnv) -ForegroundColor Green
+
+  Write-ParitySnapshot -LocalSha $finalLocalSha -OriginSha $finalOriginSha -VercelSha $finalVercelSha -VercelEnvValue $finalVercelEnv -ProdHost $productionDomainHost
 } else {
   Write-Host 'SkipVercelParity enabled.' -ForegroundColor Yellow
 }
