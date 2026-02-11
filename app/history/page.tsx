@@ -94,28 +94,26 @@ export default function HistoryPage() {
         <p className={helperTextClass}>直近20件まで表示されます。</p>
       </header>
 
-      {hasRuns ? (
-        <Card className="space-y-4">
-          <h2 className={sectionTitleClass}>結果の表示モード</h2>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-            {([
-              ["standard", "標準"],
-              ["kawaii", "かわいい"],
-              ["oshi", "推し活用語"],
-            ] as [ResultMode, string][]).map(([mode, label]) => (
-              <Button
-                key={mode}
-                variant={resultMode === mode ? "primary" : "outline"}
-                onClick={() => updateResultMode(mode)}
-                className="w-full rounded-xl"
-              >
-                {label}
-              </Button>
-            ))}
-          </div>
-          <p className={helperTextClass}>{MODE_DICTIONARY[resultMode].labels.disclaimer}</p>
-        </Card>
-      ) : null}
+      <Card className="space-y-4">
+        <h2 className={sectionTitleClass}>結果の表示モード</h2>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          {([
+            ["standard", "標準"],
+            ["kawaii", "かわいい"],
+            ["oshi", "推し活用語"],
+          ] as [ResultMode, string][]).map(([mode, label]) => (
+            <Button
+              key={mode}
+              variant={resultMode === mode ? "primary" : "outline"}
+              onClick={() => updateResultMode(mode)}
+              className="w-full rounded-xl"
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
+        <p className={helperTextClass}>{MODE_DICTIONARY[resultMode].labels.disclaimer}</p>
+      </Card>
 
       {hasRuns ? (
         <Card className="space-y-3">
