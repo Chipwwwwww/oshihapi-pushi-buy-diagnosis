@@ -39,9 +39,18 @@ function pickByHash(candidates: string[], seed: string): string {
   return candidates[index];
 }
 
-function clampTokens(values: string[], max: number): string {
-  if (max <= 0) return "";
-  return values.slice(0, max).join("");
+function pickTokensByHash(candidates: string[], max: number, seed: string): string {
+  if (max <= 0 || candidates.length === 0) return "";
+  const uniqueCandidates = Array.from(new Set(candidates));
+  const limit = Math.min(max, uniqueCandidates.length);
+  const offset = stableHash(seed) % uniqueCandidates.length;
+  const picked: string[] = [];
+
+  for (let i = 0; i < limit; i += 1) {
+    picked.push(uniqueCandidates[(offset + i) % uniqueCandidates.length]);
+  }
+
+  return picked.join("");
 }
 
 function fillTemplate(
@@ -67,13 +76,21 @@ export function formatResultByMode(input: FormatResultByModeInput): FormattedByM
 
   const sticker = pickByHash(dictionary.stickers[scenarioKey] ?? [], `${input.runId}:${scenarioKey}`);
 
-  const emoji = clampTokens(
-    dictionary.text.emoji.map((entry) => stripForbidden(entry, dictionary.text.forbiddenSubstrings)),
-    dictionary.text.maxEmoji,
+  const allowedEmoji = dictionary.text.emoji.map((entry) =>
+    stripForbidden(entry, dictionary.text.forbiddenSubstrings),
   );
-  const kaomoji = clampTokens(
-    dictionary.text.kaomoji.map((entry) => stripForbidden(entry, dictionary.text.forbiddenSubstrings)),
+  const allowedKaomoji = dictionary.text.kaomoji.map((entry) =>
+    stripForbidden(entry, dictionary.text.forbiddenSubstrings),
+  );
+  const emoji = pickTokensByHash(
+    allowedEmoji,
+    dictionary.text.maxEmoji,
+    `${input.runId}:${input.mode}:${scenarioKey}:emoji`,
+  );
+  const kaomoji = pickTokensByHash(
+    allowedKaomoji,
     dictionary.text.maxKaomoji,
+    `${input.runId}:${input.mode}:${scenarioKey}:kaomoji`,
   );
 
   const templateValues = {
@@ -98,7 +115,7 @@ export function formatResultByMode(input: FormatResultByModeInput): FormattedByM
   if (hasForbidden) {
     const fallbackSticker = pickByHash(
       MODE_DICTIONARY.standard.stickers[scenarioKey] ?? [],
-      `${input.runId}:${scenarioKey}:fallback`,
+      `${input.runId}:${scenarioKey}`,
     );
     shareTextX280 = stripForbidden(shareTextX280, dictionary.text.forbiddenSubstrings).replace(sticker, fallbackSticker);
     shareTextDmShort = stripForbidden(shareTextDmShort, dictionary.text.forbiddenSubstrings).replace(sticker, fallbackSticker);
