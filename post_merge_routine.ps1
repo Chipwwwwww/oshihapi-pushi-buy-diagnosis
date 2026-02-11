@@ -17,6 +17,8 @@ Examples
 
 param(
   [switch]$SkipPull,
+  [switch]$SkipClean,
+  [switch]$SkipKillPorts,
   [switch]$SkipNpmCi,
   [switch]$SkipBuild,
   [switch]$SkipDev,
@@ -148,8 +150,14 @@ function Resolve-UpstreamRef() {
 }
 
 function Assert-NoConflictMarkers() {
-  $searchPaths = @('app','src','components','ops','post_merge_routine.ps1')
-  $matches = (& git grep -n --perl-regexp -- '^(<<<<<<<|=======|>>>>>>>)' -- @searchPaths) 2>$null
+  $searchPaths = @('app','src','components','ops','docs','post_merge_routine.ps1')
+  $existingPaths = @()
+  foreach ($path in $searchPaths) {
+    if (Test-Path $path) { $existingPaths += $path }
+  }
+  if ($existingPaths.Count -eq 0) { return }
+
+  $matches = (& git grep -n --perl-regexp -- '^(<{7} .+|={7}|>{7} .+)$' -- @existingPaths) 2>$null
   if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace(($matches -join "`n"))) {
     Write-Host 'Conflict markers found:' -ForegroundColor Red
     $matches | ForEach-Object { Write-Host $_ -ForegroundColor Red }
@@ -288,15 +296,33 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
       }
 
       if ($ExpectedEnv -ne 'any' -and -not [string]::IsNullOrWhiteSpace($verEnv) -and $verEnv -ne $ExpectedEnv) {
-        throw ("Vercel environment mismatch: expected={0} actual={1} host={2}." -f $ExpectedEnv, $verEnv, $ProdHost)
+        $lastError = ("Vercel environment mismatch: expected={0} actual={1} host={2}." -f $ExpectedEnv, $verEnv, $ProdHost)
+        if ($attempt -lt $Retries) {
+          Write-Host ("Vercel parity not ready (attempt {0}/{1}): {2}. Retrying in {3}s..." -f $attempt, $Retries, $lastError, $RetryDelaySec) -ForegroundColor Yellow
+          Start-Sleep -Seconds $RetryDelaySec
+          continue
+        }
+        break
       }
 
       if ([string]::IsNullOrWhiteSpace($verSha) -or $verSha -eq 'unknown') {
-        throw "Parity gate failed: /api/version is not returning commitSha. Check app/api/version/route.ts and VERCEL_GIT_COMMIT_SHA environment on Vercel."
+        $lastError = 'Parity not ready: /api/version returned missing or unknown commitSha.'
+        if ($attempt -lt $Retries) {
+          Write-Host ("Vercel parity not ready (attempt {0}/{1}): {2} Retrying in {3}s..." -f $attempt, $Retries, $lastError, $RetryDelaySec) -ForegroundColor Yellow
+          Start-Sleep -Seconds $RetryDelaySec
+          continue
+        }
+        break
       }
 
       if ($verSha -ne $LocalSha) {
-        throw ("VERCEL MISMATCH: vercel={0} local={1} (vercelEnv={2})`nWait for production deployment to finish, or ensure prod host points to Production not Preview." -f $verSha, $LocalSha, $verEnv)
+        $lastError = ("Parity not ready: remote commitSha ({0}) != local HEAD ({1}) (vercelEnv={2})." -f $verSha, $LocalSha, $verEnv)
+        if ($attempt -lt $Retries) {
+          Write-Host ("Vercel parity not ready (attempt {0}/{1}): {2} Retrying in {3}s..." -f $attempt, $Retries, $lastError, $RetryDelaySec) -ForegroundColor Yellow
+          Start-Sleep -Seconds $RetryDelaySec
+          continue
+        }
+        break
       }
 
       Write-Host ("VERCEL == LOCAL ✅ ({0}) (vercelEnv={1})" -f $LocalSha, $verEnv) -ForegroundColor Green
@@ -423,15 +449,23 @@ if (-not $SkipPull) {
 }
 
 Write-Section "Clean build artifacts"
-if (Test-Path '.\.next') {
-  Write-Host 'Removing .next directory' -ForegroundColor Yellow
-  Remove-Item -Recurse -Force '.\.next' -ErrorAction SilentlyContinue
+if ($SkipClean) {
+  Write-Host 'SkipClean enabled.' -ForegroundColor DarkGray
 } else {
-  Write-Host '.next not found (skip)' -ForegroundColor DarkGray
+  if (Test-Path '.\.next') {
+    Write-Host 'Removing .next directory' -ForegroundColor Yellow
+    Remove-Item -Recurse -Force '.\.next' -ErrorAction SilentlyContinue
+  } else {
+    Write-Host '.next not found (skip)' -ForegroundColor DarkGray
+  }
 }
 
 Write-Section "Kill ports"
-foreach ($p in $KillPorts) { Stop-Port -Port $p }
+if ($SkipKillPorts) {
+  Write-Host 'SkipKillPorts enabled.' -ForegroundColor DarkGray
+} else {
+  foreach ($p in $KillPorts) { Stop-Port -Port $p }
+}
 
 Write-Section "Install (npm ci)"
 if (-not $SkipNpmCi) { Run 'npm' @('ci') }
