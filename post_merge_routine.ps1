@@ -150,36 +150,27 @@ function Resolve-UpstreamRef() {
 }
 
 function Assert-NoConflictMarkers() {
-  $searchRoots = @('app','src','components','ops')
-  $candidateFiles = @()
-
-  foreach ($root in $searchRoots) {
-    if (-not (Test-Path $root)) { continue }
-
-    $files = Get-ChildItem -Path $root -Recurse -File -ErrorAction SilentlyContinue |
-      Where-Object {
-        $_.Name -notlike '*.md' -and
-        $_.Name -notlike '*.txt'
-      }
-    $candidateFiles += $files
+  $pathspecs = @()
+  $allowRoots = @('app','src','components','lib','ops')
+  foreach ($root in $allowRoots) {
+    if (Test-Path $root) { $pathspecs += $root }
+  }
+  if (Test-Path '.\post_merge_routine.ps1') {
+    $pathspecs += 'post_merge_routine.ps1'
   }
 
-  if ($candidateFiles.Count -eq 0) { return }
+  if ($pathspecs.Count -eq 0) { return }
 
-  $matches = @()
-  foreach ($file in $candidateFiles) {
-    $fileMatches = Select-String -Path $file.FullName -Pattern '^(<<<<<<<|=======|>>>>>>>)' -SimpleMatch:$false -ErrorAction SilentlyContinue
-    if ($fileMatches) { $matches += $fileMatches }
+  $hits = (& git grep -n -I -e '<<<<<<<' -e '=======' -e '>>>>>>>' -- @pathspecs) 2>$null
+  if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne 1) {
+    throw 'Failed to run git grep for conflict marker guard.'
   }
 
-  if ($matches.Count -gt 0) {
-    Write-Host 'Conflict markers found:' -ForegroundColor Red
-    foreach ($match in $matches) {
-      $relativePath = $match.Path
-      if ($relativePath.StartsWith((Get-Location).Path)) {
-        $relativePath = $relativePath.Substring((Get-Location).Path.Length).TrimStart('\\','/')
-      }
-      Write-Host ("{0}:{1}:{2}" -f $relativePath, $match.LineNumber, $match.Line.Trim()) -ForegroundColor Red
+  if (-not [string]::IsNullOrWhiteSpace(($hits -join "`n"))) {
+    Write-Host 'Conflict markers found (showing up to 20 hits):' -ForegroundColor Red
+    $limitedHits = @($hits | Select-Object -First 20)
+    foreach ($hit in $limitedHits) {
+      Write-Host $hit -ForegroundColor Red
     }
     throw 'Conflict markers detected. Resolve them before rerunning .\post_merge_routine.ps1.'
   }
@@ -278,7 +269,7 @@ function Resolve-VercelProdHost([string]$ProvidedValue) {
   }
 
   $upper = $target.ToUpperInvariant()
-  if ($target.Contains('<') -or $target.Contains('>') -or $upper.Contains('YOUR-PROD-HOST') -or $upper.Contains('YOUR_PROD_HOST') -or $upper.Contains('PASTE_')) {
+  if ($target.Contains('<') -or $target.Contains('>') -or $upper.Contains('YOUR-PROD-HOST') -or $upper.Contains('YOUR_PROD_HOST') -or $upper.Contains('PASTE') -or $upper.Contains('EXAMPLE')) {
     throw ("Vercel host looks like placeholder: '$target'. {0}" -f $setupHint)
   }
 
@@ -296,7 +287,7 @@ function Resolve-VercelProdHost([string]$ProvidedValue) {
 function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$ExpectedEnv, [switch]$AllowPreview, [int]$Retries = 12, [int]$RetryDelaySec = 10) {
   [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-  $url = "https://$ProdHost/api/version"
+  $url = ("https://{0}/api/version" -f $ProdHost)
   $lastError = ''
 
   for ($attempt = 1; $attempt -le $Retries; $attempt++) {
@@ -357,7 +348,8 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
 
       if ($statusCode -eq 404) {
         $lastError = 'HTTP 404 from /api/version'
-        Write-Host ("Vercel parity check: /api/version returned 404 (attempt {0}/{1}); retrying in {2}s..." -f $attempt, $Retries, $RetryDelaySec) -ForegroundColor Yellow
+        Write-Host (("Vercel parity check: /api/version returned 404 (attempt {0}/{1}); likely deployment missing route or wrong domain. " +
+          "Check Vercel Deployment Details -> Environment=Production and that the domain is production/current. Retrying in {2}s...") -f $attempt, $Retries, $RetryDelaySec) -ForegroundColor Yellow
       } elseif ($attempt -lt $Retries) {
         Write-Host ("Vercel parity check failed (attempt {0}/{1}): {2}. Retrying in {3}s..." -f $attempt, $Retries, $msg, $RetryDelaySec) -ForegroundColor Yellow
       }
@@ -370,7 +362,11 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
   }
 
   if ($lastError -eq 'HTTP 404 from /api/version') {
-    throw ("Vercel parity gate failed after {0} attempt(s): https://{1}/api/version is still 404.`nAction: add app/api/version/route.ts and verify the latest deployment is updated on Production." -f $Retries, $ProdHost)
+    throw ("Vercel parity gate failed after {0} attempt(s): https://{1}/api/version is still 404.`nThis likely means the deployment you're hitting doesn't include the route yet or you're on the wrong domain.`nCheck Vercel Deployment Details -> Environment=Production and that the domain is production/current." -f $Retries, $ProdHost)
+  }
+
+  if ($lastError.StartsWith('Parity not ready: remote commitSha')) {
+    throw ("VERCEL MISMATCH after {0} attempt(s): {1}" -f $Retries, $lastError)
   }
 
   throw ("Vercel parity gate failed after {0} attempt(s). Last error: {1}`nCheck https://{2}/api/version and confirm Production deployment includes /api/version." -f $Retries, $lastError, $ProdHost)
@@ -504,19 +500,15 @@ Write-Section "Vercel parity gate (Production == Local)"
 $runVercelParity = (-not $SkipVercelParity) -or $RequireVercelSameCommit
 if ($runVercelParity) {
   if (-not (Test-Path '.\app\api\version\route.ts')) {
-    throw 'Missing app/api/version/route.ts (required for parity gate).'
+    throw 'Missing local app/api/version/route.ts; Vercel parity gate requires it.'
   }
   $localSha = Ensure-GitRemoteParity -SkipAutoPush:$SkipPush
   $vercelHost = Resolve-VercelProdHost -ProvidedValue $VercelProdUrlOrHost
   if ([string]::IsNullOrWhiteSpace($vercelHost)) {
-    $missingHostMsg = "Vercel parity gate skipped: missing production host.`nSet ops/vercel_prod_host.txt (first line host only, no https://) or set env OSH_VERCEL_PROD_HOST.`nFind host in Vercel: Deployment Details -> Domains -> Assigned Domains."
-    if ($RequireVercelSameCommit) {
-      throw $missingHostMsg
-    }
-    Write-Host $missingHostMsg -ForegroundColor Yellow
-  } else {
-  Wait-VercelCommitParity -ProdHost $vercelHost -LocalSha $localSha -ExpectedEnv $VercelEnv -AllowPreview:$AllowPreviewHost -Retries $VercelRetries -RetryDelaySec $VercelRetryDelaySec
+    throw "Missing Vercel production host. Set ops/vercel_prod_host.txt (first line host only, no https://, no path) or set OSH_VERCEL_PROD_HOST. In Vercel: Deployment Details -> Environment=Production (Current) -> Domains -> copy stable production host."
   }
+
+  Wait-VercelCommitParity -ProdHost $vercelHost -LocalSha $localSha -ExpectedEnv $VercelEnv -AllowPreview:$AllowPreviewHost -Retries $VercelRetries -RetryDelaySec $VercelRetryDelaySec
 } else {
   Write-Host 'SkipVercelParity enabled.' -ForegroundColor Yellow
 }
