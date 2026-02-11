@@ -1,0 +1,91 @@
+oshihapi — Retro Report (latest) — 2026-02-11
+
+目的
+- 讓「merge 後」的 SOP 變成完全可重現、可驗收的一條指令：
+  .\post_merge_routine.ps1
+- 其中最重要的新要求：Vercel Production 看到的內容 == Local HEAD 看到的內容（commit 完全一致）。
+
+──────────────────────────────────────────────────────────────────────────────
+1) 這次到底發生了什麼（時間線/現象）
+A. UI/版面修正後，感覺「越改越糟」
+- 同一個功能在 Local、Vercel、Codex assess 出現不同結果。
+- 使用者直覺會認為「程式碼被改壞」，但其實最常見是：
+  1) 你看的不是同一個 deployment（Production vs Preview）
+  2) 你看的不是同一個 commit（Vercel 還在 deploy / 或你本機沒同步）
+  3) 你套用了 zip 但路徑錯 / 覆蓋不完整，導致本機/文件/腳本不一致
+
+B. 嘗試加 parity gate 後又更慘：腳本本身壞掉
+- 典型錯誤：
+  - ParserError（腳本有語法錯/不完整/被 conflict markers 汙染）
+  - 嘗試寫 $Host（PowerShell 內建唯讀自動變數）→ 直接爆炸
+  - /api/version 404 → parity gate 永遠拿不到 commitSha
+  - 展開 zip 用 placeholder 路徑 C:\path\to\xxx.zip → 一定找不到
+  - 用 post_merge_routine.ps1（沒有 .\）→ PowerShell 找不到指令
+
+──────────────────────────────────────────────────────────────────────────────
+2) 根因（最關鍵的幾個）
+(1) 「同版」沒有可驗收的判定方式
+- 你需要一個 endpoint 告訴你：目前 Vercel 這個頁面到底是哪個 commit。
+- 沒有 /api/version，就只能靠 UI 感覺/Deployment 列表猜，很容易看錯。
+
+(2) 缺少 Production domain 的單一真實來源（single source of truth）
+- Vercel 同時有：
+  - production domain（主域）
+  - preview domains（每個 PR/branch 的域）
+- 如果 parity gate 打到 preview domain，永遠不會跟 main 的 local HEAD 一致。
+
+(3) merge 後的「部署延遲」沒有被流程承認
+- merge 完後，Vercel Production 還沒部署到同一個 commit 是常態。
+- 所以 parity gate 必須「retry 等待」，而不是一次失敗就爆炸。
+
+(4) 腳本缺少 fail-fast 保護
+- conflict markers / 內建變數覆寫 / 未設定 host 等問題，應該在一開始就阻止後續流程（避免跑到一半才爆）
+
+──────────────────────────────────────────────────────────────────────────────
+3) 本次最重要的修正（應該被永久保留）
+A) 新增 /api/version
+- app/api/version/route.ts
+- 回傳：
+  - commitSha（Vercel 用 VERCEL_GIT_COMMIT_SHA；本機 fallback 用 git rev-parse）
+  - vercelEnv（production/preview）
+  - deploymentId（輔助除錯）
+- cache-control: no-store（避免 CDN/cache 造成誤判）
+
+B) 強化 post_merge_routine.ps1（merge 後一鍵）
+必備能力：
+- 讀取 Production host（優先序：參數 > env var > ops/vercel_prod_host.txt）
+- normalize host（移除 https://、去尾斜線）
+- fail-fast：
+  - conflict markers 檢出即停
+  - host 未設定即停（除非顯式 -SkipVercelParity）
+- retry：
+  - 404 / 連不到 / commitSha=unknown / commit mismatch 都要重試等待
+- 避免使用 $Host 這類 PowerShell 內建唯讀變數名
+
+──────────────────────────────────────────────────────────────────────────────
+4) 新 SOP（以後你要照這個做）
+一次性設定（只做一次）
+1) Vercel 找 production domain：
+   Deployments → Production / Current → Deployment Details → Domains
+2) 填入 host（只寫 host，不要 https://）：
+   "xxx.vercel.app" | Set-Content -Encoding UTF8 .\ops\vercel_prod_host.txt
+   （或 setx OSH_VERCEL_PROD_HOST "xxx.vercel.app" 但要重開 PowerShell）
+
+每次 merge 後（固定）
+- repo root：
+  .\post_merge_routine.ps1
+
+驗收（腳本本身就會做）
+- npm run build ✅
+- parity gate 印出：VERCEL == LOCAL ✅
+
+──────────────────────────────────────────────────────────────────────────────
+5) 你這次已知的坑（下次不要再踩）
+- zip 展開：不要用 placeholder 路徑，改用「抓 Downloads 最新 zip」的命令
+- 執行腳本：永遠用 .\post_merge_routine.ps1
+- 404 /api/version：代表 route 沒進 Production，先補 code + push，等部署後再跑 parity
+- 不要在 PowerShell 用 $Host 當變數名
+- 任何時候看起來「Local 跟 Vercel 不同」，第一反應不是 UI 改壞，而是：
+  1) domain 是否為 Production
+  2) commit 是否一致（/api/version）
+

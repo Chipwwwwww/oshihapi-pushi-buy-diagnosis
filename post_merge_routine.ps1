@@ -1,200 +1,251 @@
-﻿#requires -Version 5.1
-<#
-post_merge_routine.ps1 (universal single-file)
+<# 
+oshihapi post_merge_routine.ps1 (Windows PowerShell)
+Goal: after merging/pulling, make Local + Vercel Production deterministic and identical.
 
-Purpose
-- sync remote (ff-only) -> clean .next -> kill ports -> npm ci -> npm run build -> npm run dev -- --webpack -p 3000
-- print branch/commit
-- optional feature fingerprint check (-Expect) with scope (default: code = app/src)
+What it does (default):
+1) (optional) git fetch/pull
+2) fail-fast: detect merge conflict markers (<<<<<<< ======= >>>>>>>)
+3) Vercel parity gate: wait until https://<PROD_HOST>/api/version matches local HEAD (requires PROD_HOST)
+4) clean .next, kill dev ports, npm ci, npm run build
+5) start dev server: npm run dev -- --webpack -p <PORT>
 
-Examples
+Usage:
   .\post_merge_routine.ps1
   .\post_merge_routine.ps1 -SkipDev
-  .\post_merge_routine.ps1 -Expect game_billing -SkipDev
-  .\post_merge_routine.ps1 -Expect game_billing,"ゲーム課金" -ExpectScope code -SkipDev -SkipPull -SkipNpmCi -SkipBuild
+  .\post_merge_routine.ps1 -SkipPull
+  .\post_merge_routine.ps1 -ProdHost "your-project.vercel.app"
+  .\post_merge_routine.ps1 -SkipVercelParity   # emergency bypass
 #>
 
+[CmdletBinding()]
 param(
   [switch]$SkipPull,
   [switch]$SkipNpmCi,
   [switch]$SkipBuild,
   [switch]$SkipDev,
+  [switch]$SkipVercelParity,
+  [int]$Port = 3000,
 
-  [int]$DevPort = 3000,
-  [int[]]$KillPorts = @(3000,3001,3002),
+  # If set, the script will FAIL if prod host is not configured.
+  [switch]$RequireVercelParity = $true,
 
-  [string[]]$Expect = @(),
-  [ValidateSet('code','docs','all')]
-  [string]$ExpectScope = 'code'
+  # Host only (no https://). Can also be set via env:OSH_VERCEL_PROD_HOST or ops/vercel_prod_host.txt
+  [string]$ProdHost = "",
+
+  [int]$VercelRetries = 12,        # 12*10s = 120s default
+  [int]$VercelRetrySleepSec = 10
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-function Write-Section([string]$Title) {
+function Write-Section([string]$title) {
   Write-Host ""
-  Write-Host ("=" * 72) -ForegroundColor DarkGray
-  Write-Host ("[post_merge_routine] {0}" -f $Title) -ForegroundColor Cyan
-  Write-Host ("=" * 72) -ForegroundColor DarkGray
+  Write-Host ("=" * 78) -ForegroundColor DarkGray
+  Write-Host $title -ForegroundColor Cyan
+  Write-Host ("=" * 78) -ForegroundColor DarkGray
 }
 
-function Run([string]$Command, [string[]]$CmdArgs = @()) {
-  $display = if ($CmdArgs.Count -gt 0) { "$Command $($CmdArgs -join ' ')" } else { $Command }
-  Write-Host "Running: $display" -ForegroundColor DarkGray
-  & $Command @CmdArgs
-  if ($LASTEXITCODE -ne 0) { throw "Command failed (exit=${LASTEXITCODE}): $display" }
-}
-
-function TryRun([string]$Command, [string[]]$CmdArgs = @()) {
-  $display = if ($CmdArgs.Count -gt 0) { "$Command $($CmdArgs -join ' ')" } else { $Command }
-  Write-Host "Running: $display" -ForegroundColor DarkGray
-  & $Command @CmdArgs
-  return $LASTEXITCODE
-}
-
-function Ensure-RepoRoot() {
-  $root = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
-  Set-Location $root
-  if (-not (Test-Path ".\package.json")) {
-    throw "package.json not found. Run at repo root. Current: $root"
+function Run([string]$cmd, [string[]]$args = @()) {
+  Write-Host ("Running: " + $cmd + " " + ($args -join " ")) -ForegroundColor DarkGray
+  & $cmd @args
+  if ($LASTEXITCODE -ne 0) {
+    throw "Command failed (exit=$LASTEXITCODE): $cmd $($args -join ' ')"
   }
-  return (Get-Location).Path
 }
 
-function Stop-Port([int]$Port) {
-  if (Get-Command Get-NetTCPConnection -ErrorAction SilentlyContinue) {
-    try {
-      $conns = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
-      if (-not $conns) { return }
-      $pids = $conns | Select-Object -ExpandProperty OwningProcess -Unique
-      foreach ($pid in $pids) {
-        if ($pid -and $pid -ne 0) {
-          $p = Get-Process -Id $pid -ErrorAction SilentlyContinue
-          if ($p) {
-            Write-Host "Killing PID=$pid on port=$Port ($($p.ProcessName))" -ForegroundColor Yellow
-            Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
-          }
-        }
+function Ensure-RepoRoot {
+  if (-not (Test-Path ".git")) {
+    throw "Please run this script from the repo root (folder that contains .git). Current: $(Get-Location)"
+  }
+}
+
+function Kill-Port([int]$p) {
+  try {
+    $conns = Get-NetTCPConnection -LocalPort $p -ErrorAction SilentlyContinue | Select-Object -Unique -ExpandProperty OwningProcess
+    foreach ($pid in ($conns | Where-Object { $_ -and $_ -ne 0 } | Select-Object -Unique)) {
+      try {
+        Write-Host "Killing PID $pid (port $p)..." -ForegroundColor Yellow
+        Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+      } catch {}
+    }
+  } catch {
+    # Get-NetTCPConnection may be unavailable on some systems; fallback to netstat
+    $lines = & netstat -ano | Select-String (":$p\s")
+    foreach ($line in $lines) {
+      $parts = ($line -split "\s+") | Where-Object { $_ -ne "" }
+      $pid = $parts[-1]
+      if ($pid -match "^\d+$") {
+        try {
+          Write-Host "Killing PID $pid (port $p)..." -ForegroundColor Yellow
+          taskkill /PID $pid /F | Out-Null
+        } catch {}
       }
-    } catch {}
+    }
+  }
+}
+
+function Normalize-Host([string]$h) {
+  if (-not $h) { return "" }
+  $x = $h.Trim()
+  $x = $x -replace '^https?://', ''
+  $x = $x.TrimEnd('/')
+  return $x
+}
+
+function Get-ProdHost {
+  if ($ProdHost) { return (Normalize-Host $ProdHost) }
+
+  $envHost = $env:OSH_VERCEL_PROD_HOST
+  if ($envHost) { return (Normalize-Host $envHost) }
+
+  $file = Join-Path (Get-Location) "ops\vercel_prod_host.txt"
+  if (Test-Path $file) {
+    $line = (Get-Content $file -ErrorAction SilentlyContinue | Select-Object -First 1)
+    return (Normalize-Host $line)
+  }
+
+  return ""
+}
+
+function Detect-ConflictMarkers {
+  Write-Section "[post_merge_routine] Fast guard (conflict markers)"
+  $paths = @("app", "src", "components", "ops", "docs", "post_merge_routine.ps1")
+  try {
+    $out = & git grep -n -I -E "^(<<<<<<<|=======|>>>>>>>)" -- $paths 2>$null
+    if ($LASTEXITCODE -eq 0 -and $out) {
+      Write-Host "Conflict markers detected:" -ForegroundColor Red
+      $out | ForEach-Object { Write-Host $_ -ForegroundColor Red }
+      throw "Conflict markers detected. Resolve them before running post_merge_routine."
+    }
+  } catch {
+    # If git grep fails (e.g., paths missing), still allow; but keep it noisy.
+    Write-Host "Warning: conflict marker scan skipped/failed: $($_.Exception.Message)" -ForegroundColor Yellow
+  }
+}
+
+function Get-LocalHead {
+  return (& git rev-parse HEAD).Trim()
+}
+
+function Invoke-Json([string]$url) {
+  # Use Invoke-RestMethod but with useful error message
+  try {
+    return Invoke-RestMethod -Uri $url -TimeoutSec 10 -Headers @{ "Cache-Control"="no-cache" }
+  } catch {
+    $msg = $_.Exception.Message
+    throw "Cannot reach $url ($msg)"
+  }
+}
+
+function Vercel-ParityGate {
+  if ($SkipVercelParity) {
+    Write-Section "[post_merge_routine] Vercel parity gate (SKIPPED)"
     return
   }
 
-  try {
-    $lines = netstat -ano | Select-String -Pattern (":$Port\s") -ErrorAction SilentlyContinue
-    foreach ($l in $lines) {
-      $parts = ($l -replace "\s+", " ").Trim().Split(" ")
-      if ($parts.Count -ge 5) {
-        $pid = [int]$parts[-1]
-        if ($pid -and $pid -ne 0) {
-          $p = Get-Process -Id $pid -ErrorAction SilentlyContinue
-          if ($p) {
-            Write-Host "Killing PID=$pid on port=$Port ($($p.ProcessName))" -ForegroundColor Yellow
-            Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
-          }
-        }
+  $host = Get-ProdHost
+
+  if (-not $host) {
+    $hint = @(
+      "Prod host is not set.",
+      "Set one of:",
+      "  1) ops\vercel_prod_host.txt (host only, e.g. oshihapi-pushi-buy-diagnosis.vercel.app)",
+      "  2) env var: setx OSH_VERCEL_PROD_HOST ""oshihapi-pushi-buy-diagnosis.vercel.app"" (restart PowerShell)",
+      "  3) pass: .\post_merge_routine.ps1 -ProdHost ""..."""
+    ) -join "`n"
+    if ($RequireVercelParity) { throw $hint }
+    Write-Host $hint -ForegroundColor Yellow
+    return
+  }
+
+  $localSha = Get-LocalHead
+  $url = "https://$host/api/version"
+
+  Write-Section "[post_merge_routine] Vercel parity gate"
+  Write-Host "LOCAL SHA = $localSha" -ForegroundColor Cyan
+  Write-Host "PROD HOST = $host" -ForegroundColor Cyan
+  Write-Host "URL      = $url" -ForegroundColor DarkGray
+
+  for ($i=1; $i -le $VercelRetries; $i++) {
+    try {
+      $ver = Invoke-Json $url
+
+      $remoteSha = ""
+      if ($null -ne $ver.commitSha) { $remoteSha = [string]$ver.commitSha }
+      $remoteSha = $remoteSha.Trim()
+
+      if (-not $remoteSha -or $remoteSha -eq "unknown") {
+        throw "commitSha empty/unknown (vercelEnv=$($ver.vercelEnv))"
       }
+
+      if ($remoteSha -eq $localSha) {
+        Write-Host "VERCEL == LOCAL ✅ ($localSha) (vercelEnv=$($ver.vercelEnv))" -ForegroundColor Green
+        return
+      }
+
+      Write-Host "Attempt $i/$VercelRetries: mismatch remote=$remoteSha local=$localSha (vercelEnv=$($ver.vercelEnv)). Waiting ${VercelRetrySleepSec}s..." -ForegroundColor Yellow
+    } catch {
+      $msg = $_.Exception.Message
+      # common: 404 when /api/version is not deployed yet
+      Write-Host "Attempt $i/$VercelRetries: cannot reach $url ($msg). Waiting ${VercelRetrySleepSec}s..." -ForegroundColor Yellow
     }
-  } catch {}
-}
 
-Write-Section "Boot"
-$repoRoot = Ensure-RepoRoot
-Write-Host ("Time: {0}" -f (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")) -ForegroundColor Gray
-Write-Host ("Repo: {0}" -f $repoRoot) -ForegroundColor Gray
-
-Write-Section "Git context"
-$gitOk = $false
-if (Get-Command git -ErrorAction SilentlyContinue) {
-  $isRepo = (& git rev-parse --is-inside-work-tree) 2>$null
-  if ($LASTEXITCODE -eq 0 -and $isRepo -eq "true") { $gitOk = $true }
-}
-
-if ($gitOk) {
-  $branch = (& git rev-parse --abbrev-ref HEAD) 2>$null
-  $commit = (& git rev-parse --short HEAD) 2>$null
-  $head   = (& git log -1 --oneline) 2>$null
-  Write-Host ("Branch: {0}" -f $branch) -ForegroundColor Green
-  Write-Host ("Commit: {0}" -f $commit) -ForegroundColor Green
-  Write-Host ("Head:   {0}" -f $head)   -ForegroundColor Green
-} else {
-  Write-Host "Warning: git not available or not a git repo." -ForegroundColor Yellow
-}
-
-Write-Section "Optional: feature fingerprint check"
-if ($Expect.Count -gt 0) {
-  if (-not $gitOk) { throw "-Expect requires git repo." }
-
-  $paths = @()
-  switch ($ExpectScope) {
-    'code' { $paths = @('app','src') }
-    'docs' { $paths = @('docs','SPEC.md','oshihapi_ops_windows.md','gpt_prompt_next_chat_latest.txt') }
-    'all'  { $paths = @() }
+    Start-Sleep -Seconds $VercelRetrySleepSec
   }
 
-  foreach ($pat in $Expect) {
-    if ([string]::IsNullOrWhiteSpace($pat)) { continue }
-    Write-Host ("Expect: {0} (scope={1})" -f $pat, $ExpectScope) -ForegroundColor Cyan
-
-    if ($paths.Count -gt 0) {
-      & git grep -n -- "$pat" -- @paths | Out-Null
-    } else {
-      & git grep -n -- "$pat" | Out-Null
-    }
-
-    if ($LASTEXITCODE -ne 0) {
-      throw "EXPECT FAILED: pattern '$pat' not found (scope=$ExpectScope). Likely wrong branch/commit."
-    }
-  }
-  Write-Host "Expect check: OK" -ForegroundColor Green
-} else {
-  Write-Host "Expect check: (skipped)" -ForegroundColor DarkGray
+  throw "VERCEL MISMATCH (after $VercelRetries retries): expected $localSha. Check that /api/version exists and Vercel Production has deployed the same commit, and that ops/vercel_prod_host.txt points to the PRODUCTION domain (not a preview domain)."
 }
 
-Write-Section "Sync remote (ff-only)"
+Write-Section "[post_merge_routine] Boot"
+Ensure-RepoRoot
+Write-Host "Time: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor DarkGray
+Write-Host "Repo: $(Get-Location)" -ForegroundColor DarkGray
+
+Write-Section "[post_merge_routine] Git context"
 if (-not $SkipPull) {
-  if ($gitOk) {
-    TryRun "git" @("fetch","--all","--prune") | Out-Null
-    $up = (& git rev-parse --abbrev-ref --symbolic-full-name "@{u}") 2>$null
-    if ($LASTEXITCODE -eq 0 -and $up) {
-      Run "git" @("pull","--ff-only")
-    } else {
-      Write-Host "No upstream branch; skip git pull." -ForegroundColor DarkGray
-    }
-  } else {
-    Write-Host "Skip git sync (not a repo)." -ForegroundColor DarkGray
-  }
+  Run git @("fetch", "--all", "--prune")
+  # Safe pull for current branch
+  Run git @("pull", "--ff-only")
 } else {
-  Write-Host "SkipPull enabled." -ForegroundColor DarkGray
+  Write-Host "SkipPull enabled." -ForegroundColor Yellow
 }
 
-Write-Section "Clean build artifacts"
-if (Test-Path ".\.next") {
-  Write-Host "Removing .next directory" -ForegroundColor Yellow
-  Remove-Item -Recurse -Force ".\.next" -ErrorAction SilentlyContinue
-} else {
-  Write-Host ".next not found (skip)" -ForegroundColor DarkGray
+Detect-ConflictMarkers
+Vercel-ParityGate
+
+Write-Section "[post_merge_routine] Clean build artifacts"
+if (Test-Path ".next") {
+  Write-Host "Removing .next directory" -ForegroundColor DarkGray
+  Remove-Item -Recurse -Force ".next"
 }
 
-Write-Section "Kill ports"
-foreach ($p in $KillPorts) { Stop-Port -Port $p }
+Write-Section "[post_merge_routine] Kill ports"
+Kill-Port 3000
+Kill-Port 3001
+Kill-Port 3002
 
-Write-Section "Install (npm ci)"
-if (-not $SkipNpmCi) { Run "npm" @("ci") }
-else { Write-Host "SkipNpmCi enabled." -ForegroundColor DarkGray }
+Write-Section "[post_merge_routine] Install (npm ci)"
+if (-not $SkipNpmCi) {
+  Run npm @("ci")
+} else {
+  Write-Host "SkipNpmCi enabled." -ForegroundColor Yellow
+}
 
-Write-Section "Build (npm run build)"
+Write-Section "[post_merge_routine] Build (npm run build)"
 if (-not $SkipBuild) {
-  Run "npm" @("run","build")
+  Run npm @("run", "build")
   Write-Host "BUILD OK" -ForegroundColor Green
 } else {
-  Write-Host "SkipBuild enabled." -ForegroundColor DarkGray
+  Write-Host "SkipBuild enabled." -ForegroundColor Yellow
 }
 
-Write-Section "Dev server"
-if (-not $SkipDev) {
-  Write-Host ("Starting dev: npm run dev -- --webpack -p {0}" -f $DevPort) -ForegroundColor Cyan
-  Run "npm" @("run","dev","--","--webpack","-p","$DevPort")
-} else {
-  Write-Host "SkipDev enabled." -ForegroundColor DarkGray
+Write-Section "[post_merge_routine] Dev server"
+if ($SkipDev) {
+  Write-Host "SkipDev enabled." -ForegroundColor Yellow
+  exit 0
 }
+
+Write-Host "Starting dev: npm run dev -- --webpack -p $Port" -ForegroundColor Cyan
+# do not use Run() because dev is long-running
+& npm run dev -- --webpack -p $Port

@@ -1,0 +1,50 @@
+# Codex PR Prompt — Add /api/version + Harden post_merge_routine parity gate (2026-02-11)
+
+Repo: Next.js App Router + TypeScript (Windows PowerShell)
+Goal: After merge, running `.\post_merge_routine.ps1` should be enough to:
+- sync repo
+- build successfully
+- start dev server
+- **verify Vercel Production == Local HEAD** (commit parity) with retry
+- fail-fast on known hazards (merge conflict markers, missing prod host, /api/version missing, reserved PS vars)
+
+## Requirements (must)
+1) Add `app/api/version/route.ts` (App Router route handler)
+   - Return JSON: `{ commitSha, vercelEnv, deploymentId }`
+   - commitSha resolution:
+     - Prefer `process.env.VERCEL_GIT_COMMIT_SHA` when present
+     - Fallback to `git rev-parse HEAD` (execSync) in local/dev
+     - If git not available, return `"unknown"`
+   - Add `cache-control: no-store`
+   - Ensure runtime is Node (not Edge)
+
+2) Harden `post_merge_routine.ps1` (repo root)
+   - Compatible with Windows PowerShell 5.1
+   - Do NOT use `$Host` as a variable name (reserved automatic variable)
+   - Provide `-ProdHost`, `-SkipVercelParity`, `-RequireVercelParity`, `-VercelRetries`, `-VercelRetrySleepSec` options
+   - Prod host resolution order:
+     - param `-ProdHost`
+     - env var `OSH_VERCEL_PROD_HOST`
+     - file `ops/vercel_prod_host.txt` (first line)
+   - Normalize host (strip https://, trailing /)
+   - Parity gate:
+     - call `https://<host>/api/version`
+     - retry on network errors, 404, commitSha empty/unknown, or mismatch
+     - pass only when `remote.commitSha == (git rev-parse HEAD)`
+     - on final failure, show actionable hints (wrong env/domain, deployment not finished, route missing)
+   - Fail-fast:
+     - detect merge conflict markers `<<<<<<<`, `=======`, `>>>>>>>` (use `git grep`) and abort before doing npm steps
+   - Keep existing behavior: kill ports 3000/3001/3002, remove .next, `npm ci`, `npm run build`, start dev: `npm run dev -- --webpack -p 3000`
+
+3) Update docs (minimal)
+   - `docs/oshihapi_ops_windows.md`: explain how to get production domain from Vercel UI and how to set `ops/vercel_prod_host.txt`
+   - `docs/status_summary_latest.md`: note that parity gate depends on /api/version and production domain
+
+## Constraints
+- Minimal diff, lowest risk
+- Must keep `npm run build` passing
+- Do not introduce additional dependencies
+
+## Deliverables
+- PR with changes above
+- Include quick test notes: `npm run build` + sample parity gate usage
