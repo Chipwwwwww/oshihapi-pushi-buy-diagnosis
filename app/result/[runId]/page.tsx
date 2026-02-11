@@ -27,6 +27,8 @@ import {
 } from "@/src/oshihapi/neutralizePlatformActions";
 import { findRun, updateRun } from "@/src/oshihapi/runStorage";
 import { sendTelemetry, TELEMETRY_OPT_IN_KEY } from "@/src/oshihapi/telemetryClient";
+import { formatResultByMode } from "@/src/oshihapi/modes/formatResultByMode";
+import { MODE_DICTIONARY, ResultMode, Verdict } from "@/src/oshihapi/modes/mode_dictionary";
 
 const decisionLabels: Record<string, string> = {
   BUY: "買う",
@@ -116,6 +118,7 @@ export default function ResultPage() {
   const [skipItemName, setSkipItemName] = useState(true);
   const [showAlternatives, setShowAlternatives] = useState(false);
   const [selectedHeadline, setSelectedHeadline] = useState<string | null>(null);
+  const [resultMode, setResultMode] = useState<ResultMode>("standard");
 
   const runId = params?.runId;
   const run = useMemo<DecisionRun | undefined>(() => {
@@ -124,6 +127,21 @@ export default function ResultPage() {
   }, [runId]);
 
   const feedback = localFeedback ?? run?.feedback_immediate;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const savedMode = window.localStorage.getItem("oshihapi:mode");
+    if (savedMode === "standard" || savedMode === "kawaii" || savedMode === "oshi") {
+      setResultMode(savedMode);
+    }
+  }, []);
+
+  const updateResultMode = (nextMode: ResultMode) => {
+    setResultMode(nextMode);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("oshihapi:mode", nextMode);
+    }
+  };
 
   const presentation = useMemo(() => {
     if (!run) return undefined;
@@ -159,6 +177,24 @@ export default function ResultPage() {
 
   const headline = selectedHeadline ?? presentation?.headline ?? decisionLabels[run?.output.decision ?? "THINK"];
   const alternatives = presentation?.alternatives ?? [];
+
+  const modeFormattedResult = useMemo(() => {
+    if (!run) return undefined;
+    const outputExt = run.output as typeof run.output & {
+      waitType?: string;
+      reasonTags?: string[];
+    };
+
+    return formatResultByMode({
+      runId: run.runId,
+      verdict: run.output.decision as Verdict,
+      waitType: outputExt.waitType,
+      reasons: run.output.reasons.map((reason) => reason.text),
+      reasonTags: outputExt.reasonTags ?? [],
+      actions: displayActions.map((action) => action.text),
+      mode: resultMode,
+    });
+  }, [displayActions, resultMode, run]);
 
   const decisionScale = useMemo(() => {
     if (!run) return "wait";
@@ -214,9 +250,9 @@ export default function ResultPage() {
   };
 
   const handleCopyShare = async () => {
-    if (!run) return;
+    if (!run || !modeFormattedResult) return;
     try {
-      await navigator.clipboard.writeText(run.output.shareText);
+      await navigator.clipboard.writeText(modeFormattedResult.shareTextX280);
       logActionClick("copy_share_text");
       showToast("コピーしました");
     } catch {
@@ -398,9 +434,30 @@ export default function ResultPage() {
       </Card>
 
       <Card className="space-y-4">
+        <h2 className={sectionTitleClass}>表示モード</h2>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          {([
+            ["standard", "標準"],
+            ["kawaii", "かわいい"],
+            ["oshi", "推し活用語"],
+          ] as [ResultMode, string][]).map(([mode, label]) => (
+            <Button
+              key={mode}
+              variant={resultMode === mode ? "primary" : "outline"}
+              onClick={() => updateResultMode(mode)}
+              className="w-full rounded-xl"
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
+        <p className={helperTextClass}>{MODE_DICTIONARY[resultMode].labels.disclaimer}</p>
+      </Card>
+
+      <Card className="space-y-4">
         <h2 className={sectionTitleClass}>共有テキスト</h2>
         <p className="whitespace-pre-line text-sm text-muted-foreground">
-          {run.output.shareText}
+          {modeFormattedResult?.shareTextX280 ?? run.output.shareText}
         </p>
         <Button onClick={handleCopyShare} className="w-full rounded-xl">
           共有テキストをコピー
