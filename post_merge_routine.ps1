@@ -20,8 +20,12 @@ param(
   [switch]$SkipBuild,
   [switch]$SkipDev,
   [switch]$ProdSmoke,
+  [Alias('ParityGate')]
   [switch]$RequireVercelSameCommit,
+  [Alias('VercelHost')]
   [string]$VercelProdUrlOrHost,
+  [ValidateSet('production','preview','any')]
+  [string]$VercelEnv = 'any',
 
   [int]$DevPort = 3000,
   [int[]]$KillPorts = @(3000,3001,3002),
@@ -102,13 +106,17 @@ function Stop-Port([int]$Port) {
 }
 
 function Resolve-VercelProdUrl([string]$ProvidedValue) {
+  $hostFile = ".\ops\vercel_prod_host.txt"
   $target = ""
   if (-not [string]::IsNullOrWhiteSpace($ProvidedValue)) {
     $target = $ProvidedValue.Trim()
   }
 
+  if ([string]::IsNullOrWhiteSpace($target) -and -not [string]::IsNullOrWhiteSpace($env:OSH_VERCEL_PROD_HOST)) {
+    $target = $env:OSH_VERCEL_PROD_HOST.Trim()
+  }
+
   if ([string]::IsNullOrWhiteSpace($target)) {
-    $hostFile = ".\ops\vercel_prod_host.txt"
     if (Test-Path $hostFile) {
       $line = Get-Content -Path $hostFile -TotalCount 1 -ErrorAction SilentlyContinue
       if (-not [string]::IsNullOrWhiteSpace($line)) {
@@ -117,22 +125,25 @@ function Resolve-VercelProdUrl([string]$ProvidedValue) {
     }
   }
 
-  if ([string]::IsNullOrWhiteSpace($target) -and -not [string]::IsNullOrWhiteSpace($env:OSH_VERCEL_PROD_HOST)) {
-    $target = $env:OSH_VERCEL_PROD_HOST.Trim()
-  }
-
   if ([string]::IsNullOrWhiteSpace($target)) {
-    throw "Missing Vercel production host. Set -VercelProdUrlOrHost, or ops/vercel_prod_host.txt, or OSH_VERCEL_PROD_HOST."
+    throw "Missing Vercel production host. Set -VercelHost (or -VercelProdUrlOrHost), OSH_VERCEL_PROD_HOST, or $hostFile."
   }
 
-  if ($target -notmatch '^https?://') {
-    $target = "https://$target"
+  $invalidTokens = @('http','/','<','>','PASTE','YOUR_','PROD_HOST')
+  foreach ($tok in $invalidTokens) {
+    if ($target.ToUpperInvariant().Contains($tok.ToUpperInvariant())) {
+      throw "Invalid Vercel host '$target'. Use host only (example: your-project.vercel.app). Update $hostFile or pass -VercelHost."
+    }
   }
 
-  return $target.TrimEnd('/')
+  if ($target -notmatch '\.') {
+    throw "Invalid Vercel host '$target'. Host must contain at least one dot (example: your-project.vercel.app). Update $hostFile or pass -VercelHost."
+  }
+
+  return $target
 }
 
-function Test-VercelSameCommit([string]$TargetUrl) {
+function Test-VercelSameCommit([string]$TargetHost, [string]$ExpectedVercelEnv) {
   if (-not $gitOk) {
     throw "-RequireVercelSameCommit requires git repo."
   }
@@ -143,24 +154,66 @@ function Test-VercelSameCommit([string]$TargetUrl) {
   }
   $localSha = $localSha.Trim()
 
-  $endpoint = "$TargetUrl/api/version"
+  $endpoint = "https://$TargetHost/api/version"
   Write-Host ("Checking Vercel commit: {0}" -f $endpoint) -ForegroundColor DarkGray
-  $resp = Invoke-RestMethod -Uri $endpoint -TimeoutSec 10
+  $resp = $null
+  $maxAttempts = 3
+  for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+    try {
+      $resp = Invoke-RestMethod -Uri $endpoint -TimeoutSec 10
+      break
+    } catch {
+      if ($attempt -ge $maxAttempts) {
+        throw ("Failed to call {0}. Network/API error after {1} attempts: {2}" -f $endpoint, $maxAttempts, $_.Exception.Message)
+      }
+      Start-Sleep -Milliseconds 900
+    }
+  }
+
   $vercelSha = ""
   if ($null -ne $resp -and $null -ne $resp.commitSha) {
     $vercelSha = [string]$resp.commitSha
   }
   $vercelSha = $vercelSha.Trim()
+  $vercelEnvResp = ""
+  if ($null -ne $resp -and $null -ne $resp.vercelEnv) {
+    $vercelEnvResp = ([string]$resp.vercelEnv).Trim()
+  }
+  $deploymentId = ""
+  if ($null -ne $resp -and $null -ne $resp.deploymentId) {
+    $deploymentId = ([string]$resp.deploymentId).Trim()
+  }
 
-  if ([string]::IsNullOrWhiteSpace($vercelSha)) {
-    throw "Vercel /api/version did not return commitSha."
+  if ([string]::IsNullOrWhiteSpace($vercelSha) -or $vercelSha.ToLowerInvariant() -eq 'unknown') {
+    throw ("Vercel /api/version returned missing/unknown commitSha (vercelEnv='{0}', deploymentId='{1}', host='{2}'). Vercel System Env variables may not be exposed to runtime. Check Vercel project settings (System Environment Variables exposure)." -f $vercelEnvResp, $deploymentId, $TargetHost)
+  }
+
+  if ($ExpectedVercelEnv -ne 'any' -and -not [string]::IsNullOrWhiteSpace($vercelEnvResp) -and $vercelEnvResp -ne $ExpectedVercelEnv) {
+    throw ("Vercel environment mismatch: expected='{0}' actual='{1}' host='{2}' deploymentId='{3}'." -f $ExpectedVercelEnv, $vercelEnvResp, $TargetHost, $deploymentId)
   }
 
   if ($vercelSha -ne $localSha) {
-    throw ("VERCEL MISMATCH: vercel={0} local={1}" -f $vercelSha, $localSha)
+    throw ("VERCEL MISMATCH: local={0} vercel={1} vercelEnv={2} deploymentId={3} host={4}" -f $localSha, $vercelSha, $vercelEnvResp, $deploymentId, $TargetHost)
   }
 
-  Write-Host ("Vercel commit gate: OK ({0})" -f $localSha) -ForegroundColor Green
+  Write-Host ("Vercel commit gate: OK local={0} vercelEnv={1} deploymentId={2} host={3}" -f $localSha, $vercelEnvResp, $deploymentId, $TargetHost) -ForegroundColor Green
+}
+
+function Test-GitOperationInProgress() {
+  $gitDir = (& git rev-parse --git-dir) 2>$null
+  if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($gitDir)) { return $false }
+
+  $ops = @(
+    (Join-Path $gitDir 'MERGE_HEAD'),
+    (Join-Path $gitDir 'rebase-apply'),
+    (Join-Path $gitDir 'rebase-merge'),
+    (Join-Path $gitDir 'CHERRY_PICK_HEAD'),
+    (Join-Path $gitDir 'REVERT_HEAD')
+  )
+  foreach ($path in $ops) {
+    if (Test-Path $path) { return $true }
+  }
+  return $false
 }
 
 Write-Section "Boot"
@@ -184,6 +237,27 @@ if ($gitOk) {
   Write-Host ("Head:   {0}" -f $head)   -ForegroundColor Green
 } else {
   Write-Host "Warning: git not available or not a git repo." -ForegroundColor Yellow
+}
+
+Write-Section "Git preflight guards"
+if ($gitOk) {
+  if (Test-GitOperationInProgress) {
+    throw "Git operation in progress. Resolve/abort before running post_merge_routine."
+  }
+
+  $unmerged = (& git diff --name-only --diff-filter=U) 2>$null
+  if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace(($unmerged -join "`n"))) {
+    throw "Git operation in progress. Resolve/abort before running post_merge_routine."
+  }
+
+  $dirty = (& git status --porcelain) 2>$null
+  if (-not $SkipPull -and $LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace(($dirty -join "`n"))) {
+    Write-Host "Warning: working tree has local changes and pull may fail. Commit or stash before running post_merge_routine." -ForegroundColor Yellow
+  } else {
+    Write-Host "Preflight: OK" -ForegroundColor Green
+  }
+} else {
+  Write-Host "Preflight skipped (not a git repo)." -ForegroundColor DarkGray
 }
 
 Write-Section "Optional: feature fingerprint check"
@@ -235,8 +309,8 @@ if (-not $SkipPull) {
 
 Write-Section "Optional: Vercel same commit gate"
 if ($RequireVercelSameCommit) {
-  $vercelUrl = Resolve-VercelProdUrl -ProvidedValue $VercelProdUrlOrHost
-  Test-VercelSameCommit -TargetUrl $vercelUrl
+  $vercelHost = Resolve-VercelProdUrl -ProvidedValue $VercelProdUrlOrHost
+  Test-VercelSameCommit -TargetHost $vercelHost -ExpectedVercelEnv $VercelEnv
 } else {
   Write-Host "Vercel same commit gate: (skipped)" -ForegroundColor DarkGray
 }
@@ -267,8 +341,9 @@ if (-not $SkipBuild) {
 Write-Section "Runtime server"
 if (-not $SkipDev) {
   if ($ProdSmoke) {
-    Write-Host ("Starting prod smoke: npx next start -p {0}" -f $DevPort) -ForegroundColor Cyan
-    Run "npx" @("next","start","-p","$DevPort")
+    Write-Host "ProdSmoke approximates Vercel runtime; dev may differ." -ForegroundColor Yellow
+    Write-Host ("Starting prod smoke: npm run start -- -p {0}" -f $DevPort) -ForegroundColor Cyan
+    Run "npm" @("run","start","--","-p","$DevPort")
   } else {
     Write-Host ("Starting dev: npm run dev -- --webpack -p {0}" -f $DevPort) -ForegroundColor Cyan
     Run "npm" @("run","dev","--","--webpack","-p","$DevPort")
