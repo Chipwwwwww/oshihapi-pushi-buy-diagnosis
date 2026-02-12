@@ -28,7 +28,12 @@ import {
   pageTitleClass,
   sectionTitleClass,
 } from "@/components/ui/tokens";
-import { resolveMode, setStoredMode, type ModeId } from "@/src/oshihapi/modes/modeState";
+import { RESULT_COPY } from "@/src/oshihapi/modes/mode_copy_ja";
+import {
+  resolveMode,
+  setModeToLocalStorage,
+  type PresentationMode as ModeId,
+} from "@/src/oshihapi/modes/presentationMode";
 
 const deadlineOptions = [
   { value: "today", label: "今日" },
@@ -92,7 +97,8 @@ export default function Home() {
   const [priceYen, setPriceYen] = useState("");
   const [deadline, setDeadline] = useState<DeadlineValue>("unknown");
   const [itemKind, setItemKind] = useState<ItemKind>("goods");
-  const [presentationMode, setPresentationMode] = useState<ModeId>(() => resolveMode(null));
+  const [presentationMode, setPresentationMode] = useState<ModeId>(() => resolveMode());
+  const modeCopy = RESULT_COPY[presentationMode];
   const [decisiveness, setDecisiveness] = useState<Decisiveness>(() => {
     if (typeof window === "undefined") return "standard";
     return parseDecisiveness(window.localStorage.getItem(DECISIVENESS_STORAGE_KEY));
@@ -126,7 +132,7 @@ export default function Home() {
   const handleStart = () => {
     const params = new URLSearchParams();
     params.set("mode", mode);
-    params.set("pmode", presentationMode);
+    params.set("pm", presentationMode);
     if (itemName.trim()) params.set("itemName", itemName.trim());
     if (parsedPriceYen !== undefined) {
       params.set("priceYen", String(parsedPriceYen));
@@ -145,7 +151,7 @@ export default function Home() {
 
   const handlePresentationModeChange = (nextMode: ModeId) => {
     setPresentationMode(nextMode);
-    setStoredMode(nextMode);
+    setModeToLocalStorage(nextMode);
   };
 
   const handleApplyScenario = (scenario: typeof SCENARIO_CARDS_JA[number]) => {
@@ -210,6 +216,8 @@ export default function Home() {
       </Card>
 
       <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
+        <h2 className={sectionTitleClass}>{modeCopy.ui.styleSectionTitle}</h2>
+        <p className={helperTextClass}>{modeCopy.ui.styleSectionHelp}</p>
         <ModeToggle value={presentationMode} onChange={handlePresentationModeChange} />
       </Card>
 

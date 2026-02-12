@@ -17,7 +17,11 @@ import { evaluate } from "@/src/oshihapi/engine";
 import { evaluateGameBillingV1, getGameBillingQuestions } from "@/src/oshihapi/gameBillingNeutralV1";
 import { saveRun } from "@/src/oshihapi/runStorage";
 import { QUESTION_COPY } from "@/src/oshihapi/modes/questionCopy";
-import { resolveMode, type ModeId } from "@/src/oshihapi/modes/modeState";
+import {
+  resolveMode,
+  setModeToLocalStorage,
+  type PresentationMode as ModeId,
+} from "@/src/oshihapi/modes/presentationMode";
 import { MODE_DICTIONARY } from "@/src/oshihapi/modes/mode_dictionary";
 import { parseDecisiveness } from "@/src/oshihapi/decisiveness";
 import Button from "@/components/ui/Button";
@@ -93,7 +97,7 @@ export default function FlowPage() {
   const deadline = parseDeadline(searchParams.get("deadline"));
   const itemKind = parseItemKind(searchParams.get("itemKind"));
   const decisiveness: Decisiveness = parseDecisiveness(searchParams.get("decisiveness"));
-  const presentationMode: ModeId = resolveMode(searchParams);
+  const presentationMode: ModeId = resolveMode({ url: searchParams });
 
   const useCase = itemKind === "game_billing" ? "game_billing" : "merch";
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -128,6 +132,13 @@ export default function FlowPage() {
 
   const getOptionLabel = (questionId: string, optionId: string, fallback: string) =>
     QUESTION_COPY[presentationMode]?.[questionId]?.options?.[optionId]?.label ?? fallback;
+
+  const handlePresentationModeChange = (nextMode: ModeId) => {
+    setModeToLocalStorage(nextMode);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("pm", nextMode);
+    router.replace(`/flow?${params.toString()}`);
+  };
 
   useEffect(() => {
     startTimeRef.current = Date.now();
@@ -286,7 +297,7 @@ export default function FlowPage() {
 
     setSubmitting(true);
     saveRun(run);
-    router.push(`/result/${runId}?pmode=${presentationMode}`);
+    router.push(`/result/${runId}?pm=${presentationMode}`);
   };
 
   const handleBack = () => {
@@ -468,10 +479,27 @@ export default function FlowPage() {
         </div>
       </Card>
 
-      <Card className="space-y-2">
+      <Card className="space-y-4">
         <p className={helperTextClass}>
           判断の表示例：{MODE_DICTIONARY[presentationMode].text.verdictLabel.BUY} / {MODE_DICTIONARY[presentationMode].text.verdictLabel.THINK} / {MODE_DICTIONARY[presentationMode].text.verdictLabel.SKIP}
         </p>
+        <div className="grid grid-cols-3 gap-2 rounded-2xl border border-slate-200 bg-slate-100 p-2 dark:border-white/10 dark:bg-white/6">
+          {(["standard", "kawaii", "oshi"] as const).map((modeOption) => (
+            <button
+              key={modeOption}
+              type="button"
+              onClick={() => handlePresentationModeChange(modeOption)}
+              className={[
+                "min-h-11 rounded-xl px-3 py-2 text-sm font-semibold transition",
+                presentationMode === modeOption
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-transparent text-slate-700 hover:bg-white dark:text-zinc-200 dark:hover:bg-white/10",
+              ].join(" ")}
+            >
+              {MODE_DICTIONARY[modeOption].labels.name}
+            </button>
+          ))}
+        </div>
       </Card>
 
       <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 py-4 backdrop-blur">

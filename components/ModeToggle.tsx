@@ -1,6 +1,6 @@
 "use client";
 
-import type { ModeId } from "@/src/oshihapi/modes/modeState";
+import type { PresentationMode as ModeId } from "@/src/oshihapi/modes/presentationMode";
 
 type ModeToggleProps = {
   value: ModeId;
