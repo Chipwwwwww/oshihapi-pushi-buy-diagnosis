@@ -24,8 +24,13 @@ param(
   [switch]$SkipPush,
   [switch]$AllowPreviewHost,
 
+  [Alias('ProdHost')]
   [Alias('VercelHost')]
   [string]$VercelProdUrlOrHost,
+  [string]$PreviewHost = '',
+  [string]$ProdBranch = 'main',
+  [ValidateSet('auto','prod','preview')]
+  [string]$ParityTarget = 'auto',
   [ValidateSet('production','preview','any')]
   [string]$VercelEnv = 'production',
   [int]$VercelMaxWaitSec = 0,
@@ -291,6 +296,98 @@ function Resolve-VercelProdHost([string]$ProvidedValue) {
   }
 
   return $target
+}
+
+function Resolve-HostValue([string]$ProvidedValue, [string]$EnvName, [string]$FilePath, [string]$Label) {
+  $target = ''
+
+  if (-not [string]::IsNullOrWhiteSpace($ProvidedValue)) {
+    $target = $ProvidedValue
+  }
+
+  if ([string]::IsNullOrWhiteSpace($target) -and -not [string]::IsNullOrWhiteSpace($EnvName)) {
+    $envValue = [Environment]::GetEnvironmentVariable($EnvName)
+    if (-not [string]::IsNullOrWhiteSpace($envValue)) {
+      $target = $envValue
+    }
+  }
+
+  if ([string]::IsNullOrWhiteSpace($target) -and -not [string]::IsNullOrWhiteSpace($FilePath) -and (Test-Path $FilePath)) {
+    $line = Get-Content -Path $FilePath -TotalCount 1 -ErrorAction SilentlyContinue
+    if (-not [string]::IsNullOrWhiteSpace($line)) {
+      $target = $line
+    }
+  }
+
+  if ([string]::IsNullOrWhiteSpace($target)) { return $null }
+
+  $target = $target.Trim()
+  $target = $target -replace '^https?://', ''
+  $target = ($target -split '[/?#]', 2)[0]
+  $target = $target.TrimEnd('/')
+
+  if ($target -notmatch '^[A-Za-z0-9.-]+(:\d+)?$' -or $target -notmatch '[A-Za-z0-9.-]') {
+    throw ("Invalid {0} host '{1}'." -f $Label, $target)
+  }
+
+  return $target
+}
+
+function Resolve-VercelPreviewHost([string]$ProvidedValue) {
+  return Resolve-HostValue -ProvidedValue $ProvidedValue -EnvName 'OSH_VERCEL_PREVIEW_HOST' -FilePath '.\ops\vercel_preview_host.txt' -Label 'Vercel preview'
+}
+
+function Resolve-VercelProdBranch([string]$ProvidedValue, [string]$FallbackBranch = 'main') {
+  if (-not [string]::IsNullOrWhiteSpace($ProvidedValue)) {
+    return $ProvidedValue.Trim()
+  }
+
+  $branchFilePath = '.\ops\vercel_prod_branch.txt'
+  if (Test-Path $branchFilePath) {
+    $line = Get-Content -Path $branchFilePath -TotalCount 1 -ErrorAction SilentlyContinue
+    if (-not [string]::IsNullOrWhiteSpace($line)) {
+      return $line.Trim()
+    }
+  }
+
+  return $FallbackBranch
+}
+
+function Resolve-ParityTargetHost([string]$CurrentBranch, [string]$EffectiveProdBranch, [string]$RequestedTarget, [string]$ProvidedProdHost, [string]$ProvidedPreviewHost) {
+  $productionHost = Resolve-VercelProdHost -ProvidedValue $ProvidedProdHost
+  $previewHost = Resolve-VercelPreviewHost -ProvidedValue $ProvidedPreviewHost
+
+  if ($RequestedTarget -eq 'prod') {
+    if ([string]::IsNullOrWhiteSpace($productionHost)) {
+      return [PSCustomObject]@{ ShouldRun = $false; Target = 'prod'; Host = ''; Message = 'Missing Vercel production host. Set -ProdHost / -VercelHost or ops/vercel_prod_host.txt.' }
+    }
+    return [PSCustomObject]@{ ShouldRun = $true; Target = 'prod'; Host = $productionHost; Message = '' }
+  }
+
+  if ($RequestedTarget -eq 'preview') {
+    if ([string]::IsNullOrWhiteSpace($previewHost)) {
+      return [PSCustomObject]@{ ShouldRun = $false; Target = 'preview'; Host = ''; Message = 'Missing preview host. Set -PreviewHost or ops/vercel_preview_host.txt.' }
+    }
+    return [PSCustomObject]@{ ShouldRun = $true; Target = 'preview'; Host = $previewHost; Message = '' }
+  }
+
+  if ($CurrentBranch -eq $EffectiveProdBranch) {
+    if ([string]::IsNullOrWhiteSpace($productionHost)) {
+      return [PSCustomObject]@{ ShouldRun = $false; Target = 'prod'; Host = ''; Message = 'Missing Vercel production host for prod branch parity. Set -ProdHost / -VercelHost or ops/vercel_prod_host.txt.' }
+    }
+    return [PSCustomObject]@{ ShouldRun = $true; Target = 'prod'; Host = $productionHost; Message = '' }
+  }
+
+  if (-not [string]::IsNullOrWhiteSpace($previewHost)) {
+    return [PSCustomObject]@{ ShouldRun = $true; Target = 'preview'; Host = $previewHost; Message = '' }
+  }
+
+  return [PSCustomObject]@{
+    ShouldRun = $false
+    Target = 'skip'
+    Host = ''
+    Message = ("你在 feature branch（{0}），Production 不會是這個 commit；請設定 preview host 或先 merge。" -f $CurrentBranch)
+  }
 }
 
 function Invoke-VersionEndpoint([string]$ProdHost) {
@@ -630,7 +727,7 @@ if (-not $SkipBuild) {
   Write-Host 'SkipBuild enabled.' -ForegroundColor DarkGray
 }
 
-Write-Section "Vercel parity gate (Production == Local == origin/main)"
+Write-Section "Vercel parity gate (branch-aware)"
 $runVercelParity = $false
 if ($VercelParityMode -ne 'off' -and ((-not $SkipVercelParity) -or $RequireVercelSameCommit)) {
   $runVercelParity = $true
@@ -640,6 +737,7 @@ $finalOriginSha = ''
 $finalVercelSha = ''
 $finalVercelEnv = ''
 $productionDomainHost = ''
+$effectiveProdBranch = Resolve-VercelProdBranch -ProvidedValue $ProdBranch -FallbackBranch 'main'
 
 if ($runVercelParity) {
   Assert-VersionRouteExistsInHead
@@ -649,40 +747,49 @@ if ($runVercelParity) {
   $finalLocalSha = $parityState.LocalSha
   $finalOriginSha = $parityState.OriginSha
 
-  $productionDomainHost = Resolve-VercelProdHost -ProvidedValue $VercelProdUrlOrHost
-  if ([string]::IsNullOrWhiteSpace($productionDomainHost)) {
-    throw "Missing Vercel production host. Set OSH_VERCEL_PROD_HOST or ops/vercel_prod_host.txt (host only)."
-  }
-
-  $effectiveParityRetries = if (-not [string]::IsNullOrWhiteSpace($env:OSH_VERCEL_PARITY_RETRIES)) { [int]$env:OSH_VERCEL_PARITY_RETRIES } else { $VercelParityRetries }
-  $effectiveParityDelaySec = if (-not [string]::IsNullOrWhiteSpace($env:OSH_VERCEL_PARITY_DELAY_SEC)) { [int]$env:OSH_VERCEL_PARITY_DELAY_SEC } else { $null }
-  $effectivePollIntervalSec = if ($effectiveParityDelaySec -and $effectiveParityDelaySec -gt 0) { $effectiveParityDelaySec } else { $VercelPollIntervalSec }
-  $effectiveMaxWaitSec = 0
-  if ($VercelMaxWaitSec -and $VercelMaxWaitSec -gt 0) {
-    $effectiveMaxWaitSec = $VercelMaxWaitSec
-  } elseif ($effectiveParityRetries -and $effectiveParityRetries -gt 0) {
-    $effectiveMaxWaitSec = [Math]::Max(1, ($effectivePollIntervalSec * ([Math]::Max(1, $effectiveParityRetries - 1))) + 1)
-  } else {
-    $effectiveMaxWaitSec = 600
-  }
-
-  $vercelState = Wait-VercelCommitParity -ProdHost $productionDomainHost -LocalSha $finalLocalSha -ExpectedEnv $VercelEnv -AllowPreview:$AllowPreviewHost -MaxWaitSec $effectiveMaxWaitSec -PollIntervalSec $effectivePollIntervalSec
-  if (-not $vercelState.Success) {
+  $hostTarget = Resolve-ParityTargetHost -CurrentBranch $parityState.Branch -EffectiveProdBranch $effectiveProdBranch -RequestedTarget $ParityTarget -ProvidedProdHost $VercelProdUrlOrHost -ProvidedPreviewHost $PreviewHost
+  if (-not $hostTarget.ShouldRun) {
     if ($VercelParityMode -eq 'warn') {
-      Write-Host ("Vercel parity warning: {0}" -f $vercelState.FailureMessage) -ForegroundColor Yellow
+      Write-Host ("Vercel parity warning: {0}" -f $hostTarget.Message) -ForegroundColor Yellow
     } else {
-      throw $vercelState.FailureMessage
+      Write-Host ("Vercel parity skipped: {0}" -f $hostTarget.Message) -ForegroundColor Yellow
     }
+  } else {
+    $productionDomainHost = $hostTarget.Host
+    $expectedVercelEnv = if ($hostTarget.Target -eq 'preview') { 'preview' } elseif ($VercelEnv -eq 'preview') { 'production' } else { $VercelEnv }
+
+    $effectiveParityRetries = if (-not [string]::IsNullOrWhiteSpace($env:OSH_VERCEL_PARITY_RETRIES)) { [int]$env:OSH_VERCEL_PARITY_RETRIES } else { $VercelParityRetries }
+    $effectiveParityDelaySec = if (-not [string]::IsNullOrWhiteSpace($env:OSH_VERCEL_PARITY_DELAY_SEC)) { [int]$env:OSH_VERCEL_PARITY_DELAY_SEC } else { $null }
+    $effectivePollIntervalSec = if ($effectiveParityDelaySec -and $effectiveParityDelaySec -gt 0) { $effectiveParityDelaySec } else { $VercelPollIntervalSec }
+    $effectiveMaxWaitSec = 0
+    if ($VercelMaxWaitSec -and $VercelMaxWaitSec -gt 0) {
+      $effectiveMaxWaitSec = $VercelMaxWaitSec
+    } elseif ($effectiveParityRetries -and $effectiveParityRetries -gt 0) {
+      $effectiveMaxWaitSec = [Math]::Max(1, ($effectivePollIntervalSec * ([Math]::Max(1, $effectiveParityRetries - 1))) + 1)
+    } else {
+      $effectiveMaxWaitSec = 600
+    }
+
+    $allowPreviewForTarget = $AllowPreviewHost -or $hostTarget.Target -eq 'preview'
+    $vercelState = Wait-VercelCommitParity -ProdHost $productionDomainHost -LocalSha $finalLocalSha -ExpectedEnv $expectedVercelEnv -AllowPreview:$allowPreviewForTarget -MaxWaitSec $effectiveMaxWaitSec -PollIntervalSec $effectivePollIntervalSec
+    if (-not $vercelState.Success) {
+      if ($VercelParityMode -eq 'warn') {
+        Write-Host ("Vercel parity warning: {0}" -f $vercelState.FailureMessage) -ForegroundColor Yellow
+      } else {
+        throw $vercelState.FailureMessage
+      }
+    }
+    $finalVercelSha = $vercelState.CommitSha
+    $finalVercelEnv = $vercelState.VercelEnv
+
+    Write-Host ("PARITY TARGET: {0}" -f $hostTarget.Target) -ForegroundColor Green
+    Write-Host ("LOCAL SHA:     {0}" -f $finalLocalSha) -ForegroundColor Green
+    Write-Host ("ORIGIN SHA:    {0}" -f $finalOriginSha) -ForegroundColor Green
+    Write-Host ("VERCEL SHA:    {0}" -f $finalVercelSha) -ForegroundColor Green
+    Write-Host ("VERCEL ENV:    {0}" -f $finalVercelEnv) -ForegroundColor Green
+
+    Write-ParitySnapshot -LocalSha $finalLocalSha -OriginSha $finalOriginSha -VercelSha $finalVercelSha -VercelEnvValue $finalVercelEnv -ProdHost $productionDomainHost
   }
-  $finalVercelSha = $vercelState.CommitSha
-  $finalVercelEnv = $vercelState.VercelEnv
-
-  Write-Host ("LOCAL SHA:  {0}" -f $finalLocalSha) -ForegroundColor Green
-  Write-Host ("ORIGIN SHA: {0}" -f $finalOriginSha) -ForegroundColor Green
-  Write-Host ("VERCEL SHA: {0}" -f $finalVercelSha) -ForegroundColor Green
-  Write-Host ("VERCEL ENV: {0}" -f $finalVercelEnv) -ForegroundColor Green
-
-  Write-ParitySnapshot -LocalSha $finalLocalSha -OriginSha $finalOriginSha -VercelSha $finalVercelSha -VercelEnvValue $finalVercelEnv -ProdHost $productionDomainHost
 } else {
   if ($VercelParityMode -eq 'off') {
     Write-Host 'Vercel parity skipped (VercelParityMode=off).' -ForegroundColor Yellow

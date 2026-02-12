@@ -1,0 +1,32 @@
+背景
+- 目前在 feature branch 跑 post_merge_routine.ps1 時，會用 Production domain 做 parity，
+  造成 /api/version 404（但 /api/telemetry/health OK），進而無意義重試。
+- 事實上 Vercel Production 通常只跟 Production branch（多半 main）走；feature 應該用 Preview URL。
+
+目標
+1) post_merge_routine.ps1 的 parity gate 變成 branch-aware
+2) 清晰輸出：如果不在 ProdBranch，且使用 prod host，預設跳過 parity（或直接 fail-fast 但不 throw stacktrace）
+3) 支援 preview host：ops/vercel_preview_host.txt 或參數 -PreviewHost / -ProdHost
+
+具體修改
+- 新增參數：
+  - [string]$ProdBranch = "main"
+  - [string]$PreviewHost = ""  # optional
+  - [ValidateSet("auto","prod","preview")] [string]$ParityTarget="auto"
+- 新增檔案（可選）：
+  - ops/vercel_prod_branch.txt（第一行：prod branch 名稱）
+  - ops/vercel_preview_host.txt（第一行：preview host）
+- Host 選擇邏輯（auto）：
+  - 若 currentBranch == ProdBranch → 用 ops/vercel_prod_host.txt
+  - 否則：
+    - 若有 PreviewHost/ops/vercel_preview_host.txt → 用 preview host
+    - 否則：跳過 parity，顯示明確訊息「你在 feature branch，Production 不會是這個 commit；請設定 preview host 或先 merge」
+- 不要丟 stacktrace；維持最高原則「跑完不爆」。
+
+另外（可選）
+- 在 next.config.ts 或 next.config.js 加 turbopack.root=__dirname 以避免多 lockfile 的 workspace root 警告。
+
+驗收
+- npm ci && npm run build ✅
+- feature branch：未提供 preview host 時，parity 區塊會清楚提示並跳過（不 retry 到死）
+- main branch：production parity 正常檢查 /api/version 並能達成 VERCEL==LOCAL（當部署完成）
