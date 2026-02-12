@@ -69,8 +69,64 @@ function Write-Section([string]$Title) {
 function Run([string]$Command, [string[]]$CmdArgs = @()) {
   $display = if ($CmdArgs.Count -gt 0) { "$Command $($CmdArgs -join ' ')" } else { $Command }
   Write-Host "Running: $display" -ForegroundColor DarkGray
-  & $Command @CmdArgs
-  if ($LASTEXITCODE -ne 0) { throw "Command failed (exit=${LASTEXITCODE}): $display" }
+  Invoke-Exec -Command $Command -CmdArgs $CmdArgs -Display $display
+}
+
+function Invoke-Exec(
+  [Parameter(Mandatory = $true)]
+  [string]$Command,
+  [string[]]$CmdArgs = @(),
+  [string]$Display = ''
+) {
+  $label = if ([string]::IsNullOrWhiteSpace($Display)) {
+    if ($CmdArgs.Count -gt 0) { "$Command $($CmdArgs -join ' ')" } else { $Command }
+  } else {
+    $Display
+  }
+
+  $psi = New-Object System.Diagnostics.ProcessStartInfo
+  $psi.FileName = $Command
+  if ($CmdArgs -and $CmdArgs.Count -gt 0) {
+    $psi.Arguments = [string]::Join(' ', ($CmdArgs | ForEach-Object {
+      $arg = [string]$_
+      if ($arg -match '[\s"]') {
+        '"' + ($arg -replace '"', '\"') + '"'
+      } else {
+        $arg
+      }
+    }))
+  }
+  $psi.UseShellExecute = $false
+  $psi.RedirectStandardOutput = $true
+  $psi.RedirectStandardError = $true
+
+  $process = New-Object System.Diagnostics.Process
+  $process.StartInfo = $psi
+
+  [void]$process.Start()
+  $stdout = $process.StandardOutput.ReadToEnd()
+  $stderr = $process.StandardError.ReadToEnd()
+  $process.WaitForExit()
+  $exitCode = $process.ExitCode
+
+  if (-not [string]::IsNullOrEmpty($stdout)) {
+    Write-Host ($stdout.TrimEnd("`r", "`n"))
+  }
+  if (-not [string]::IsNullOrEmpty($stderr)) {
+    Write-Host ($stderr.TrimEnd("`r", "`n")) -ForegroundColor Yellow
+  }
+
+  if ($exitCode -ne 0) {
+    Write-Host '---- Captured stdout ----' -ForegroundColor DarkYellow
+    if ([string]::IsNullOrWhiteSpace($stdout)) { Write-Host '(empty)' -ForegroundColor DarkGray }
+    else { Write-Host ($stdout.TrimEnd("`r", "`n")) }
+
+    Write-Host '---- Captured stderr ----' -ForegroundColor DarkYellow
+    if ([string]::IsNullOrWhiteSpace($stderr)) { Write-Host '(empty)' -ForegroundColor DarkGray }
+    else { Write-Host ($stderr.TrimEnd("`r", "`n")) -ForegroundColor Yellow }
+
+    throw "Command failed (exit=$exitCode): $label"
+  }
 }
 
 function Ensure-RepoRoot() {
@@ -107,79 +163,41 @@ function Assert-ScriptParses([string]$ScriptPath) {
   }
 }
 
-function Start-LocalReadyNotifier(
+function Start-LocalReadyProbeProcess(
   [Parameter(Mandatory = $true)]
   [string]$Url,
   [int]$TimeoutSec = 180,
   [int]$IntervalSec = 1
 ) {
-  if ($script:PMR_LocalReadyEventSourceIdentifier) {
-    try { Unregister-Event -SourceIdentifier $script:PMR_LocalReadyEventSourceIdentifier -ErrorAction SilentlyContinue } catch {}
-  }
-  if ($script:PMR_LocalReadyTimer) {
-    try { $script:PMR_LocalReadyTimer.Stop() } catch {}
-    try { $script:PMR_LocalReadyTimer.Dispose() } catch {}
-  }
-
+  # Keep this as plain PS 5.1 syntax; no PS7-only features.
   $safeTimeoutSec = if ($TimeoutSec -gt 0) { $TimeoutSec } else { 180 }
   $safeIntervalSec = if ($IntervalSec -gt 0) { $IntervalSec } else { 1 }
-  $eventSourceIdentifier = "LocalReadyNotifier_{0}" -f ([Guid]::NewGuid().ToString('N'))
-  $script:PMR_LocalReadyEventSourceIdentifier = $eventSourceIdentifier
 
-  Write-Host ("⏳ Waiting for {0} ..." -f $Url) -ForegroundColor DarkYellow
-
-  $timer = New-Object System.Timers.Timer
-  $timer.Interval = $safeIntervalSec * 1000
-  $timer.AutoReset = $true
-  $script:PMR_LocalReadyTimer = $timer
-
-  $state = [PSCustomObject]@{
-    Completed = $false
-  }
-
-  $messageData = [PSCustomObject]@{
-    Url = $Url
-    StartedAt = Get-Date
-    TimeoutSec = $safeTimeoutSec
-    Timer = $timer
-    EventSourceIdentifier = $eventSourceIdentifier
-    State = $state
-  }
-
-  Register-ObjectEvent -InputObject $timer -EventName Elapsed -SourceIdentifier $eventSourceIdentifier -MessageData $messageData -Action {
-    $ctx = $event.MessageData
-    if ($ctx.State.Completed) { return }
-
-    $elapsed = (Get-Date) - $ctx.StartedAt
-    if ($elapsed.TotalSeconds -ge $ctx.TimeoutSec) {
-      $ctx.State.Completed = $true
-      try { $ctx.Timer.Stop() } catch {}
-      try { $ctx.Timer.Dispose() } catch {}
-      try { Unregister-Event -SourceIdentifier $ctx.EventSourceIdentifier -ErrorAction SilentlyContinue } catch {}
-      return
+  $encodedUrl = $Url.Replace("'", "''")
+  $probeScript = @"
+`$ErrorActionPreference = 'SilentlyContinue'
+`$url = '$encodedUrl'
+`$timeoutSec = $safeTimeoutSec
+`$intervalSec = $safeIntervalSec
+if (`$intervalSec -lt 1) { `$intervalSec = 1 }
+`$deadline = (Get-Date).AddSeconds(`$timeoutSec)
+while ((Get-Date) -lt `$deadline) {
+  try {
+    `$resp = Invoke-WebRequest -Uri `$url -UseBasicParsing -TimeoutSec 1
+    if (`$resp -and `$resp.StatusCode -ge 200 -and `$resp.StatusCode -lt 400) {
+      Write-Host ('✅ Local 起動OK: {0}' -f `$url) -ForegroundColor Green
+      exit 0
     }
+  } catch {}
+  Start-Sleep -Seconds `$intervalSec
+}
+Write-Host ('⚠️ Local 起動待機 timeout: {0} sec ({1})' -f `$timeoutSec, `$url) -ForegroundColor Yellow
+exit 0
+"@
 
-    $isReady = $false
-    try {
-      $resp = Invoke-WebRequest -Uri $ctx.Url -Method Get -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop
-      if ($resp -and $resp.StatusCode -ge 200 -and $resp.StatusCode -lt 400) {
-        $isReady = $true
-      }
-    } catch {
-      $isReady = $false
-    }
-
-    if ($isReady) {
-      $ctx.State.Completed = $true
-      [Console]::WriteLine(("✅ Local 起動OK: {0}" -f $ctx.Url))
-      try { $ctx.Timer.Stop() } catch {}
-      try { $ctx.Timer.Dispose() } catch {}
-      try { Unregister-Event -SourceIdentifier $ctx.EventSourceIdentifier -ErrorAction SilentlyContinue } catch {}
-    }
-  } | Out-Null
-
-  $timer.Start()
-  return $eventSourceIdentifier
+  $bytes = [System.Text.Encoding]::Unicode.GetBytes($probeScript)
+  $encoded = [Convert]::ToBase64String($bytes)
+  Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-EncodedCommand',$encoded) -NoNewWindow | Out-Null
 }
 
 function Run-DevWithReadyBanner(
@@ -187,26 +205,11 @@ function Run-DevWithReadyBanner(
   [int]$Port
 ) {
   $localUrl = "http://localhost:$Port"
+  Start-LocalReadyProbeProcess -Url $localUrl -TimeoutSec 180 -IntervalSec 1
   Write-Host ("⏳ Waiting for {0} ..." -f $localUrl) -ForegroundColor DarkYellow
 
-  $readyBannerShown = $false
-  & npm run dev -- --webpack -p "$Port" 2>&1 | ForEach-Object {
-    $line = [string]$_
-    Write-Host $line
-
-    if (-not $readyBannerShown) {
-      if (
-        $line -match '(?i)ready' -or
-        $line -match '(?i)local' -or
-        $line -match '(?i)started\s+server' -or
-        $line -match '(?i)\burl\b' -or
-        $line -match ([regex]::Escape($localUrl))
-      ) {
-        Write-Host ("✅ Local 起動OK: {0}" -f $localUrl) -ForegroundColor Green
-        $readyBannerShown = $true
-      }
-    }
-  }
+  # Keep npm dev in foreground so Ctrl+C reaches the dev process directly.
+  & npm run dev -- --webpack -p "$Port"
 
   $devExitCode = $LASTEXITCODE
   if ($devExitCode -ne 0) {
