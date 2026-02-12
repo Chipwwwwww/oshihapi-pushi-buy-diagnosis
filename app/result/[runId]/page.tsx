@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import DecisionScale from "@/components/DecisionScale";
+import ModeToggle from "@/components/ModeToggle";
 import MarketCheckCard from "@/components/MarketCheckCard";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -29,6 +30,7 @@ import { findRun, updateRun } from "@/src/oshihapi/runStorage";
 import { sendTelemetry, TELEMETRY_OPT_IN_KEY } from "@/src/oshihapi/telemetryClient";
 import { formatResultByMode } from "@/src/oshihapi/modes/formatResultByMode";
 import { MODE_DICTIONARY, ResultMode, Verdict } from "@/src/oshihapi/modes/mode_dictionary";
+import { resolveMode, setStoredMode } from "@/src/oshihapi/modes/modeState";
 
 const decisionLabels: Record<string, string> = {
   BUY: "買う",
@@ -98,6 +100,7 @@ function getActionLink(action: DecisionRun["output"]["actions"][number]): {
 export default function ResultPage() {
   const router = useRouter();
   const params = useParams<{ runId: string }>();
+  const searchParams = useSearchParams();
   const [toast, setToast] = useState<string | null>(null);
   const [localFeedback, setLocalFeedback] = useState<FeedbackImmediate | undefined>(
     undefined,
@@ -118,7 +121,7 @@ export default function ResultPage() {
   const [skipItemName, setSkipItemName] = useState(true);
   const [showAlternatives, setShowAlternatives] = useState(false);
   const [selectedHeadline, setSelectedHeadline] = useState<string | null>(null);
-  const [resultMode, setResultMode] = useState<ResultMode>("standard");
+  const [resultMode, setResultMode] = useState<ResultMode>(() => resolveMode(searchParams));
 
   const runId = params?.runId;
   const run = useMemo<DecisionRun | undefined>(() => {
@@ -129,18 +132,12 @@ export default function ResultPage() {
   const feedback = localFeedback ?? run?.feedback_immediate;
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const savedMode = window.localStorage.getItem("oshihapi:mode");
-    if (savedMode === "standard" || savedMode === "kawaii" || savedMode === "oshi") {
-      setResultMode(savedMode);
-    }
-  }, []);
+    setResultMode(resolveMode(searchParams));
+  }, [searchParams]);
 
   const updateResultMode = (nextMode: ResultMode) => {
     setResultMode(nextMode);
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("oshihapi:mode", nextMode);
-    }
+    setStoredMode(nextMode);
   };
 
   const presentation = useMemo(() => {
@@ -190,11 +187,26 @@ export default function ResultPage() {
       verdict: run.output.decision as Verdict,
       waitType: outputExt.waitType,
       reasons: run.output.reasons.map((reason) => reason.text),
-      reasonTags: outputExt.reasonTags ?? [],
+      reasonTags: outputExt.reasonTags ?? run.output.reasons.map((reason) => reason.id),
       actions: displayActions.map((action) => action.text),
       mode: resultMode
     });
   }, [displayActions, resultMode, run]);
+
+  const outputExt = run?.output as
+    | (DecisionRun["output"] & {
+        waitType?: string;
+        reasonTags?: string[];
+      })
+    | undefined;
+  const normalizedWaitType = outputExt?.waitType ?? (run?.output.decision === "THINK" ? "none" : "none");
+  const adviceText =
+    run?.output.decision === "BUY"
+      ? MODE_DICTIONARY[resultMode].explanation.buy
+      : run?.output.decision === "THINK"
+        ? MODE_DICTIONARY[resultMode].explanation.wait[normalizedWaitType] ??
+          MODE_DICTIONARY[resultMode].explanation.wait.none
+        : MODE_DICTIONARY[resultMode].explanation.skip;
 
   const decisionScale = useMemo(() => {
     if (!run) return "wait";
@@ -377,6 +389,11 @@ export default function ResultPage() {
 
       <DecisionScale decision={decisionScale} index={decisionIndex} />
 
+      <Card className="space-y-3 border-amber-200 bg-amber-50 dark:ring-1 dark:ring-white/10">
+        <h2 className="text-lg font-semibold text-amber-900">アドバイス</h2>
+        <p className="text-sm text-amber-800">{adviceText}</p>
+      </Card>
+
       <Card className="space-y-4">
         <h2 className={sectionTitleClass}>今すぐやる</h2>
         <ul className="grid gap-4">
@@ -384,7 +401,7 @@ export default function ResultPage() {
             const actionLink = getActionLink(action);
             return (
               <li key={action.id} className="rounded-2xl border border-border p-4">
-              <p className={bodyTextClass}>{action.text}</p>
+              <p className={bodyTextClass}>{MODE_DICTIONARY[resultMode].text.actionLabel[action.id] ?? action.text}</p>
                 {actionLink ? (
                   <a
                     href={actionLink.href}
@@ -401,11 +418,11 @@ export default function ResultPage() {
       </Card>
 
       <Card className="space-y-4">
-        <h2 className={sectionTitleClass}>理由</h2>
+        <h2 className={sectionTitleClass}>理由タグ</h2>
         <div className="grid gap-4">
           {run.output.reasons.map((reason) => (
             <div key={reason.id} className="rounded-2xl border border-border p-4">
-              <p className={bodyTextClass}>{reason.text}</p>
+              <p className={bodyTextClass}>{MODE_DICTIONARY[resultMode].text.reasonTagLabel[reason.id] ?? reason.text}</p>
             </div>
           ))}
         </div>
@@ -434,23 +451,7 @@ export default function ResultPage() {
       </Card>
 
       <Card className="space-y-4">
-        <h2 className={sectionTitleClass}>結果の表示モード</h2>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-          {([
-            ["standard", "標準"],
-            ["kawaii", "かわいい"],
-            ["oshi", "推し活用語"],
-          ] as [ResultMode, string][]).map(([mode, label]) => (
-            <Button
-              key={mode}
-              variant={resultMode === mode ? "primary" : "outline"}
-              onClick={() => updateResultMode(mode)}
-              className="w-full rounded-xl"
-            >
-              {label}
-            </Button>
-          ))}
-        </div>
+        <ModeToggle value={resultMode} onChange={updateResultMode} />
         <p className={helperTextClass}>{MODE_DICTIONARY[resultMode].labels.disclaimer}</p>
       </Card>
 
@@ -461,7 +462,7 @@ export default function ResultPage() {
           {modeFormattedResult?.shareTextX280 ?? run.output.shareText}
         </p>
         <Button onClick={handleCopyShare} className="w-full rounded-xl">
-          shareTextX280 をコピー
+          共有テキストをコピー
         </Button>
       </Card>
 
