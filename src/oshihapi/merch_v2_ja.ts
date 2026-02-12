@@ -2,8 +2,9 @@ import type { QuestionSet } from './model';
 
 /**
  * オシハピ｜推し買い診断（merch_v2_ja）
- * - 通常：7問
- * - 急ぎ：urgentCore=true を中心に 4〜6問で完走
+ * - 通常：Core 12問
+ * - 急ぎ：6問
+ * - 長診断：Core 12 + itemType別追加4問
  *
  * Note: ここでは「チケット」も itemKind= ticket として同枠で扱う（周辺グッズの一種）。
  */
@@ -120,6 +121,40 @@ export const merch_v2_ja: QuestionSet = {
       ],
     },
     {
+      id: 'q_price_feel',
+      type: 'single',
+      title: '価格の納得感は？',
+      required: true,
+      options: [
+        { id: 'good', label: '納得できる' },
+        { id: 'normal', label: '普通' },
+        { id: 'high', label: '高めに感じる' },
+        { id: 'unknown', label: 'まだ比較できていない' },
+      ],
+    },
+    {
+      id: 'q_storage_space',
+      type: 'single',
+      title: '置き場所・保管の見通しは？',
+      required: true,
+      options: [
+        { id: 'enough', label: '問題ない' },
+        { id: 'adjust', label: '少し工夫が必要' },
+        { id: 'tight', label: 'かなり厳しい' },
+      ],
+    },
+    {
+      id: 'q_alternative_plan',
+      type: 'single',
+      title: '見送る場合の代替案はある？',
+      required: true,
+      options: [
+        { id: 'clear', label: 'ある（他の満たし方がある）' },
+        { id: 'maybe', label: 'たぶんある' },
+        { id: 'none', label: '特にない' },
+      ],
+    },
+    {
       id: 'q_impulse_axis_short',
       type: 'scale',
       title: '今の欲しさ、どっち寄り？',
@@ -158,6 +193,139 @@ export const merch_v2_ja: QuestionSet = {
       urgentCore: false,
       standard: false,
       longOnly: true,
+    },
+
+    {
+      id: 'q_addon_common_info',
+      type: 'single',
+      title: '必要情報は揃っている？',
+      required: true,
+      options: [
+        { id: 'enough', label: '十分そろっている' },
+        { id: 'partial', label: '一部足りない' },
+        { id: 'lack', label: '不足が多い' },
+      ],
+    },
+    {
+      id: 'q_addon_common_priority',
+      type: 'single',
+      title: '今月の推し活の中で優先度は？',
+      required: true,
+      options: [
+        { id: 'high', label: '高い' },
+        { id: 'mid', label: '中くらい' },
+        { id: 'low', label: '低め' },
+      ],
+    },
+    {
+      id: 'q_addon_goods_compare',
+      type: 'single',
+      title: '同系統アイテムとの比較はできた？',
+      required: true,
+      options: [
+        { id: 'done', label: '比較済み' },
+        { id: 'partial', label: '一部だけ比較した' },
+        { id: 'none', label: 'まだ比較していない' },
+      ],
+    },
+    {
+      id: 'q_addon_goods_portability',
+      type: 'single',
+      title: '持ち歩き・使いどころの想定は？',
+      required: true,
+      options: [
+        { id: 'often', label: 'よく使う想定' },
+        { id: 'sometimes', label: '時々使う想定' },
+        { id: 'rare', label: 'ほぼ観賞用' },
+      ],
+    },
+    {
+      id: 'q_addon_blind_draw_cap',
+      type: 'single',
+      title: 'くじ・ブラインドの回数上限は決めた？',
+      required: true,
+      options: [
+        { id: 'fixed', label: '決めた' },
+        { id: 'rough', label: 'だいたい決めた' },
+        { id: 'none', label: 'まだ決めていない' },
+      ],
+    },
+    {
+      id: 'q_addon_blind_draw_exit',
+      type: 'single',
+      title: '撤退ライン（やめどき）はある？',
+      required: true,
+      options: [
+        { id: 'clear', label: '明確にある' },
+        { id: 'some', label: 'なんとなくある' },
+        { id: 'none', label: '特にない' },
+      ],
+    },
+    {
+      id: 'q_addon_ticket_schedule',
+      type: 'single',
+      title: '日程・移動・体調まで見通せている？',
+      required: true,
+      options: [
+        { id: 'ready', label: '問題なし' },
+        { id: 'some_risk', label: '少し不安あり' },
+        { id: 'risk', label: '不確定が多い' },
+      ],
+    },
+    {
+      id: 'q_addon_ticket_resale_rule',
+      type: 'single',
+      title: 'キャンセル・譲渡ルールを確認した？',
+      required: true,
+      options: [
+        { id: 'checked', label: '確認済み' },
+        { id: 'partly', label: '一部だけ確認' },
+        { id: 'not_yet', label: '未確認' },
+      ],
+    },
+    {
+      id: 'q_addon_preorder_timeline',
+      type: 'single',
+      title: '発売・到着タイミングを許容できる？',
+      required: true,
+      options: [
+        { id: 'ok', label: '待てる' },
+        { id: 'maybe', label: '状況次第' },
+        { id: 'hard', label: '待つのが厳しい' },
+      ],
+    },
+    {
+      id: 'q_addon_preorder_restock',
+      type: 'single',
+      title: '受注再開・再販の可能性を確認した？',
+      required: true,
+      options: [
+        { id: 'checked', label: '確認した' },
+        { id: 'heard', label: '噂レベルで知っている' },
+        { id: 'unknown', label: 'わからない' },
+      ],
+    },
+    {
+      id: 'q_addon_used_condition',
+      type: 'single',
+      title: '中古の状態リスクを許容できる？',
+      required: true,
+      options: [
+        { id: 'ok', label: '許容できる' },
+        { id: 'careful', label: '条件次第' },
+        { id: 'hard', label: '不安が大きい' },
+      ],
+    },
+    {
+      id: 'q_addon_used_price_gap',
+      type: 'single',
+      title: '新品との差額は納得できる？',
+      required: true,
+      options: [
+        { id: 'worth', label: '納得できる' },
+        { id: 'small', label: '差額が小さい' },
+        { id: 'unknown', label: '比較できていない' },
+      ],
     },
   ],
 };

@@ -29,12 +29,13 @@ import {
 import { findRun, updateRun } from "@/src/oshihapi/runStorage";
 import { sendTelemetry, TELEMETRY_OPT_IN_KEY } from "@/src/oshihapi/telemetryClient";
 import { formatResultByMode } from "@/src/oshihapi/modes/formatResultByMode";
-import { MODE_DICTIONARY, ResultMode, Verdict } from "@/src/oshihapi/modes/mode_dictionary";
-import { RESULT_COPY } from "@/src/oshihapi/modes/mode_copy_ja";
+import { MODE_DICTIONARY, Verdict } from "@/src/oshihapi/modes/mode_dictionary";
+import { COPY_BY_MODE } from "@/src/oshihapi/modes/copy_dictionary";
 import {
-  resolveMode,
-  setModeToLocalStorage,
-} from "@/src/oshihapi/modes/presentationMode";
+  getStyleModeFromSearchParams,
+  setStyleModeToLocalStorage,
+  type StyleMode,
+} from "@/src/oshihapi/modes/useStyleMode";
 
 const decisionLabels: Record<string, string> = {
   BUY: "買う",
@@ -120,7 +121,7 @@ export default function ResultPage() {
   const [skipItemName, setSkipItemName] = useState(true);
   const [showAlternatives, setShowAlternatives] = useState(false);
   const [selectedHeadline, setSelectedHeadline] = useState<string | null>(null);
-  const [resultMode, setResultMode] = useState<ResultMode>(() => resolveMode({ url: searchParams }));
+  const [styleMode, setStyleMode] = useState<StyleMode>(() => getStyleModeFromSearchParams(searchParams) ?? "standard");
 
   const runId = params?.runId;
   const run = useMemo<DecisionRun | undefined>(() => {
@@ -131,14 +132,14 @@ export default function ResultPage() {
   const feedback = localFeedback ?? run?.feedback_immediate;
 
   useEffect(() => {
-    setResultMode(resolveMode({ url: searchParams }));
+    setStyleMode(getStyleModeFromSearchParams(searchParams) ?? "standard");
   }, [searchParams]);
 
-  const updateResultMode = (nextMode: ResultMode) => {
-    setResultMode(nextMode);
-    setModeToLocalStorage(nextMode);
+  const updateStyleMode = (nextMode: StyleMode) => {
+    setStyleMode(nextMode);
+    setStyleModeToLocalStorage(nextMode);
     const params = new URLSearchParams(searchParams.toString());
-    params.set("pm", nextMode);
+    params.set("styleMode", nextMode);
     router.replace(`/result/${runId}?${params.toString()}`);
   };
 
@@ -191,9 +192,9 @@ export default function ResultPage() {
       reasons: run.output.reasons.map((reason) => reason.text),
       reasonTags: outputExt.reasonTags ?? run.output.reasons.map((reason) => reason.id),
       actions: displayActions.map((action) => action.text),
-      mode: resultMode
+      mode: styleMode
     });
-  }, [displayActions, resultMode, run]);
+  }, [displayActions, styleMode, run]);
 
   const outputExt = run?.output as
     | (DecisionRun["output"] & {
@@ -201,15 +202,15 @@ export default function ResultPage() {
         reasonTags?: string[];
       })
     | undefined;
-  const modeCopy = RESULT_COPY[resultMode];
+  const modeCopy = COPY_BY_MODE[styleMode];
   const normalizedWaitType = outputExt?.waitType ?? (run?.output.decision === "THINK" ? "none" : "none");
   const adviceText =
     run?.output.decision === "BUY"
-      ? MODE_DICTIONARY[resultMode].explanation.buy
+      ? MODE_DICTIONARY[styleMode].explanation.buy
       : run?.output.decision === "THINK"
-        ? MODE_DICTIONARY[resultMode].explanation.wait[normalizedWaitType] ??
-          MODE_DICTIONARY[resultMode].explanation.wait.none
-        : MODE_DICTIONARY[resultMode].explanation.skip;
+        ? MODE_DICTIONARY[styleMode].explanation.wait[normalizedWaitType] ??
+          MODE_DICTIONARY[styleMode].explanation.wait.none
+        : MODE_DICTIONARY[styleMode].explanation.skip;
 
   const decisionScale = useMemo(() => {
     if (!run) return "wait";
@@ -348,8 +349,8 @@ export default function ResultPage() {
       <header className="space-y-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
         <p className="text-sm font-semibold tracking-wide text-accent">{modeCopy.ui.resultSummaryTitle}</p>
         <div className="space-y-2">
-          <h1 className="text-4xl font-black leading-tight tracking-tight text-foreground sm:text-5xl">{headline}</h1>
-          <p className={`${bodyTextClass} text-foreground/90`}>{modeCopy.verdictSubcopy[run.output.decision]}</p>
+          <h1 className="text-4xl font-black leading-tight tracking-tight text-foreground sm:text-5xl">{modeCopy.result.verdictTitle[run.output.decision]}</h1>
+          <p className={`${bodyTextClass} text-foreground/90`}>{modeCopy.result.verdictLead[run.output.decision]}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="primary">信頼度 {run.output.confidence}%</Badge>
@@ -396,11 +397,8 @@ export default function ResultPage() {
         <h2 className="text-lg font-semibold text-amber-900">{modeCopy.ui.adviceTitle}</h2>
         <p className="text-sm text-amber-800">{adviceText}</p>
         <p className="text-xs text-amber-700">
-          {modeCopy.waitTypeHint[normalizedWaitType] ?? modeCopy.waitTypeHint.none}
+          {modeCopy.result.waitTypeLabel[normalizedWaitType] ?? modeCopy.result.waitTypeLabel.none}
         </p>
-        {(run.meta.itemKind && modeCopy.itemTypeHint[run.meta.itemKind]) ? (
-          <p className="text-xs text-amber-700">{modeCopy.itemTypeHint[run.meta.itemKind]}</p>
-        ) : null}
       </Card>
 
       <Card className="space-y-4">
@@ -410,9 +408,9 @@ export default function ResultPage() {
             const actionLink = getActionLink(action);
             return (
               <li key={action.id} className="rounded-2xl border border-border p-4">
-              <p className={bodyTextClass}>{MODE_DICTIONARY[resultMode].text.actionLabel[action.id] ?? action.text}
-                {modeCopy.actionExplain[action.id] ? (
-                  <span className="mt-1 block text-xs text-muted-foreground">{modeCopy.actionExplain[action.id]}</span>
+              <p className={bodyTextClass}>{modeCopy.result.actionLabel[action.id] ?? action.text}
+                {modeCopy.result.actionHelp[action.id] ? (
+                  <span className="mt-1 block text-xs text-muted-foreground">{modeCopy.result.actionHelp[action.id]}</span>
                 ) : null}</p>
                 {actionLink ? (
                   <a
@@ -434,10 +432,7 @@ export default function ResultPage() {
         <div className="grid gap-4">
           {run.output.reasons.map((reason) => (
             <div key={reason.id} className="rounded-2xl border border-border p-4">
-              <p className={bodyTextClass}>{MODE_DICTIONARY[resultMode].text.reasonTagLabel[reason.id] ?? reason.text}
-              {modeCopy.reasonExplain[reason.id] ? (
-                <span className="mt-1 block text-xs text-muted-foreground">{modeCopy.reasonExplain[reason.id]}</span>
-              ) : null}</p>
+              <p className={bodyTextClass}>{modeCopy.result.reasonTagLabel[reason.id] ?? reason.text}</p>
             </div>
           ))}
         </div>
@@ -466,8 +461,8 @@ export default function ResultPage() {
       </Card>
 
       <Card className="space-y-4">
-        <ModeToggle value={resultMode} onChange={updateResultMode} />
-        <p className={helperTextClass}>{MODE_DICTIONARY[resultMode].labels.disclaimer}</p>
+        <ModeToggle value={styleMode} onChange={updateStyleMode} />
+        <p className={helperTextClass}>{MODE_DICTIONARY[styleMode].labels.disclaimer}</p>
       </Card>
 
       <Card className="space-y-4">

@@ -16,12 +16,12 @@ import { merch_v2_ja } from "@/src/oshihapi/merch_v2_ja";
 import { evaluate } from "@/src/oshihapi/engine";
 import { evaluateGameBillingV1, getGameBillingQuestions } from "@/src/oshihapi/gameBillingNeutralV1";
 import { saveRun } from "@/src/oshihapi/runStorage";
-import { QUESTION_COPY } from "@/src/oshihapi/modes/questionCopy";
+import { COPY_BY_MODE } from "@/src/oshihapi/modes/copy_dictionary";
 import {
-  resolveMode,
-  setModeToLocalStorage,
-  type PresentationMode as ModeId,
-} from "@/src/oshihapi/modes/presentationMode";
+  getStyleModeFromSearchParams,
+  setStyleModeToLocalStorage,
+  type StyleMode,
+} from "@/src/oshihapi/modes/useStyleMode";
 import { MODE_DICTIONARY } from "@/src/oshihapi/modes/mode_dictionary";
 import { parseDecisiveness } from "@/src/oshihapi/decisiveness";
 import Button from "@/components/ui/Button";
@@ -88,6 +88,38 @@ const decisionLabels: Record<string, string> = {
   SKIP: "やめる",
 };
 
+const QUICK_QUESTION_IDS = [
+  "q_desire",
+  "q_budget_pain",
+  "q_urgency",
+  "q_rarity_restock",
+  "q_regret_impulse",
+  "q_impulse_axis_short",
+] as const;
+
+const CORE_12_QUESTION_IDS = [
+  "q_desire",
+  "q_budget_pain",
+  "q_urgency",
+  "q_rarity_restock",
+  "q_goal",
+  "q_motives_multi",
+  "q_hot_cold",
+  "q_regret_impulse",
+  "q_impulse_axis_short",
+  "q_price_feel",
+  "q_storage_space",
+  "q_alternative_plan",
+] as const;
+
+const ADDON_BY_ITEM_KIND: Partial<Record<ItemKind, readonly string[]>> = {
+  goods: ["q_addon_common_info", "q_addon_common_priority", "q_addon_goods_compare", "q_addon_goods_portability"],
+  blind_draw: ["q_addon_common_info", "q_addon_common_priority", "q_addon_blind_draw_cap", "q_addon_blind_draw_exit"],
+  ticket: ["q_addon_common_info", "q_addon_common_priority", "q_addon_ticket_schedule", "q_addon_ticket_resale_rule"],
+  preorder: ["q_addon_common_info", "q_addon_common_priority", "q_addon_preorder_timeline", "q_addon_preorder_restock"],
+  used: ["q_addon_common_info", "q_addon_common_priority", "q_addon_used_condition", "q_addon_used_price_gap"],
+};
+
 export default function FlowPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -97,7 +129,7 @@ export default function FlowPage() {
   const deadline = parseDeadline(searchParams.get("deadline"));
   const itemKind = parseItemKind(searchParams.get("itemKind"));
   const decisiveness: Decisiveness = parseDecisiveness(searchParams.get("decisiveness"));
-  const presentationMode: ModeId = resolveMode({ url: searchParams });
+  const styleMode: StyleMode = getStyleModeFromSearchParams(searchParams) ?? "standard";
 
   const useCase = itemKind === "game_billing" ? "game_billing" : "merch";
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -107,14 +139,14 @@ export default function FlowPage() {
     if (useCase === "game_billing") {
       return getGameBillingQuestions(mode, answers);
     }
-    return merch_v2_ja.questions.filter((q) => {
-      const isStandard = q.standard ?? q.required ?? false;
-      const isShortOnly = q.shortOnly ?? false;
-      if (mode === "short") return q.urgentCore || isShortOnly;
-      if (mode === "medium") return !isShortOnly && (q.urgentCore || isStandard);
-      return !isShortOnly && (q.urgentCore || isStandard || q.longOnly);
-    });
-  }, [answers, mode, useCase]);
+
+    const baseIds = mode === "short" ? QUICK_QUESTION_IDS : CORE_12_QUESTION_IDS;
+    const addonIds = mode === "long" && itemKind ? (ADDON_BY_ITEM_KIND[itemKind] ?? []) : [];
+    const ids = [...baseIds, ...addonIds];
+    return ids
+      .map((id) => merch_v2_ja.questions.find((question) => question.id === id))
+      .filter((question): question is Question => Boolean(question));
+  }, [answers, itemKind, mode, useCase]);
 
   const [submitting, setSubmitting] = useState(false);
   const startTimeRef = useRef<number>(0);
@@ -125,18 +157,18 @@ export default function FlowPage() {
 
   const currentQuestion = questions[currentIndex];
   const currentQuestionCopy = currentQuestion
-    ? QUESTION_COPY[presentationMode]?.[currentQuestion.id]
+    ? COPY_BY_MODE[styleMode].questions[currentQuestion.id]
     : undefined;
   const currentTitle = currentQuestionCopy?.title ?? currentQuestion?.title ?? "";
   const currentHelper = currentQuestionCopy?.helper ?? currentQuestion?.description;
 
   const getOptionLabel = (questionId: string, optionId: string, fallback: string) =>
-    QUESTION_COPY[presentationMode]?.[questionId]?.options?.[optionId]?.label ?? fallback;
+    COPY_BY_MODE[styleMode].questions[questionId]?.options?.[optionId] ?? fallback;
 
-  const handlePresentationModeChange = (nextMode: ModeId) => {
-    setModeToLocalStorage(nextMode);
+  const handleStyleModeChange = (nextMode: StyleMode) => {
+    setStyleModeToLocalStorage(nextMode);
     const params = new URLSearchParams(searchParams.toString());
-    params.set("pm", nextMode);
+    params.set("styleMode", nextMode);
     router.replace(`/flow?${params.toString()}`);
   };
 
@@ -297,7 +329,7 @@ export default function FlowPage() {
 
     setSubmitting(true);
     saveRun(run);
-    router.push(`/result/${runId}?pm=${presentationMode}`);
+    router.push(`/result/${runId}?styleMode=${styleMode}`);
   };
 
   const handleBack = () => {
@@ -456,9 +488,9 @@ export default function FlowPage() {
                     })}
                     {typeof currentQuestion.maxSelect === "number" && isMaxed ? (
                       <p className={helperTextClass}>
-                        {presentationMode === "kawaii"
+                        {styleMode === "kawaii"
                           ? `いま${currentQuestion.maxSelect}こ選んでるよ。入れ替えるなら1こ外してね。`
-                          : presentationMode === "oshi"
+                          : styleMode === "oshi"
                             ? `現在${currentQuestion.maxSelect}件まで選択中。差し替えるなら1件外そう。`
                             : `現在${currentQuestion.maxSelect}個まで選択中です。入れ替える場合はいずれかを外してください。`}
                       </p>
@@ -481,17 +513,17 @@ export default function FlowPage() {
 
       <Card className="space-y-4">
         <p className={helperTextClass}>
-          判断の表示例：{MODE_DICTIONARY[presentationMode].text.verdictLabel.BUY} / {MODE_DICTIONARY[presentationMode].text.verdictLabel.THINK} / {MODE_DICTIONARY[presentationMode].text.verdictLabel.SKIP}
+          判断の表示例：{MODE_DICTIONARY[styleMode].text.verdictLabel.BUY} / {MODE_DICTIONARY[styleMode].text.verdictLabel.THINK} / {MODE_DICTIONARY[styleMode].text.verdictLabel.SKIP}
         </p>
         <div className="grid grid-cols-3 gap-2 rounded-2xl border border-slate-200 bg-slate-100 p-2 dark:border-white/10 dark:bg-white/6">
           {(["standard", "kawaii", "oshi"] as const).map((modeOption) => (
             <button
               key={modeOption}
               type="button"
-              onClick={() => handlePresentationModeChange(modeOption)}
+              onClick={() => handleStyleModeChange(modeOption)}
               className={[
                 "min-h-11 rounded-xl px-3 py-2 text-sm font-semibold transition",
-                presentationMode === modeOption
+                styleMode === modeOption
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "bg-transparent text-slate-700 hover:bg-white dark:text-zinc-200 dark:hover:bg-white/10",
               ].join(" ")}
