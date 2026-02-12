@@ -1,0 +1,67 @@
+PR Goal
+- Make StyleMode (ver0=standard / ver1=kawaii / ver2=oshi) visible from the HOME page, and apply it across HOME -> FLOW -> RESULT.
+- Expand question routing to a visible, “complete” structure:
+  - FlowMode controls question count (quick/standard/consult).
+  - ItemType controls Addons (ticket/gacha/figure/digital/preorder).
+- IMPORTANT INVARIANTS:
+  - StyleMode must NOT change decision semantics (BUY/WAIT/SKIP meaning), reasonTags meaning, or nextActions meaning.
+  - Option `value` keys and QuestionId keys are logic-level and must remain stable.
+- Must pass: npm run build ✅
+
+Single source of truth to use
+- docs/mode_copy_spec_latest.md
+- docs/question_bank_spec_latest.md
+- docs/mode_branch_report_latest.md
+- src/oshihapi/modes/style_copy_dictionary.ts
+- (existing) your evaluation pipeline + run storage
+
+Implementation tasks (minimal diff, build-first)
+1) Add global StyleMode state
+   - StyleModeId = "standard" | "kawaii" | "oshi"
+   - Persist localStorage key: "oshihapi:style_mode"
+   - Provide hook useStyleMode() or context provider so HOME/FLOW/RESULT share the same value.
+   - Default = "standard"
+
+2) HOME page UI
+   - On app/page.tsx:
+     - Add StyleMode toggle section using STYLE_COPY[styleMode].home
+     - Rename existing “モードを選ぶ” (flow depth) to: “診断の深さ（所要時間）” to avoid confusion.
+   - Ensure selecting StyleMode persists and is used on flow/result without re-selecting.
+
+3) Question bank routing (visible)
+   - Create a small router module e.g. src/oshihapi/questionBank.ts that exports:
+     - coreQuick: QuestionId[]
+     - coreStandard: QuestionId[]
+     - addonsByItemType: Record<ItemType, QuestionId[]>
+     - getQuestions({ flowMode, itemType }): QuestionId[] (core + addons)
+   - Ensure FLOW uses that list for rendering questions.
+   - IMPORTANT: If your existing code already has question IDs/values, align the new QuestionId list to the existing ones,
+     OR add a mapping adapter so evaluation still receives the exact keys it expects.
+
+4) FLOW page copy (StyleMode affects copy only)
+   - On app/flow/page.tsx:
+     - For each question rendered, pull title/help/options labels from STYLE_COPY[styleMode].flow.questions[questionId].
+     - Keep answer value keys unchanged and pass to existing evaluation unchanged.
+
+5) RESULT page copy (StyleMode affects copy only)
+   - On app/result/[runId]/page.tsx:
+     - Show headline/explain from STYLE_COPY[styleMode].result
+     - Build share text using STYLE_COPY[styleMode].result.shareTemplateX
+     - Keep verdict/reasons/actions arrays unchanged (meaning-wise).
+   - If there is already a result-only mode toggle, replace it with the global StyleMode toggle (one source of truth).
+
+6) Verification / acceptance
+   - npm run build ✅
+   - Manual:
+     1) HOME: change StyleMode, navigate to flow: question text + option labels change.
+     2) Finish a run: result copy changes by StyleMode; stored answers/values remain stable.
+     3) Reload: StyleMode persists.
+     4) FlowMode changes question count; ItemType changes addon questions (visible).
+
+Failure reporting
+- If build fails: paste the first TypeScript error (file:line) + build log tail.
+- If UI mismatch: screenshot of HOME + FLOW + RESULT with current StyleMode/FlowMode selection.
+
+Constraints
+- Minimal diff, no broad refactors.
+- No randomness in persisted outputs.

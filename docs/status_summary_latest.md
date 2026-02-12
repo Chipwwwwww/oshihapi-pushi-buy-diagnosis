@@ -1,22 +1,17 @@
-﻿# status summary (latest)
+# status summary (latest)
 
-## What is done
-- post_merge_routine.ps1: PS 5.1 compatible, build-first pipeline, parity gate (config-driven)
-- StyleMode concept clarified:
-  - FlowMode (診断深さ) vs StyleMode (文案世界観 ver0/1/2)
+## What is done (spec/data)
+- StyleMode / FlowMode の区別を明文化（docs/mode_copy_spec_latest.md）
+- “完全な題庫” の分岐設計（docs/question_bank_spec_latest.md）
+- StyleMode の質問/結果文案辞書（src/oshihapi/modes/style_copy_dictionary.ts）
+- Codex に渡す実装プロンプト（docs/codex_prompt_stylemode_questionbank_fullstack_20260213.txt）
 
-## What is NOT yet visible (current pain)
-- StyleMode toggle is not guaranteed to exist on HOME/flow yet.
-  - If only result page was updated, users won't see the feature early.
+## What is NOT yet visible (why you didn't see it)
+- 既存の PR は「結果ページだけ」の切替に寄っていたため、HOME/FLOW で見えない
+- FlowMode の UI を “モード” と書いたため StyleMode と混同した
+- Vercel は production branch の commit を表示するため、作業 branch を見ていない可能性
 
-## Next PR (Codex)
-- Implement StyleMode end-to-end (HOME + flow + result) using:
-  - docs/mode_copy_spec_latest.md
-  - src/oshihapi/modes/style_copy_dictionary.ts
-- Rename FlowMode section label to avoid confusion.
-
-## Acceptance criteria
-- npm run build ✅
-- Manual: change StyleMode on HOME -> flow question copy changes -> result copy changes
-- verdict/reasons/actions semantics unchanged
-
+## Next action (Codex)
+- HOME に StyleMode toggle を追加し、FLOW/RESULT に伝播させる
+- FlowMode+ItemType による質問ルーティングを実装して “全部見える” 状態にする
+- build-first: npm run build ✅

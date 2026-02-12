@@ -1,19 +1,24 @@
-﻿/**
- * style_copy_dictionary.ts (Latest)
- * - StyleMode: standard/kawaii/oshi
- * - Copy ONLY (question prompt/options/result explain/advice/share)
- * - Invariant: logic-level IDs and option values must not change.
+\
+/**
+ * style_copy_dictionary.ts
+ *
+ * PURPOSE:
+ * - Provide per-StyleMode copy for:
+ *   - Home UI labels
+ *   - Flow questions: prompt + option labels
+ *   - Result explanations / advice / share templates
+ *
+ * IMPORTANT INVARIANT:
+ * - Question IDs and option "value" are LOGIC-level (immutable).
+ * - Only labels/help text vary by StyleMode.
  */
 
 export type StyleModeId = "standard" | "kawaii" | "oshi";
 
 export type QuestionId =
-  // context
-  | "q_item_type"
+  // core
   | "q_urgency_deadline"
   | "q_budget_impact"
-  | "q_payment_timing"
-  // core
   | "q_market_price"
   | "q_regret_if_skip"
   | "q_regret_if_buy"
@@ -22,55 +27,44 @@ export type QuestionId =
   | "q_duplicate_inventory"
   | "q_alt_satisfaction"
   | "q_impulse_state"
+  | "q_payment_timing"
   | "q_support_goal"
-  // risk/reality
-  | "q_authenticity_risk"
-  | "q_return_policy"
-  | "q_future_conflicts"
-  | "q_storage_cost"
-  // addons
+  // addons: ticket
   | "q_ticket_total_cost"
-  | "q_ticket_schedule_burden"
+  | "q_ticket_time_off"
   | "q_ticket_purpose_clarity"
+  // addons: gacha
   | "q_gacha_stop_line"
   | "q_gacha_duplicate_tolerance"
-  | "q_gacha_trade_options"
-  | "q_preorder_cancel"
-  | "q_preorder_release_window"
-  | "q_preorder_budget_future"
+  | "q_gacha_trade_route"
+  // addons: figure/goods
   | "q_shipping_risk"
-  | "q_figure_display_plan"
-  | "q_digital_expiry"
+  | "q_figure_size_risk"
+  | "q_authenticity_risk"
+  // addons: digital
   | "q_digital_replay_value"
-  | "q_digital_ownership";
+  | "q_digital_expiry"
+  // addons: preorder
+  | "q_preorder_cancel"
+  | "q_preorder_payment_lock"
+  | "q_preorder_delay_risk";
 
 export interface OptionCopy {
-  value: string; // LOGIC value (immutable)
+  value: string; // LOGIC value (do not change)
   label: string; // UI label (mode-specific)
 }
+
 export interface QuestionCopy {
   title: string;
   help?: string;
   options: OptionCopy[];
 }
 
-export type Verdict = "BUY" | "WAIT" | "SKIP";
-export type NextAction =
-  | "buy_now"
-  | "set_price_cap"
-  | "market_check"
-  | "cooldown_24h"
-  | "declutter_first"
-  | "check_inventory"
-  | "set_spending_cap"
-  | "rerun_later";
-
 export interface ResultCopy {
-  headline: Record<Verdict, string>;
-  explain: Record<Verdict, string>;
+  headline: Record<"BUY" | "WAIT" | "SKIP", string>;
+  explain: Record<"BUY" | "WAIT" | "SKIP", string>;
   advicePrefix: string;
-  actionLabel: Record<NextAction, string>;
-  shareTemplateX: string; // placeholders: {verdict} {reasons} {actions} {sticker}
+  shareTemplateX: string; // {verdict} {reasons} {actions} {sticker}
 }
 
 export interface StyleCopyPack {
@@ -85,53 +79,8 @@ export interface StyleCopyPack {
   result: ResultCopy;
 }
 
-const ACTIONS = {
-  standard: {
-    buy_now: "購入する",
-    set_price_cap: "上限価格を決める",
-    market_check: "相場を確認する",
-    cooldown_24h: "24時間置く",
-    declutter_first: "先に片付ける",
-    check_inventory: "所持を確認する",
-    set_spending_cap: "推し活予算枠を作る",
-    rerun_later: "後で再診断する",
-  },
-  kawaii: {
-    buy_now: "買っちゃお✨",
-    set_price_cap: "上限きめよ💸",
-    market_check: "相場みよ💸",
-    cooldown_24h: "いったん24h🫧",
-    declutter_first: "お部屋整えよ📦",
-    check_inventory: "持ってるか確認！",
-    set_spending_cap: "推し活枠つくろ💸",
-    rerun_later: "あとでもう一回！",
-  },
-  oshi: {
-    buy_now: "購入",
-    set_price_cap: "cap設定",
-    market_check: "相場チェック",
-    cooldown_24h: "24h冷却",
-    declutter_first: "収納確保",
-    check_inventory: "所持チェック",
-    set_spending_cap: "予算枠確保",
-    rerun_later: "後で再戦",
-  },
-} as const;
-
-const Q_STANDARD: Record<QuestionId, QuestionCopy> = {
-  q_item_type: {
-    title: "対象はどれ？",
-    help: "種類によって追加質問が変わります。",
-    options: [
-      { value: "goods", label: "グッズ（一般）" },
-      { value: "gacha", label: "ガチャ/くじ" },
-      { value: "ticket", label: "チケット/現場" },
-      { value: "figure", label: "フィギュア" },
-      { value: "digital", label: "デジタル（配信/DL）" },
-      { value: "preorder", label: "予約（受注/受取待ち）" },
-    ],
-  },
-
+const QUESTIONS_STANDARD: Record<QuestionId, QuestionCopy> = {
+  // ------------------ core ------------------
   q_urgency_deadline: {
     title: "締切・在庫：いつまでに決める必要がある？",
     help: "期限が近いほど「今決める」価値が上がります。",
@@ -149,15 +98,6 @@ const Q_STANDARD: Record<QuestionId, QuestionCopy> = {
       { value: "bad", label: "かなり危ない" },
     ],
   },
-  q_payment_timing: {
-    title: "支払い：支払いタイミングは耐えられる？",
-    options: [
-      { value: "now_ok", label: "今月でもOK" },
-      { value: "later_ok", label: "来月ならOK" },
-      { value: "bad", label: "どちらも厳しい" },
-    ],
-  },
-
   q_market_price: {
     title: "相場：定価/中古相場と比べてどう？",
     help: "高い場合は上限を決めると後悔が減ります。",
@@ -223,6 +163,14 @@ const Q_STANDARD: Record<QuestionId, QuestionCopy> = {
       { value: "wild", label: "完全に勢い" },
     ],
   },
+  q_payment_timing: {
+    title: "支払い：支払いタイミングは耐えられる？",
+    options: [
+      { value: "now_ok", label: "今月でもOK" },
+      { value: "later_ok", label: "来月ならOK" },
+      { value: "bad", label: "どちらも厳しい" },
+    ],
+  },
   q_support_goal: {
     title: "目的：これは応援（支援）目的？それとも自己満足？",
     options: [
@@ -232,66 +180,33 @@ const Q_STANDARD: Record<QuestionId, QuestionCopy> = {
     ],
   },
 
-  q_authenticity_risk: {
-    title: "公式/真贋：公式・正規である確度は？",
-    help: "不安が強い場合は購入経路の見直しが有効です。",
-    options: [
-      { value: "high", label: "高い（公式/正規）" },
-      { value: "mid", label: "普通（信頼できるが断定不可）" },
-      { value: "low", label: "不安（偽物/非公式が心配）" },
-    ],
-  },
-  q_return_policy: {
-    title: "返品/返金：トラブル時の救済はある？",
-    options: [
-      { value: "good", label: "返品/返金可（条件明確）" },
-      { value: "meh", label: "条件あり/やや不明" },
-      { value: "bad", label: "不可/ほぼ無理" },
-    ],
-  },
-  q_future_conflicts: {
-    title: "来月以降：固定イベント/遠征/支払いと衝突しない？",
-    options: [
-      { value: "ok", label: "衝突しない" },
-      { value: "tight", label: "やや不安" },
-      { value: "bad", label: "衝突しそう" },
-    ],
-  },
-  q_storage_cost: {
-    title: "収納コスト：片付け/管理の手間を受け入れられる？",
-    options: [
-      { value: "ok", label: "問題ない" },
-      { value: "meh", label: "少し気になる" },
-      { value: "bad", label: "負担が大きい" },
-    ],
-  },
-
-  #region addons
+  // ------------------ ticket addons ------------------
   q_ticket_total_cost: {
-    title: "（チケット）遠征/宿/グッズ込み総額は許容？",
+    title: "（チケット）遠征/宿/物販込みの総額は許容？",
     options: [
       { value: "ok", label: "余裕" },
       { value: "tight", label: "ギリギリ" },
       { value: "bad", label: "無理" },
     ],
   },
-  q_ticket_schedule_burden: {
-    title: "（チケット）体力/移動/休みの負荷は？",
+  q_ticket_time_off: {
+    title: "（チケット）時間/体力：休みや移動の負担は大丈夫？",
     options: [
-      { value: "ok", label: "問題なし" },
-      { value: "meh", label: "少し重い" },
-      { value: "bad", label: "かなり重い" },
+      { value: "ok", label: "問題ない" },
+      { value: "tight", label: "少ししんどい" },
+      { value: "bad", label: "厳しい" },
     ],
   },
   q_ticket_purpose_clarity: {
-    title: "（チケット）今回の目的は明確？（推しを見る/友人/初現場など）",
+    title: "（チケット）目的：今回の参加で得たいものは明確？",
     options: [
-      { value: "clear", label: "明確" },
-      { value: "some", label: "だいたい" },
-      { value: "vague", label: "曖昧" },
+      { value: "clear", label: "明確（行く理由がある）" },
+      { value: "half", label: "半々" },
+      { value: "unclear", label: "迷いが大きい" },
     ],
   },
 
+  // ------------------ gacha addons ------------------
   q_gacha_stop_line: {
     title: "（ガチャ）撤退ライン（上限）を決めて守れる？",
     options: [
@@ -301,47 +216,23 @@ const Q_STANDARD: Record<QuestionId, QuestionCopy> = {
     ],
   },
   q_gacha_duplicate_tolerance: {
-    title: "（ガチャ）被り耐性：被った時に納得できる？",
+    title: "（ガチャ）被り耐性：同じのが出ても大丈夫？",
     options: [
-      { value: "ok", label: "問題ない" },
-      { value: "meh", label: "少しつらい" },
-      { value: "bad", label: "かなりつらい" },
+      { value: "ok", label: "大丈夫（許容）" },
+      { value: "meh", label: "少し嫌" },
+      { value: "bad", label: "かなり嫌" },
     ],
   },
-  q_gacha_trade_options: {
-    title: "（ガチャ）交換/譲渡などの逃げ道はある？",
+  q_gacha_trade_route: {
+    title: "（ガチャ）交換/譲渡：被りを処理する手段はある？",
     options: [
-      { value: "good", label: "ある（相手/場所あり）" },
-      { value: "meh", label: "探せばある" },
-      { value: "bad", label: "ない/難しい" },
-    ],
-  },
-
-  q_preorder_cancel: {
-    title: "（予約）キャンセル可否と支払い条件は？",
-    options: [
-      { value: "easy", label: "いつでもキャンセル可" },
-      { value: "cond", label: "条件あり" },
-      { value: "no", label: "不可/即支払い" },
-    ],
-  },
-  q_preorder_release_window: {
-    title: "（予約）発売/到着までの期間はストレスにならない？",
-    options: [
-      { value: "ok", label: "問題ない" },
-      { value: "meh", label: "少し不安" },
-      { value: "bad", label: "長すぎて不安" },
-    ],
-  },
-  q_preorder_budget_future: {
-    title: "（予約）将来の支払いが他の出費と重ならない？",
-    options: [
-      { value: "ok", label: "重ならない" },
-      { value: "tight", label: "少し重なりそう" },
-      { value: "bad", label: "重なりそう" },
+      { value: "yes", label: "ある（交換/譲渡/売る）" },
+      { value: "maybe", label: "一部なら可能" },
+      { value: "no", label: "ない" },
     ],
   },
 
+  // ------------------ figure/goods addons ------------------
   q_shipping_risk: {
     title: "（配送）破損/返品リスクはどれくらい？",
     options: [
@@ -350,103 +241,513 @@ const Q_STANDARD: Record<QuestionId, QuestionCopy> = {
       { value: "high", label: "高い/不安" },
     ],
   },
-  q_figure_display_plan: {
-    title: "（フィギュア）飾る/保管の具体案はある？",
+  q_figure_size_risk: {
+    title: "（フィギュア）サイズ/展示：置き場・埃・管理は現実的？",
     options: [
-      { value: "clear", label: "ある（場所/ケースなど）" },
-      { value: "some", label: "だいたいある" },
-      { value: "none", label: "ない" },
+      { value: "ok", label: "問題ない" },
+      { value: "maybe", label: "工夫すれば可能" },
+      { value: "bad", label: "厳しい" },
+    ],
+  },
+  q_authenticity_risk: {
+    title: "（中古/輸入）真贋・状態：偽物/状態詐欺の不安は？",
+    options: [
+      { value: "low", label: "低い（信頼できる）" },
+      { value: "mid", label: "普通" },
+      { value: "high", label: "高い（不安）" },
     ],
   },
 
-  q_digital_expiry: {
-    title: "（デジタル）期限/視聴期限は気にならない？",
-    options: [
-      { value: "ok", label: "気にならない" },
-      { value: "meh", label: "少し気になる" },
-      { value: "bad", label: "期限が嫌" },
-    ],
-  },
+  // ------------------ digital addons ------------------
   q_digital_replay_value: {
-    title: "（デジタル）見返す価値（リピート）は高い？",
+    title: "（デジタル）見返す価値：何度も見返しそう？",
     options: [
-      { value: "high", label: "高い" },
-      { value: "mid", label: "中" },
+      { value: "high", label: "かなりある" },
+      { value: "mid", label: "たぶんある" },
+      { value: "low", label: "一回かも" },
+    ],
+  },
+  q_digital_expiry: {
+    title: "（デジタル）期限：視聴/購入期限は短い？",
+    options: [
+      { value: "soon", label: "短い（すぐ）" },
+      { value: "mid", label: "普通" },
+      { value: "long", label: "長い/なし" },
+    ],
+  },
+
+  // ------------------ preorder addons ------------------
+  q_preorder_cancel: {
+    title: "（予約）キャンセル可否と条件は？",
+    options: [
+      { value: "easy", label: "いつでも可" },
+      { value: "cond", label: "条件あり" },
+      { value: "no", label: "不可" },
+    ],
+  },
+  q_preorder_payment_lock: {
+    title: "（予約）支払い：今すぐ確定？後払い？",
+    options: [
+      { value: "later", label: "後払い/余裕" },
+      { value: "partial", label: "一部前払い" },
+      { value: "now", label: "即支払い/ロック" },
+    ],
+  },
+  q_preorder_delay_risk: {
+    title: "（予約）遅延/仕様変更：許容できる？",
+    options: [
+      { value: "ok", label: "許容できる" },
+      { value: "meh", label: "少し不安" },
+      { value: "bad", label: "許容しづらい" },
+    ],
+  },
+};
+
+const QUESTIONS_KAWAII: Record<QuestionId, QuestionCopy> = {
+  q_urgency_deadline: {
+    title: "いつまでに決めなきゃ？どきどき…",
+    help: "期限が近いと「今の価値」が上がるよ🫧",
+    options: [
+      { value: "soon_48h", label: "いま〜48時間！" },
+      { value: "week", label: "1週間くらい" },
+      { value: "anytime", label: "いつでも/よくわかんない" },
+    ],
+  },
+  q_budget_impact: {
+    title: "おさいふ大丈夫？生活がしんどくならない？",
+    options: [
+      { value: "ok", label: "ぜんぜん平気！" },
+      { value: "tight", label: "ちょいキツい…" },
+      { value: "bad", label: "これは危険かも…" },
+    ],
+  },
+  q_market_price: {
+    title: "相場くらべ：今の値段、どう感じる？",
+    help: "上限を決めると安心だよ💸",
+    options: [
+      { value: "good", label: "お得/定価くらい✨" },
+      { value: "meh", label: "高いけど…許容" },
+      { value: "bad", label: "高すぎ！いったん深呼吸" },
+    ],
+  },
+  q_regret_if_skip: {
+    title: "見送ったら泣いちゃう？後悔しそう？",
+    options: [
+      { value: "high", label: "たぶん泣く🫶" },
+      { value: "mid", label: "わかんない…" },
+      { value: "low", label: "意外と大丈夫" },
+    ],
+  },
+  q_regret_if_buy: {
+    title: "買ったあと、後悔しちゃいそう？",
+    options: [
+      { value: "low", label: "しないと思う✨" },
+      { value: "mid", label: "半々かな…" },
+      { value: "high", label: "後悔しそう…" },
+    ],
+  },
+  q_use_frequency: {
+    title: "どれくらい使う/飾る？ちゃんと活躍する？",
+    options: [
+      { value: "often", label: "めっちゃ使う！" },
+      { value: "sometimes", label: "たまに" },
+      { value: "rare", label: "ほぼ保存かも" },
+    ],
+  },
+  q_space_storage: {
+    title: "おうちに置ける？置き場所ある？📦",
+    options: [
+      { value: "ok", label: "置けるよ！" },
+      { value: "maybe", label: "片付けたらOK" },
+      { value: "bad", label: "むずかしい…" },
+    ],
+  },
+  q_duplicate_inventory: {
+    title: "ダブりそう？似たの持ってない？",
+    options: [
+      { value: "none", label: "持ってない！" },
+      { value: "similar", label: "似たのある" },
+      { value: "same", label: "同じのある…" },
+    ],
+  },
+  q_alt_satisfaction: {
+    title: "代わりで満足できる？（写真/配信/借りる）",
+    options: [
+      { value: "no", label: "代わりはムリ！" },
+      { value: "half", label: "半分いける" },
+      { value: "yes", label: "代わりでOK" },
+    ],
+  },
+  q_impulse_state: {
+    title: "いま冷静？それとも勢い？🫧",
+    options: [
+      { value: "calm", label: "冷静！" },
+      { value: "push", label: "ちょい勢い" },
+      { value: "wild", label: "勢いMAX！" },
+    ],
+  },
+  q_payment_timing: {
+    title: "支払い、耐えられる？今月/来月どう？",
+    options: [
+      { value: "now_ok", label: "今月でもOK✨" },
+      { value: "later_ok", label: "来月ならOK" },
+      { value: "bad", label: "どっちも厳しい…" },
+    ],
+  },
+  q_support_goal: {
+    title: "これは応援の気持ち？それとも自分の満足？",
+    options: [
+      { value: "support", label: "応援したい！" },
+      { value: "both", label: "半々かな" },
+      { value: "self", label: "自分の満足寄り" },
+    ],
+  },
+
+  // ticket
+  q_ticket_total_cost: {
+    title: "（チケ）遠征込みの総額、だいじょうぶ？",
+    options: [
+      { value: "ok", label: "余裕〜✨" },
+      { value: "tight", label: "ギリギリ…" },
+      { value: "bad", label: "無理かも…" },
+    ],
+  },
+  q_ticket_time_off: {
+    title: "（チケ）休み/移動、からだ大丈夫？",
+    options: [
+      { value: "ok", label: "だいじょうぶ！" },
+      { value: "tight", label: "ちょいしんどい…" },
+      { value: "bad", label: "厳しい…" },
+    ],
+  },
+  q_ticket_purpose_clarity: {
+    title: "（チケ）今回、行く理由はハッキリしてる？",
+    options: [
+      { value: "clear", label: "めっちゃハッキリ！" },
+      { value: "half", label: "半々…" },
+      { value: "unclear", label: "迷ってる…" },
+    ],
+  },
+
+  // gacha
+  q_gacha_stop_line: {
+    title: "（ガチャ）撤退ライン決めて守れる？💸",
+    options: [
+      { value: "can", label: "守れる！" },
+      { value: "maybe", label: "守れる…たぶん" },
+      { value: "no", label: "決められない" },
+    ],
+  },
+  q_gacha_duplicate_tolerance: {
+    title: "（ガチャ）被り、許せる？",
+    options: [
+      { value: "ok", label: "だいじょうぶ！" },
+      { value: "meh", label: "ちょいイヤ…" },
+      { value: "bad", label: "ムリ…" },
+    ],
+  },
+  q_gacha_trade_route: {
+    title: "（ガチャ）被り、交換/譲渡できそう？",
+    options: [
+      { value: "yes", label: "できる！" },
+      { value: "maybe", label: "たぶん…" },
+      { value: "no", label: "できない" },
+    ],
+  },
+
+  // figure/goods
+  q_shipping_risk: {
+    title: "（配送）壊れたりしない？返品できる？",
+    options: [
+      { value: "low", label: "安心！" },
+      { value: "mid", label: "普通" },
+      { value: "high", label: "不安…" },
+    ],
+  },
+  q_figure_size_risk: {
+    title: "（フィギュア）置き場/ほこり/管理、いけそう？📦",
+    options: [
+      { value: "ok", label: "いける！" },
+      { value: "maybe", label: "工夫したらOK" },
+      { value: "bad", label: "厳しい…" },
+    ],
+  },
+  q_authenticity_risk: {
+    title: "（中古）偽物とか状態、こわくない？",
+    options: [
+      { value: "low", label: "大丈夫そう" },
+      { value: "mid", label: "普通" },
+      { value: "high", label: "不安…" },
+    ],
+  },
+
+  // digital
+  q_digital_replay_value: {
+    title: "（デジタル）何回も見返しそう？",
+    options: [
+      { value: "high", label: "めっちゃ見る！" },
+      { value: "mid", label: "たぶん見る" },
+      { value: "low", label: "1回かも" },
+    ],
+  },
+  q_digital_expiry: {
+    title: "（デジタル）期限、短い？",
+    options: [
+      { value: "soon", label: "短い！" },
+      { value: "mid", label: "普通" },
+      { value: "long", label: "長い/なし" },
+    ],
+  },
+
+  // preorder
+  q_preorder_cancel: {
+    title: "（予約）キャンセルできる？",
+    options: [
+      { value: "easy", label: "いつでもOK✨" },
+      { value: "cond", label: "条件あり" },
+      { value: "no", label: "不可/ムリ" },
+    ],
+  },
+  q_preorder_payment_lock: {
+    title: "（予約）支払い、今すぐ確定？",
+    options: [
+      { value: "later", label: "後払い/余裕✨" },
+      { value: "partial", label: "一部だけ先払い" },
+      { value: "now", label: "今すぐ確定…" },
+    ],
+  },
+  q_preorder_delay_risk: {
+    title: "（予約）遅延とか仕様変更、だいじょうぶ？",
+    options: [
+      { value: "ok", label: "大丈夫！" },
+      { value: "meh", label: "ちょい不安" },
+      { value: "bad", label: "無理かも…" },
+    ],
+  },
+};
+
+const QUESTIONS_OSHI: Record<QuestionId, QuestionCopy> = {
+  q_urgency_deadline: {
+    title: "締切いつ？現場は待ってくれない",
+    help: "期限が短い＝判断コストを下げる価値が上がる。",
+    options: [
+      { value: "soon_48h", label: "〜48h（急げ）" },
+      { value: "week", label: "〜1週間" },
+      { value: "anytime", label: "不明/いつでも" },
+    ],
+  },
+  q_budget_impact: {
+    title: "予算：この課金、生活を崩さない？",
+    options: [
+      { value: "ok", label: "問題なし" },
+      { value: "tight", label: "圧はある" },
+      { value: "bad", label: "危険域" },
+    ],
+  },
+  q_market_price: {
+    title: "相場：今の値段、熱い？冷えてる？",
+    help: "cap（上限）を置くと勝ちやすい。",
+    options: [
+      { value: "good", label: "良い（定価/お得）" },
+      { value: "meh", label: "高いが許容" },
+      { value: "bad", label: "高すぎ" },
+    ],
+  },
+  q_regret_if_skip: {
+    title: "見送り後悔：あとで引きずる？",
+    options: [
+      { value: "high", label: "引きずる" },
+      { value: "mid", label: "半々" },
+      { value: "low", label: "引きずらない" },
+    ],
+  },
+  q_regret_if_buy: {
+    title: "購入後悔：買って冷める可能性は？",
+    options: [
       { value: "low", label: "低い" },
+      { value: "mid", label: "中" },
+      { value: "high", label: "高い" },
     ],
   },
-  q_digital_ownership: {
-    title: "（デジタル）所有感/保存性（DRM等）は納得できる？",
+  q_use_frequency: {
+    title: "活躍頻度：ちゃんと現場に出る？",
     options: [
-      { value: "ok", label: "納得できる" },
-      { value: "meh", label: "条件次第" },
-      { value: "bad", label: "納得できない" },
+      { value: "often", label: "出る（頻繁）" },
+      { value: "sometimes", label: "たまに" },
+      { value: "rare", label: "保存寄り" },
     ],
   },
-  #endregion addons
+  q_space_storage: {
+    title: "収納が現場：置き場所は確保済み？",
+    options: [
+      { value: "ok", label: "確保済み" },
+      { value: "maybe", label: "片付ければ可" },
+      { value: "bad", label: "厳しい" },
+    ],
+  },
+  q_duplicate_inventory: {
+    title: "所持チェック：ダブりの可能性は？",
+    options: [
+      { value: "none", label: "なし" },
+      { value: "similar", label: "似たのあり" },
+      { value: "same", label: "同一あり" },
+    ],
+  },
+  q_alt_satisfaction: {
+    title: "代替：別手段で回避できる？",
+    options: [
+      { value: "no", label: "回避不可" },
+      { value: "half", label: "半分可" },
+      { value: "yes", label: "回避可" },
+    ],
+  },
+  q_impulse_state: {
+    title: "衝動：今は情緒か理性か",
+    options: [
+      { value: "calm", label: "理性" },
+      { value: "push", label: "情緒寄り" },
+      { value: "wild", label: "情緒MAX" },
+    ],
+  },
+  q_payment_timing: {
+    title: "支払い：今月/来月の耐久は？",
+    options: [
+      { value: "now_ok", label: "今月OK" },
+      { value: "later_ok", label: "来月OK" },
+      { value: "bad", label: "厳しい" },
+    ],
+  },
+  q_support_goal: {
+    title: "目的：応援（支援）か自己満か",
+    options: [
+      { value: "support", label: "支援寄り" },
+      { value: "both", label: "半々" },
+      { value: "self", label: "自己満寄り" },
+    ],
+  },
+
+  // ticket
+  q_ticket_total_cost: {
+    title: "（チケ）遠征込み総額：耐久できる？",
+    options: [
+      { value: "ok", label: "余裕" },
+      { value: "tight", label: "ギリ" },
+      { value: "bad", label: "無理" },
+    ],
+  },
+  q_ticket_time_off: {
+    title: "（チケ）休み/移動：体力と予定は守れる？",
+    options: [
+      { value: "ok", label: "守れる" },
+      { value: "tight", label: "圧ある" },
+      { value: "bad", label: "厳しい" },
+    ],
+  },
+  q_ticket_purpose_clarity: {
+    title: "（チケ）目的：何を回収したいか明確？",
+    options: [
+      { value: "clear", label: "明確" },
+      { value: "half", label: "半々" },
+      { value: "unclear", label: "迷い大" },
+    ],
+  },
+
+  // gacha
+  q_gacha_stop_line: {
+    title: "（ガチャ）撤退ライン（cap）を守れる？",
+    options: [
+      { value: "can", label: "守れる" },
+      { value: "maybe", label: "怪しい" },
+      { value: "no", label: "無理" },
+    ],
+  },
+  q_gacha_duplicate_tolerance: {
+    title: "（ガチャ）被り耐性：許容できる？",
+    options: [
+      { value: "ok", label: "許容" },
+      { value: "meh", label: "微妙" },
+      { value: "bad", label: "無理" },
+    ],
+  },
+  q_gacha_trade_route: {
+    title: "（ガチャ）交換/譲渡ルート：確保できてる？",
+    options: [
+      { value: "yes", label: "ある" },
+      { value: "maybe", label: "一部" },
+      { value: "no", label: "ない" },
+    ],
+  },
+
+  // figure/goods
+  q_shipping_risk: {
+    title: "（配送）破損/返品リスク：許容できる？",
+    options: [
+      { value: "low", label: "低い" },
+      { value: "mid", label: "普通" },
+      { value: "high", label: "高い" },
+    ],
+  },
+  q_figure_size_risk: {
+    title: "（フィギュア）サイズ/展示：管理できる？",
+    options: [
+      { value: "ok", label: "できる" },
+      { value: "maybe", label: "工夫で可" },
+      { value: "bad", label: "厳しい" },
+    ],
+  },
+  q_authenticity_risk: {
+    title: "（中古/輸入）真贋/状態：不安度は？",
+    options: [
+      { value: "low", label: "低い" },
+      { value: "mid", label: "普通" },
+      { value: "high", label: "高い" },
+    ],
+  },
+
+  // digital
+  q_digital_replay_value: {
+    title: "（デジタル）リピート価値：回す？",
+    options: [
+      { value: "high", label: "回す" },
+      { value: "mid", label: "たぶん回す" },
+      { value: "low", label: "一回" },
+    ],
+  },
+  q_digital_expiry: {
+    title: "（デジタル）期限：短い？",
+    options: [
+      { value: "soon", label: "短い" },
+      { value: "mid", label: "普通" },
+      { value: "long", label: "長い/なし" },
+    ],
+  },
+
+  // preorder
+  q_preorder_cancel: {
+    title: "（予約）キャンセル：逃げ道ある？",
+    options: [
+      { value: "easy", label: "ある" },
+      { value: "cond", label: "条件あり" },
+      { value: "no", label: "ない" },
+    ],
+  },
+  q_preorder_payment_lock: {
+    title: "（予約）支払い：ロック強い？",
+    options: [
+      { value: "later", label: "弱い（後）" },
+      { value: "partial", label: "中（部）" },
+      { value: "now", label: "強い（今）" },
+    ],
+  },
+  q_preorder_delay_risk: {
+    title: "（予約）遅延/仕様変更：許容できる？",
+    options: [
+      { value: "ok", label: "許容" },
+      { value: "meh", label: "不安" },
+      { value: "bad", label: "不可" },
+    ],
+  },
 };
-
-const Q_KAWAII: Record<QuestionId, QuestionCopy> = Object.fromEntries(
-  Object.entries(Q_STANDARD).map(([k, v]) => {
-    // lightweight cute transformation for MVP: later we can hand-tune further
-    const title = v.title
-      .replace("（", "（")
-      .replace("：", "：")
-      .replace("？", "？");
-    return [k, { ...v, title }];
-  })
-) as any;
-
-Q_KAWAII.q_item_type = {
-  title: "どれのこと？えらんでね🫧",
-  help: "種類で質問がちょっと変わるよ",
-  options: [
-    { value: "goods", label: "グッズ" },
-    { value: "gacha", label: "ガチャ/くじ💸" },
-    { value: "ticket", label: "チケット/現場" },
-    { value: "figure", label: "フィギュア📦" },
-    { value: "digital", label: "デジタル" },
-    { value: "preorder", label: "予約" },
-  ],
-};
-
-Q_KAWAII.q_budget_impact = {
-  title: "おさいふ大丈夫？生活がしんどくならない？",
-  options: [
-    { value: "ok", label: "ぜんぜん平気！" },
-    { value: "tight", label: "ちょいキツい…" },
-    { value: "bad", label: "これは危険かも…" },
-  ],
-};
-
-Q_KAWAII.q_impulse_state = {
-  title: "いま冷静？それとも勢い？🫧",
-  options: [
-    { value: "calm", label: "冷静！" },
-    { value: "push", label: "ちょい勢い" },
-    { value: "wild", label: "勢いMAX！" },
-  ],
-};
-
-const Q_OSHI: Record<QuestionId, QuestionCopy> = Object.fromEntries(
-  Object.entries(Q_STANDARD).map(([k, v]) => [k, v])
-) as any;
-
-Q_OSHI.q_item_type = {
-  title: "対象カテゴリは？（追加質問が分岐）",
-  options: [
-    { value: "goods", label: "グッズ" },
-    { value: "gacha", label: "ガチャ/くじ" },
-    { value: "ticket", label: "チケット/現場" },
-    { value: "figure", label: "フィギュア" },
-    { value: "digital", label: "デジタル" },
-    { value: "preorder", label: "予約" },
-  ],
-};
-
-Q_OSHI.q_space_storage.title = "収納が現場：置き場所は確保済み？";
-Q_OSHI.q_market_price.title = "相場：今の値段、熱い？冷えてる？";
-Q_OSHI.q_gacha_stop_line.title = "（ガチャ）撤退ライン（cap）を守れる？";
 
 export const STYLE_COPY: Record<StyleModeId, StyleCopyPack> = {
   standard: {
@@ -458,7 +759,7 @@ export const STYLE_COPY: Record<StyleModeId, StyleCopyPack> = {
         oshi: { label: "推し活用語", sub: "共鳴しつつ安全" },
       },
     },
-    flow: { sectionTitle: "質問", questions: Q_STANDARD },
+    flow: { sectionTitle: "質問", questions: QUESTIONS_STANDARD },
     result: {
       headline: { BUY: "買いでOK", WAIT: "一旦待ち", SKIP: "今回は見送り" },
       explain: {
@@ -467,7 +768,6 @@ export const STYLE_COPY: Record<StyleModeId, StyleCopyPack> = {
         SKIP: "現時点ではリスク/負担が勝っています。守る判断も正解です。",
       },
       advicePrefix: "次の一手：",
-      actionLabel: ACTIONS.standard as any,
       shareTemplateX: "判定：{verdict}｜理由：{reasons}｜次：{actions}",
     },
   },
@@ -481,7 +781,7 @@ export const STYLE_COPY: Record<StyleModeId, StyleCopyPack> = {
         oshi: { label: "推し活用語", sub: "共鳴ワード" },
       },
     },
-    flow: { sectionTitle: "しつもん", questions: Q_KAWAII },
+    flow: { sectionTitle: "しつもん", questions: QUESTIONS_KAWAII },
     result: {
       headline: { BUY: "買ってOK✨", WAIT: "いったん待ち🫧", SKIP: "今回は見送り🫶" },
       explain: {
@@ -490,7 +790,6 @@ export const STYLE_COPY: Record<StyleModeId, StyleCopyPack> = {
         SKIP: "守れたのが勝ち！また良いタイミングがくるよ🫶",
       },
       advicePrefix: "次は：",
-      actionLabel: ACTIONS.kawaii as any,
       shareTemplateX: "{verdict} {reasons} / 次は {actions} だよ✨",
     },
   },
@@ -504,7 +803,7 @@ export const STYLE_COPY: Record<StyleModeId, StyleCopyPack> = {
         oshi: { label: "推し活用語", sub: "共鳴（安全）" },
       },
     },
-    flow: { sectionTitle: "質問（推し活）", questions: Q_OSHI },
+    flow: { sectionTitle: "質問（推し活）", questions: QUESTIONS_OSHI },
     result: {
       headline: { BUY: "買い", WAIT: "待ち", SKIP: "見送り" },
       explain: {
@@ -513,7 +812,6 @@ export const STYLE_COPY: Record<StyleModeId, StyleCopyPack> = {
         SKIP: "現状は回避が強い。温存も推し活。",
       },
       advicePrefix: "次：",
-      actionLabel: ACTIONS.oshi as any,
       shareTemplateX: "判定：{verdict}｜{reasons}｜次：{actions}",
     },
   },

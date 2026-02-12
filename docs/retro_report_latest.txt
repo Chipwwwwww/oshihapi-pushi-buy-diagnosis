@@ -1,21 +1,22 @@
-﻿[retro] 2026-02-13
+[retro] 2026-02-13 (StyleMode + QuestionBank)
 
 Root issues:
-1) "Mode" word collision:
-   - HOME already had FlowMode ("急いで/じっくり/AI相談"), user expected StyleMode (standard/kawaii/oshi).
-2) Spec/dictionary existed but feature not wired across HOME->flow->result, so user couldn't see it.
-3) Local != Vercel/Codex because remote push/branch/host config not guaranteed.
+1) "Mode" の衝突
+   - HOME の “モード” は FlowMode（質問数）なのに、ユーザーは StyleMode（文案世界観）を期待していた。
+2) 機能が “見える場所” に無い
+   - 結果ページだけ更新しても、開始ページ/質問ページで体感できない。
+3) Local != Vercel/Codex
+   - push していない/production branch が違う/host 設定が無い、のどれかでズレる。
 
 Fix direction:
-- Separate FlowMode vs StyleMode explicitly in UI and docs.
-- Add StyleMode toggle on HOME, persist to localStorage, apply to flow & result copy.
-- Keep decision logic invariant at MVP; change only copy.
+- FlowMode と StyleMode を UI 文言レベルで分離。
+- StyleMode を HOME で選べるようにし、localStorage で全ページに伝播。
+- 題庫を “FlowMode + ItemType Addons” で見える形にする（完全化）。
+- MVP の安全策：StyleMode は copy だけ。ロジックは不変。
 
-Artifacts delivered:
+Delivered:
 - docs/mode_copy_spec_latest.md
+- docs/question_bank_spec_latest.md
+- docs/mode_branch_report_latest.md
 - src/oshihapi/modes/style_copy_dictionary.ts
-- docs/codex_prompt_expand_questionbank_and_stylemode_fullstack_20260213.txt (copied to clipboard)
-
-SOP reminder:
-- After merge: push -> post_merge_routine -> verify parity (if configured) -> UI check.
-
+- docs/codex_prompt_stylemode_questionbank_fullstack_20260213.txt
