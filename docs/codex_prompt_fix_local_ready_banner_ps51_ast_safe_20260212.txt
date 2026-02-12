@@ -1,0 +1,29 @@
+請存成：docs/codex_prompt_fix_local_ready_banner_ps51_ast_safe_20260212.txt
+並開 PR（最小 diff / PowerShell 5.1 相容 / npm run build 必須過）。
+
+問題
+- 現行 Start-LocalReadyNotifier 使用 Register-ObjectEvent，PS5.1 + 前景 npm dev 時輸出不可靠，使用者只看到 ⏳ Waiting，卻看不到 ✅。
+- 過往嘗試用文字匹配替換 Start-LocalReadyNotifier 會誤傷 function 定義行，造成腳本 Parse fail（UnexpectedToken ')' / invalid assignment）。
+
+目標
+- PS5.1：腳本永遠可 Parse（0 parse errors）。
+- dev ready 時，console 必定顯示：✅ Local 起動OK: http://localhost:3000
+- dev 仍以前景方式執行（不 background、不另開視窗），維持既有工作方式。
+
+修正
+1) 新增 function Run-DevWithReadyBanner：
+- npm run dev -- --webpack -p $DevPort 2>&1 | ForEach-Object
+- 原樣輸出每行 log
+- 偵測 Ready / Local / started server / url / http://localhost:PORT 任一模式後，印一次 ✅ Local 起動OK...
+
+2) Dev server 區塊：
+- 不再呼叫 Start-LocalReadyNotifier（或保留但不使用）
+- 用 Run-DevWithReadyBanner 取代原本 Run "npm run dev -- --webpack -p $DevPort" 的啟動方式
+
+安全性
+- 不要用「簡單替換包含 Start-LocalReadyNotifier 的行」這種方式，避免誤傷 function 定義。
+- 若需要插入點，使用清楚 marker 或 AST/結構化方式（例如緊接在 Start-LocalReadyNotifier function 後插入）。
+
+驗收
+- Windows PowerShell 5.1：Parse OK、能啟動 dev、且一定看到 ✅
+- npm run build ✅

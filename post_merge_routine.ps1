@@ -182,6 +182,38 @@ function Start-LocalReadyNotifier(
   return $eventSourceIdentifier
 }
 
+function Run-DevWithReadyBanner(
+  [Parameter(Mandatory = $true)]
+  [int]$Port
+) {
+  $localUrl = "http://localhost:$Port"
+  Write-Host ("⏳ Waiting for {0} ..." -f $localUrl) -ForegroundColor DarkYellow
+
+  $readyBannerShown = $false
+  & npm run dev -- --webpack -p "$Port" 2>&1 | ForEach-Object {
+    $line = [string]$_
+    Write-Host $line
+
+    if (-not $readyBannerShown) {
+      if (
+        $line -match '(?i)ready' -or
+        $line -match '(?i)local' -or
+        $line -match '(?i)started\s+server' -or
+        $line -match '(?i)\burl\b' -or
+        $line -match ([regex]::Escape($localUrl))
+      ) {
+        Write-Host ("✅ Local 起動OK: {0}" -f $localUrl) -ForegroundColor Green
+        $readyBannerShown = $true
+      }
+    }
+  }
+
+  $devExitCode = $LASTEXITCODE
+  if ($devExitCode -ne 0) {
+    throw ("Command failed (exit={0}): npm run dev -- --webpack -p {1}" -f $devExitCode, $Port)
+  }
+}
+
 function Stop-Port([int]$Port) {
   if (Get-Command Get-NetTCPConnection -ErrorAction SilentlyContinue) {
     try {
@@ -929,30 +961,7 @@ if (-not $SkipDev) {
     Run 'npm' @('run','start','--','-p',"$DevPort")
   } else {
     Write-Host ("Starting dev: npm run dev -- --webpack -p {0}" -f $DevPort) -ForegroundColor Cyan
-    $localUrl = "http://localhost:$DevPort"
-    Write-Host ("⏳ Waiting for {0} ..." -f $localUrl) -ForegroundColor DarkYellow
-    $readyBannerShown = $false
-
-    & npm run dev -- --webpack -p "$DevPort" 2>&1 | ForEach-Object {
-      $line = [string]$_
-      Write-Host $line
-
-      if (-not $readyBannerShown) {
-        if (
-          $line -match 'Ready in' -or
-          $line -match ([regex]::Escape("Local: $localUrl")) -or
-          $line -match ([regex]::Escape($localUrl))
-        ) {
-          Write-Host ("✅ Local 起動OK: {0}" -f $localUrl) -ForegroundColor Green
-          $readyBannerShown = $true
-        }
-      }
-    }
-
-    $devExitCode = $LASTEXITCODE
-    if ($devExitCode -ne 0) {
-      throw ("Command failed (exit={0}): npm run dev -- --webpack -p {1}" -f $devExitCode, $DevPort)
-    }
+    Run-DevWithReadyBanner -Port $DevPort
   }
 } else {
   Write-Host 'SkipDev enabled.' -ForegroundColor DarkGray
