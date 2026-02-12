@@ -1,0 +1,62 @@
+﻿PR Goal
+- Make StyleMode (ver0=standard / ver1=kawaii / ver2=oshi) visible from the HOME page and applied globally.
+- StyleMode must affect:
+  1) Home UI microcopy
+  2) Flow questions prompt + option labels (copy only)
+  3) Result headline/explain/advice/share text (copy only)
+- IMPORTANT INVARIANT:
+  - StyleMode must NOT change decision semantics (BUY/WAIT/SKIP meaning), reasonTags meaning, or nextActions meaning.
+- Must pass: npm run build ✅
+
+Single source of truth
+- docs/question_bank_v3_spec_latest.md
+- src/oshihapi/modes/style_copy_dictionary.ts
+- (existing) result formatting / mode_dictionary.ts may remain, but StyleMode must be the global one.
+
+Implementation tasks (minimal diff, build-first)
+1) Add global StyleMode state
+   - Create hook: src/oshihapi/modes/useStyleMode.ts
+   - localStorage key: "oshihapi:style_mode"
+   - safe client-only read/write (guard window undefined)
+   - default = "standard"
+
+2) HOME: add StyleMode toggle (this is what user expects)
+   - Update app/page.tsx
+   - Add section title from STYLE_COPY[styleMode].home.sectionTitle
+   - 3 options from STYLE_COPY[styleMode].home.modes
+   - Selection writes to localStorage and becomes global
+   - IMPORTANT: Existing "モードを選ぶ" is FlowMode (depth). Rename it to avoid collision:
+     - "診断の深さ（所要時間）" or similar.
+
+3) Flow page: apply StyleMode to question copy ONLY
+   - Update app/flow/page.tsx
+   - Wherever you render question prompt + options:
+     - keep the same QuestionId + option.value used for evaluation
+     - only replace displayed text by STYLE_COPY[styleMode].flow.questions[questionId]
+   - Ensure values sent into evaluate() remain identical (do not rename).
+   - If some questionId is missing in dictionary, fallback to standard.
+
+4) Result page: apply StyleMode to result copy ONLY
+   - Update app/result/[runId]/page.tsx
+   - Use STYLE_COPY[styleMode].result:
+     - headline[verdict]
+     - explain[verdict]
+     - advicePrefix
+     - actionLabel mapping for nextActions labels (do not change action codes)
+     - shareTemplateX to build share text
+   - If you currently have a separate "result mode toggle", either:
+     - remove it in favor of StyleMode, OR
+     - make it read/write the same StyleMode (single source).
+
+5) Persistence + UX verification
+   - Change StyleMode on HOME -> go to flow -> question copy changes
+   - Complete a run -> result copy changes
+   - Reload -> persists
+
+Acceptance
+- npm run build ✅
+- Manual: switching StyleMode never changes verdict/reasons/actions meaning; only copy.
+
+Notes
+- Do not introduce randomness.
+- Minimal refactor; keep risk low.

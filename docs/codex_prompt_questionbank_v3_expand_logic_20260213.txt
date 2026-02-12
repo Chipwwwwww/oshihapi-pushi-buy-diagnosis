@@ -1,0 +1,33 @@
+﻿PR Goal
+- Expand question bank toward v3 as defined in docs/question_bank_v3_spec_latest.md.
+- Add missing questions (context/core/risk/addons) and route them by FlowMode + ItemType.
+- Keep backward compatibility for old runs.
+- Must pass: npm run build ✅
+
+Rules
+- At MVP, it is OK if evaluation logic stays mostly the same, BUT:
+  - new questions must not break evaluation (missing answers allowed)
+  - if you wire new questions into evaluate(), do it additively and safely
+
+Implementation (recommended safe approach)
+1) Question definitions
+   - Create/extend a question list structure (ids + option values)
+   - Ensure option values match those in src/oshihapi/modes/style_copy_dictionary.ts
+
+2) Routing
+   - quick: max 5
+   - standard: ~12
+   - deep: include risk + addons (max ~20-26)
+   - ItemType adds addons:
+     - ticket/gacha/preorder/figure/digital
+
+3) Evaluation compatibility
+   - Ensure evaluate() handles missing keys
+   - Keep reasonTags semantics unchanged
+   - If you add new scoring, map to existing tags:
+     budget/urgency/market/space/impulse/duplicate/use/regret/risk
+
+Acceptance
+- build ✅
+- UI shows the expanded question bank in deep mode
+- old runId renders without crash
