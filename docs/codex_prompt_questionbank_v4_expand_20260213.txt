@@ -1,0 +1,40 @@
+PR Goal
+- Expand QuestionBank to v4 branch architecture (core + addons) and make StyleMode visible end-to-end.
+- MUST pass: npm run build ✅
+- IMPORTANT invariants:
+  - Do NOT change decision semantics for BUY/WAIT/SKIP, reasonTags meaning, nextActions meaning.
+  - Option 'value' keys are LOGIC and must remain stable. Only labels/help/copy can differ by StyleMode.
+  - Minimal diff, build-first, reversible.
+
+Single source of truth
+- docs/question_bank_v4_spec_latest.md
+- src/oshihapi/modes/style_copy_dictionary.ts
+
+Tasks
+1) Fix build blockers if any (TypeScript parsing/encoding). Ensure style_copy_dictionary.ts compiles.
+2) StyleMode global state
+   - Add StyleModeId = "standard" | "kawaii" | "oshi"
+   - Persist localStorage key: "oshihapi:style_mode"
+   - Create a small client hook helper: src/oshihapi/modes/useStyleMode.ts (or similar)
+3) HOME (app/page.tsx)
+   - Add StyleMode toggle section using STYLE_COPY[mode].home
+   - Keep existing FlowMode section but rename it to avoid confusion: "診断の深さ（所要時間）"
+4) FLOW (app/flow/page.tsx)
+   - Keep existing internal question ids / option values used by evaluation.
+   - Render prompt/help/options labels from STYLE_COPY[mode].flow.questions[questionId]
+   - Ensure answer submission uses the stable 'value'
+   - Addons:
+     - If itemType= ticket/gacha/preorder etc, include the addon questions defined in spec.
+     - If current code doesn't have itemType in flow, add minimal way to set it from home selection or query param.
+5) RESULT (app/result/[runId]/page.tsx)
+   - Use STYLE_COPY[mode].result for headline/explain/share
+   - verdict/reasons/actions must remain unchanged, only presentation changes
+6) Verification
+   - npm run build ✅
+   - Manual:
+     - Select StyleMode on home -> go to flow -> confirm question text changes
+     - Complete run -> result copy changes by StyleMode, but verdict/reasons/actions content remains same
+     - Reload -> StyleMode persists
+
+If build fails
+- Paste FIRST TypeScript error (file:line) and the build log tail.

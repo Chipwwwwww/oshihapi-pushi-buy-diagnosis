@@ -1,22 +1,24 @@
-[retro] 2026-02-13 (StyleMode + QuestionBank)
+[retro] 2026-02-13 (build fix + QB v4 spec)
 
-Root issues:
-1) "Mode" の衝突
-   - HOME の “モード” は FlowMode（質問数）なのに、ユーザーは StyleMode（文案世界観）を期待していた。
-2) 機能が “見える場所” に無い
-   - 結果ページだけ更新しても、開始ページ/質問ページで体感できない。
-3) Local != Vercel/Codex
-   - push していない/production branch が違う/host 設定が無い、のどれかでズレる。
+症状
+- `npm run build` が TypeScript で落ちる:
+  - `style_copy_dictionary.ts:1:1 Invalid character`（先頭に `\` が混入）
+  - または `: expected`（TS 内に `#region` が混入）
 
-Fix direction:
-- FlowMode と StyleMode を UI 文言レベルで分離。
-- StyleMode を HOME で選べるようにし、localStorage で全ページに伝播。
-- 題庫を “FlowMode + ItemType Addons” で見える形にする（完全化）。
-- MVP の安全策：StyleMode は copy だけ。ロジックは不変。
+原因
+- PowerShell/zip overlay 由来で TS ファイル先頭に余計な文字が入った
+- PowerShell の `#region` を TS にそのまま貼ってしまった（TS では無効）
 
-Delivered:
-- docs/mode_copy_spec_latest.md
-- docs/question_bank_spec_latest.md
-- docs/mode_branch_report_latest.md
-- src/oshihapi/modes/style_copy_dictionary.ts
-- docs/codex_prompt_stylemode_questionbank_fullstack_20260213.txt
+対応
+- TS 先頭の余計な `\` を削除
+- `#region/#endregion` 行を `//` コメント化
+- UTF-8 (no BOM) で書き戻し
+
+副作用/注意
+- Next が `C:\Users\User\package-lock.json` を workspace root と誤認する警告が出る
+  - 安全に .bak へ退避推奨（再発防止）
+
+成果物
+- src/oshihapi/modes/style_copy_dictionary.ts（ビルドできる版）
+- docs/question_bank_v4_spec_latest.md（分岐構造の最新仕様）
+- docs/codex_prompt_questionbank_v4_expand_20260213.txt（Codex PR prompt）

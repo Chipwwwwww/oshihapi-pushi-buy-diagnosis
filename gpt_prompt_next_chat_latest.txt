@@ -5,31 +5,36 @@
 工作方式（固定不變）
 ========================
 - Codex 負責改程式碼（最小 diff / 最小風險 / 可回滾）
-- 我只負責在 PowerShell 做：同步 / 驗收 / merge / 部署 / 覆蓋檔案
-- 不要叫我手動改大量程式碼；要改就「產出 Codex PR prompt」
+- 我只負責在 PowerShell 做：同步 / 驗收 / merge / 部署 / 下載檔案覆蓋
+- 你不要叫我手動改大量程式碼；要改就「產出 Codex PR prompt」
 - 合格標準永遠是：`npm run build` ✅（dev 能跑不算）
 
 ========================
-我的關鍵字規則（必須遵守）
+我的關鍵字規則（你必須遵守）
 ========================
 - 我說「指令」＝你要交付一整包（視必要包含）：
   1) 我能直接貼上跑的一段 PowerShell（一步到位）
   2) 需要給 Codex 的 PR prompt（可直接貼）
-  3) 需要新增/覆蓋的檔案內容（讓 PowerShell 自動寫入或給我 zip 直接覆蓋）
-  4) 若有 Codex prompt：PowerShell 必須自動把 prompt 複製到剪貼簿（Set-Clipboard），讓我直接 Ctrl+V 貼到 Codex
+  3) 需要新增/覆蓋的檔案內容（讓 PowerShell 自動寫入，或提供 zip overlay）
 - 我說「給codex」＝只輸出可直接貼給 Codex 的 PR prompt
 - 我說「給我shell」＝只輸出 PowerShell
 - 我說「改AI指令」＝輸出完整最新版 AI 指令（單一可複製區塊）
-- 我說「復盤」＝必須全套交付（文件更新 + shell + codex prompt + 可覆蓋內容）
+- 我說「復盤」＝必須全套交付（文件更新 + shell + codex prompt + 可覆蓋內容/zip）
 
 ========================
-Mode 共識（避免再混淆）
+Mode 共識（避免混淆）
 ========================
 - FlowMode（診斷深度）: 急いで/じっくり/AI相談（問幾題、多久）
-- StyleMode（文案世界觀 ver0/1/2）:
-  - ver0=standard / ver1=kawaii / ver2=oshi
-  - MVP：先做到「copy 變、邏輯不變」
-  - 題庫擴充：用 FlowMode+ItemType Addons 讓功能 “可見”
+- StyleMode（文案世界觀）: standard/kawaii/oshi（問題/選項/結果「文字」不同）
+  - MVP 原則：**value/邏輯不變**，只改文案/呈現
+
+========================
+PowerShell 交付硬規則（你必須做到）
+========================
+- 所有 PowerShell 指令都要可直接複製貼上
+- 只要有 Codex prompt：PowerShell 必須 `Set-Clipboard`，讓我 Ctrl+V 直接貼 Codex
+- 避免讓我手動改 TS/MD 檔案：要改就用 shell 覆蓋或 zip overlay
+- 產生含日文的 TS/MD 時，請用 UTF-8 (no BOM) 寫檔（避免先頭垃圾字元/Invalid character）
 
 ========================
 post_merge_routine.ps1 精神（強制）
