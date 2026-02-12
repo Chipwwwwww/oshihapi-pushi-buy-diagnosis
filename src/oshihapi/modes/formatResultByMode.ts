@@ -14,7 +14,6 @@ type FormatResultByModeInput = {
   reasonTags: string[];
   actions: string[];
   mode: ResultMode;
-  stickerOffset?: number;
 };
 
 type FormattedByMode = {
@@ -96,7 +95,7 @@ export function formatResultByMode(input: FormatResultByModeInput): FormattedByM
   const normalizedWaitType = input.verdict === "THINK" ? (input.waitType ?? "none") : "";
   const scenarioKey = SCENARIO_RESOLUTION.resolve(input.verdict, normalizedWaitType, primaryTag);
   const runHash = stableHash(input.runId);
-  const stickerHash = runHash + (input.stickerOffset ?? 0);
+  const stickerHash = runHash;
 
   const sticker = pickByHash(dictionary.stickers[scenarioKey] ?? [], stickerHash);
   const emoji = pickTokensByHash(dictionary.text.emoji, dictionary.text.maxEmoji, runHash);

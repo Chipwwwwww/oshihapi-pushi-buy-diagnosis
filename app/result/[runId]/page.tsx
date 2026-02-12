@@ -119,7 +119,6 @@ export default function ResultPage() {
   const [showAlternatives, setShowAlternatives] = useState(false);
   const [selectedHeadline, setSelectedHeadline] = useState<string | null>(null);
   const [resultMode, setResultMode] = useState<ResultMode>("standard");
-  const [stickerOffset, setStickerOffset] = useState(0);
 
   const runId = params?.runId;
   const run = useMemo<DecisionRun | undefined>(() => {
@@ -174,7 +173,6 @@ export default function ResultPage() {
   useEffect(() => {
     setShowAlternatives(false);
     setSelectedHeadline(null);
-    setStickerOffset(0);
   }, [runId]);
 
   const headline = selectedHeadline ?? presentation?.headline ?? decisionLabels[run?.output.decision ?? "THINK"];
@@ -194,10 +192,9 @@ export default function ResultPage() {
       reasons: run.output.reasons.map((reason) => reason.text),
       reasonTags: outputExt.reasonTags ?? [],
       actions: displayActions.map((action) => action.text),
-      mode: resultMode,
-      stickerOffset,
+      mode: resultMode
     });
-  }, [displayActions, resultMode, run, stickerOffset]);
+  }, [displayActions, resultMode, run]);
 
   const decisionScale = useMemo(() => {
     if (!run) return "wait";
@@ -463,13 +460,6 @@ export default function ResultPage() {
         <p className="whitespace-pre-line text-sm text-muted-foreground">
           {modeFormattedResult?.shareTextX280 ?? run.output.shareText}
         </p>
-        <Button
-          variant="outline"
-          onClick={() => setStickerOffset((prev) => prev + 1)}
-          className="w-full rounded-xl"
-        >
-          コメントを変える
-        </Button>
         <Button onClick={handleCopyShare} className="w-full rounded-xl">
           shareTextX280 をコピー
         </Button>
