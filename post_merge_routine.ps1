@@ -107,6 +107,67 @@ function Assert-ScriptParses([string]$ScriptPath) {
   }
 }
 
+function Start-LocalReadyNotifier(
+  [Parameter(Mandatory = $true)]
+  [string]$Url,
+  [int]$TimeoutSec = 180,
+  [int]$IntervalSec = 1
+) {
+  $safeTimeoutSec = if ($TimeoutSec -gt 0) { $TimeoutSec } else { 180 }
+  $safeIntervalSec = if ($IntervalSec -gt 0) { $IntervalSec } else { 1 }
+  $eventSourceIdentifier = "LocalReadyNotifier_{0}" -f ([Guid]::NewGuid().ToString('N'))
+
+  Write-Host ("⏳ Waiting for {0} ..." -f $Url) -ForegroundColor DarkYellow
+
+  $timer = New-Object System.Timers.Timer
+  $timer.Interval = $safeIntervalSec * 1000
+  $timer.AutoReset = $true
+
+  $state = [PSCustomObject]@{
+    Url = $Url
+    StartedAt = Get-Date
+    TimeoutSec = $safeTimeoutSec
+    Timer = $timer
+    EventSourceIdentifier = $eventSourceIdentifier
+    Completed = $false
+  }
+
+  Register-ObjectEvent -InputObject $timer -EventName Elapsed -SourceIdentifier $eventSourceIdentifier -MessageData $state -Action {
+    $ctx = $event.MessageData
+    if ($ctx.Completed) { return }
+
+    $elapsed = (Get-Date) - $ctx.StartedAt
+    if ($elapsed.TotalSeconds -ge $ctx.TimeoutSec) {
+      $ctx.Completed = $true
+      try { $ctx.Timer.Stop() } catch {}
+      try { $ctx.Timer.Dispose() } catch {}
+      try { Unregister-Event -SourceIdentifier $ctx.EventSourceIdentifier -ErrorAction SilentlyContinue } catch {}
+      return
+    }
+
+    $isReady = $false
+    try {
+      $resp = Invoke-WebRequest -Uri $ctx.Url -Method Get -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop
+      if ($resp -and $resp.StatusCode -ge 200 -and $resp.StatusCode -lt 400) {
+        $isReady = $true
+      }
+    } catch {
+      $isReady = $false
+    }
+
+    if ($isReady) {
+      $ctx.Completed = $true
+      Write-Host ("✅ Local 起動OK: {0}" -f $ctx.Url) -ForegroundColor Green
+      try { $ctx.Timer.Stop() } catch {}
+      try { $ctx.Timer.Dispose() } catch {}
+      try { Unregister-Event -SourceIdentifier $ctx.EventSourceIdentifier -ErrorAction SilentlyContinue } catch {}
+    }
+  } | Out-Null
+
+  $timer.Start()
+  return $eventSourceIdentifier
+}
+
 function Stop-Port([int]$Port) {
   if (Get-Command Get-NetTCPConnection -ErrorAction SilentlyContinue) {
     try {
@@ -854,6 +915,7 @@ if (-not $SkipDev) {
     Run 'npm' @('run','start','--','-p',"$DevPort")
   } else {
     Write-Host ("Starting dev: npm run dev -- --webpack -p {0}" -f $DevPort) -ForegroundColor Cyan
+    Start-LocalReadyNotifier -Url "http://localhost:$DevPort" -TimeoutSec 180 | Out-Null
     Run 'npm' @('run','dev','--','--webpack','-p',"$DevPort")
   }
 } else {
