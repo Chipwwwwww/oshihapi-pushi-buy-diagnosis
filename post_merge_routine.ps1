@@ -929,8 +929,30 @@ if (-not $SkipDev) {
     Run 'npm' @('run','start','--','-p',"$DevPort")
   } else {
     Write-Host ("Starting dev: npm run dev -- --webpack -p {0}" -f $DevPort) -ForegroundColor Cyan
-    Start-LocalReadyNotifier -Url "http://localhost:$DevPort" -TimeoutSec 180 | Out-Null
-    Run 'npm' @('run','dev','--','--webpack','-p',"$DevPort")
+    $localUrl = "http://localhost:$DevPort"
+    Write-Host ("⏳ Waiting for {0} ..." -f $localUrl) -ForegroundColor DarkYellow
+    $readyBannerShown = $false
+
+    & npm run dev -- --webpack -p "$DevPort" 2>&1 | ForEach-Object {
+      $line = [string]$_
+      Write-Host $line
+
+      if (-not $readyBannerShown) {
+        if (
+          $line -match 'Ready in' -or
+          $line -match ([regex]::Escape("Local: $localUrl")) -or
+          $line -match ([regex]::Escape($localUrl))
+        ) {
+          Write-Host ("✅ Local 起動OK: {0}" -f $localUrl) -ForegroundColor Green
+          $readyBannerShown = $true
+        }
+      }
+    }
+
+    $devExitCode = $LASTEXITCODE
+    if ($devExitCode -ne 0) {
+      throw ("Command failed (exit={0}): npm run dev -- --webpack -p {1}" -f $devExitCode, $DevPort)
+    }
   }
 } else {
   Write-Host 'SkipDev enabled.' -ForegroundColor DarkGray

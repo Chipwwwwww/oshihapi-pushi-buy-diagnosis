@@ -1,0 +1,26 @@
+請在 `post_merge_routine.ps1` 做最小修改，修正 Windows PowerShell 5.1 下看不到 Local Ready 訊息的問題。
+
+目標
+- 當 dev server 真正就緒時，必定在同一個 console 顯示：
+  `✅ Local 起動OK: http://localhost:<port>`
+- 不改 dev 執行語義：仍是前景執行（不 background、不另外開視窗）
+
+問題背景
+- 目前 `Start-LocalReadyNotifier` 使用 `Register-ObjectEvent -Action`。
+- 在 Windows PowerShell 5.1，Action 可能在背景 runspace 執行，訊息不一定回到前景 console。
+- 造成 localhost 已可連線時，使用者仍只看到 `⏳ Waiting...`。
+
+實作要求（最穩定）
+- 在 dev server 區塊不要依賴事件 notifier 輸出。
+- 改為用 pipeline 解析 `npm run dev -- --webpack -p $DevPort` 的輸出：
+  - 使用 `2>&1 | ForEach-Object { $_; ... }` 逐行保留原始 log
+  - 當偵測到 `Ready in` 或 `Local: http://localhost:$DevPort` 或 `http://localhost:$DevPort` 時：
+    - 印一次 `✅ Local 起動OK: http://localhost:$DevPort`
+    - 設旗標避免重複輸出
+
+可選
+- 可保留啟動前先印一次 `⏳ Waiting for ...`
+
+驗收
+- Windows PowerShell 5.1：啟動 dev 後，一定可見 `✅` 行（不受背景事件影響）
+- `npm run build` 必須通過
