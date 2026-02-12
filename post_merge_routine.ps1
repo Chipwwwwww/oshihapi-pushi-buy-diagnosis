@@ -28,15 +28,19 @@ param(
   [string]$VercelProdUrlOrHost,
   [ValidateSet('production','preview','any')]
   [string]$VercelEnv = 'production',
-  [int]$VercelMaxWaitSec = 180,
-  [int]$VercelPollIntervalSec = 5,
+  [int]$VercelMaxWaitSec = 0,
+  [int]$VercelPollIntervalSec = 10,
+  [int]$VercelParityRetries = 60,
+  [ValidateSet('enforce','warn','off')]
+  [string]$VercelParityMode = 'enforce',
 
   [int]$DevPort = 3000,
   [int[]]$KillPorts = @(3000,3001,3002),
 
   [string[]]$Expect = @(),
-  [ValidateSet('code','docs','all')]
-  [string]$ExpectScope = 'code'
+  [ValidateSet('code','all')]
+  [string]$ExpectScope = 'code',
+  [switch]$ExpectRegex
 )
 
 Set-StrictMode -Version Latest
@@ -153,7 +157,6 @@ function Resolve-UpstreamRef() {
 }
 
 function Assert-NoConflictMarkers() {
-  $regex = '^(<<<<<<< .+|=======|>>>>>>> .+)$'
   $paths = @('app','src','components','ops','post_merge_routine.ps1')
   $existingPaths = @()
   foreach ($path in $paths) {
@@ -162,7 +165,7 @@ function Assert-NoConflictMarkers() {
 
   if ($existingPaths.Count -eq 0) { return }
 
-  $output = (& git grep -n -I -E -- "$regex" -- @existingPaths) 2>$null
+  $output = (& git grep -n -I -E -e '^<<<<<<<' -e '^=======$' -e '^>>>>>>>' -- @existingPaths) 2>$null
   $exitCode = $LASTEXITCODE
 
   if ($exitCode -eq 0) {
@@ -329,7 +332,7 @@ function Get-WebExceptionStatusCode([System.Exception]$Exception) {
   return $null
 }
 
-function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$ExpectedEnv, [switch]$AllowPreview, [int]$MaxWaitSec = 180, [int]$PollIntervalSec = 5) {
+function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$ExpectedEnv, [switch]$AllowPreview, [int]$MaxWaitSec = 600, [int]$PollIntervalSec = 10) {
   $started = Get-Date
   $attempt = 0
   $safeIntervalSec = [Math]::Max(1, $PollIntervalSec)
@@ -412,6 +415,8 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
       }
 
       Write-Host ("VERCEL == LOCAL ✅ ({0}) (vercelEnv={1})" -f $LocalSha, $vercelEnvValue) -ForegroundColor Green
+      $result | Add-Member -NotePropertyName Success -NotePropertyValue $true -Force
+      $result | Add-Member -NotePropertyName FailureMessage -NotePropertyValue '' -Force
       return $result
     } catch {
       $statusCode = Get-WebExceptionStatusCode -Exception $_.Exception
@@ -447,10 +452,14 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
   }
 
   if ($lastStatusCode -eq 404 -or -not $hadParsedCommitSha) {
-    throw ("REMOTE ENDPOINT MISSING: /api/version returned 404 after {0} tries (host={1}, localSha={2}, branch={3}). Production is not deployed to a version that includes app/api/version/route.ts. Ensure your changes are merged into the Vercel Production Branch and wait/redeploy Production, then rerun." -f $maxAttempts, $ProdHost, $LocalSha, $branchName)
+    $result | Add-Member -NotePropertyName Success -NotePropertyValue $false -Force
+    $result | Add-Member -NotePropertyName FailureMessage -NotePropertyValue ("REMOTE ENDPOINT MISSING: /api/version returned 404 after {0} tries (host={1}, localSha={2}, branch={3}). Production is not deployed to a version that includes app/api/version/route.ts. Ensure your changes are merged into the Vercel Production Branch and wait/redeploy Production, then rerun." -f $maxAttempts, $ProdHost, $LocalSha, $branchName) -Force
+    return $result
   }
 
-  throw ("VERCEL MISMATCH after {0} tries: host={1}, remoteSha={2}, localSha={3}, vercelEnv={4}" -f $maxAttempts, $ProdHost, $result.CommitSha, $LocalSha, $result.VercelEnv)
+  $result | Add-Member -NotePropertyName Success -NotePropertyValue $false -Force
+  $result | Add-Member -NotePropertyName FailureMessage -NotePropertyValue ("VERCEL MISMATCH after {0} tries: host={1}, remoteSha={2}, localSha={3}, vercelEnv={4}" -f $maxAttempts, $ProdHost, $result.CommitSha, $LocalSha, $result.VercelEnv) -Force
+  return $result
 }
 
 function Write-ParitySnapshot([string]$LocalSha, [string]$OriginSha, [string]$VercelSha, [string]$VercelEnvValue, [string]$ProdHost) {
@@ -528,23 +537,36 @@ Write-Section "Optional: feature fingerprint check"
 if ($Expect.Count -gt 0) {
   $paths = @()
   switch ($ExpectScope) {
-    'code' { $paths = @('app','src') }
-    'docs' { $paths = @('docs','SPEC.md','oshihapi_ops_windows.md','gpt_prompt_next_chat_latest.txt') }
+    'code' { $paths = @('app','src','components','ops') }
     'all'  { $paths = @() }
+  }
+
+  $existingExpectPaths = @()
+  foreach ($path in $paths) {
+    if (Test-Path ".\$path") { $existingExpectPaths += $path }
+  }
+  if ($ExpectScope -eq 'code' -and $existingExpectPaths.Count -eq 0) {
+    throw 'EXPECT FAILED: code scope paths (app/src/components/ops) not found. Likely wrong branch/commit.'
   }
 
   foreach ($pat in $Expect) {
     if ([string]::IsNullOrWhiteSpace($pat)) { continue }
-    Write-Host ("Expect: {0} (scope={1})" -f $pat, $ExpectScope) -ForegroundColor Cyan
+    $expectMode = if ($ExpectRegex) { 'regex' } else { 'fixed-string' }
+    Write-Host ("Expect: {0} (scope={1}, mode={2})" -f $pat, $ExpectScope, $expectMode) -ForegroundColor Cyan
 
-    if ($paths.Count -gt 0) {
-      & git grep -n -- "$pat" -- @paths | Out-Null
+    $expectArgs = @('grep','-n')
+    if (-not $ExpectRegex) { $expectArgs += '-F' }
+    $expectArgs += '--'
+    $expectArgs += $pat
+
+    if ($ExpectScope -eq 'all') {
+      & git @expectArgs | Out-Null
     } else {
-      & git grep -n -- "$pat" | Out-Null
+      & git @expectArgs -- @existingExpectPaths | Out-Null
     }
 
     if ($LASTEXITCODE -ne 0) {
-      throw "EXPECT FAILED: pattern '$pat' not found (scope=$ExpectScope). Likely wrong branch/commit."
+      throw "EXPECT FAILED: pattern '$pat' not found (scope=$ExpectScope, mode=$expectMode). Likely wrong branch/commit."
     }
   }
   Write-Host 'Expect check: OK' -ForegroundColor Green
@@ -596,7 +618,10 @@ if (-not $SkipBuild) {
 }
 
 Write-Section "Vercel parity gate (Production == Local == origin/main)"
-$runVercelParity = (-not $SkipVercelParity) -or $RequireVercelSameCommit
+$runVercelParity = $false
+if ($VercelParityMode -ne 'off' -and ((-not $SkipVercelParity) -or $RequireVercelSameCommit)) {
+  $runVercelParity = $true
+}
 $finalLocalSha = ''
 $finalOriginSha = ''
 $finalVercelSha = ''
@@ -618,12 +643,26 @@ if ($runVercelParity) {
     throw "Missing Vercel production host. Set OSH_VERCEL_PROD_HOST or ops/vercel_prod_host.txt (host only)."
   }
 
-  $effectiveParityRetries = if (-not [string]::IsNullOrWhiteSpace($env:OSH_VERCEL_PARITY_RETRIES)) { [int]$env:OSH_VERCEL_PARITY_RETRIES } else { $null }
+  $effectiveParityRetries = if (-not [string]::IsNullOrWhiteSpace($env:OSH_VERCEL_PARITY_RETRIES)) { [int]$env:OSH_VERCEL_PARITY_RETRIES } else { $VercelParityRetries }
   $effectiveParityDelaySec = if (-not [string]::IsNullOrWhiteSpace($env:OSH_VERCEL_PARITY_DELAY_SEC)) { [int]$env:OSH_VERCEL_PARITY_DELAY_SEC } else { $null }
   $effectivePollIntervalSec = if ($effectiveParityDelaySec -and $effectiveParityDelaySec -gt 0) { $effectiveParityDelaySec } else { $VercelPollIntervalSec }
-  $effectiveMaxWaitSec = if ($effectiveParityRetries -and $effectiveParityRetries -gt 0) { [Math]::Max(1, ($effectivePollIntervalSec * ([Math]::Max(1, $effectiveParityRetries - 1))) + 1) } else { $VercelMaxWaitSec }
+  $effectiveMaxWaitSec = 0
+  if ($VercelMaxWaitSec -and $VercelMaxWaitSec -gt 0) {
+    $effectiveMaxWaitSec = $VercelMaxWaitSec
+  } elseif ($effectiveParityRetries -and $effectiveParityRetries -gt 0) {
+    $effectiveMaxWaitSec = [Math]::Max(1, ($effectivePollIntervalSec * ([Math]::Max(1, $effectiveParityRetries - 1))) + 1)
+  } else {
+    $effectiveMaxWaitSec = 600
+  }
 
   $vercelState = Wait-VercelCommitParity -ProdHost $productionDomainHost -LocalSha $finalLocalSha -ExpectedEnv $VercelEnv -AllowPreview:$AllowPreviewHost -MaxWaitSec $effectiveMaxWaitSec -PollIntervalSec $effectivePollIntervalSec
+  if (-not $vercelState.Success) {
+    if ($VercelParityMode -eq 'warn') {
+      Write-Host ("Vercel parity warning: {0}" -f $vercelState.FailureMessage) -ForegroundColor Yellow
+    } else {
+      throw $vercelState.FailureMessage
+    }
+  }
   $finalVercelSha = $vercelState.CommitSha
   $finalVercelEnv = $vercelState.VercelEnv
 
@@ -634,7 +673,11 @@ if ($runVercelParity) {
 
   Write-ParitySnapshot -LocalSha $finalLocalSha -OriginSha $finalOriginSha -VercelSha $finalVercelSha -VercelEnvValue $finalVercelEnv -ProdHost $productionDomainHost
 } else {
-  Write-Host 'SkipVercelParity enabled.' -ForegroundColor Yellow
+  if ($VercelParityMode -eq 'off') {
+    Write-Host 'Vercel parity skipped (VercelParityMode=off).' -ForegroundColor Yellow
+  } else {
+    Write-Host 'SkipVercelParity enabled.' -ForegroundColor Yellow
+  }
 }
 
 Write-Section "Runtime server"

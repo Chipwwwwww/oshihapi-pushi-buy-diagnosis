@@ -177,6 +177,10 @@ npm run dev -- --webpack
 
 > ⚠️ PowerShell 通常也可用 `.\post_merge_routine.ps1`，但文件統一示範 `./post_merge_routine.ps1`。
 
+> ℹ️ 新版 conflict scan 只掃 `app/`、`src/`、`components/`、`ops/` 與 `post_merge_routine.ps1`，且用行首錨定 `^<<<<<<<` / `^=======$` / `^>>>>>>>`，不掃 `docs/` 可避免誤判。
+
+> ℹ️ Vercel parity 可用 `-VercelParityMode warn`（不阻塞、僅警告）或 `-VercelParityMode enforce`（嚴格失敗即中止）。
+
 #### 一次性設定（只做一次）
 1. Vercel Project → **Settings** → **Git**，確認 **Production Branch** 就是你平常 merge 的分支（通常是 `main`）。
 2. 設定 Production domain host（只放 host，不含 `https://`、不含 `/path`）：
