@@ -31,6 +31,7 @@ import { sendTelemetry, TELEMETRY_OPT_IN_KEY } from "@/src/oshihapi/telemetryCli
 import { formatResultByMode } from "@/src/oshihapi/modes/formatResultByMode";
 import { MODE_DICTIONARY, Verdict } from "@/src/oshihapi/modes/mode_dictionary";
 import { COPY_BY_MODE } from "@/src/oshihapi/modes/copy_dictionary";
+import { shouldAskStorage, STORAGE_FIT_LABEL } from "@/src/oshihapi/storageGate";
 import {
   getStyleModeFromSearchParams,
   setStyleModeToLocalStorage,
@@ -204,6 +205,11 @@ export default function ResultPage() {
     | undefined;
   const modeCopy = COPY_BY_MODE[styleMode];
   const normalizedWaitType = outputExt?.waitType ?? (run?.output.decision === "THINK" ? "none" : "none");
+  const storageFitValue =
+    run && shouldAskStorage(run.meta.itemKind) && typeof run.answers.q_storage_fit === "string"
+      ? STORAGE_FIT_LABEL[run.answers.q_storage_fit] ?? run.answers.q_storage_fit
+      : null;
+
   const adviceText =
     run?.output.decision === "BUY"
       ? MODE_DICTIONARY[styleMode].explanation.buy
@@ -361,6 +367,12 @@ export default function ResultPage() {
         <p className={helperTextClass}>
           決め切り度: {decisivenessLabels[run.decisiveness ?? "standard"]}（変更可）
         </p>
+        {storageFitValue ? (
+          <div className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm">
+            <span className="font-semibold text-foreground">置き場所</span>
+            <span className="text-muted-foreground">{storageFitValue}</span>
+          </div>
+        ) : null}
         {alternatives.length > 0 ? (
           <div className="space-y-2 rounded-2xl border border-border bg-card/90 p-3">
             <Button

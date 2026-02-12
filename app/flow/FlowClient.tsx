@@ -24,6 +24,7 @@ import {
 } from "@/src/oshihapi/modes/useStyleMode";
 import { MODE_DICTIONARY } from "@/src/oshihapi/modes/mode_dictionary";
 import { parseDecisiveness } from "@/src/oshihapi/decisiveness";
+import { shouldAskStorage } from "@/src/oshihapi/storageGate";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Progress from "@/components/ui/Progress";
@@ -89,6 +90,7 @@ const decisionLabels: Record<string, string> = {
 };
 
 const QUICK_QUESTION_IDS = [
+  "q_storage_fit",
   "q_desire",
   "q_budget_pain",
   "q_urgency",
@@ -98,6 +100,7 @@ const QUICK_QUESTION_IDS = [
 ] as const;
 
 const CORE_12_QUESTION_IDS = [
+  "q_storage_fit",
   "q_desire",
   "q_budget_pain",
   "q_urgency",
@@ -142,7 +145,10 @@ export default function FlowPage() {
 
     const baseIds = mode === "short" ? QUICK_QUESTION_IDS : CORE_12_QUESTION_IDS;
     const addonIds = mode === "long" && itemKind ? (ADDON_BY_ITEM_KIND[itemKind] ?? []) : [];
-    const ids = [...baseIds, ...addonIds];
+    const ids = [...baseIds, ...addonIds].filter((id) => {
+      if (id !== "q_storage_fit") return true;
+      return shouldAskStorage(itemKind);
+    });
     return ids
       .map((id) => merch_v2_ja.questions.find((question) => question.id === id))
       .filter((question): question is Question => Boolean(question));

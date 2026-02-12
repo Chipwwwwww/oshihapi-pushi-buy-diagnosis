@@ -31,6 +31,19 @@ export const merch_v2_ja: QuestionSet = {
       rightLabel: '本命',
     },
     {
+      id: 'q_storage_fit',
+      type: 'single',
+      title: '置き場所、決まってる？',
+      required: true,
+      options: [
+        { id: 'CONFIRMED', label: 'ある（もう決まってる）' },
+        { id: 'PROBABLE', label: 'たぶんある（片付ければ）' },
+        { id: 'NONE', label: '今はない' },
+        { id: 'UNKNOWN', label: 'わからない（先に確認する）' },
+      ],
+    },
+
+    {
       id: 'q_budget_pain',
       type: 'single',
       title: 'この出費、あとで痛い？',

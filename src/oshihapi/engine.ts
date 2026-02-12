@@ -15,6 +15,7 @@ import { engineConfig as defaultConfig, normalize01ToSigned, clamp } from './eng
 import { pickReasons, pickActions, buildShareText } from './reasonRules';
 import { decideMerchMethod } from './merchMethod';
 import { buildPresentation } from './decisionPresentation';
+import { shouldAskStorage } from './storageGate';
 
 type EvaluateInput = {
   config?: EngineConfig;
@@ -158,7 +159,7 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
   if (impulseFlag) {
     extraReasons.push({
       id: 'impulse_rush',
-      severity: 'info',
+      severity: 'info' as const,
       text: '「買えた快感」が主役の時、満足がすぐ落ち着くこともあるかも。',
     });
     extraActions.push({
@@ -178,15 +179,56 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
       text: 'まず相場を5分だけ見る（新品で焦らなくてOK）。',
     });
   }
-  const reasons = [...extraReasons, ...reasonsBase].slice(0, 6);
-  const actions = [...extraActions, ...actionsBase].slice(0, 3);
+  let reasons = [...extraReasons, ...reasonsBase].slice(0, 6);
+  let actions = [...extraActions, ...actionsBase].slice(0, 3);
 
   // Confidence
-  const confidence = clamp(
+  let confidence = clamp(
     50,
     95,
     Math.round(50 + Math.abs(scoreSigned) * 70 - unknownPenalty)
   );
+
+  if (shouldAskStorage(input.meta.itemKind)) {
+    const storageFit = input.answers.q_storage_fit;
+    if (storageFit === 'NONE' || storageFit === 'UNKNOWN') {
+      if (decision === 'BUY') {
+        decision = 'THINK';
+      }
+      confidence = clamp(50, 95, confidence - 15);
+      reasons = [
+        ...reasons,
+        {
+          id: 'storage_unconfirmed',
+          severity: 'warn' as const,
+          text: '置き場所が未確定（買った後の置き場が決まってない）',
+        },
+      ].slice(0, 6);
+      actions = [
+        ...actions,
+        {
+          id: 'storage_plan_first',
+          text: '先に置き場所を決める（棚/ケース/引き出し）',
+        },
+      ].slice(0, 3);
+    } else if (storageFit === 'PROBABLE') {
+      reasons = [
+        ...reasons,
+        {
+          id: 'storage_cleanup_needed',
+          severity: 'info' as const,
+          text: '片付けが必要（置き場所を作れたら後悔しにくい）',
+        },
+      ].slice(0, 6);
+      actions = [
+        ...actions,
+        {
+          id: 'storage_cleanup_10min',
+          text: '買う前に10分だけ片付けてスペース確保',
+        },
+      ].slice(0, 3);
+    }
+  }
 
   const decisionJa = decision === 'BUY' ? '買う' : decision === 'SKIP' ? 'やめる' : '保留';
   const shareText = buildShareText(decisionJa, reasons);
