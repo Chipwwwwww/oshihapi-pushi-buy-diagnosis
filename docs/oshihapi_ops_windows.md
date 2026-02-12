@@ -203,9 +203,15 @@ Copy-Item .\ops\vercel_prod_host.sample.txt .\ops\vercel_prod_host.txt
 - 寫入：`ops/parity_snapshot_latest.json`
 
 #### `/api/version` 回傳 404 代表什麼？
-代表「Production 還沒更新到含有此 endpoint 的版本」，不是單純本機問題。
+這不是本機腳本 bug。通常表示：Production 尚未提供包含 `/api/version` 的 commit、Production Branch 設錯，或 deployment 失敗 / 被 rate limit。
 - 先確認 Vercel **Production Branch** 設定正確
-- 或在 Vercel 把最新正確 deployment **Promote to Production**
+- 查看 Vercel Deployments 的最新 **Production** deployment 狀態
+- 若遇到 rate limit（例如 `api-deployments-free-per-day`），需等待 / 升級 / 降低部署頻率
+
+快速檢查（PowerShell）：
+```powershell
+$prod=(Get-Content .\ops\vercel_prod_host.txt|Select-Object -First 1).Trim(); irm "https://$prod/api/version?t=$([int][DateTimeOffset]::UtcNow.ToUnixTimeSeconds())" -TimeoutSec 10
+```
 
 #### Troubleshooting（常見錯誤）
 - `Working tree is not clean`：先 `git status --short`，commit/stash 後重跑。
