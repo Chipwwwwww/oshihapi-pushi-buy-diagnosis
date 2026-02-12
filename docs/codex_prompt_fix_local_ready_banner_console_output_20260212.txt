@@ -1,0 +1,25 @@
+請存成：docs/codex_prompt_fix_local_ready_banner_console_output_20260212.txt
+並開 PR（最小 diff / PS5.1 相容 / npm run build 必須過）。
+
+問題
+- PR#64 的 Start-LocalReadyNotifier 使用 Register-ObjectEvent -Action。
+- 在 Windows PowerShell 5.1 下，-Action 會在背景 PSEventJob 中執行，Write-Host 不一定顯示在前景正在跑 npm dev 的 console，因此使用者只看到「⏳ Waiting...」，即使 localhost 已可連線也看不到「✅」。
+
+目標
+- localhost 真正可連線時，必定能在同一個 console 顯示：
+  ✅ Local 起動OK: http://localhost:<port>
+
+修正
+1) Start-LocalReadyNotifier：
+- Event action 內改用 [Console]::WriteLine(...) 輸出（保證寫到同一個 console）
+- 使用 -MessageData 傳 Url/Start/TimeoutSec（避免 $using 變數捕捉問題）
+- Timer 用 $script:PMR_LocalReadyTimer 保存引用，避免 function return 後 timer 被 GC 停止
+- 重複執行時先 Unregister-Event / Dispose 舊 timer，避免重複訂閱
+
+2) Dev server 行為不變：
+- 仍以 foreground 執行 npm run dev -- --webpack -p <port>
+- notifier 僅負責提示，不改 dev 啟動語義
+
+驗收
+- Windows PowerShell 5.1：可以看到 ⏳ Waiting...，並在實際可連線時看到 ✅ Local 起動OK...
+- npm run build ✅
