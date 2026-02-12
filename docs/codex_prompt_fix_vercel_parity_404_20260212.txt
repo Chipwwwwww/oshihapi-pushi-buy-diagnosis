@@ -1,3 +1,5 @@
+目標：最小 diff / 最小風險。
+
 你是 Codex。請在 Next.js App Router + TypeScript 專案中修正 post_merge_routine.ps1 的 Vercel parity gate「404 讓人困惑/無法早期抓到未提交 route」問題，並同步更新文件（最小變更）。
 
 背景（現象）
