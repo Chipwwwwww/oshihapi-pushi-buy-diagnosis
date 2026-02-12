@@ -113,32 +113,46 @@ function Start-LocalReadyNotifier(
   [int]$TimeoutSec = 180,
   [int]$IntervalSec = 1
 ) {
+  if ($script:PMR_LocalReadyEventSourceIdentifier) {
+    try { Unregister-Event -SourceIdentifier $script:PMR_LocalReadyEventSourceIdentifier -ErrorAction SilentlyContinue } catch {}
+  }
+  if ($script:PMR_LocalReadyTimer) {
+    try { $script:PMR_LocalReadyTimer.Stop() } catch {}
+    try { $script:PMR_LocalReadyTimer.Dispose() } catch {}
+  }
+
   $safeTimeoutSec = if ($TimeoutSec -gt 0) { $TimeoutSec } else { 180 }
   $safeIntervalSec = if ($IntervalSec -gt 0) { $IntervalSec } else { 1 }
   $eventSourceIdentifier = "LocalReadyNotifier_{0}" -f ([Guid]::NewGuid().ToString('N'))
+  $script:PMR_LocalReadyEventSourceIdentifier = $eventSourceIdentifier
 
   Write-Host ("⏳ Waiting for {0} ..." -f $Url) -ForegroundColor DarkYellow
 
   $timer = New-Object System.Timers.Timer
   $timer.Interval = $safeIntervalSec * 1000
   $timer.AutoReset = $true
+  $script:PMR_LocalReadyTimer = $timer
 
   $state = [PSCustomObject]@{
+    Completed = $false
+  }
+
+  $messageData = [PSCustomObject]@{
     Url = $Url
     StartedAt = Get-Date
     TimeoutSec = $safeTimeoutSec
     Timer = $timer
     EventSourceIdentifier = $eventSourceIdentifier
-    Completed = $false
+    State = $state
   }
 
-  Register-ObjectEvent -InputObject $timer -EventName Elapsed -SourceIdentifier $eventSourceIdentifier -MessageData $state -Action {
+  Register-ObjectEvent -InputObject $timer -EventName Elapsed -SourceIdentifier $eventSourceIdentifier -MessageData $messageData -Action {
     $ctx = $event.MessageData
-    if ($ctx.Completed) { return }
+    if ($ctx.State.Completed) { return }
 
     $elapsed = (Get-Date) - $ctx.StartedAt
     if ($elapsed.TotalSeconds -ge $ctx.TimeoutSec) {
-      $ctx.Completed = $true
+      $ctx.State.Completed = $true
       try { $ctx.Timer.Stop() } catch {}
       try { $ctx.Timer.Dispose() } catch {}
       try { Unregister-Event -SourceIdentifier $ctx.EventSourceIdentifier -ErrorAction SilentlyContinue } catch {}
@@ -156,8 +170,8 @@ function Start-LocalReadyNotifier(
     }
 
     if ($isReady) {
-      $ctx.Completed = $true
-      Write-Host ("✅ Local 起動OK: {0}" -f $ctx.Url) -ForegroundColor Green
+      $ctx.State.Completed = $true
+      [Console]::WriteLine(("✅ Local 起動OK: {0}" -f $ctx.Url))
       try { $ctx.Timer.Stop() } catch {}
       try { $ctx.Timer.Dispose() } catch {}
       try { Unregister-Event -SourceIdentifier $ctx.EventSourceIdentifier -ErrorAction SilentlyContinue } catch {}
