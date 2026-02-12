@@ -1,0 +1,59 @@
+﻿PR Goal
+- Make StyleMode (ver0=standard / ver1=kawaii / ver2=oshi) visible from the HOME page.
+- StyleMode must affect:
+  1) Home UI microcopy
+  2) Flow question prompt + option labels (copy only)
+  3) Result explanation/advice/share text (copy only)
+- IMPORTANT INVARIANT:
+  - StyleMode must NOT change decision semantics (BUY/WAIT/SKIP meaning), reasonTags meaning, or nextActions meaning.
+  - At MVP, logic can stay the same; only copy changes. (Future PR can extend logic.)
+- Must pass: npm run build ✅
+
+Single source of truth to use
+- docs/mode_copy_spec_latest.md
+- src/oshihapi/modes/style_copy_dictionary.ts
+- (existing) src/oshihapi/modes/mode_dictionary.ts (if you already use it on result page)
+
+Implementation tasks (minimal diff, build-first)
+1) Add StyleMode state (global)
+   - StyleModeId = "standard" | "kawaii" | "oshi"
+   - Persist to localStorage key: "oshihapi:style_mode"
+   - Provide hook: useStyleMode() that reads/writes localStorage safely (client-only)
+   - Default = "standard"
+
+2) Home page: add StyleMode toggle
+   - On app/page.tsx: add a clear section "表示スタイル" (or similar)
+   - 3 options: 標準 / かわいい / 推し活用語
+   - When changed: store in localStorage and keep for all pages.
+
+3) Flow page: copy changes ONLY
+   - On app/flow/page.tsx:
+     - For each question, keep the same internal value keys used for evaluation.
+     - Replace ONLY the displayed prompt/option labels using STYLE_COPY[styleMode].flow.questions[questionId].
+   - IMPORTANT: Answer "value" sent into evaluation must remain unchanged.
+
+4) Result page: explanation/advice/share copy changes
+   - If result page already has mode toggle: keep it, but align to the same StyleMode global state (one source).
+   - Show:
+     - headline/explain from STYLE_COPY[styleMode].result
+     - share template from STYLE_COPY[styleMode].result.shareTemplateX
+   - Keep verdict/reasons/actions arrays unchanged.
+
+5) Avoid confusion: rename existing "モードを選ぶ" (flow depth) label
+   - Change that section title to something like: "診断の深さ（所要時間）"
+   - Keep existing flow options (急いで/じっくり/AI相談) working as-is.
+
+Verification / acceptance
+- npm run build ✅
+- Manual checks:
+  1) Home: change StyleMode, navigate to flow, confirm question text changes.
+  2) Complete a run: result page copy changes by StyleMode; verdict/reasons/actions stay identical.
+  3) Reload: StyleMode persists.
+
+Failure reporting
+- If build fails: paste the first TypeScript error (file:line) and the build log tail.
+- If UI mismatch: provide screenshot of home + flow + result with current mode selection.
+
+Constraints
+- Minimal diff, no broad refactors.
+- PS: do NOT introduce randomness; keep any sticker selection deterministic if needed.
