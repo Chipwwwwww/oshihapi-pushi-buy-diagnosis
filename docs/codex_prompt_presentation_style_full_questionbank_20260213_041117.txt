@@ -1,0 +1,67 @@
+﻿PR Goal
+- Implement Presentation Style (ver0=standard, ver1=kawaii, ver2=oshi) END-TO-END.
+- IMPORTANT INVARIANT:
+  - Decision logic MUST NOT change (routing/verdict/waitType/reasonTags/actions selection).
+  - Only wording/presentation changes.
+- Must pass: npm run build ✅
+
+Source of truth
+- docs/mode_branch_report_latest.md
+- docs/questionbank_full_branch_architecture_latest.md
+- src/oshihapi/modes/mode_copy_ja.ts
+- src/oshihapi/modes/mode_dictionary.ts (if formatter/stickers already exist, reuse)
+
+User requirement (critical)
+- Style must be selectable FROM HOME (start page).
+- Flow questions + option labels must change by style.
+- Result explanation + action explanation must change by style.
+- Users must visually notice differences immediately.
+
+Implementation (minimal risk)
+1) Add mode storage helper
+   - Create src/oshihapi/modes/presentationMode.ts
+     - getModeFromUrl(searchParams)
+     - getModeFromLocalStorage()
+     - setModeToLocalStorage(mode)
+     - resolveMode({url, ls}) default "standard"
+
+2) Home page (app/page.tsx)
+   - Add new section ABOVE current "診断モード":
+     - Title: RESULT_COPY[mode].ui.styleSectionTitle
+     - Help:  RESULT_COPY[mode].ui.styleSectionHelp
+     - 3 options: standard/kawaii/oshi
+   - Persist to localStorage key: "oshihapi:presentationMode"
+   - When navigating to /flow, append query param pm=<mode>
+
+3) Flow page (app/flow/page.tsx)
+   - Resolve mode from pm param -> localStorage -> default.
+   - Integrate copy:
+     - Locate where each question's title/help/options are rendered.
+     - Map existing question to QuestionId.
+       - If your internal ids differ, create a mapping table:
+         e.g. const QUESTION_ID_MAP: Record<string, QuestionId>
+     - Replace displayed text:
+       - title/help from QUESTION_COPY[mode][questionId]
+       - option labels: keep underlying option values the same. Only label changes.
+     - If mapping missing: fallback to original text (never crash).
+   - Optional but recommended: show a small inline style toggle (updates URL + localStorage).
+
+4) Result page (app/result/[runId]/page.tsx)
+   - Use RESULT_COPY[mode] to render:
+     - verdict title/body
+     - waitType hint
+     - reason tags label/explain
+     - action label/explain
+     - item type hint (if itemType available; else omit gracefully)
+   - Keep verdict/reasonTags/actions ids unchanged when mode toggles.
+   - If you already have mode formatter for sticker/shareText, keep it; else implement minimal.
+
+Verification
+- npm run build ✅
+- Manual:
+  1) Home: switch style -> start flow -> questions text clearly differs
+  2) Finish run -> result explanation differs by style
+  3) Toggle style on result -> verdict/reasonTags/actions unchanged (presentation only)
+
+Failure reporting
+- Paste the first TS error (file:line) from build and relevant logs.
