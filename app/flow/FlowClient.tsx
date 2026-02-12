@@ -16,6 +16,9 @@ import { merch_v2_ja } from "@/src/oshihapi/merch_v2_ja";
 import { evaluate } from "@/src/oshihapi/engine";
 import { evaluateGameBillingV1, getGameBillingQuestions } from "@/src/oshihapi/gameBillingNeutralV1";
 import { saveRun } from "@/src/oshihapi/runStorage";
+import { QUESTION_COPY } from "@/src/oshihapi/modes/questionCopy";
+import { resolveMode, type ModeId } from "@/src/oshihapi/modes/modeState";
+import { MODE_DICTIONARY } from "@/src/oshihapi/modes/mode_dictionary";
 import { parseDecisiveness } from "@/src/oshihapi/decisiveness";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -90,6 +93,7 @@ export default function FlowPage() {
   const deadline = parseDeadline(searchParams.get("deadline"));
   const itemKind = parseItemKind(searchParams.get("itemKind"));
   const decisiveness: Decisiveness = parseDecisiveness(searchParams.get("decisiveness"));
+  const presentationMode: ModeId = resolveMode(searchParams);
 
   const useCase = itemKind === "game_billing" ? "game_billing" : "merch";
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -116,6 +120,14 @@ export default function FlowPage() {
   const numBacktracksRef = useRef(0);
 
   const currentQuestion = questions[currentIndex];
+  const currentQuestionCopy = currentQuestion
+    ? QUESTION_COPY[presentationMode]?.[currentQuestion.id]
+    : undefined;
+  const currentTitle = currentQuestionCopy?.title ?? currentQuestion?.title ?? "";
+  const currentHelper = currentQuestionCopy?.helper ?? currentQuestion?.description;
+
+  const getOptionLabel = (questionId: string, optionId: string, fallback: string) =>
+    QUESTION_COPY[presentationMode]?.[questionId]?.options?.[optionId]?.label ?? fallback;
 
   useEffect(() => {
     startTimeRef.current = Date.now();
@@ -274,7 +286,7 @@ export default function FlowPage() {
 
     setSubmitting(true);
     saveRun(run);
-    router.push(`/result/${runId}`);
+    router.push(`/result/${runId}?pmode=${presentationMode}`);
   };
 
   const handleBack = () => {
@@ -324,9 +336,9 @@ export default function FlowPage() {
 
       <Card className="space-y-4">
         <div className="space-y-2">
-          <h2 className={sectionTitleClass}>{currentQuestion.title}</h2>
-          {currentQuestion.description ? (
-            <p className={helperTextClass}>{currentQuestion.description}</p>
+          <h2 className={sectionTitleClass}>{currentTitle}</h2>
+          {currentHelper ? (
+            <p className={helperTextClass}>{currentHelper}</p>
           ) : null}
         </div>
 
@@ -363,7 +375,7 @@ export default function FlowPage() {
               {currentQuestion.options.map((option) => (
                 <RadioCard
                   key={option.id}
-                  title={option.label}
+                  title={getOptionLabel(currentQuestion.id, option.id, option.label)}
                   isSelected={answers[currentQuestion.id] === option.id}
                   type="button"
                   onClick={() => updateAnswer(currentQuestion.id, option.id)}
@@ -414,7 +426,7 @@ export default function FlowPage() {
                             .join(" ")}
                         >
                           <span className="text-base font-semibold">
-                            {option.label}
+                            {getOptionLabel(currentQuestion.id, option.id, option.label)}
                           </span>
                           <span
                             className={[
@@ -433,7 +445,11 @@ export default function FlowPage() {
                     })}
                     {typeof currentQuestion.maxSelect === "number" && isMaxed ? (
                       <p className={helperTextClass}>
-                        いま{currentQuestion.maxSelect}つ選んでるよ。入れ替えるならどれか外してね。
+                        {presentationMode === "kawaii"
+                          ? `いま${currentQuestion.maxSelect}こ選んでるよ。入れ替えるなら1こ外してね。`
+                          : presentationMode === "oshi"
+                            ? `現在${currentQuestion.maxSelect}件まで選択中。差し替えるなら1件外そう。`
+                            : `現在${currentQuestion.maxSelect}個まで選択中です。入れ替える場合はいずれかを外してください。`}
                       </p>
                     ) : null}
                   </>
@@ -454,7 +470,7 @@ export default function FlowPage() {
 
       <Card className="space-y-2">
         <p className={helperTextClass}>
-          判断の表示例：{decisionLabels.BUY} / {decisionLabels.THINK} / {decisionLabels.SKIP}
+          判断の表示例：{MODE_DICTIONARY[presentationMode].text.verdictLabel.BUY} / {MODE_DICTIONARY[presentationMode].text.verdictLabel.THINK} / {MODE_DICTIONARY[presentationMode].text.verdictLabel.SKIP}
         </p>
       </Card>
 
