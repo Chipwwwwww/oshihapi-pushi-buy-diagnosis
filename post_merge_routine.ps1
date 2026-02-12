@@ -332,6 +332,13 @@ function Get-WebExceptionStatusCode([System.Exception]$Exception) {
   return $null
 }
 
+function Assert-VersionRouteExistsInHead() {
+  & git cat-file -e 'HEAD:app/api/version/route.ts' 2>$null
+  if ($LASTEXITCODE -ne 0) {
+    throw 'Missing app/api/version/route.ts in HEAD commit. The route may exist only in your working tree. Please git add/commit/push this route, then rerun parity gate.'
+  }
+}
+
 function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$ExpectedEnv, [switch]$AllowPreview, [int]$MaxWaitSec = 600, [int]$PollIntervalSec = 10) {
   $started = Get-Date
   $attempt = 0
@@ -451,9 +458,15 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
     }
   }
 
-  if ($lastStatusCode -eq 404 -or -not $hadParsedCommitSha) {
+  if ($lastStatusCode -eq 404) {
     $result | Add-Member -NotePropertyName Success -NotePropertyValue $false -Force
-    $result | Add-Member -NotePropertyName FailureMessage -NotePropertyValue ("REMOTE ENDPOINT MISSING: /api/version returned 404 after {0} tries (host={1}, localSha={2}, branch={3}). Production is not deployed to a version that includes app/api/version/route.ts. Ensure your changes are merged into the Vercel Production Branch and wait/redeploy Production, then rerun." -f $maxAttempts, $ProdHost, $LocalSha, $branchName) -Force
+    $result | Add-Member -NotePropertyName FailureMessage -NotePropertyValue ("PRODUCTION ROUTE MISSING: /api/version returned 404 after {0} tries (host={1}, localSha={2}, branch={3}). Production currently does not serve this route. Check that app/api/version/route.ts exists in HEAD commit, verify Vercel Production deployment points to the expected commit, and confirm this host is your Production domain." -f $maxAttempts, $ProdHost, $LocalSha, $branchName) -Force
+    return $result
+  }
+
+  if (-not $hadParsedCommitSha) {
+    $result | Add-Member -NotePropertyName Success -NotePropertyValue $false -Force
+    $result | Add-Member -NotePropertyName FailureMessage -NotePropertyValue ("VERCEL PARITY PROBE FAILED: unable to obtain a valid commitSha from /api/version after {0} tries (host={1}, localSha={2}, branch={3}, lastStatus={4})." -f $maxAttempts, $ProdHost, $LocalSha, $branchName, $lastStatusCode) -Force
     return $result
   }
 
@@ -629,9 +642,7 @@ $finalVercelEnv = ''
 $productionDomainHost = ''
 
 if ($runVercelParity) {
-  if (-not (Test-Path '.\app\api\version\route.ts')) {
-    throw 'Missing local app/api/version/route.ts; Vercel parity gate requires it.'
-  }
+  Assert-VersionRouteExistsInHead
 
   Ensure-CleanWorkingTree
   $parityState = Ensure-GitRemoteParity -SkipAutoPush:$SkipPush

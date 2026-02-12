@@ -29,6 +29,8 @@
 - 衝突掃描範圍固定為 `app/`、`src/`、`components/`、`ops/` 與 `post_merge_routine.ps1`（不掃 `docs/` 與 repo root），降低文件字樣誤判風險。
 - 新增 `-Expect` / `-ExpectScope (code|all)`（`code` 僅掃 app/src/components/ops，預設 fixed-string，`-ExpectRegex` 可切 regex），找不到時會 fail-fast 並提示可能跑錯 branch/commit。
 - 新增 `-VercelParityMode (enforce|warn|off)`；預設等待強化為 retries 60、每次 10 秒（可由既有環境變數覆蓋），`warn` 模式超時只警告不中止。
+- parity gate 現在會先用 `git cat-file -e HEAD:app/api/version/route.ts` 驗證 route 存在於 HEAD commit（非僅工作目錄），缺少時會 fail-fast 提示先 git add/commit/push。
+- 當 `/api/version` 最終為 404 時，錯誤訊息改為明確指出 Production 尚未提供該 route，並提示檢查 HEAD commit、Vercel Production deployment commit 與 Production domain。
 - 影響：在無衝突 repo 上，PowerShell 5.1 執行 `./post_merge_routine.ps1` 不會因誤判中止；若檔案真的含行首衝突標記仍會正確中止。
 
 ### 🟡 仍需做/確認（建議下一步）

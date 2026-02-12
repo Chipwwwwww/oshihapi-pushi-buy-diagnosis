@@ -1,0 +1,34 @@
+你是 Codex。請在 Next.js App Router + TypeScript 專案中修正 post_merge_routine.ps1 的 Vercel parity gate「404 讓人困惑/無法早期抓到未提交 route」問題，並同步更新文件（最小變更）。
+
+背景（現象）
+- local `npm run build` 會列出 `/api/version` route，但 Production `https://<PROD_HOST>/api/version` 回 404，導致 parity gate 一直 retry。
+- 常見根因是 route.ts 只存在工作目錄/未被 commit（untracked 或未 push），Vercel 端自然沒有該 route。
+
+要改的檔案
+1) post_merge_routine.ps1
+A) 強化 Assert-VersionRouteExistsLocally：
+- 目前用 Test-Path 檢查「工作目錄」的 app\api\version\route.ts，會漏抓「未 commit」情況。
+- 改成檢查 HEAD commit 內是否存在：`git cat-file -e HEAD:app/api/version/route.ts`
+- 若不存在，throw 明確訊息：route 不在目前 commit，請 git add/commit/push 後再跑 parity gate。
+
+B) parity gate 的錯誤訊息分流：
+- 如果最後一次請求是 404：
+  - throw 訊息要明確說：Production 上沒有 /api/version（通常是部署還沒包含該 route，或 domain/production branch 用錯）。
+  - 建議檢查：route 是否在 HEAD commit、Vercel Production deployment 指向的 commit、domain 是否為 Production domain。
+- 保持既有 retry 行為，不改主流程（最小風險）。
+
+2) docs/oshihapi_ops_windows.md
+- 在「parity gate 404」排查段落補一行：先跑 `git cat-file -e HEAD:app/api/version/route.ts` 確認 route 在 commit（不是只有工作目錄）。
+- 提醒：若急著起 dev，可先用 `-SkipVercelParity`。
+
+3) docs/status_summary_latest.md
+- 補一條 ops 修正紀錄：parity gate 現在會檢查 version route 是否存在於 HEAD commit，並對 404 提供更清晰錯誤訊息。
+
+驗收
+- `npm run build` 成功
+- 當 route.ts 不在 HEAD commit：腳本在 parity gate 開始就 fail-fast（不會一直打 HTTP）
+- 當 Production 回 404：最終錯誤訊息清楚指向「Production 沒有該 route / 檢查 commit & domain」
+- 只改必要檔案，避免無關格式化
+
+建議 commit message：
+fix: improve vercel parity gate (detect uncommitted /api/version + clearer 404)

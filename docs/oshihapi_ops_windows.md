@@ -208,9 +208,11 @@ Copy-Item .\ops\vercel_prod_host.sample.txt .\ops\vercel_prod_host.txt
 
 #### `/api/version` 回傳 404 代表什麼？
 這不是本機腳本 bug。通常表示：Production 尚未提供包含 `/api/version` 的 commit、Production Branch 設錯，或 deployment 失敗 / 被 rate limit。
+- 先跑 `git cat-file -e HEAD:app/api/version/route.ts`，確認 route 在 **HEAD commit**（不是只存在工作目錄）
 - 先確認 Vercel **Production Branch** 設定正確
 - 查看 Vercel Deployments 的最新 **Production** deployment 狀態
 - 若遇到 rate limit（例如 `api-deployments-free-per-day`），需等待 / 升級 / 降低部署頻率
+- 若你急著先開發，可先用 `./post_merge_routine.ps1 -SkipVercelParity` 暫時跳過 parity gate
 
 快速檢查（PowerShell）：
 ```powershell
