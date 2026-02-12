@@ -1,0 +1,24 @@
+請存成：docs/codex_prompt_add_local_ready_banner_20260212.txt
+並依此開 PR（最小 diff / npm run build 必須過 / PowerShell 5.1 相容）。
+
+目標
+- post_merge_routine.ps1 啟動 dev 後，當 http://localhost:3000 實際可連線時，印出醒目提示：
+  - ⏳ Waiting for http://localhost:3000 ...
+  - ✅ Local 起動OK: http://localhost:3000
+- 不改變既有行為：仍使用同一個 PowerShell 視窗跑 `npm run dev -- --webpack -p 3000`（不要改成背景執行）
+
+實作
+1) 在 post_merge_routine.ps1 加入 function Start-LocalReadyNotifier：
+- 用 System.Timers.Timer + Register-ObjectEvent 輪詢 localhost URL
+- Timeout 預設 180s、Interval 1s
+- 成功（HTTP 2xx~3xx）後印出 ✅ 提示並停止 timer / unregister event
+- 失敗/未就緒時靜默重試，不要噴錯、不阻塞主流程
+- 需相容 Windows PowerShell 5.1（不可用 PS7-only 語法）
+
+2) 在 Dev server 區塊中、開始 `npm run dev -- --webpack -p 3000` 之前呼叫：
+Start-LocalReadyNotifier -Url "http://localhost:3000" -TimeoutSec 180 | Out-Null
+
+驗收
+- Windows PowerShell 5.1：腳本可執行、無 ParserError
+- 跑腳本後，dev server 啟動完成時會看到 ✅ Local 起動OK 訊息（可能與 npm log 交錯但要可辨識）
+- npm run build ✅
