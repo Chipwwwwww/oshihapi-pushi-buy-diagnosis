@@ -80,6 +80,16 @@ function Shorten-Text([string]$Text, [int]$MaxLen = 240) {
   return ($flat.Substring(0, $MaxLen) + '...')
 }
 
+function Assert-ScriptParses([string]$ScriptPath) {
+  $tokens = $null
+  $errors = $null
+  [void][System.Management.Automation.Language.Parser]::ParseFile($ScriptPath, [ref]$tokens, [ref]$errors)
+  if ($errors -and $errors.Count -gt 0) {
+    $firstError = $errors | Select-Object -First 1
+    throw ("PowerShell parser error in {0}: {1}" -f $ScriptPath, $firstError.Message)
+  }
+}
+
 function Stop-Port([int]$Port) {
   if (Get-Command Get-NetTCPConnection -ErrorAction SilentlyContinue) {
     try {
@@ -320,9 +330,13 @@ function Get-WebExceptionStatusCode([System.Exception]$Exception) {
 }
 
 function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$ExpectedEnv, [switch]$AllowPreview, [int]$MaxWaitSec = 180, [int]$PollIntervalSec = 5) {
-  $url = "https://$ProdHost/api/version"
   $started = Get-Date
   $attempt = 0
+  $safeIntervalSec = [Math]::Max(1, $PollIntervalSec)
+  $maxAttempts = [Math]::Max(1, [int][Math]::Floor($MaxWaitSec / $safeIntervalSec) + 1)
+  $lastStatusCode = $null
+  $hadParsedCommitSha = $false
+  $branchName = Get-GitValue -Args @('rev-parse','--abbrev-ref','HEAD') -ErrorMessage 'Unable to determine current branch for diagnostics.'
 
   $result = [PSCustomObject]@{
     CommitSha = ''
@@ -332,34 +346,27 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
     StatusCode = 0
   }
 
-  while ($true) {
+  while ($attempt -lt $maxAttempts) {
     $attempt++
     $elapsedSec = [int]((Get-Date) - $started).TotalSeconds
-    if ($elapsedSec -gt $MaxWaitSec) {
-      break
-    }
 
     try {
       $versionResponse = Invoke-VersionEndpoint -ProdHost $ProdHost
-      $result.StatusCode = $versionResponse.StatusCode
-      $url = $versionResponse.Url
+      $statusCode = $versionResponse.StatusCode
+      $lastStatusCode = $statusCode
+      $result.StatusCode = $statusCode
 
-      if ($attempt -eq 1 -and $versionResponse.StatusCode -eq 404) {
-        Write-Host ''
-        Write-Host 'FAIL-FAST: /api/version returned 404 on first attempt.' -ForegroundColor Red
-        Write-Host '- Production may still be on an older deployment without /api/version.' -ForegroundColor Yellow
-        Write-Host '- Or Vercel Production Branch is not the branch you merged into.' -ForegroundColor Yellow
-        Write-Host '- Or deployment failed / was rate-limited (Vercel api-deployments-free-per-day).' -ForegroundColor Yellow
-        Write-Host 'Next steps:' -ForegroundColor Cyan
-        Write-Host '1) Vercel Project -> Settings -> Git: Production Branch matches your merge target branch.' -ForegroundColor Cyan
-        Write-Host '2) Vercel Deployments: check latest Production deployment status.' -ForegroundColor Cyan
-        Write-Host '3) If rate-limited: wait, upgrade plan, or reduce deployments.' -ForegroundColor Cyan
-        Write-Host '4) If CI checks failed: fix CI and redeploy.' -ForegroundColor Cyan
-        throw 'Vercel parity fail-fast: /api/version returned 404 on first attempt.'
+      if ($statusCode -eq 404) {
+        Write-Host ("Attempt {0}/{1}: /api/version is 404 (endpoint missing on remote). This usually means Production deployment is still on an older commit or you are using the wrong domain/branch. Waiting {2}s..." -f $attempt, $maxAttempts, $safeIntervalSec) -ForegroundColor Yellow
+        if ($attempt -lt $maxAttempts) {
+          Start-Sleep -Seconds $safeIntervalSec
+          continue
+        }
+        break
       }
 
-      if ($versionResponse.StatusCode -ne 200) {
-        throw ("Unexpected status {0} from {1}." -f $versionResponse.StatusCode, $url)
+      if ($statusCode -ne 200) {
+        throw ("Unexpected status {0} from {1}." -f $statusCode, $versionResponse.Url)
       }
 
       $json = $versionResponse.Json
@@ -388,13 +395,19 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
 
       if ([string]::IsNullOrWhiteSpace($vercelSha) -or $vercelSha -eq 'unknown') {
         Write-Host ("/api/version returned commitSha='$vercelSha'. waited=${elapsedSec}s/${MaxWaitSec}s") -ForegroundColor Yellow
-        Start-Sleep -Seconds $PollIntervalSec
+        if ($attempt -lt $maxAttempts) {
+          Start-Sleep -Seconds $safeIntervalSec
+        }
         continue
       }
 
+      $hadParsedCommitSha = $true
+
       if ($vercelSha -ne $LocalSha) {
-        Write-Host ("Vercel commit mismatch: local=$LocalSha vercel=$vercelSha waited=${elapsedSec}s/${MaxWaitSec}s") -ForegroundColor Yellow
-        Start-Sleep -Seconds $PollIntervalSec
+        Write-Host ("Vercel commit mismatch: local=$LocalSha vercel=$vercelSha host=$ProdHost vercelEnv=$vercelEnvValue waited=${elapsedSec}s/${MaxWaitSec}s") -ForegroundColor Yellow
+        if ($attempt -lt $maxAttempts) {
+          Start-Sleep -Seconds $safeIntervalSec
+        }
         continue
       }
 
@@ -402,6 +415,11 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
       return $result
     } catch {
       $statusCode = Get-WebExceptionStatusCode -Exception $_.Exception
+      if ($null -ne $statusCode) {
+        $lastStatusCode = $statusCode
+        $result.StatusCode = $statusCode
+      }
+
       $responseBody = ''
       if ($_.Exception.PSObject.Properties['Response'] -and $_.Exception.Response) {
         try {
@@ -411,33 +429,28 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
         } catch {}
       }
 
-      if ($attempt -eq 1 -and $statusCode -eq 404) {
-        Write-Host ''
-        Write-Host 'FAIL-FAST: /api/version returned 404 on first attempt.' -ForegroundColor Red
-        Write-Host '- Production may still be on an older deployment without /api/version.' -ForegroundColor Yellow
-        Write-Host '- Or Vercel Production Branch is not the branch you merged into.' -ForegroundColor Yellow
-        Write-Host '- Or deployment failed / was rate-limited (Vercel api-deployments-free-per-day).' -ForegroundColor Yellow
-        Write-Host 'Next steps:' -ForegroundColor Cyan
-        Write-Host '1) Vercel Project -> Settings -> Git: Production Branch matches your merge target branch.' -ForegroundColor Cyan
-        Write-Host '2) Vercel Deployments: check latest Production deployment status.' -ForegroundColor Cyan
-        Write-Host '3) If rate-limited: wait, upgrade plan, or reduce deployments.' -ForegroundColor Cyan
-        Write-Host '4) If CI checks failed: fix CI and redeploy.' -ForegroundColor Cyan
-        throw 'Vercel parity fail-fast: /api/version returned 404 on first attempt.'
-      }
-
-      $shortMsg = Shorten-Text -Text $_.Exception.Message -MaxLen 240
-      if (-not [string]::IsNullOrWhiteSpace($responseBody)) {
+      if ($statusCode -eq 404) {
+        Write-Host ("Attempt {0}/{1}: /api/version is 404 (endpoint missing on remote). This usually means Production deployment is still on an older commit or you are using the wrong domain/branch. Waiting {2}s..." -f $attempt, $maxAttempts, $safeIntervalSec) -ForegroundColor Yellow
+      } elseif (-not [string]::IsNullOrWhiteSpace($responseBody)) {
         $shortBody = Shorten-Text -Text $responseBody -MaxLen 160
         Write-Host ("Vercel parity probe retry: status=$statusCode detail=$shortBody waited=${elapsedSec}s/${MaxWaitSec}s") -ForegroundColor Yellow
       } else {
+        $shortMsg = Shorten-Text -Text $_.Exception.Message -MaxLen 240
         Write-Host ("Vercel parity probe retry: status=$statusCode detail=$shortMsg waited=${elapsedSec}s/${MaxWaitSec}s") -ForegroundColor Yellow
       }
-      Start-Sleep -Seconds $PollIntervalSec
-      continue
+
+      if ($attempt -lt $maxAttempts) {
+        Start-Sleep -Seconds $safeIntervalSec
+        continue
+      }
     }
   }
 
-  throw ("Vercel parity timeout after {0}s. local={1}, vercel={2}, env={3}, host={4}" -f $MaxWaitSec, $LocalSha, $result.CommitSha, $result.VercelEnv, $ProdHost)
+  if ($lastStatusCode -eq 404 -or -not $hadParsedCommitSha) {
+    throw ("REMOTE ENDPOINT MISSING: /api/version returned 404 after {0} tries (host={1}, localSha={2}, branch={3}). Production is not deployed to a version that includes app/api/version/route.ts. Ensure your changes are merged into the Vercel Production Branch and wait/redeploy Production, then rerun." -f $maxAttempts, $ProdHost, $LocalSha, $branchName)
+  }
+
+  throw ("VERCEL MISMATCH after {0} tries: host={1}, remoteSha={2}, localSha={3}, vercelEnv={4}" -f $maxAttempts, $ProdHost, $result.CommitSha, $LocalSha, $result.VercelEnv)
 }
 
 function Write-ParitySnapshot([string]$LocalSha, [string]$OriginSha, [string]$VercelSha, [string]$VercelEnvValue, [string]$ProdHost) {
@@ -464,6 +477,9 @@ Write-Section "Boot"
 $repoRoot = Ensure-RepoRoot
 Write-Host ("Time: {0}" -f (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")) -ForegroundColor Gray
 Write-Host ("Repo: {0}" -f $repoRoot) -ForegroundColor Gray
+
+Assert-ScriptParses -ScriptPath (Join-Path $repoRoot "post_merge_routine.ps1")
+Write-Host "PowerShell parser check: OK" -ForegroundColor Green
 
 Write-Section "Git context"
 $gitOk = $false
@@ -602,7 +618,12 @@ if ($runVercelParity) {
     throw "Missing Vercel production host. Set OSH_VERCEL_PROD_HOST or ops/vercel_prod_host.txt (host only)."
   }
 
-  $vercelState = Wait-VercelCommitParity -ProdHost $productionDomainHost -LocalSha $finalLocalSha -ExpectedEnv $VercelEnv -AllowPreview:$AllowPreviewHost -MaxWaitSec $VercelMaxWaitSec -PollIntervalSec $VercelPollIntervalSec
+  $effectiveParityRetries = if (-not [string]::IsNullOrWhiteSpace($env:OSH_VERCEL_PARITY_RETRIES)) { [int]$env:OSH_VERCEL_PARITY_RETRIES } else { $null }
+  $effectiveParityDelaySec = if (-not [string]::IsNullOrWhiteSpace($env:OSH_VERCEL_PARITY_DELAY_SEC)) { [int]$env:OSH_VERCEL_PARITY_DELAY_SEC } else { $null }
+  $effectivePollIntervalSec = if ($effectiveParityDelaySec -and $effectiveParityDelaySec -gt 0) { $effectiveParityDelaySec } else { $VercelPollIntervalSec }
+  $effectiveMaxWaitSec = if ($effectiveParityRetries -and $effectiveParityRetries -gt 0) { [Math]::Max(1, ($effectivePollIntervalSec * ([Math]::Max(1, $effectiveParityRetries - 1))) + 1) } else { $VercelMaxWaitSec }
+
+  $vercelState = Wait-VercelCommitParity -ProdHost $productionDomainHost -LocalSha $finalLocalSha -ExpectedEnv $VercelEnv -AllowPreview:$AllowPreviewHost -MaxWaitSec $effectiveMaxWaitSec -PollIntervalSec $effectivePollIntervalSec
   $finalVercelSha = $vercelState.CommitSha
   $finalVercelEnv = $vercelState.VercelEnv
 
