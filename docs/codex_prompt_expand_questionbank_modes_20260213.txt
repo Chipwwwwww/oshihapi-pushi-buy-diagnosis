@@ -1,0 +1,64 @@
+﻿PR Goal
+- Expand question bank to a full set (Core 12 + ItemType addons) and add StyleMode (ver0=standard, ver1=kawaii, ver2=oshi) that affects:
+  - question text
+  - option text
+  - result explanation + action labels
+  - share text / sticker (if already implemented, reuse)
+- IMPORTANT: StyleMode MUST NOT change:
+  - question IDs / option IDs
+  - routing logic (which IDs are asked at each flow depth / item type)
+  - decision logic (BUY/WAIT/SKIP), waitType, reasonTags semantics, nextActions selection
+- Must pass: npm run build ✅
+
+Single source of truth (already in repo)
+- docs/question_bank_modes_spec_latest.md
+- src/oshihapi/modes/copy_dictionary.ts
+- (existing) src/oshihapi/modes/mode_dictionary.ts (if present, reuse for stickers/share templates)
+
+Implementation (minimal risk, minimal diff)
+1) Add a unified StyleMode getter/setter (client-only)
+   - Create: src/oshihapi/modes/useStyleMode.ts (hook)
+     - default: "standard"
+     - persist localStorage key: "oshihapi:styleMode"
+     - optionally sync with searchParam ?styleMode=...
+   - Provide helper: resolveStyleMode(input): "standard"|"kawaii"|"oshi" (guards invalid)
+
+2) Start page: style toggle from the beginning
+   - Update: app/page.tsx (or the actual start page component)
+   - Add a "表示の雰囲気" section using COPY_BY_MODE[mode].ui
+   - Selecting a mode updates localStorage immediately
+   - When navigating to /flow, pass styleMode via query params (e.g., /flow?styleMode=oshi&...existing params)
+
+3) Flow page: render question/option copy by StyleMode
+   - Update: app/flow/page.tsx (or where questions are rendered)
+   - Ensure each question has stable questionId and each option has stable optionId
+   - Replace hard-coded strings with COPY_BY_MODE[styleMode].questions[questionId]
+   - If any existing IDs differ, DO NOT rename logic IDs. Instead map the existing IDs in the dictionary.
+   - FlowDepth:
+     - quick asks 6 IDs (as spec)
+     - standard asks core 12
+     - deep asks core 12 + 4 addons by itemType (max 24)
+   - ItemType:
+     - If itemType already exists in your flow, reuse it; otherwise add a light selector early in flow (goods/gacha/ticket/figure/digital/preorder)
+     - Routing is ID-array only (keep evaluation logic unchanged)
+
+4) Result page: show explanations/labels by StyleMode
+   - Update: app/result/[runId]/page.tsx
+   - Result explanation uses COPY_BY_MODE[styleMode].result:
+     - verdictTitle / verdictLead
+     - waitTypeLabel
+     - reasonTagLabel
+     - actionLabel + optional help
+   - Keep verdict/reasons/actions data unchanged; only render strings differently.
+
+5) Verification (hard requirement)
+   - npm run build ✅
+   - Manual UI:
+     - start page selects styleMode
+     - /flow questions and options change per mode
+     - result explanation and action labels change per mode
+     - verdict/waitType/reasonTags/actions remain identical when toggling modes on same run
+
+Failure report (paste back)
+- First TypeScript error line from build output
+- and the relevant file path/line number
