@@ -1,0 +1,34 @@
+請存成：docs/codex_prompt_rebuild_post_merge_routine_v4_20260212.txt
+並用同內容開 PR（最小 diff / npm run build 必須過）。
+
+目標（最高原則）
+1) post_merge_routine.ps1 永遠不崩潰、不噴 stacktrace、不會因 parity 404 卡死。
+2) host「指向正確環境」並以 branch-aware 方式驗證：
+   - production 只追 production branch；非 production branch 預設是 preview deployment（Vercel Git workflow）。
+3) 最後才是 vercel==local==codex：
+   - Codex: HEAD==upstream
+   - Vercel host: /api/version commitSha==HEAD
+
+要做的變更
+A) post_merge_routine.ps1
+- 加入 ops/vercel_prod_branch.txt 的讀取（ProdBranch）；若無則從 origin/HEAD 推斷。
+- 預設 AutoCheckoutProdBranch=$true（僅在 working tree clean 時自動 checkout + pull），避免「跑完看不到新功能」。
+- ParityTarget: auto|prod|preview|off
+  - auto: current==ProdBranch → prod host；否則 → preview host
+  - 若 host 未設定：清楚提示並跳過 parity（不 retry、不當成致命錯誤）
+- parity 404 降噪：只做一次診斷（含 /api/telemetry/health probe），其後低頻提示，不要 60 次刷屏。
+- StrictParity 可選：開啟時 parity fail 以非 0 exit 結束，但仍不噴 stacktrace。
+
+B) 新增（小檔案）
+- ops/vercel_prod_branch.txt（第一行為 production branch 名稱）
+- ops/vercel_preview_host.txt（可選：在 feature branch 想驗證 preview host 才需要）
+
+C) （建議）消除 Next.js workspace root 警告
+- 在 next.config.ts 或 next.config.js 增加 turbopack.root = __dirname
+  （避免多 lockfile 造成 root 推斷錯）
+
+驗收
+- npm ci && npm run build ✅
+- 跑 .\post_merge_routine.ps1 不會噴 stacktrace
+- parity 404 不會卡死；Summary 清楚告訴使用者下一步
+- dev 指令固定使用：npm run dev -- --webpack -p 3000（含 --）

@@ -23,13 +23,15 @@ param(
   [switch]$SkipVercelParity,
   [switch]$SkipPush,
   [switch]$AllowPreviewHost,
+  [bool]$AutoCheckoutProdBranch = $true,
+  [switch]$StrictParity,
 
   [Alias('ProdHost')]
   [Alias('VercelHost')]
   [string]$VercelProdUrlOrHost,
   [string]$PreviewHost = '',
-  [string]$ProdBranch = 'main',
-  [ValidateSet('auto','prod','preview')]
+  [string]$ProdBranch = '',
+  [ValidateSet('auto','prod','preview','off')]
   [string]$ParityTarget = 'auto',
   [ValidateSet('production','preview','any')]
   [string]$VercelEnv = 'production',
@@ -50,6 +52,12 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+trap {
+  $message = if ($_.Exception -and -not [string]::IsNullOrWhiteSpace($_.Exception.Message)) { $_.Exception.Message } else { [string]$_ }
+  Write-Host ("ERROR: {0}" -f $message) -ForegroundColor Red
+  exit 1
+}
 
 function Write-Section([string]$Title) {
   Write-Host ""
@@ -197,6 +205,31 @@ function Ensure-CleanWorkingTree() {
   }
 }
 
+function Test-WorkingTreeClean() {
+  $dirty = (& git status --porcelain) 2>$null
+  if ($LASTEXITCODE -ne 0) { return $false }
+  return [string]::IsNullOrWhiteSpace(($dirty -join "`n"))
+}
+
+function Ensure-OnProdBranchIfNeeded([string]$EffectiveProdBranch, [bool]$EnableAutoCheckout) {
+  if (-not $EnableAutoCheckout) {
+    Write-Host 'AutoCheckoutProdBranch disabled.' -ForegroundColor DarkGray
+    return
+  }
+
+  $currentBranch = Get-GitValue -Args @('rev-parse','--abbrev-ref','HEAD') -ErrorMessage 'Unable to determine current branch.'
+  if ($currentBranch -eq $EffectiveProdBranch) { return }
+
+  if (-not (Test-WorkingTreeClean)) {
+    Write-Host ("AutoCheckoutProdBranch skipped: working tree is dirty (current={0}, prod={1})." -f $currentBranch, $EffectiveProdBranch) -ForegroundColor Yellow
+    return
+  }
+
+  Write-Host ("AutoCheckoutProdBranch: switching {0} -> {1}" -f $currentBranch, $EffectiveProdBranch) -ForegroundColor Yellow
+  Run 'git' @('checkout',$EffectiveProdBranch)
+  Run 'git' @('pull','--ff-only')
+}
+
 function Get-AheadBehind([string]$UpstreamRef) {
   $countRaw = (& git rev-list --left-right --count "$UpstreamRef...HEAD") 2>$null
   if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($countRaw)) {
@@ -337,6 +370,17 @@ function Resolve-VercelPreviewHost([string]$ProvidedValue) {
   return Resolve-HostValue -ProvidedValue $ProvidedValue -EnvName 'OSH_VERCEL_PREVIEW_HOST' -FilePath '.\ops\vercel_preview_host.txt' -Label 'Vercel preview'
 }
 
+function Infer-ProdBranchFromOriginHead([string]$FallbackBranch = 'main') {
+  $symbolic = (& git symbolic-ref --quiet --short refs/remotes/origin/HEAD) 2>$null
+  if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($symbolic)) {
+    $remoteRef = ($symbolic | Select-Object -First 1).Trim()
+    if ($remoteRef -match '^origin/(.+)$') {
+      return $Matches[1]
+    }
+  }
+  return $FallbackBranch
+}
+
 function Resolve-VercelProdBranch([string]$ProvidedValue, [string]$FallbackBranch = 'main') {
   if (-not [string]::IsNullOrWhiteSpace($ProvidedValue)) {
     return $ProvidedValue.Trim()
@@ -350,7 +394,7 @@ function Resolve-VercelProdBranch([string]$ProvidedValue, [string]$FallbackBranc
     }
   }
 
-  return $FallbackBranch
+  return Infer-ProdBranchFromOriginHead -FallbackBranch $FallbackBranch
 }
 
 function Resolve-ParityTargetHost([string]$CurrentBranch, [string]$EffectiveProdBranch, [string]$RequestedTarget, [string]$ProvidedProdHost, [string]$ProvidedPreviewHost) {
@@ -444,6 +488,7 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
   $lastStatusCode = $null
   $hadParsedCommitSha = $false
   $branchName = Get-GitValue -Args @('rev-parse','--abbrev-ref','HEAD') -ErrorMessage 'Unable to determine current branch for diagnostics.'
+  $did404Diagnosis = $false
 
   $result = [PSCustomObject]@{
     CommitSha = ''
@@ -451,6 +496,7 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
     VercelUrl = ''
     GitRef = ''
     StatusCode = 0
+    TelemetryHealthStatus = ''
   }
 
   while ($attempt -lt $maxAttempts) {
@@ -464,12 +510,7 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
       $result.StatusCode = $statusCode
 
       if ($statusCode -eq 404) {
-        Write-Host ("Attempt {0}/{1}: /api/version is 404 (endpoint missing on remote). This usually means Production deployment is still on an older commit or you are using the wrong domain/branch. Waiting {2}s..." -f $attempt, $maxAttempts, $safeIntervalSec) -ForegroundColor Yellow
-        if ($attempt -lt $maxAttempts) {
-          Start-Sleep -Seconds $safeIntervalSec
-          continue
-        }
-        break
+        throw "404"
       }
 
       if ($statusCode -ne 200) {
@@ -491,30 +532,20 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
         throw "Host '$ProdHost' is preview (vercelEnv=preview). Use Production domain or rerun with -AllowPreviewHost."
       }
 
-      if (-not [string]::IsNullOrWhiteSpace($vercelEnvValue) -and $vercelEnvValue -ne 'production') {
-        Write-Host ("Host '$ProdHost' returned vercelEnv='$vercelEnvValue'. This may be a preview domain.") -ForegroundColor Yellow
-        throw "Host '$ProdHost' is not production (vercelEnv=$vercelEnvValue)."
-      }
-
       if ($ExpectedEnv -ne 'any' -and -not [string]::IsNullOrWhiteSpace($vercelEnvValue) -and $vercelEnvValue -ne $ExpectedEnv) {
         throw ("Vercel environment mismatch: expected={0} actual={1} host={2}." -f $ExpectedEnv, $vercelEnvValue, $ProdHost)
       }
 
       if ([string]::IsNullOrWhiteSpace($vercelSha) -or $vercelSha -eq 'unknown') {
         Write-Host ("/api/version returned commitSha='$vercelSha'. waited=${elapsedSec}s/${MaxWaitSec}s") -ForegroundColor Yellow
-        if ($attempt -lt $maxAttempts) {
-          Start-Sleep -Seconds $safeIntervalSec
-        }
+        if ($attempt -lt $maxAttempts) { Start-Sleep -Seconds $safeIntervalSec }
         continue
       }
 
       $hadParsedCommitSha = $true
-
       if ($vercelSha -ne $LocalSha) {
         Write-Host ("Vercel commit mismatch: local=$LocalSha vercel=$vercelSha host=$ProdHost vercelEnv=$vercelEnvValue waited=${elapsedSec}s/${MaxWaitSec}s") -ForegroundColor Yellow
-        if ($attempt -lt $maxAttempts) {
-          Start-Sleep -Seconds $safeIntervalSec
-        }
+        if ($attempt -lt $maxAttempts) { Start-Sleep -Seconds $safeIntervalSec }
         continue
       }
 
@@ -524,25 +555,29 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
       return $result
     } catch {
       $statusCode = Get-WebExceptionStatusCode -Exception $_.Exception
+      if ($_.Exception.Message -eq '404') { $statusCode = 404 }
       if ($null -ne $statusCode) {
         $lastStatusCode = $statusCode
         $result.StatusCode = $statusCode
       }
 
-      $responseBody = ''
-      if ($_.Exception.PSObject.Properties['Response'] -and $_.Exception.Response) {
-        try {
-          $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
-          $responseBody = $reader.ReadToEnd()
-          $reader.Close()
-        } catch {}
-      }
-
       if ($statusCode -eq 404) {
-        Write-Host ("Attempt {0}/{1}: /api/version is 404 (endpoint missing on remote). This usually means Production deployment is still on an older commit or you are using the wrong domain/branch. Waiting {2}s..." -f $attempt, $maxAttempts, $safeIntervalSec) -ForegroundColor Yellow
-      } elseif (-not [string]::IsNullOrWhiteSpace($responseBody)) {
-        $shortBody = Shorten-Text -Text $responseBody -MaxLen 160
-        Write-Host ("Vercel parity probe retry: status=$statusCode detail=$shortBody waited=${elapsedSec}s/${MaxWaitSec}s") -ForegroundColor Yellow
+        if (-not $did404Diagnosis) {
+          $did404Diagnosis = $true
+          $probeUrl = "https://$ProdHost/api/telemetry/health"
+          $probeStatus = 'unavailable'
+          try {
+            $probeResp = Invoke-WebRequest -Uri $probeUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
+            $probeStatus = [string]$probeResp.StatusCode
+          } catch {
+            $probeCode = Get-WebExceptionStatusCode -Exception $_.Exception
+            if ($null -ne $probeCode) { $probeStatus = [string]$probeCode }
+          }
+          $result.TelemetryHealthStatus = $probeStatus
+          Write-Host ("/api/version 404 diagnosed once: host={0}, branch={1}, telemetryHealth={2}." -f $ProdHost, $branchName, $probeStatus) -ForegroundColor Yellow
+        } elseif (($attempt % 10) -eq 0 -or $attempt -eq $maxAttempts) {
+          Write-Host ("/api/version still 404 (attempt {0}/{1}); waiting..." -f $attempt, $maxAttempts) -ForegroundColor DarkYellow
+        }
       } else {
         $shortMsg = Shorten-Text -Text $_.Exception.Message -MaxLen 240
         Write-Host ("Vercel parity probe retry: status=$statusCode detail=$shortMsg waited=${elapsedSec}s/${MaxWaitSec}s") -ForegroundColor Yellow
@@ -557,13 +592,13 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
 
   if ($lastStatusCode -eq 404) {
     $result | Add-Member -NotePropertyName Success -NotePropertyValue $false -Force
-    $result | Add-Member -NotePropertyName FailureMessage -NotePropertyValue ("PRODUCTION ROUTE MISSING: /api/version returned 404 after {0} tries (host={1}, localSha={2}, branch={3}). Production currently does not serve this route. Check that app/api/version/route.ts exists in HEAD commit, verify Vercel Production deployment points to the expected commit, and confirm this host is your Production domain." -f $maxAttempts, $ProdHost, $LocalSha, $branchName) -Force
+    $result | Add-Member -NotePropertyName FailureMessage -NotePropertyValue ("PARITY 404: /api/version not found after {0} tries (host={1}, branch={2}, telemetryHealth={3}). 檢查 host 是否指向正確環境，或等待部署完成。" -f $maxAttempts, $ProdHost, $branchName, $result.TelemetryHealthStatus) -Force
     return $result
   }
 
   if (-not $hadParsedCommitSha) {
     $result | Add-Member -NotePropertyName Success -NotePropertyValue $false -Force
-    $result | Add-Member -NotePropertyName FailureMessage -NotePropertyValue ("VERCEL PARITY PROBE FAILED: unable to obtain a valid commitSha from /api/version after {0} tries (host={1}, localSha={2}, branch={3}, lastStatus={4})." -f $maxAttempts, $ProdHost, $LocalSha, $branchName, $lastStatusCode) -Force
+    $result | Add-Member -NotePropertyName FailureMessage -NotePropertyValue ("VERCEL PARITY PROBE FAILED: unable to obtain commitSha from /api/version after {0} tries (host={1}, branch={2}, lastStatus={3})." -f $maxAttempts, $ProdHost, $branchName, $lastStatusCode) -Force
     return $result
   }
 
@@ -631,6 +666,10 @@ if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace(($unmerged -join 
 Assert-NoConflictMarkers
 Ensure-CleanWorkingTree
 Run 'git' @('fetch','--all','--prune')
+
+$effectiveProdBranch = Resolve-VercelProdBranch -ProvidedValue $ProdBranch -FallbackBranch 'main'
+Write-Host ("Resolved production branch: {0}" -f $effectiveProdBranch) -ForegroundColor Green
+Ensure-OnProdBranchIfNeeded -EffectiveProdBranch $effectiveProdBranch -EnableAutoCheckout $AutoCheckoutProdBranch
 
 if (-not $SkipPull) {
   $upstream = Resolve-UpstreamRef
@@ -729,7 +768,9 @@ if (-not $SkipBuild) {
 
 Write-Section "Vercel parity gate (branch-aware)"
 $runVercelParity = $false
-if ($VercelParityMode -ne 'off' -and ((-not $SkipVercelParity) -or $RequireVercelSameCommit)) {
+if ($ParityTarget -eq 'off') {
+  $runVercelParity = $false
+} elseif ($VercelParityMode -ne 'off' -and ((-not $SkipVercelParity) -or $RequireVercelSameCommit)) {
   $runVercelParity = $true
 }
 $finalLocalSha = ''
@@ -737,7 +778,8 @@ $finalOriginSha = ''
 $finalVercelSha = ''
 $finalVercelEnv = ''
 $productionDomainHost = ''
-$effectiveProdBranch = Resolve-VercelProdBranch -ProvidedValue $ProdBranch -FallbackBranch 'main'
+$parityFailed = $false
+$parityFailureMessage = ''
 
 if ($runVercelParity) {
   Assert-VersionRouteExistsInHead
@@ -749,11 +791,7 @@ if ($runVercelParity) {
 
   $hostTarget = Resolve-ParityTargetHost -CurrentBranch $parityState.Branch -EffectiveProdBranch $effectiveProdBranch -RequestedTarget $ParityTarget -ProvidedProdHost $VercelProdUrlOrHost -ProvidedPreviewHost $PreviewHost
   if (-not $hostTarget.ShouldRun) {
-    if ($VercelParityMode -eq 'warn') {
-      Write-Host ("Vercel parity warning: {0}" -f $hostTarget.Message) -ForegroundColor Yellow
-    } else {
-      Write-Host ("Vercel parity skipped: {0}" -f $hostTarget.Message) -ForegroundColor Yellow
-    }
+    Write-Host ("Vercel parity skipped: {0}" -f $hostTarget.Message) -ForegroundColor Yellow
   } else {
     $productionDomainHost = $hostTarget.Host
     $expectedVercelEnv = if ($hostTarget.Target -eq 'preview') { 'preview' } elseif ($VercelEnv -eq 'preview') { 'production' } else { $VercelEnv }
@@ -773,11 +811,9 @@ if ($runVercelParity) {
     $allowPreviewForTarget = $AllowPreviewHost -or $hostTarget.Target -eq 'preview'
     $vercelState = Wait-VercelCommitParity -ProdHost $productionDomainHost -LocalSha $finalLocalSha -ExpectedEnv $expectedVercelEnv -AllowPreview:$allowPreviewForTarget -MaxWaitSec $effectiveMaxWaitSec -PollIntervalSec $effectivePollIntervalSec
     if (-not $vercelState.Success) {
-      if ($VercelParityMode -eq 'warn') {
-        Write-Host ("Vercel parity warning: {0}" -f $vercelState.FailureMessage) -ForegroundColor Yellow
-      } else {
-        throw $vercelState.FailureMessage
-      }
+      $parityFailed = $true
+      $parityFailureMessage = $vercelState.FailureMessage
+      Write-Host ("Vercel parity failed: {0}" -f $parityFailureMessage) -ForegroundColor Yellow
     }
     $finalVercelSha = $vercelState.CommitSha
     $finalVercelEnv = $vercelState.VercelEnv
@@ -791,11 +827,23 @@ if ($runVercelParity) {
     Write-ParitySnapshot -LocalSha $finalLocalSha -OriginSha $finalOriginSha -VercelSha $finalVercelSha -VercelEnvValue $finalVercelEnv -ProdHost $productionDomainHost
   }
 } else {
-  if ($VercelParityMode -eq 'off') {
-    Write-Host 'Vercel parity skipped (VercelParityMode=off).' -ForegroundColor Yellow
+  if ($ParityTarget -eq 'off' -or $VercelParityMode -eq 'off') {
+    Write-Host 'Vercel parity skipped (off).' -ForegroundColor Yellow
   } else {
     Write-Host 'SkipVercelParity enabled.' -ForegroundColor Yellow
   }
+}
+
+Write-Section "Summary"
+if ($parityFailed) {
+  Write-Host ("PARITY SUMMARY: FAIL - {0}" -f $parityFailureMessage) -ForegroundColor Yellow
+  Write-Host 'Next step: verify host mapping for current branch and retry parity after deployment is ready.' -ForegroundColor Yellow
+  if ($StrictParity) {
+    Write-Host 'StrictParity enabled: exiting with non-zero code.' -ForegroundColor Red
+    exit 2
+  }
+} else {
+  Write-Host 'PARITY SUMMARY: OK or skipped.' -ForegroundColor Green
 }
 
 Write-Section "Runtime server"
