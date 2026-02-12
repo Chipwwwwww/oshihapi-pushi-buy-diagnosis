@@ -30,7 +30,11 @@ import { findRun, updateRun } from "@/src/oshihapi/runStorage";
 import { sendTelemetry, TELEMETRY_OPT_IN_KEY } from "@/src/oshihapi/telemetryClient";
 import { formatResultByMode } from "@/src/oshihapi/modes/formatResultByMode";
 import { MODE_DICTIONARY, ResultMode, Verdict } from "@/src/oshihapi/modes/mode_dictionary";
-import { resolveMode, setStoredMode } from "@/src/oshihapi/modes/modeState";
+import { RESULT_COPY } from "@/src/oshihapi/modes/mode_copy_ja";
+import {
+  resolveMode,
+  setModeToLocalStorage,
+} from "@/src/oshihapi/modes/presentationMode";
 
 const decisionLabels: Record<string, string> = {
   BUY: "買う",
@@ -38,11 +42,6 @@ const decisionLabels: Record<string, string> = {
   SKIP: "やめる",
 };
 
-const decisionSubcopy: Record<string, string> = {
-  BUY: "今の条件ならOK。上限だけ決めて進もう。",
-  THINK: "今は保留でOK。条件が整ったらまた検討しよう。",
-  SKIP: "今回は見送りでOK。次の推し活に回そう。",
-};
 
 function getDefaultSearchWord(run: DecisionRun): string {
   const itemName = run.meta.itemName?.trim();
@@ -121,7 +120,7 @@ export default function ResultPage() {
   const [skipItemName, setSkipItemName] = useState(true);
   const [showAlternatives, setShowAlternatives] = useState(false);
   const [selectedHeadline, setSelectedHeadline] = useState<string | null>(null);
-  const [resultMode, setResultMode] = useState<ResultMode>(() => resolveMode(searchParams));
+  const [resultMode, setResultMode] = useState<ResultMode>(() => resolveMode({ url: searchParams }));
 
   const runId = params?.runId;
   const run = useMemo<DecisionRun | undefined>(() => {
@@ -132,12 +131,15 @@ export default function ResultPage() {
   const feedback = localFeedback ?? run?.feedback_immediate;
 
   useEffect(() => {
-    setResultMode(resolveMode(searchParams));
+    setResultMode(resolveMode({ url: searchParams }));
   }, [searchParams]);
 
   const updateResultMode = (nextMode: ResultMode) => {
     setResultMode(nextMode);
-    setStoredMode(nextMode);
+    setModeToLocalStorage(nextMode);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("pm", nextMode);
+    router.replace(`/result/${runId}?${params.toString()}`);
   };
 
   const presentation = useMemo(() => {
@@ -199,6 +201,7 @@ export default function ResultPage() {
         reasonTags?: string[];
       })
     | undefined;
+  const modeCopy = RESULT_COPY[resultMode];
   const normalizedWaitType = outputExt?.waitType ?? (run?.output.decision === "THINK" ? "none" : "none");
   const adviceText =
     run?.output.decision === "BUY"
@@ -343,10 +346,10 @@ export default function ResultPage() {
   return (
     <div className={`${containerClass} flex min-h-screen flex-col gap-6 py-10`}>
       <header className="space-y-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
-        <p className="text-sm font-semibold tracking-wide text-accent">診断サマリー</p>
+        <p className="text-sm font-semibold tracking-wide text-accent">{modeCopy.ui.resultSummaryTitle}</p>
         <div className="space-y-2">
           <h1 className="text-4xl font-black leading-tight tracking-tight text-foreground sm:text-5xl">{headline}</h1>
-          <p className={`${bodyTextClass} text-foreground/90`}>{decisionSubcopy[run.output.decision]}</p>
+          <p className={`${bodyTextClass} text-foreground/90`}>{modeCopy.verdictSubcopy[run.output.decision]}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="primary">信頼度 {run.output.confidence}%</Badge>
@@ -390,18 +393,27 @@ export default function ResultPage() {
       <DecisionScale decision={decisionScale} index={decisionIndex} />
 
       <Card className="space-y-3 border-amber-200 bg-amber-50 dark:ring-1 dark:ring-white/10">
-        <h2 className="text-lg font-semibold text-amber-900">アドバイス</h2>
+        <h2 className="text-lg font-semibold text-amber-900">{modeCopy.ui.adviceTitle}</h2>
         <p className="text-sm text-amber-800">{adviceText}</p>
+        <p className="text-xs text-amber-700">
+          {modeCopy.waitTypeHint[normalizedWaitType] ?? modeCopy.waitTypeHint.none}
+        </p>
+        {(run.meta.itemKind && modeCopy.itemTypeHint[run.meta.itemKind]) ? (
+          <p className="text-xs text-amber-700">{modeCopy.itemTypeHint[run.meta.itemKind]}</p>
+        ) : null}
       </Card>
 
       <Card className="space-y-4">
-        <h2 className={sectionTitleClass}>今すぐやる</h2>
+        <h2 className={sectionTitleClass}>{modeCopy.ui.actionsTitle}</h2>
         <ul className="grid gap-4">
           {displayActions.map((action) => {
             const actionLink = getActionLink(action);
             return (
               <li key={action.id} className="rounded-2xl border border-border p-4">
-              <p className={bodyTextClass}>{MODE_DICTIONARY[resultMode].text.actionLabel[action.id] ?? action.text}</p>
+              <p className={bodyTextClass}>{MODE_DICTIONARY[resultMode].text.actionLabel[action.id] ?? action.text}
+                {modeCopy.actionExplain[action.id] ? (
+                  <span className="mt-1 block text-xs text-muted-foreground">{modeCopy.actionExplain[action.id]}</span>
+                ) : null}</p>
                 {actionLink ? (
                   <a
                     href={actionLink.href}
@@ -418,11 +430,14 @@ export default function ResultPage() {
       </Card>
 
       <Card className="space-y-4">
-        <h2 className={sectionTitleClass}>理由タグ</h2>
+        <h2 className={sectionTitleClass}>{modeCopy.ui.reasonsTitle}</h2>
         <div className="grid gap-4">
           {run.output.reasons.map((reason) => (
             <div key={reason.id} className="rounded-2xl border border-border p-4">
-              <p className={bodyTextClass}>{MODE_DICTIONARY[resultMode].text.reasonTagLabel[reason.id] ?? reason.text}</p>
+              <p className={bodyTextClass}>{MODE_DICTIONARY[resultMode].text.reasonTagLabel[reason.id] ?? reason.text}
+              {modeCopy.reasonExplain[reason.id] ? (
+                <span className="mt-1 block text-xs text-muted-foreground">{modeCopy.reasonExplain[reason.id]}</span>
+              ) : null}</p>
             </div>
           ))}
         </div>
