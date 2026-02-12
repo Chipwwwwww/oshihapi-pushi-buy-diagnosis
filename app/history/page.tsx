@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { DecisionRun } from "@/src/oshihapi/model";
@@ -57,15 +57,14 @@ export default function HistoryPage() {
   const router = useRouter();
   const [runs] = useState<DecisionRun[]>(() => loadRuns());
   const [marketMemos] = useState(() => loadMarketMemos());
-  const [resultMode, setResultMode] = useState<ResultMode>("standard");
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  const [resultMode, setResultMode] = useState<ResultMode>(() => {
+    if (typeof window === "undefined") return "standard";
     const savedMode = window.localStorage.getItem("oshihapi:mode");
     if (savedMode === "standard" || savedMode === "kawaii" || savedMode === "oshi") {
-      setResultMode(savedMode);
+      return savedMode;
     }
-  }, []);
+    return "standard";
+  });
 
   const updateResultMode = (nextMode: ResultMode) => {
     setResultMode(nextMode);
