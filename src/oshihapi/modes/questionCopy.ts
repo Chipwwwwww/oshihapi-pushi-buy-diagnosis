@@ -43,6 +43,7 @@ export const QUESTION_COPY: Record<ModeId, Record<string, QuestionCopy>> = {
     q_regret_impulse: { title: "いまの気分、どれが近い？" },
     q_long_note: { title: "AIに相談したいことをメモしよう" },
 
+    q_storage_fit: { title: "おうちに置くとこ、ある？", options: { CONFIRMED: { label: "あるよ！（もう決めた）" }, PROBABLE: { label: "たぶんある…！（片付ければ）" }, NONE: { label: "いまはない…" }, UNKNOWN: { label: "わかんない（先に見てくる）" } } },
     q_price_feel: { title: "お値段の納得感はどう？", options: { good: { label: "いい感じ" }, normal: { label: "ふつう" }, high: { label: "ちょっと高め" }, unknown: { label: "まだ比べてない" } } },
     q_storage_space: { title: "置き場所だいじょうぶ？", options: { enough: { label: "問題ない" }, adjust: { label: "少し工夫する" }, tight: { label: "かなりきびしい" } } },
     q_alternative_plan: { title: "見送るなら別プランある？", options: { clear: { label: "あるよ" }, maybe: { label: "たぶんある" }, none: { label: "ないかも" } } },
@@ -101,6 +102,7 @@ export const QUESTION_COPY: Record<ModeId, Record<string, QuestionCopy>> = {
     q_regret_impulse: { title: "現在のメンタル状態、どれに近い？" },
     q_long_note: { title: "AI相談用メモを残す" },
 
+    q_storage_fit: { title: "置き場ある？（棚/ケース確保済み？）", options: { CONFIRMED: { label: "確保済み（勝ち）" }, PROBABLE: { label: "片付ければいける" }, NONE: { label: "今はムリ（圧迫）" }, UNKNOWN: { label: "未確認（先に確認）" } } },
     q_price_feel: { title: "価格感、相場的にどう？", options: { good: { label: "納得" }, normal: { label: "標準" }, high: { label: "やや高" }, unknown: { label: "未比較" } } },
     q_storage_space: { title: "保管キャパは確保できる？", options: { enough: { label: "問題なし" }, adjust: { label: "調整が必要" }, tight: { label: "厳しい" } } },
     q_alternative_plan: { title: "見送り時の代替案は？", options: { clear: { label: "明確にある" }, maybe: { label: "候補あり" }, none: { label: "特にない" } } },
