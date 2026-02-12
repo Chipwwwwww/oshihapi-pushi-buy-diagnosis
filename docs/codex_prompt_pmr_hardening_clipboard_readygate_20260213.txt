@@ -1,0 +1,58 @@
+[CODEx PR PROMPT] PMR hardening (PS5.1) + deterministic local + clipboard support snapshot
+
+Goal
+- Harden post_merge_routine.ps1 so it is PS 5.1 compatible, deterministic, and diagnosable.
+- "npm run build ✅" is the ONLY acceptance criteria.
+- Ensure failures produce a debug bundle and a copy-pastable clipboard summary.
+
+Constraints / Principles
+- Minimal diff, minimal risk, easy rollback.
+- No PS7-only syntax (no ternary `? :`), avoid reserved vars (`$Host`) and param name `args`.
+- Avoid string interpolation patterns that cause ParserError (e.g. `"$path: ..."`) — use `-f` formatting.
+- External command calls must pass arguments as an array; do NOT build a single command string.
+
+Required behavior
+1) Always run from repo root (auto-correct using `git rev-parse --show-toplevel`).
+2) Pre-clean:
+   - Kill listeners on ports 3000/3001/3002.
+   - Remove `.next` (and optionally `.turbo`, `node_modules/.cache`).
+3) `npm ci` then `npm run build`.
+   - Stream command output to console and also append to `ops/pmr_log_*.txt`.
+   - If `npm ci` fails once, do a safe retry (remove node_modules + npm cache verify), then retry once.
+4) Dev:
+   - Unless `-SkipDev`, start `npm run dev -- --webpack -p 3000`.
+   - Determine readiness deterministically: parse stdout for “Ready” AND/OR probe `http://localhost:3000/api/version` and ensure commitSha matches local HEAD.
+   - If not ready within timeout, treat as failure and produce bundle.
+5) Parity gate (optional):
+   - Only after build ✅.
+   - Determine prod vs preview target by comparing current branch to prod branch (from ops/vercel_prod_branch.txt).
+   - If host missing, report "skipped (reason)" without failing local readiness.
+   - Call `/api/version` with cache-busting query; compare commitSha.
+6) Error handling:
+   - On ANY failure: print which stage failed, exit code/message, and create `ops/pmr_debug_bundle_*.zip`.
+   - Bundle must include: env_and_git_snapshot.txt, post_merge_routine.ps1 (current), pmr_log, dev stdout/err if present, ops/vercel_* files if present.
+   - Also copy a “PMR AUTO SUMMARY” block to clipboard (Set-Clipboard) so user can Ctrl+V into chat.
+
+Deliverables
+- A PR modifying:
+  - post_merge_routine.ps1
+  - .gitignore (ignore ops/pmr_log_*.txt, ops/pmr_debug_bundle_*.zip, ops/pmr_bundle_*, ops/pmr_bak, ops/pmr_repair_*)
+  - docs/pmr_safety_checklist.md (update if needed)
+
+Acceptance / Verification steps (must include in PR description)
+1) On Windows PowerShell 5.1:
+   - `[ScriptBlock]::Create((Get-Content -Raw .\post_merge_routine.ps1)) | Out-Null`
+2) `npm ci`
+3) `npm run build`  ✅
+4) Run `.\post_merge_routine.ps1 -SkipParity` and confirm it ends with:
+   - build success
+   - dev ready banner (unless SkipDev)
+5) Force a failure (e.g., temporarily rename package-lock.json) and verify:
+   - stage label is printed
+   - debug bundle zip is created
+   - clipboard summary is produced
+
+If anything fails, report back with:
+- the latest `ops/pmr_debug_bundle_*.zip`
+- the latest `ops/pmr_log_*.txt` tail (last 200 lines)
+- `git status -sb` and `git log -1 --oneline`

@@ -46,3 +46,12 @@ next-env.d.ts
 
 # local ops config
 ops/vercel_prod_host.txt
+# ops artifacts (do not commit)
+ops/pmr_log_*.txt
+ops/pmr_dev_stdout_*.txt
+ops/pmr_dev_stderr_*.txt
+ops/pmr_debug_bundle_*.zip
+ops/pmr_bundle_*/
+ops/pmr_bak/
+ops/pmr_repair_*/
+ops/pmr_repair_*.*/
