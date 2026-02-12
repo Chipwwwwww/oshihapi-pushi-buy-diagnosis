@@ -16,7 +16,6 @@ import {
   parseDecisiveness,
 } from "@/src/oshihapi/decisiveness";
 import Badge from "@/components/ui/Badge";
-import ModeToggle from "@/components/ModeToggle";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import RadioCard from "@/components/ui/RadioCard";
@@ -28,12 +27,12 @@ import {
   pageTitleClass,
   sectionTitleClass,
 } from "@/components/ui/tokens";
-import { RESULT_COPY } from "@/src/oshihapi/modes/mode_copy_ja";
+import { COPY_BY_MODE } from "@/src/oshihapi/modes/copy_dictionary";
 import {
-  resolveMode,
-  setModeToLocalStorage,
-  type PresentationMode as ModeId,
-} from "@/src/oshihapi/modes/presentationMode";
+  getStyleModeFromLocalStorage,
+  setStyleModeToLocalStorage,
+  type StyleMode,
+} from "@/src/oshihapi/modes/useStyleMode";
 
 const deadlineOptions = [
   { value: "today", label: "今日" },
@@ -97,8 +96,8 @@ export default function Home() {
   const [priceYen, setPriceYen] = useState("");
   const [deadline, setDeadline] = useState<DeadlineValue>("unknown");
   const [itemKind, setItemKind] = useState<ItemKind>("goods");
-  const [presentationMode, setPresentationMode] = useState<ModeId>(() => resolveMode());
-  const modeCopy = RESULT_COPY[presentationMode];
+  const [styleMode, setStyleMode] = useState<StyleMode>(() => getStyleModeFromLocalStorage());
+  const modeCopy = COPY_BY_MODE[styleMode];
   const [decisiveness, setDecisiveness] = useState<Decisiveness>(() => {
     if (typeof window === "undefined") return "standard";
     return parseDecisiveness(window.localStorage.getItem(DECISIVENESS_STORAGE_KEY));
@@ -132,7 +131,7 @@ export default function Home() {
   const handleStart = () => {
     const params = new URLSearchParams();
     params.set("mode", mode);
-    params.set("pm", presentationMode);
+    params.set("styleMode", styleMode);
     if (itemName.trim()) params.set("itemName", itemName.trim());
     if (parsedPriceYen !== undefined) {
       params.set("priceYen", String(parsedPriceYen));
@@ -149,9 +148,9 @@ export default function Home() {
     setMode(nextMode);
   };
 
-  const handlePresentationModeChange = (nextMode: ModeId) => {
-    setPresentationMode(nextMode);
-    setModeToLocalStorage(nextMode);
+  const handleStyleModeChange = (nextMode: StyleMode) => {
+    setStyleMode(nextMode);
+    setStyleModeToLocalStorage(nextMode);
   };
 
   const handleApplyScenario = (scenario: typeof SCENARIO_CARDS_JA[number]) => {
@@ -218,7 +217,23 @@ export default function Home() {
       <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
         <h2 className={sectionTitleClass}>{modeCopy.ui.styleSectionTitle}</h2>
         <p className={helperTextClass}>{modeCopy.ui.styleSectionHelp}</p>
-        <ModeToggle value={presentationMode} onChange={handlePresentationModeChange} />
+        <div className="grid grid-cols-3 gap-2 rounded-2xl border border-slate-200 bg-slate-100 p-2 dark:border-white/10 dark:bg-white/6">
+          {(["standard", "kawaii", "oshi"] as const).map((modeOption) => (
+            <button
+              key={modeOption}
+              type="button"
+              onClick={() => handleStyleModeChange(modeOption)}
+              className={[
+                "min-h-11 rounded-xl px-3 py-2 text-sm font-semibold transition",
+                styleMode === modeOption
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-transparent text-slate-700 hover:bg-white dark:text-zinc-200 dark:hover:bg-white/10",
+              ].join(" ")}
+            >
+              {modeCopy.ui.styleOptionLabel[modeOption]}
+            </button>
+          ))}
+        </div>
       </Card>
 
       <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
