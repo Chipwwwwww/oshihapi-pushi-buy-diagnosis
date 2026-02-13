@@ -14,7 +14,16 @@ const ALLOWED_EVENTS = new Set(["run_export", "l1_feedback"]);
 export const runtime = "nodejs";
 
 const ENV_HINT =
-  "Set .env.local: POSTGRES_URL_NON_POOLING=... (or POSTGRES_URL/DATABASE_URL)";
+  "Set .env.local: DATABASE_URL=... (or POSTGRES_URL_NON_POOLING/POSTGRES_URL/DATABASE_URL_UNPOOLED)";
+
+const DB_ENV_KEYS = [
+  "DATABASE_URL",
+  "POSTGRES_URL_NON_POOLING",
+  "POSTGRES_URL",
+  "DATABASE_URL_UNPOOLED",
+] as const;
+
+const INVALID_DB_HOSTS = new Set(["base", "localhost", "127.0.0.1", "postgres", "db"]);
 
 const loadPgClient = () => {
   const requireFn = eval("require") as NodeRequire;
@@ -38,10 +47,31 @@ const jsonError = (
   return Response.json(payload, { status });
 };
 
-const getConnectionString = () =>
-  process.env.POSTGRES_URL_NON_POOLING ??
-  process.env.POSTGRES_URL ??
-  process.env.DATABASE_URL;
+const getConnectionString = () => {
+  for (const key of DB_ENV_KEYS) {
+    const value = process.env[key];
+    if (value) {
+      return { connectionString: value, envKey: key };
+    }
+  }
+  return null;
+};
+
+const getInvalidConnectionHost = (connectionString: string, envKey: string) => {
+  try {
+    const host = new URL(connectionString).hostname.toLowerCase();
+    if (INVALID_DB_HOSTS.has(host)) {
+      console.error(
+        `[telemetry] invalid db host "${host}" from ${envKey}. Set Vercel Project Env DATABASE_URL to a Neon host (*.neon.tech) and redeploy.`,
+      );
+      return host;
+    }
+  } catch {
+    // Keep existing behavior for malformed URLs; pg will produce its own runtime error.
+  }
+
+  return null;
+};
 
 const shortenError = (error: unknown) => {
   if (error instanceof Error) {
@@ -105,17 +135,23 @@ export async function POST(request: Request) {
     return jsonError(400, "bad_request", { hint: "Invalid data." });
   }
 
-  const connectionString = getConnectionString();
+  const dbConfig = getConnectionString();
 
-  if (!connectionString) {
-    const missing = ["POSTGRES_URL_NON_POOLING", "POSTGRES_URL", "DATABASE_URL"].filter(
-      (key) => !process.env[key],
-    );
+  if (!dbConfig) {
+    const missing = DB_ENV_KEYS.filter((key) => !process.env[key]);
     return jsonError(500, "db_env_missing", { hint: ENV_HINT, missing });
   }
 
+  const invalidHost = getInvalidConnectionHost(dbConfig.connectionString, dbConfig.envKey);
+  if (invalidHost) {
+    return jsonError(500, "db_insert_failed", {
+      detail: `invalid_db_host=${invalidHost}`,
+      hint: "Set Vercel Project Env DATABASE_URL to a Neon host (*.neon.tech) and redeploy.",
+    });
+  }
+
   const Client = loadPgClient();
-  const client = new Client({ connectionString });
+  const client = new Client({ connectionString: dbConfig.connectionString });
   const id = crypto.randomUUID();
   try {
     await client.connect();
