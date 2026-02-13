@@ -1,0 +1,104 @@
+﻿Codex PR Prompt: Add「置き場所（放得下）」gate for physical kinds (minimal diff, build ✅)
+
+Background / Goal
+- Home page has "種別" (kind) dropdown (e.g., グッズ / チケット).
+- Add a very short question: 「置き場所（放哪/放得下）決定了嗎？」 into the diagnosis flow.
+- Only show this question for kinds that create a physical item that must be stored at home.
+- For non-physical kinds (課金, チケット, デジタル etc.), SKIP this question.
+- This question must affect the final output deterministically (at least prevent "買う" when storage is NONE/UNKNOWN).
+- Keep changes minimal, low-risk, and easy to revert.
+
+Hard acceptance criteria (ONLY)
+- npm run build ✅
+
+Definitions: which kinds should ask "storage"
+Principle
+- Physical: buying results in a physical item at home -> ask storage.
+- Non-physical: rights/experience/digital/spending -> skip storage.
+
+Implementation
+- Add a helper like shouldAskStorage(kindId): boolean.
+- Use allowlist-based approach:
+  - PHYSICAL_KINDS include (if exists in your app): グッズ, くじ/一番くじ, 中古(メルカリ等), 予約(到貨實體), セット/福袋/まとめ買い, 書籍/CD/BD/フィギュア/ぬい etc.
+  - SKIP_STORAGE_KINDS include: チケット, 課金, デジタル(配信票/デジタルグッズ) if exists.
+- Safe default: if kindId unknown, treat as PHYSICAL (ask storage) to avoid missing physical items.
+
+New question: storage_fit
+- id: storage_fit (unique)
+- type: single-choice (radio)
+- ask timing: early in the flow (ideally first question after entering flow) to save time.
+- show condition: shouldAskStorage(kindId) === true
+- internal values (do not depend on style):
+  - CONFIRMED  (place already decided)
+  - PROBABLE   (probably, after tidying)
+  - NONE       (no place now)
+  - UNKNOWN    (not sure / need to check)
+
+Copy / Strings by 表示スタイル (only 3 styles)
+(1) 標準
+- Q: 置き場所、決まってる？
+- A1: ある（もう決まってる）
+- A2: たぶんある（片付ければ）
+- A3: 今はない
+- A4: わからない（先に確認する）
+
+(2) かわいい
+- Q: おうちに置くとこ、ある？
+- A1: あるよ！（もう決めた）
+- A2: たぶんある…！（片付ければ）
+- A3: いまはない…
+- A4: わかんない（先に見てくる）
+
+(3) 推し活用語
+- Q: 置き場ある？（棚/ケース確保済み？）
+- A1: 確保済み（勝ち）
+- A2: 片付ければいける
+- A3: 今はムリ（圧迫）
+- A4: 未確認（先に確認）
+
+Deterministic gate (minimal risk)
+- Keep existing core evaluate() logic unchanged.
+- After evaluation, apply a small post-process ONLY when shouldAskStorage(kindId) is true:
+  - If storage_fit is NONE or UNKNOWN:
+    - Final decision must NOT be "買う".
+    - If decision was "買う" -> downgrade to "保留".
+    - Adjust confidence down slightly (e.g., -10 ~ -20) using existing confidence system.
+    - Append a reason and action:
+      - reason: 置き場所が未確定（買った後の置き場が決まってない）
+      - action: 先に置き場所を決める（棚/ケース/引き出し）
+  - If storage_fit is PROBABLE:
+    - Keep decision, but append:
+      - reason: 片付けが必要（置き場所を作れたら後悔しにくい）
+      - action: 買う前に10分だけ片付けてスペース確保
+  - If storage_fit is CONFIRMED:
+    - No change.
+
+Result UI (minimal)
+- On result page (and optionally history list item), show a small chip/row:
+  - label: 置き場所
+  - value mapping:
+    - CONFIRMED: 確保済み
+    - PROBABLE: 片付ければOK
+    - NONE: 今はない
+    - UNKNOWN: 未確認
+- Style-specific wording can be added later; OK to start with standard text to minimize diff.
+
+Where to change (Codex should locate in repo)
+- Find flow question builder / question list (keywords: questions, buildQuestions, flow, merch_v2_ja, evaluate, run)
+- Find style copy / strings mapping (keywords: 表示スタイル, styleMode, tone, copy, strings)
+- Find result model for decision/confidence/reasons/actions; implement the post-process there.
+
+Validation steps
+1) npm run build ✅
+2) npm run dev -- --webpack -p 3000
+3) kind=グッズ => storage question appears early.
+4) kind=チケット => storage question DOES NOT appear.
+5) When selecting "今はない" or "未確認" for physical:
+   - final decision must not be "買う"
+   - reasons/actions include storage line(s)
+6) Confirm copy changes for all 3 表示スタイル (question + options at least).
+
+If you fail
+- Paste the first npm run build error (file:line)
+- Paste runtime console error + route
+- Provide changed file list (git diff --name-only)

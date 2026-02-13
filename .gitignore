@@ -55,3 +55,9 @@ ops/pmr_bundle_*/
 ops/pmr_bak/
 ops/pmr_repair_*/
 ops/pmr_repair_*.*/
+# --- ops tool artifacts (generated locally) ---
+ops/branch_snapshot_*.txt
+ops/branch_snapshot_bundle_*.zip
+ops/retro_backup_*.zip
+ops/retro_backup_*/
+post_merge_routine.ps1.bak_*

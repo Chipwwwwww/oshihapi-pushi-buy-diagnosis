@@ -1,69 +1,89 @@
-# 🧭 oshihapi ops (Windows / PowerShell 5.1)
+# 🧭 oshihapi 操作守則（Windows / PowerShell 5.1）
 
-> 目標：我只做「同步/驗收/merge/部署」，其他都用一鍵腳本 + 可診斷輸出完成。
-
-## 0) 絕對規則（永遠優先）
-- 合格標準永遠是：`npm run build` ✅（dev 能跑不算）
-- merge 後固定只跑：`.\post_merge_routine.ps1`
-- 期待 Vercel / Codex = 最新：一定先 `git push`
-- 發生事故：先保全（stash + backup branch）→ 再處理
+> 核心精神：**merge 後只跑 `.\post_merge_routine.ps1`**，合格標準只有 **`npm run build` ✅**。  
+> 任何失敗必須 **可診斷 / 可復現 / 可回滾**（靠 PMR 自動產出的 log + debug bundle）。
 
 ---
 
-## 1) 最短日常 SOP（照抄）
-1. `cd C:\Users\User\dev\oshihapi-pushi-buy-diagnosis`
-2. `git fetch --all --prune`
-3. `git status -sb`（確認分支 & 是否乾淨）
-4. `git push`（只要你期待 Vercel/Codex 跟上）
-5. `.\post_merge_routine.ps1`
-   - 看到 `✅ Local 起動OK` 才算完成
+## 0) Repo Root（永遠從這裡開始）
+```powershell
+cd C:\Users\User\dev\oshihapi-pushi-buy-diagnosis
+```
 
 ---
 
-## 2) 本次事故的核心坑（以後一律按這裡做）
-### A) Local 不是最新版（或你看到舊版畫面）
-幾乎都是其中一個：
-- port 3000 已經有舊的 dev 在跑（你以為你啟的是新版本）
-- 你 checkout 的 commit/branch 不是你以為的
-- 你 build 沒清乾淨（.next 殘留）但 dev 還在拿舊的 cache
-- 你在 DETACHED HEAD 或 dirty tree，導致你「修了但沒落在正確分支」
+## 1) Merge 後唯一 SOP（最高優先）
+```powershell
+.\post_merge_routine.ps1
+```
 
-✅ 對策（最小動作）：
-- 先跑 `.\post_merge_routine.ps1`（它會 kill 3000/3001/3002 + 清 .next + npm ci + build）
-- 失敗時：直接 Ctrl+V 貼上「PMR AUTO SUMMARY」（腳本會自動複製剪貼簿）
-
-### B) PowerShell ParserError（最致命）
-常見原因：
-- 在字串中用 `$var:`（例如 `"... $path: ..."`）→ PS 會把 `:` 當成 drive 語法，直接 ParserError
-- 用了保留變數名/混淆名：例如 param 用 `args`、變數用 `$Host`
-- 混進不可見字元 / here-string 拼接錯誤
-
-✅ 對策：
-- 任何脚本都要先做 parser check：`[ScriptBlock]::Create((Get-Content -Raw .\post_merge_routine.ps1))`
-- 字串插值一律用 `-f` 格式（避免 `$var:`）
+你應該看到（例）：
+- `▶ npm ci`
+- `▶ npm run build`
+- `▶ Start dev: http://localhost:3000`
+- `✅ Local 起動OK: http://localhost:3000 (commit <sha>)`
 
 ---
 
-## 3) Vercel 回到指定舊版（最少風險的做法）
-你這次要的其實不是「改 git」，而是「讓 production 網域指到某個已存在的 deployment」。
+## 2) PMR 常見錯誤與診斷方式
+### 2.1 看 stage
+PMR 失敗時會印：
+- `stage: <STAGE_NAME>`
+- `log: ops\pmr_log_YYYYMMDD_HHMMSS.txt`
+- `bundle: ops\pmr_debug_bundle_YYYYMMDD_HHMMSS.zip`
 
-✅ 建議做法：在 Vercel UI 對該 deployment 做 **Promote to Production**。
-- 只是在 Vercel 把 production domains 指到那個 deployment
-- 不會改 GitHub 的 branch history（你不用 force push）
-- 回滾也同樣快（再 promote 另一個 deployment 即可）
-
-（參考：Vercel docs「Promoting a Deployment」 https://vercel.com/docs/deployments/promoting-a-deployment ）  
-（也可用 CLI：`vercel promote <deployment-url>`，參考： https://vercel.com/docs/cli/promote ）  
-
----
-
-## 4) 支援資訊一鍵複製（Ctrl+V 貼回來）
-- PMR 失敗時會自動把摘要放進剪貼簿（PMR AUTO SUMMARY）
-- 你只要 Ctrl+V 貼給我即可，不用找 log、也不用手動開檔
+### 2.2 Debug bundle 內容用途
+`ops\pmr_debug_bundle_*.zip` 用來「可復現」：
+- env & git snapshot
+- 當下版本 `post_merge_routine.ps1`
+- 相關 ops 設定檔（prod/preview host/branch 等）
 
 ---
 
-## 5) 常用指令（備忘）
-- dev 指令固定：`npm run dev -- --webpack -p 3000`
-- kill 3000/3001/3002（手動）：  
-  `foreach ($p in 3000,3001,3002) { Get-NetTCPConnection -State Listen -LocalPort $p -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue } }`
+## 3) 本次踩雷（已處理）：PS5.1 內建唯讀變數撞名
+PowerShell **大小寫不分**，因此：
+- `$pid` 等同 `$PID`（唯讀）→ 一賦值就爆
+- `$host` 等同 `$Host`（唯讀）→ 一賦值就爆
+
+✅ 已用最小修補避免（將自訂變數改名）  
+**未來規約：腳本/工具一律避免使用 `$pid/$host` 當自訂變數。**
+
+---
+
+## 4) 分支 / DETACHED HEAD 的 deterministic 作法
+你可能會遇到：
+- `git symbolic-ref --short HEAD` 空值（DETACHED）
+
+建議 SOP：
+```powershell
+git branch --contains HEAD
+# 選你要的那個，例如 feature/urgent-medium-long
+git switch feature/urgent-medium-long
+```
+
+⚠️ 原則：**不要在 DETACHED 狀態 commit/push**（避免把歷史弄亂）。
+
+---
+
+## 5) Vercel parity gate（可選、不可阻斷 local）
+- parity 只在 build OK 後執行
+- 如果缺 host 設定，必須清楚顯示 `skipped (reason...)`，而不是炸掉
+
+設定檔位置：
+- `ops\vercel_prod_branch.txt`
+- `ops\vercel_prod_host.txt`
+- `ops\vercel_preview_host.txt`
+
+---
+
+## 6) 給 Codex 的任務檔（都放 docs/）
+```powershell
+Get-ChildItem -Recurse -Filter "codex_prompt*.txt" | Select-Object FullName
+```
+
+---
+
+## 7) 快速自救（只做你要我做的）
+- 你說「給我shell」→ 我給你一段可直接跑的 PowerShell（包含 cd / 備份 / 覆蓋 / 驗收）
+- 你說「給codex」→ 我給你最小 diff 的 Codex PR prompt（build ✅ 為唯一合格）
+

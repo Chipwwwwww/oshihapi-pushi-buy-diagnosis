@@ -1,0 +1,38 @@
+Codex PR Prompt: PMR hardening — reserved variable guard for PS5.1 ($PID / $Host) (minimal diff, build ✅)
+
+Goal
+- Prevent post_merge_routine.ps1 from crashing due to PowerShell 5.1 automatic read-only variables collisions.
+- In PowerShell, variable names are case-insensitive: $pid == $PID, $host == $Host.
+- Add a fail-fast preflight guard that detects dangerous variable names used in assignments and exits with a clear message BEFORE running stages.
+
+Hard acceptance criteria
+- npm run build ✅ (app)
+- post_merge_routine.ps1 parse check passes in PS5.1
+- Running .\post_merge_routine.ps1 does not throw "Cannot overwrite variable PID/Host" when the script contains no such assignments.
+
+Scope (minimal diff)
+1) Add a new preflight step early in PMR, before KILL_PORTS:
+   - Scan the script text (Get-Content -Raw) for patterns of assignments to reserved vars:
+     - `(?im)^\s*\$pid\s*=`  (covers $pid / $PID)
+     - `(?im)^\s*\$host\s*=` (covers $host / $Host)
+   - If found, print:
+     - Stage label: RESERVED_VAR_GUARD
+     - A clear error explaining case-insensitivity and why it's read-only
+     - Recommended rename: $owningPid / $parityHost (or $targetHost)
+   - Exit non-zero and generate the normal debug bundle + PMR AUTO SUMMARY.
+
+2) (Optional) expand guard list to other confusing names:
+   - param name "Args" / variable $args (warn-only is OK)
+
+Validation
+- Run parse check:
+  `[ScriptBlock]::Create((Get-Content -Raw .\post_merge_routine.ps1 -Encoding UTF8)) | Out-Null`
+- Run PMR normally and confirm it proceeds.
+- (If you simulate bad content by temporarily inserting `$pid = 1`), guard should stop early with clear message, then roll back.
+
+If failure
+- Paste PMR AUTO SUMMARY
+- Paste ops/pmr_debug_bundle_*.zip path
+
+Notes
+- Keep changes minimal and PS5.1 compatible; do not add PS7-only syntax.

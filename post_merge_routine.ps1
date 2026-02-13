@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
   [switch]$SkipDev,
   [switch]$SkipParity,
@@ -40,13 +40,13 @@ function Kill-Ports([int[]]$ports) {
   foreach ($p in $ports) {
     $conns = Get-NetTCPConnection -State Listen -LocalPort $p -ErrorAction SilentlyContinue
     foreach ($c in $conns) {
-      $pid = $c.OwningProcess
-      if ($pid -and $pid -ne 0) {
+      $owningPid = $c.OwningProcess
+      if ($owningPid -and $owningPid -ne 0) {
         try {
-          Stop-Process -Id $pid -Force -ErrorAction Stop
-          Write-Host ("🧹 Killed PID {0} (port {1})" -f $pid, $p) -ForegroundColor Yellow
+          Stop-Process -Id $owningPid -Force -ErrorAction Stop
+          Write-Host ("🧹 Killed PID {0} (port {1})" -f $owningPid, $p) -ForegroundColor Yellow
         } catch {
-          Write-Host ("⚠️ Cannot kill PID {0} (port {1}): {2}" -f $pid, $p, $_.Exception.Message) -ForegroundColor Yellow
+          Write-Host ("⚠️ Cannot kill PID {0} (port {1}): {2}" -f $owningPid, $p, $_.Exception.Message) -ForegroundColor Yellow
         }
       }
     }
@@ -97,9 +97,9 @@ function Copy-SupportSummary([string]$root, [string]$stage, [string]$logPath, [s
     try {
       $c = Get-NetTCPConnection -State Listen -LocalPort 3000 -ErrorAction SilentlyContinue | Select-Object -First 1
       if ($c) {
-        $pid = $c.OwningProcess
-        $proc = Get-CimInstance Win32_Process -Filter ("ProcessId={0}" -f $pid) -ErrorAction SilentlyContinue
-        $portLine = ("Port3000 PID={0}`nCMD={1}" -f $pid, (SafeStr $proc.CommandLine))
+        $owningPid = $c.OwningProcess
+        $proc = Get-CimInstance Win32_Process -Filter ("ProcessId={0}" -f $owningPid) -ErrorAction SilentlyContinue
+        $portLine = ("Port3000 PID={0}`nCMD={1}" -f $owningPid, (SafeStr $proc.CommandLine))
       }
     } catch {}
 
@@ -194,19 +194,19 @@ function Parity-Check([string]$root, [string]$logPath) {
   $targetEnv = "preview"
   if ($branch -eq $prodBranch) { $targetEnv = "prod" }
 
-  $host = $null
-  if ($targetEnv -eq "prod") { $host = $prodHost } else { $host = $previewHost }
+  $parityHost = $null
+  if ($targetEnv -eq "prod") { $parityHost = $prodHost } else { $parityHost = $previewHost }
 
-  if ([string]::IsNullOrWhiteSpace($host)) {
+  if ([string]::IsNullOrWhiteSpace($parityHost)) {
     Write-Host ("ℹ️ Parity: skipped (target={0}, missing host config)" -f $targetEnv) -ForegroundColor DarkGray
     return
   }
 
   $localSha = (git rev-parse HEAD).Trim()
   $t = [int][double]::Parse((Get-Date -UFormat %s))
-  $url = ("https://{0}/api/version?t={1}" -f $host, $t)
+  $url = ("https://{0}/api/version?t={1}" -f $parityHost, $t)
 
-  Write-Host ("🔎 Parity: target={0} host={1}" -f $targetEnv, $host) -ForegroundColor Cyan
+  Write-Host ("🔎 Parity: target={0} host={1}" -f $targetEnv, $parityHost) -ForegroundColor Cyan
   try {
     $resp = Invoke-WebRequest -Uri $url -Method Get -Headers @{ "Cache-Control"="no-cache"; "Pragma"="no-cache" } -TimeoutSec 15 -UseBasicParsing -ErrorAction Stop
     $json = $resp.Content | ConvertFrom-Json
@@ -326,3 +326,5 @@ try {
   Copy-SupportSummary $root $label $logPath $bundle
   exit 1
 }
+
+

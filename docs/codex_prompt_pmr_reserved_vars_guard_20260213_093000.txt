@@ -1,0 +1,49 @@
+Codex PR Prompt: Harden post_merge_routine.ps1 against PS5.1 reserved variables + null-trim pitfalls (minimal diff)
+
+Goal
+- Prevent PMR from failing due to PowerShell 5.1 reserved/read-only automatic variables and null `.Trim()` usage.
+- Keep diff minimal and safe. MUST remain PS5.1 compatible.
+- Acceptance: npm run build ✅ AND running .\post_merge_routine.ps1 completes to "✅ Local 起動OK".
+
+Problems observed
+1) PowerShell variables are case-insensitive:
+   - `$pid` == `$PID` (read-only). Assigning to `$pid` crashes at KILL_PORTS.
+   - `$host` == `$Host` (read-only). Assigning to `$host` crashes at PARITY.
+   - `$args` == `$Args` can also cause confusion.
+2) In DETACHED HEAD, some git commands may return empty; calling `.Trim()` on `$null` crashes.
+
+Requested changes (minimal, low risk)
+A) Add a fail-fast guard near script start:
+   - Scan the script for obvious forbidden variable assignments:
+     - `(?im)^\s*\$pid\s*=` , `(?im)^\s*\$host\s*=`, `(?im)^\s*\$args\s*=`
+   - If found, print a clear error explaining PS5.1 reserved vars and exit with non-zero.
+   - Also document recommended replacements: `$owningPid`, `$parityHost`/`$targetHost`, `$userArgs`.
+   - This guard must not introduce parser errors.
+
+B) Audit the script and rename any remaining uses of `$pid`/`$host` as custom vars:
+   - `$pid` -> `$owningPid`
+   - `$host` -> `$parityHost` (or `$targetHost`)
+   - Ensure replacements do not affect process killing or parity checks.
+
+C) Replace any pattern `(& git ...).Trim()` where the command can return empty:
+   - Use safe trim: `$raw = (& git ...); if ([string]::IsNullOrWhiteSpace($raw)) { ... } else { $raw.Trim() }`
+   - Specifically for branch detection: `git symbolic-ref --quiet --short HEAD`
+
+D) Add a non-blocking DETACHED HEAD warning:
+   - If branch is detached, print:
+     - "WARN: DETACHED HEAD" and suggest:
+       - `git branch --contains HEAD`
+       - `git switch <branch>`
+   - This warning must not stop local run, unless user explicitly opts in.
+
+Testing / Acceptance
+1) Run .\post_merge_routine.ps1 in PS5.1:
+   - It must complete build, start dev, and show "✅ Local 起動OK"
+2) Verify parity still behaves:
+   - If host config missing, must be "skipped (reason...)" and not crash.
+3) Confirm no reserved var assignment remains.
+
+If build or PMR fails
+- Paste first error from `npm run build` (file:line)
+- Paste PMR stage + tail of ops/pmr_log_*.txt
+- Attach / reference ops/pmr_debug_bundle_*.zip

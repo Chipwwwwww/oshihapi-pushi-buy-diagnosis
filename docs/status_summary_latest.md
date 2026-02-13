@@ -1,19 +1,32 @@
-# status summary (latest)
+# status_summary_latest.md (as of 2026-02-13)
 
-## 這次你達成的狀態（已驗證）
-- ✅ Local：已成功切回指定版本（commit `f5db190`），並且 `npm run build` ✅
-- ✅ Vercel：已用 **Promote to Production** 把 production 指到同一個 deployment（回到你要的舊版）(參考：Vercel docs「Promoting a Deployment」 https://vercel.com/docs/deployments/promoting-a-deployment)
-- ✅ PMR：已修到「可跑、可診斷、失敗自動複製剪貼簿摘要」的版本（PS 5.1 兼容）
+## ✅ 目前狀態（最重要）
+- `npm run build` ✅（PMR 流程確認可通過）
+- `.\post_merge_routine.ps1` ✅
+  - Local dev 可起：`✅ Local 起動OK: http://localhost:3000`
+  - commit: `8357b091d29653aec380f02533fade0437528621`（來自 PMR 輸出）
 
-## 本次根因（精準版）
-1) `post_merge_routine.ps1` 曾經被 patch 壞 / ParserError → 導致 merge 後流程無法 deterministic
-2) 因為 dev 可能仍佔用 port 3000，你看到的 local 畫面不一定是你以為的 commit
-3) Vercel 其實已經有你要的 deployment；你要的是「讓 production domains 指向它」，不是改 git
+## ✅ 本次新增功能：置き場所（放不放得下）gate（physical only）
+- 目的：對「實體類（如 goods）」在未確認置き場所時，避免直接推薦 BUY
+- 行為：
+  - 只對 physical 種別問 `q_storage_fit`
+  - ticket/課金等非實體 skip
+  - 若 `NONE/UNKNOWN`：BUY → THINK（保留），並降 confidence、附加 reason/action
+  - 結果頁顯示「置き場所」一列/ chip
+- 表示スタイル：標準 / かわいい / 推し活用語 都有對應文案
 
-## 新 SOP（以後照抄就不會再踩）
-- Local：只要出現「local 不是最新版」→ 先跑 `.\post_merge_routine.ps1`（它會 kill ports + 清 .next + build）
-- Vercel：要把 production 指到某個 commit → 先找那個 deployment → Promote to Production（回滾也用 promote）(參考：Vercel docs「Promoting a Deployment」 https://vercel.com/docs/deployments/promoting-a-deployment)
-- 支援資訊：PMR 失敗時直接 Ctrl+V（PMR AUTO SUMMARY）
+## 🟡 parity 現況
+- PMR 顯示：`Parity: skipped (target=preview, missing host config)`
+- 意味：local 已 OK；parity 不阻斷（符合精神）
+- 若要啟用：補 `ops/vercel_preview_host.txt`（及必要設定）
 
-## 下一步（把流程更自動化）
-- （可選）之後要把 promote 也一鍵化：引入 Vercel CLI 的 `vercel promote` 做成 ops 腳本（需要你登入/連結專案）(參考：Vercel CLI docs「vercel promote」 https://vercel.com/docs/cli/promote)
+## ⚠️ 本次踩雷 & 已修正
+- PowerShell 5.1 內建唯讀變數撞名（大小寫不分）
+  - `$pid` → 等同 `$PID`（唯讀）→ KILL_PORTS 會爆
+  - `$host` → 等同 `$Host`（唯讀）→ PARITY 會爆
+- 已改名避免，PMR 已可完整跑完
+
+## 待辦（最小風險優先序）
+1) （可選）把「Reserved var guard」做成 PMR 內建 fail-fast（交給 Codex 最小 diff）
+2) （可選）補齊 preview host 設定讓 parity 可跑（不影響 local）
+3) 把本次復盤 docs commit/push 到正確 branch（避免 DETACHED 狀態下 commit）

@@ -1,102 +1,99 @@
-[retro] 2026-02-13（Local 版本不一致 + PMR 事故 + Vercel 回滾/發布流程復盤）
+retro_report_latest.txt
+======================
 
-本次復盤最高原則（自動化精神）：
-1) 唯一合格標準：`npm run build` ✅
-2) merge 後只跑：`.\post_merge_routine.ps1`（PMR 必須 PS5.1 穩定、失敗可診斷）
-3) Local / Vercel / Codex 三者版本一致要「可決定」：要嘛成功，要嘛明確指出哪一步壞、下一步怎麼做
-4) 復盤交付的檔案不能破壞腳本（尤其 PMR）；任何改動必須可回滾
+日期：2026-02-13（JST）
+範圍：從「要把放不放得下加入種別 gating」→ 產出 Codex 規格 → 合併 PR → merge 後 PMR 爆炸 → 修復 → 完整跑通 PMR → 補齊 deterministic 的套用/commit 流程
 
-============================================================
-A) 事情怎麼開始
-============================================================
-你遇到的表象是：
-- 跑 `.\post_merge_routine.ps1` 後，local 看起來不是最新版（或 /api/version 打不到）
-- 你想把 local 回到某個「Vercel 上看起來正常的舊版 deployment」
-- 最終目標是：local 正確 + Vercel production 也回到那一版（最少人力、最少風險）
+----------------------------------------
+1) 初始需求（產品/UX）
+----------------------------------------
+- 使用者確認「風格」= 首頁的表示スタイル（標準 / かわいい / 推し活用語），目前只有這三種。
+- 想加入「放不放得下 / 置き場所」但只對需要的種別生效：
+  - Physical（會多一個實體物）→ 要問
+  - Non-physical（課金/門票/數位）→ 不問（skip）
 
-============================================================
-B) 中間嘗試與失敗點（逐段對應）
-============================================================
-1) 你先做了正確的 repo root 檢查、git status/log
-   - 但工作樹不乾淨 → 安全流程中止（這是對的：避免 reset/pull 誤傷）
-   - 同時你也驗證到：server 的 `/api/version` 連不上（表示 dev 不在或不是你想的那個）
+設計原則：
+- 問題要短、早出、決定性
+- 並且要真的影響結論（至少避免在置き場所未定時推薦 BUY）
+- 表示スタイル 只改文案，不改判定邏輯（降低風險）
 
-2) 嘗試做「pre-clean」（清 .next / kill ports / 移走 home package-lock.json）
-   - 你遇到 PowerShell ParserError：`"$path: ..."` 這種寫法會被 PS 當成 drive 解析（`$path:`）→ 直接解析失敗
-   - 這個錯誤非常致命，因為它會讓你以為「清理做了」，但其實腳本根本沒跑完
+----------------------------------------
+2) 交付（給 Codex 的規格）
+----------------------------------------
+- 產出一份可直接貼給 Codex 的 PR prompt：
+  - 新增 `storage_fit` 單選題（CONFIRMED / PROBABLE / NONE / UNKNOWN）
+  - `shouldAskStorage(kindId)`：allowlist/skiplist
+  - 對 physical kinds 生效；ticket/課金 skip
+  - post-evaluation gate：
+    - NONE/UNKNOWN：BUY -> THINK（保留），降低 confidence，附加 reason/action
+    - PROBABLE：不一定改結論，但補 reason/action（先整理）
+  - 結果頁顯示「置き場所」chip/row
+  - 驗收：`npm run build` ✅ + dev 檢查 goods/ticket 行為
 
-3) 你決定「回到 Vercel 那版的 commit」：checkout `f5db190`
-   - 你安全地先 stash（含 untracked）+ 建 backup branch（能回去）
-   - 但你在 DETACHED HEAD 狀態跑 PMR 時，發現當下 `post_merge_routine.ps1` 本身就有 ParserError（line 550 附近）
-   - 更糟的是：你用「從 git history 找最後可 parse 的 PMR」的策略失敗（代表近 200 commit 內的 PMR 都不可 parse 或檔案不存在/被改壞）
+----------------------------------------
+3) 合併 PR（功能落地）
+----------------------------------------
+- PR 內容（依 PR 描述）：
+  - src/oshihapi/storageGate.ts：集中 shouldAskStorage + label
+  - src/oshihapi/merch_v2_ja.ts：插入 q_storage_fit
+  - src/oshihapi/modes/questionCopy.ts：三風格文案
+  - app/flow/FlowClient.tsx：把 q_storage_fit 放進 early flow 並 condition filter
+  - src/oshihapi/engine.ts：post gate（不改核心 scoring）
+  - app/result/[runId]/page.tsx：結果顯示置き場所
 
-4) 你改成直接用最保守方式驗收：kill ports → 清 cache → `npm ci` → `npm run build` → `npm run dev`
-   - 這一步證明：目標版本 `f5db190` 的 app 本身是可以 build & dev 的（問題在「運維腳本」，不在 Next app）
+----------------------------------------
+4) merge 後 PMR 失敗（兩次）
+----------------------------------------
+4.1 第一次：stage=KILL_PORTS
+- 現象：PMR 報錯「無法覆寫 PID 變數，因為它是唯讀或常數」
+- 根因：PowerShell 變數大小寫不分；腳本使用 `$pid` 作自訂變數，等同在寫 `$PID`（內建唯讀）
+- 解法：最小修補：把 `$pid` 改名為 `$owningPid`（保留語意、低風險）
 
-5) 我們把焦點收斂到：PMR 必須先恢復成「可用的一鍵流程」
-   - 你用 here-string 寫入新的 PMR，並做 parser check（✅）
-   - 但第一跑又卡在 `npm ci exit=1`，且 debug bundle 也 failed（null method）
-   - 最終根因：腳本的參數命名/傳遞（例如 `args`）容易撞上 PowerShell 自帶 `$args`，導致 npm 沒收到 `ci` 參數 → 只吐 usage
+4.2 第二次：stage=PARITY
+- 現象：跑到 PARITY 時失敗
+- 根因：同理；腳本使用 `$host` 作自訂變數，等同覆寫 `$Host`（內建唯讀）
+- 解法：最小修補：把 `$host` 改名為 `$parityHost`（或 `$targetHost`）
 
-============================================================
-C) 根因（Root Cause）整理
-============================================================
-根因不是單一點，而是一串「自動化鏈條」中任一點不 deterministic：
+結果：
+- `.\post_merge_routine.ps1` 成功完整跑完
+- parity 因缺 preview host 設定而 skipped（符合“不可阻斷 local”精神）
+- local dev ready 並顯示 commitSha
 
-1) **port 3000 上可能還有舊 dev**  
-   → 你以為你看到的新版本，其實是舊 server 還在服務。
+----------------------------------------
+5) 復盤重點：deterministic 與可診斷
+----------------------------------------
+(1) PowerShell 5.1 的「保留/唯讀變數」是高頻踩雷
+- `$PID/$Host/$Args` 都不該被當作自訂變數名稱（即使小寫也會撞）
 
-2) **PMR 腳本不穩定（ParserError / 參數撞名 / debug bundle 易爆）**  
-   → merge 後唯一入口失效，整個流程就變成「手動拼湊」，不可重現。
+(2) `.Trim()` / `.ToString()` 在命令回傳空值時會炸
+- DETACHED HEAD 時 `git symbolic-ref --short HEAD` 可能回傳空 → 不能直接 `.Trim()`
 
-3) **Vercel 的需求其實是「域名指向哪個 deployment」**  
-   → 你要的是把 production 指到「已存在且正常的 deployment」，不是動 git。
+(3) 使用者實際操作容易「在 repo 外跑腳本」
+- 所以任何「給我shell」都必須包含：
+  - 自動 cd 到 repo root（或明確要求先 cd）
+  - 失敗時清楚提示「你不在 repo」
 
-============================================================
-D) 最終解法（可重現、可回滾）
-============================================================
-1) Local 回到指定版本
-- 先保全：stash + backup branch
-- checkout 到目標 commit（或切回對應 branch）
-- 用 deterministic 流程跑：kill ports → 清 .next → npm ci → build ✅ → dev ready
+----------------------------------------
+6) 可重用 SOP（下次照抄）
+----------------------------------------
+A) merge 後驗收（唯一 SOP）
+- `cd <repoRoot>`
+- `.\post_merge_routine.ps1`
 
-2) 修復 PMR：把它變成「PS5.1 可跑 + log 可追 + 失敗自動打包 + 支援資訊自動複製剪貼簿」
-- 修掉常見 ParserError（避免 `$var:`）
-- 修掉參數撞名（不要用 `args`）
-- dev 必須 ready 才算成功（否則 fail + bundle）
+B) PMR 失敗時
+- 先看 `stage:`（KILL_PORTS / NPM_CI / BUILD / PARITY / DEV_START）
+- 打開 `ops/pmr_log_*.txt` 看第一個 error
+- 需要協助就貼：
+  - `=== PMR AUTO SUMMARY ===`
+  - `ops/pmr_debug_bundle_*.zip` 路徑
 
-3) Vercel production 回到舊版
-- 在 Vercel Deployments 中選中目標 deployment
-- 用 **Promote to Production** 把 production domains 指向它（不改 Git）(參考：Vercel docs「Promoting a Deployment」 https://vercel.com/docs/deployments/promoting-a-deployment)
+C) DETACHED HEAD 自救
+- `git branch --contains HEAD`
+- `git switch <target-branch>`
+- 再做 commit/push（不要在 detached 直接 commit）
 
-============================================================
-E) 踩雷清單（為什麼會踩）
-============================================================
-- 以為「跑了 PMR 就一定是最新版」：其實 port 3000 可能還是舊的
-- 在 PowerShell 字串裡寫 `$path:`：PS5.1 直接 parse 爆
-- 用 `args` 當參數名：容易撞到 `$args` 導致外部命令參數丟失
-- DETACHED HEAD：修了東西但不在分支上，之後很容易「修完又不見」
-
-============================================================
-F) 下次避免方式（具體到指令/檢查）
-============================================================
-- 每次覺得 local 不對：先看 port 3000 → 再跑 PMR
-  - `Get-NetTCPConnection -State Listen -LocalPort 3000`
-- 每次改 PMR：先 parser check
-  - `[ScriptBlock]::Create((Get-Content -Raw .\post_merge_routine.ps1)) | Out-Null`
-- 支援資訊回報：不用找檔，直接 Ctrl+V 貼「PMR AUTO SUMMARY」
-
-============================================================
-G) 可重用 SOP（我下次照抄就能成功）
-============================================================
-1) `git status -sb`（確認分支，不要 DETACHED）
-2) `git push`（你要 Vercel/Codex 跟上就先推）
-3) `.\post_merge_routine.ps1`
-4) 若要把 production 指到某 deployment：Vercel Deployments → Promote to Production (參考：Vercel docs「Promoting a Deployment」 https://vercel.com/docs/deployments/promoting-a-deployment)
-
-============================================================
-H) 這次改動影響哪些檔案/路徑、為什麼、風險是什麼
-============================================================
-- `post_merge_routine.ps1`：恢復成 deterministic 的一鍵入口（最高優先）；風險：腳本變更可能引入新 bug，所以必須 parser check + build-first + debug bundle
-- `docs/*`：SOP、檔案地圖、狀態總結、復盤全文（讓下次照抄）
-- `.gitignore`：避免把 ops/ debug artifacts 進版控，保持工作樹乾淨（降低誤操作）
+----------------------------------------
+7) 風險與影響範圍（本次）
+----------------------------------------
+- 功能面：新增「置き場所 gate」只影響 physical kinds 的流程與輸出（且是輸出層 gate，核心 scoring 不改）
+- 運維面：PMR 被保留變數撞名卡死的風險已暴露，後續應加 “reserved var guard” 以 fail-fast

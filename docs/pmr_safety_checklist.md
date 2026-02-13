@@ -1,29 +1,40 @@
-# PMR safety checklist (Windows / PS5.1)
+# PMR 安全檢查清單（pmr_safety_checklist.md）
 
-> 目的：任何「自動化腳本/復盤交付」都不能把 PMR 搞爆。
+> 目標：任何人改 PMR 前先照這張做，避免把 merge 後唯一 SOP 弄壞。
 
-## 1) Parser safety（必做）
-- ✅ 必須能 parse：
-  - `[ScriptBlock]::Create((Get-Content -Raw .\post_merge_routine.ps1)) | Out-Null`
-- ❌ 禁止：
-  - 字串內 `"$var:"`（會觸發 drive 解析）
-  - param/變數命名：`args`、`Host`
-  - PS7-only 語法（例如 `? :` ternary）
+## 0) 合格標準
+- `npm run build` ✅（唯一合格）
+- `.\post_merge_routine.ps1` 能跑完並顯示 `✅ Local 起動OK`
 
-## 2) Determinism（必做）
-- kill ports：3000/3001/3002
-- 清 `.next`（建議也清 `.turbo`、`node_modules\.cache`）
-- `npm ci` → `npm run build`（build-first）
-- dev 必須 ready 才算成功（否則 fail + bundle）
+## 1) PowerShell 5.1 相容性
+- 禁用 PS7-only 語法（例：ternary `? :`）
+- 避免撞到內建唯讀變數（大小寫不分）：
+  - ❌ `$pid` / `$PID`
+  - ❌ `$host` / `$Host`
+  - ❌ `$args` / `$Args`
+  - 建議改名：`$owningPid`, `$parityHost`, `$userArgs`
+- 任何命令輸出可能為 `$null`：
+  - ❌ `(& somecmd).Trim()`
+  - ✅ 先判空再 `.Trim()`
 
-## 3) Diagnosability（必做）
-- 任何失敗都要：
-  1) 明確標示 stage/label
-  2) log：`ops/pmr_log_*.txt`
-  3) bundle：`ops/pmr_debug_bundle_*.zip`
-  4) 自動複製「PMR AUTO SUMMARY」到剪貼簿（方便 Ctrl+V 回報）
+## 2) 失敗必須可診斷
+- 任一步驟失敗需顯示：
+  - stage label
+  - exit code / key message
+  - 自動產生 `ops/pmr_debug_bundle_*.zip`
+- bundle 內至少包含：
+  - env_and_git_snapshot.txt
+  - post_merge_routine.ps1（當下版本）
+  - ops/*.txt（prod/preview host/branch）
 
-## 4) Version parity（可選，但要可診斷）
-- parity gate 必須在 build ✅ 後
-- branch != prod branch 時，target=preview
-- 缺 host/route → 顯示 skipped 原因（不可爆）
+## 3) parity gate 規約
+- build OK 才跑 parity
+- 缺 host / target 不明 → 必須 `skipped (reason...)`，不可炸
+- parity 不能阻斷 local（除非明確要求）
+
+## 4) 變更前的自保
+- 改 PMR 前先備份：
+  - `Copy-Item post_merge_routine.ps1 post_merge_routine.ps1.bak_YYYYMMDD_HHMMSS`
+- 改完先做 parse check：
+  - `[System.Management.Automation.Language.Parser]::ParseFile(...)`
+- 最後跑一次 PMR 驗收

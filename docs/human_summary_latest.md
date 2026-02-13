@@ -1,17 +1,17 @@
-# 人話版摘要（給自己看）
+# human_summary_latest.md（人話版）
 
-## 這次你做對的事
-- 用 stash + backup branch 先保全，避免「修到一半想回去卻回不去」
-- 把 local 明確切回 `f5db190`，並用 build ✅ 證明 app 沒壞
-- 最後用 Vercel 的 Promote to Production 把 prod 直接指到那個 deployment（最少風險）
+## 今天做了什麼（結果）
+1) 把「置き場所（放不放得下）」加入診斷流程（只對實體種別生效）
+2) 三種表示スタイル（標準/かわいい/推し活用語）都能顯示對應文案
+3) merge 後 PMR 兩次爆炸（PS5.1 撞 `$PID/$Host`）→ 已用最小改名修好
+4) `.\post_merge_routine.ps1` 現在能完整跑完（build ✅、dev ready ✅）
+5) parity 目前 skipped（缺 preview host），但不影響 local（符合精神）
 
-## 真正的問題不是 Next.js
-- 是「PMR 不 deterministic」+「port 3000 可能還在跑舊 dev」+「PS ParserError 讓清理流程根本沒跑完」
+## 你現在最該做的 3 件事（依重要度）
+1) ✅ 任何 merge 後，只跑 `.\post_merge_routine.ps1`
+2) （可選）補 ops/vercel_preview_host.txt 讓 parity 可以真的對齊 preview
+3) （可選）讓 Codex 做一個「reserved var guard」PR，避免 PMR 再被 `$pid/$host` 搞爆
 
-## 以後最省事的流程
-- 只要 local 看起來怪：跑 PMR → 失敗 Ctrl+V 貼摘要
-- 只要 Vercel 要回到某版：找到 deployment → Promote to Production
-- 不要用 force push 回退 git（除非你真的要改 branch 歷史）
-
-## 下一步（自動化升級）
-- 把 vercel promote（CLI）做成 `ops/vercel_promote_prod.ps1`（需要你登入/連結專案）
+## 如果又爆了怎麼辦（超短）
+- 先看 `stage:`，再看 `ops/pmr_log_*.txt`
+- 有 debug bundle 就貼路徑 `ops/pmr_debug_bundle_*.zip`
