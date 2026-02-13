@@ -84,7 +84,7 @@ const decisionLabels: Record<string, string> = {
 export default function FlowPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const mode = parseMode(searchParams.get("mode"));
+  const mode = parseMode(searchParams.get("styleMode") ?? searchParams.get("mode"));
   const itemName = searchParams.get("itemName") ?? undefined;
   const priceYen = parsePriceYen(searchParams.get("priceYen"));
   const deadline = parseDeadline(searchParams.get("deadline"));
