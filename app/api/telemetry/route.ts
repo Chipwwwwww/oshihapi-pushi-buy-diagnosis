@@ -14,7 +14,7 @@ const ALLOWED_EVENTS = new Set(["run_export", "l1_feedback"]);
 export const runtime = "nodejs";
 
 const ENV_HINT =
-  "Set .env.local: DATABASE_URL=... (or POSTGRES_URL_NON_POOLING/POSTGRES_URL/DATABASE_URL_UNPOOLED)";
+  "Set Vercel env DATABASE_URL to Neon host (*.neon.tech) and redeploy.";
 
 const DB_ENV_KEYS = [
   "DATABASE_URL",
@@ -71,6 +71,14 @@ const getInvalidConnectionHost = (connectionString: string, envKey: string) => {
   }
 
   return null;
+};
+
+const getConnectionHost = (connectionString: string) => {
+  try {
+    return new URL(connectionString).hostname.toLowerCase();
+  } catch {
+    return "unparseable";
+  }
 };
 
 const shortenError = (error: unknown) => {
@@ -164,12 +172,17 @@ export async function POST(request: Request) {
       createdAtRaw instanceof Date ? createdAtRaw.toISOString() : createdAtRaw;
     return Response.json({ ok: true, id, createdAt });
   } catch (error) {
-    console.error("Telemetry insert failed", error);
+    const host = getConnectionHost(dbConfig.connectionString);
     const message = shortenError(error);
     const code =
       typeof error === "object" && error !== null && "code" in error
         ? String((error as { code?: string }).code)
         : undefined;
+    console.error(
+      `[telemetry] insert failed via ${dbConfig.envKey} host=${host}${
+        code ? ` code=${code}` : ""
+      }: ${message}`,
+    );
     const hint = buildDbHint(message);
     return jsonError(500, "db_insert_failed", {
       detail: code ? `code=${code}; ${message}` : message,
