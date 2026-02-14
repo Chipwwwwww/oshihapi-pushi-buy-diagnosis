@@ -43,3 +43,9 @@ next-env.d.ts
 # Windows shortcuts
 *.lnk
 
+# ops runtime artifacts (avoid checkout blockage across branches)
+ops/vercel_preview_host.txt
+ops/pmr_log_*.txt
+ops/pmr_*
+ops/retro_backup_*
+*.bak_*
