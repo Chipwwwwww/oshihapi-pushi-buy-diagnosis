@@ -130,6 +130,7 @@ export default function Home() {
 
   const handleStart = () => {
     const params = new URLSearchParams();
+    params.set("styleMode", mode);
     params.set("mode", mode);
     params.set("styleMode", styleMode);
     if (itemName.trim()) params.set("itemName", itemName.trim());
@@ -188,7 +189,7 @@ export default function Home() {
         <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-100 p-4 text-slate-900 dark:border-white/10 dark:bg-white/7 dark:text-zinc-50">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm text-slate-600 dark:text-zinc-300">
-              おすすめモード
+              おすすめスタイル
             </span>
             <Badge variant="primary">{MODE_LABELS[recommendation.mode]}</Badge>
             <span className="text-sm text-slate-600 dark:text-zinc-300">
@@ -291,7 +292,7 @@ export default function Home() {
         <div className="flex flex-col gap-2">
           <h2 className={sectionTitleClass}>状況から選ぶ</h2>
           <p className="text-sm text-slate-600 dark:text-zinc-300">
-            チップをタップするとモードが切り替わります。
+            チップをタップするとスタイルが切り替わります。
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
