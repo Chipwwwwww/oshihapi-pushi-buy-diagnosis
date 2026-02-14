@@ -1,14 +1,20 @@
-﻿# ✅ status summary (latest)
+# ✅ status summary (latest)
 
-- Updated at: 20260215_005602
-- HEAD: aaa97de5ae2bfdb794f5979c4abb0bcc330268c5
-- PROD: your-project.vercel.app
+- Updated at (UTC): 20260214_160146
+- Goal: PR39–PR80+ feature set present + deterministic verification flow
+- Evidence: build ✅ + PROD commitSha match + telemetry health ok
 
-## Evidence (must be true)
-- npm run build ✅
-- PROD /api/version commitSha == HEAD ✅
-- PROD /api/telemetry/health ok ✅
+## What happened (high level)
+- Cleaned Vercel projects to avoid “wrong project / wrong deploy” confusion.
+- Used an empty commit to force a Vercel deploy event for observability.
+- Reset main back to PR77 baseline (after backing up), then restored PR39–PR80+ by replay/restore PRs and merged.
+- Switched verification from “merge message counting” to evidence-based checks.
 
-## Notes
-- PR83 merged: restore full feature set from PR39–PR80+ (post-PR77 baseline replay)
-- PS5.1 pitfalls handled: no ternary, use -LiteralPath for [runId] paths, IWR uses -UseBasicParsing
+## Required checks (source of truth)
+1) `npm run build` ✅
+2) PROD `/api/version` commitSha == `git rev-parse HEAD`
+3) PROD `/api/telemetry/health` returns ok/db ok
+4) must-have paths exist (use `-LiteralPath` for `[runId]` routes)
+
+## Helpful tooling
+- `ops/verify_pr39_80plus_parity.ps1` (reusable smoke + parity checks)

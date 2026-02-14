@@ -1,23 +1,29 @@
-﻿[RETRO] Turning Point: PR77 baseline reset → restore PR39–PR80+ → provable parity
+[RETRO] Turning Point: PR77 baseline reset → restore PR39–PR80+ → provable parity
 
-1) Problem
-- main/history and Vercel deployment state were confusing; needed deterministic recovery path.
+1) 起點（當時的真問題）
+- main / Vercel / Codex 的「版本認知」容易分裂：同 repo 兩個 Vercel project + 多次部署/回滾導致你不確定 prod 在跑哪個 commit。
+- 你要的不是「修一個 UI」，而是：把 merge→驗收→部署變成 deterministic（可重播/可證明/可回滾）。
 
-2) Key moves that fixed it
-- Backup before risky ops (backup branch/tag).
-- Hard reset main back to known baseline (PR77) + force-with-lease.
-- Restore missing feature-set via replay PR79/80/81 and merge as PR83.
-- Verification shifted from “merge message counts” to “evidence-based gates”:
-  build ✅, must-have paths, PROD /api/version commitSha match, telemetry health ok.
+2) 關鍵決策（這串對話的轉折點）
+A) Vercel 專案整理：刪掉多餘 project，避免看錯 deployment。
+B) 用空 commit 觸發部署：不改程式碼，但能創造「可觀測事件」，用 /api/version 直接證明 prod 跟哪個 commit 對齊。
+C) 高風險操作前先保命：backup branch/tag → 再 reset/force-with-lease。
+D) 先回到可控基線（PR77），再整合完整功能集（PR39–PR80+），而不是在混亂狀態硬修。
+E) 驗收方式升級：放棄「只看 git log --merges」，改用「功能證據」(build, endpoints, paths, parity)。
 
-3) Pitfalls hit (and new rules)
-- PS5.1: ternary ? : is NOT supported → always if/else.
-- PowerShell treats [] in paths as wildcard → use -LiteralPath.
-- Invoke-WebRequest can prompt security warning → always -UseBasicParsing.
-- git log --merges can miss squash merges → do not use it as feature completeness proof.
+3) 踩雷清單（重要）
+- PS5.1 不支援 ternary `? :`（? 在 PS5.1 是 Where-Object alias）→ 一律 if/else。
+- PowerShell 對 `[]` 會當 wildcard → 路徑檢查必須用 `-LiteralPath`（尤其 Next route `[runId]`）。
+- Invoke-WebRequest 可能跳互動式安全提示 → 一律 `-UseBasicParsing`，否則會卡住流程。
+- `git log --merges` 只能看到 merge commit；若 PR 用 squash merge 會誤判「缺 PR」→ 不可用它當「功能完整性」證據。
 
-4) Outcome
-- Local build ✅
-- Prod commitSha == HEAD ✅
-- Telemetry health ok ✅
-- SOP updated + overlay zip created (contains gpt_prompt_next_chat_latest.txt as source of truth).
+4) 最終可證明結果（Definition of Done）
+- Local: `npm ci` + `npm run build` ✅
+- Prod: `/api/version` 回傳 commitSha == 本機 HEAD（Match True）
+- Telemetry: `/api/telemetry/health` ok/db ok
+- must-have paths 以 -LiteralPath 檢查皆存在（含 `app/result/[runId]/page.tsx`）
+
+5) 可重用 SOP（下次直接照做）
+- 同 repo 僅 1 個 Vercel project。
+- 需要重跑 production：空 commit 觸發 deploy。
+- 大整合：先備份 → 回到可控基線 → replay/restore → evidence-based verify。

@@ -1,0 +1,23 @@
+﻿[RETRO] Turning Point: PR77 baseline reset → restore PR39–PR80+ → provable parity
+
+1) Problem
+- main/history and Vercel deployment state were confusing; needed deterministic recovery path.
+
+2) Key moves that fixed it
+- Backup before risky ops (backup branch/tag).
+- Hard reset main back to known baseline (PR77) + force-with-lease.
+- Restore missing feature-set via replay PR79/80/81 and merge as PR83.
+- Verification shifted from “merge message counts” to “evidence-based gates”:
+  build ✅, must-have paths, PROD /api/version commitSha match, telemetry health ok.
+
+3) Pitfalls hit (and new rules)
+- PS5.1: ternary ? : is NOT supported → always if/else.
+- PowerShell treats [] in paths as wildcard → use -LiteralPath.
+- Invoke-WebRequest can prompt security warning → always -UseBasicParsing.
+- git log --merges can miss squash merges → do not use it as feature completeness proof.
+
+4) Outcome
+- Local build ✅
+- Prod commitSha == HEAD ✅
+- Telemetry health ok ✅
+- SOP updated + overlay zip created (contains gpt_prompt_next_chat_latest.txt as source of truth).
