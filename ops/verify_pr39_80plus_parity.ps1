@@ -23,8 +23,49 @@ function Normalize-ProdHost([string]$InputHost) {
   return $value.TrimEnd('/')
 }
 
+function Get-WebExceptionStatusCode([System.Exception]$Exception) {
+  if ($null -eq $Exception) { return $null }
+  if ($Exception -is [System.Net.WebException] -and $Exception.Response) {
+    try { return [int]([System.Net.HttpWebResponse]$Exception.Response).StatusCode } catch {}
+  }
+  if ($Exception.PSObject.Properties['Response'] -and $Exception.Response) {
+    try { return [int]$Exception.Response.StatusCode } catch {}
+  }
+  return $null
+}
+
+function Invoke-WebRequestWithSingleRedirect([string]$Url, [int]$TimeoutSec = 15) {
+  $safeTimeoutSec = if ($TimeoutSec -gt 0) { $TimeoutSec } else { 15 }
+  $attemptUrl = $Url
+  $didFollow = $false
+  for ($i = 0; $i -lt 2; $i++) {
+    try {
+      $response = Invoke-WebRequest -Uri $attemptUrl -UseBasicParsing -MaximumRedirection 0 -TimeoutSec $safeTimeoutSec -ErrorAction Stop
+      return [PSCustomObject]@{ Response = $response; FinalUrl = $attemptUrl; Redirected = $didFollow }
+    } catch {
+      $statusCode = Get-WebExceptionStatusCode -Exception $_.Exception
+      $location = $null
+      if ($_.Exception -and $_.Exception.Response -and $_.Exception.Response.Headers) {
+        $location = $_.Exception.Response.Headers['Location']
+      }
+      if (($statusCode -in @(301,302,307,308)) -and -not [string]::IsNullOrWhiteSpace($location) -and -not $didFollow) {
+        Say ("[WARN] Redirect {0} -> {1}" -f $statusCode, $location)
+        if ($location -notmatch '^https?://') {
+          $baseUri = New-Object System.Uri($attemptUrl)
+          $location = (New-Object System.Uri($baseUri, $location)).AbsoluteUri
+        }
+        $attemptUrl = $location
+        $didFollow = $true
+        continue
+      }
+      throw
+    }
+  }
+}
+
 try {
-  $rootRaw = (& git rev-parse --show-toplevel 2>$null)
+  $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+  $rootRaw = (& git -C $scriptDir rev-parse --show-toplevel 2>$null)
   $root = Safe-Trim $rootRaw
   if ([string]::IsNullOrWhiteSpace($root)) {
     Write-Host '[ERR] Not a git repo.' -ForegroundColor Red
@@ -33,7 +74,7 @@ try {
 
   Set-Location $root
 
-  $headRaw = (& git rev-parse HEAD 2>$null)
+  $headRaw = (& git -C $root rev-parse HEAD 2>$null)
   $head = Safe-Trim $headRaw
   Say ("HEAD: {0}" -f $head)
 
@@ -81,7 +122,8 @@ try {
     Say "`n=== PROD smoke ==="
     try {
       $versionUrl = "{0}/api/version" -f $ProdHost
-      $versionResponse = Invoke-WebRequest -Uri $versionUrl -UseBasicParsing -TimeoutSec 15 -ErrorAction Stop
+      $versionResult = Invoke-WebRequestWithSingleRedirect -Url $versionUrl -TimeoutSec 15
+      $versionResponse = $versionResult.Response
       $versionJson = $null
       if ($versionResponse -and -not [string]::IsNullOrWhiteSpace($versionResponse.Content)) {
         $versionJson = $versionResponse.Content | ConvertFrom-Json
@@ -110,7 +152,8 @@ try {
 
     try {
       $healthUrl = "{0}/api/telemetry/health" -f $ProdHost
-      $healthResponse = Invoke-WebRequest -Uri $healthUrl -UseBasicParsing -TimeoutSec 15 -ErrorAction Stop
+      $healthResult = Invoke-WebRequestWithSingleRedirect -Url $healthUrl -TimeoutSec 15
+      $healthResponse = $healthResult.Response
       if ($healthResponse -and -not [string]::IsNullOrWhiteSpace($healthResponse.Content)) {
         $healthStatus = Safe-Trim $healthResponse.Content
       } elseif ($healthResponse) {
