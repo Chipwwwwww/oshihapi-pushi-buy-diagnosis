@@ -1,0 +1,75 @@
+﻿[PR GOAL]
+Harden Windows PowerShell 5.1 compatibility and determinism for:
+- post_merge_routine.ps1 (PMR)
+- ops/verify_pr39_80plus_parity.ps1 (parity verifier)
+
+[WHY]
+Our merge→verify→deploy pipeline must be deterministic, diagnosable, and rollbackable on Windows PowerShell 5.1.
+Recent state produced ParserError / UnexpectedToken (likely due to PS7-only syntax and/or UTF-8 w/o BOM + non-ASCII chars).
+
+[SCOPE]
+Only touch:
+- post_merge_routine.ps1
+- ops/verify_pr39_80plus_parity.ps1
+Optionally add ONE new helper script (ops/ps51_parser_check.ps1) if it reduces risk.
+Update docs/oshihapi_ops_windows.md only if needed for new flags/usage.
+
+NON-GOALS
+- No Next.js app feature changes
+- No DB schema changes
+- No CI/Vercel config changes
+
+[HARD CONSTRAINTS]
+- Must run in Windows PowerShell 5.1 (no PS7-only operators: ??, ??=, ?:, pipeline parallel, etc.)
+- No reserved variable names: $host/$pid/$args etc
+- Paths containing [] MUST use -LiteralPath for Test-Path/Get-Content/Copy-Item etc
+- Invoke-WebRequest MUST use -UseBasicParsing
+- Guard null before .Trim() / .ToString()
+- Parity checks MUST NOT block local gates by default (parity result: ok / not confirmed / skipped(reason))
+- Scripts MUST NOT rely on non-ASCII (avoid emojis). Output markers: [OK]/[WARN]/[ERR]
+
+[DELIVERABLES]
+A) PMR improvements (minimal diff):
+- Add a "parser preflight" step early:
+  - Use [System.Management.Automation.Language.Parser]::ParseFile() on:
+    - post_merge_routine.ps1
+    - ops/verify_pr39_80plus_parity.ps1
+  - If parse errors exist: print first errors clearly and create debug bundle, then exit non-zero.
+- Ensure debug bundle is created in BOTH success and failure paths (try/finally).
+- Ensure any web calls/timeouts are safe and never hang.
+- Ensure output includes a final checklist:
+  - Local build ✅? (if failed: first TS error file:line)
+  - PMR ✅? (if failed: stage + exit code + bundle path)
+  - Prod commitSha == HEAD? (True/False/Not confirmed)
+  - /api/telemetry/health status
+  - parity conclusion: ok / not confirmed / skipped(reason)
+
+B) Parity verifier improvements:
+- Must parse/run in PS5.1 with no emojis and stable ASCII output
+- Must support:
+  - -SkipProd (do not call prod)
+  - -ProdHost <host> (optional override)
+- Must never throw unhandled exceptions; should print "not confirmed" on network failures and exit 0 unless user explicitly asks for strict mode (do NOT add strict mode unless already present)
+
+C) Encoding discipline:
+- Ensure the two .ps1 files are stored as UTF-8 WITH BOM (so PS5.1 reads correctly), or strictly ASCII-only as a fallback.
+  (Prefer: keep scripts ASCII-only + BOM anyway.)
+- If adding a helper script, same encoding rule.
+
+[ACCEPTANCE / TEST]
+1) npm run build ✅
+2) powershell -NoProfile -ExecutionPolicy Bypass -File .\ops\verify_pr39_80plus_parity.ps1 -SkipProd ✅ (no ParserError)
+3) .\post_merge_routine.ps1 ✅ (no ParserError; debug bundle/log paths printed)
+4) If ops/vercel_prod_host.txt is missing or prod unreachable:
+   - parity conclusion must be "not confirmed" or "skipped(reason)" WITHOUT failing the whole PMR local gates.
+
+[ROLLBACK]
+Revert the PR commit(s) OR restore from backups:
+- ops/overlay_backups/*
+
+[FAILURE REPORT REQUEST]
+If anything fails, print and ask user to attach:
+1) ops/pmr_debug_bundle_*.zip
+2) latest ops/pmr_log_*.txt
+3) git status -sb
+4) git log -n 10 --oneline --decorate

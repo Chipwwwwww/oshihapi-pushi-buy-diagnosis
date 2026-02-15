@@ -1,4 +1,4 @@
-﻿param(
+param(
   [string]$ProdHost = "",
   [switch]$SkipProd
 )
@@ -6,7 +6,7 @@
 function Say($m){ Write-Host $m }
 
 $root = (& git rev-parse --show-toplevel 2>$null)
-if (-not $root) { Write-Host "[ERR] Not a git repo." -ForegroundColor Red; exit 1 }
+if (-not $root) { Write-Host "❌ Not a git repo." -ForegroundColor Red; exit 1 }
 $root = $root.Trim()
 Set-Location $root
 
@@ -27,8 +27,8 @@ $mustPaths = @(
 
 Say "`n=== must-have paths (LiteralPath) ==="
 foreach($p in $mustPaths){
-  $mark = "[ERR]"
-  if (Test-Path -LiteralPath $p) { $mark = "[OK]" }
+  $mark = "❌"
+  if (Test-Path -LiteralPath $p) { $mark = "✅" }
   "{0}  {1}" -f $mark, $p | Write-Host
 }
 
@@ -61,4 +61,3 @@ if (-not $SkipProd) {
 }
 
 Say "`nNext: run .\post_merge_routine.ps1 for full post-merge verification."
-
