@@ -1,0 +1,93 @@
+﻿[PR GOAL]
+Fix post_merge_routine.ps1 (PMR) to be fully deterministic on Windows PowerShell 5.1:
+1) Git commands must be cwd-independent (no more 'not a git repository' exit=128).
+2) -SkipParity must truly skip ALL parity stages (including Git preflight parity).
+3) PROD smoke must handle HTTP 308 Permanent Redirect safely (diagnose + optionally follow once) and never block local gates.
+4) Parity must be non-blocking by default: ok / not confirmed / skipped(reason).
+
+[CONTEXT / CURRENT FAILURES]
+- Running PMR from repo root fails at stage "Git preflight parity" with:
+  fatal: not a git repository (or any of the parent directories): .git
+  exit=128
+- However in the same shell, manual:
+  git rev-parse --show-toplevel  => OK
+  git fetch --all --prune        => OK
+=> PMR's command runner likely executes git in a different working directory.
+
+- verify_pr39_80plus_parity.ps1 PROD smoke currently fails with 308 Permanent Redirect.
+=> PS5.1 Invoke-WebRequest may not auto-follow 308. Need safe redirect logic.
+
+[SCOPE]
+Only change scripts:
+- post_merge_routine.ps1
+- ops/verify_pr39_80plus_parity.ps1 (only if needed for redirect logic consistency; prefer PMR-local change first)
+Optional: add ops/ps51_http_get_json.ps1 helper if it reduces risk (but keep additive + minimal).
+
+[HARD CONSTRAINTS (PS5.1 RULES)]
+- No PS7-only syntax: ??, ??=, ?:, ForEach-Object -Parallel, etc.
+- Avoid reserved vars: $host/41532/ etc.
+- Any path with [] must use -LiteralPath for Test-Path/Get-Content/Copy-Item
+- Invoke-WebRequest must use -UseBasicParsing and bounded -TimeoutSec
+- Null guards before .Trim()/.ToString()
+- No emoji / non-ASCII output; use [OK]/[WARN]/[ERR]
+
+[REQUIRED IMPLEMENTATION]
+A) RepoRoot detection (single source of truth)
+- Determine RepoRoot early and store as $script:RepoRoot.
+- Use git rev-parse --show-toplevel but DO NOT rely on current working directory.
+  Approach:
+  1) $scriptDir = Split-Path -Parent System.Management.Automation.InvocationInfo.MyCommand.Path
+  2) Try git -C  rev-parse --show-toplevel
+  3) If that fails, fall back to $scriptDir and mark git unavailable.
+
+B) Make git commands cwd-independent
+- Replace ALL git invocations inside PMR with git -C "" ...
+  At minimum:
+  - fetch --all --prune
+  - rev-parse HEAD / branch name
+  - status -sb
+- Ensure the helper that runs external commands supports a WorkingDirectory argument and defaults to RepoRoot.
+  If there is a wrapper like Invoke-CommandCapture / Invoke-External, add param -WorkingDirectory and pass RepoRoot for git/npm/node.
+
+C) -SkipParity behavior
+- If -SkipParity is set:
+  - Skip Git preflight parity stage entirely (no git fetch).
+  - Skip any prod/preview parity calls.
+  - Still run local gates (npm ci, npm run build, optional dev).
+- The final checklist must show parity conclusion = "skipped(reason: SkipParity)".
+
+D) Parity should be non-blocking by default
+- If git fetch fails: record "not confirmed" and continue local gates.
+- If prod is unreachable/redirect: record "not confirmed" and continue local gates.
+- Only fail PMR on local gates failure (npm ci/build) unless user explicitly asked for strict parity (do NOT add strict mode unless already present).
+
+E) HTTP 308 redirect handling (PS5.1 safe)
+- Implement a helper function in PMR:
+  Invoke-WebRequest -UseBasicParsing -MaximumRedirection 0
+  If status code is 301/302/307/308 and Location header exists:
+    - Print [WARN] Redirect <code> -> <location>
+    - Follow once with the new URL (still bounded timeout)
+  If still fails: return not confirmed (do not throw).
+- Apply to PROD /api/version and /api/telemetry/health checks (either in PMR or shared with verifier).
+
+[ACCEPTANCE TEST]
+1) From repo root:
+   .\post_merge_routine.ps1
+   => must not fail at git fetch; must proceed to npm ci + npm run build.
+2) From outside repo:
+   powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\User\dev\oshihapi-pushi-buy-diagnosis\post_merge_routine.ps1"
+   => must still correctly find RepoRoot and run git -C.
+3) .\post_merge_routine.ps1 -SkipParity
+   => must NOT run any git fetch/prod calls; must run local gates; checklist shows parity skipped.
+4) verify_pr39_80plus_parity.ps1 PROD smoke on 308:
+   => should report redirect and either succeed after one follow or mark not confirmed without error.
+
+[ROLLBACK]
+Single revert commit.
+
+[FAILURE REPORT]
+Ask user to attach:
+1) ops/pmr_debug_bundle_*.zip
+2) latest ops/pmr_log_*.txt
+3) git status -sb
+4) git log -n 10 --oneline --decorate
