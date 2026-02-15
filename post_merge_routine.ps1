@@ -125,6 +125,28 @@ function Invoke-Exec(
   $psi.RedirectStandardOutput = $true
   $psi.RedirectStandardError = $true
 
+  $commandLeaf = [System.IO.Path]::GetFileName($psi.FileName)
+  $commandLeafLower = if ([string]::IsNullOrWhiteSpace($commandLeaf)) { '' } else { $commandLeaf.ToLowerInvariant() }
+  $isBatchScript = $commandLeafLower.EndsWith('.cmd') -or $commandLeafLower.EndsWith('.bat')
+  $isCmdShim = @('npm','npm.cmd','npx','npx.cmd','pnpm','pnpm.cmd','yarn','yarn.cmd') -contains $commandLeafLower
+  if ($isBatchScript -or $isCmdShim) {
+    $originalFileName = $psi.FileName
+    $originalArgs = $psi.Arguments
+    $quotedOriginalFileName = '"' + ($originalFileName -replace '"', '""') + '"'
+    $wrappedCmdLine = $quotedOriginalFileName
+    if (-not [string]::IsNullOrWhiteSpace($originalArgs)) {
+      $wrappedCmdLine += (' ' + $originalArgs)
+    }
+
+    $comSpec = $env:ComSpec
+    if ([string]::IsNullOrWhiteSpace($comSpec)) {
+      $comSpec = 'cmd.exe'
+    }
+
+    $psi.FileName = $comSpec
+    $psi.Arguments = '/d /s /c "' + $wrappedCmdLine + '"'
+  }
+
   $process = New-Object System.Diagnostics.Process
   $process.StartInfo = $psi
 
@@ -1250,4 +1272,3 @@ try {
   Write-Host ("PMR log: {0}" -f $script:PmrLogPath)
   exit $script:PmrExitCode
 }
-
