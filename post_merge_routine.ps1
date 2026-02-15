@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <#!
 post_merge_routine.ps1
 
@@ -17,6 +17,7 @@ param(
   [switch]$SkipLint,
   [switch]$SkipBuild,
   [switch]$SkipDev,
+  [switch]$SkipParity,
   [switch]$ProdSmoke,
   [Alias('ParityGate')]
   [switch]$RequireVercelSameCommit,
@@ -53,11 +54,21 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-trap {
-  $message = if ($_.Exception -and -not [string]::IsNullOrWhiteSpace($_.Exception.Message)) { $_.Exception.Message } else { [string]$_ }
-  Write-Host ("ERROR: {0}" -f $message) -ForegroundColor Red
-  exit 1
-}
+$script:LastCommandStdout = ''
+$script:LastCommandStderr = ''
+$script:LastCommandExitCode = 0
+$script:PmrStage = 'boot'
+$script:PmrExitCode = 0
+$script:PmrFailureMessage = ''
+$script:PmrLogPath = ''
+$script:PmrBundlePath = ''
+$script:BuildStatus = 'not run'
+$script:BuildFirstTsError = ''
+$script:ProdHeadMatch = 'Not confirmed'
+$script:TelemetryHealthStatus = 'not confirmed'
+$script:ParityConclusion = 'not confirmed'
+$script:RepoRoot = ''
+$script:GitAvailable = $false
 
 function Write-Section([string]$Title) {
   Write-Host ""
@@ -66,17 +77,23 @@ function Write-Section([string]$Title) {
   Write-Host ("=" * 72) -ForegroundColor DarkGray
 }
 
-function Run([string]$Command, [string[]]$CmdArgs = @()) {
+function Run([string]$Command, [string[]]$CmdArgs = @(), [string]$WorkingDirectory = '') {
+  if ($Command -eq 'git' -and -not [string]::IsNullOrWhiteSpace($script:RepoRoot)) {
+    if ($CmdArgs.Count -lt 2 -or $CmdArgs[0] -ne '-C') {
+      $CmdArgs = @('-C', $script:RepoRoot) + $CmdArgs
+    }
+  }
   $display = if ($CmdArgs.Count -gt 0) { "$Command $($CmdArgs -join ' ')" } else { $Command }
   Write-Host "Running: $display" -ForegroundColor DarkGray
-  Invoke-Exec -Command $Command -CmdArgs $CmdArgs -Display $display
+  Invoke-Exec -Command $Command -CmdArgs $CmdArgs -Display $display -WorkingDirectory $WorkingDirectory
 }
 
 function Invoke-Exec(
   [Parameter(Mandatory = $true)]
   [string]$Command,
   [string[]]$CmdArgs = @(),
-  [string]$Display = ''
+  [string]$Display = '',
+  [string]$WorkingDirectory = ''
 ) {
   $label = if ([string]::IsNullOrWhiteSpace($Display)) {
     if ($CmdArgs.Count -gt 0) { "$Command $($CmdArgs -join ' ')" } else { $Command }
@@ -96,6 +113,14 @@ function Invoke-Exec(
       }
     }))
   }
+  if ([string]::IsNullOrWhiteSpace($WorkingDirectory)) {
+    if (-not [string]::IsNullOrWhiteSpace($script:RepoRoot)) {
+      $WorkingDirectory = $script:RepoRoot
+    } else {
+      $WorkingDirectory = (Get-Location).Path
+    }
+  }
+  $psi.WorkingDirectory = $WorkingDirectory
   $psi.UseShellExecute = $false
   $psi.RedirectStandardOutput = $true
   $psi.RedirectStandardError = $true
@@ -108,6 +133,10 @@ function Invoke-Exec(
   $stderr = $process.StandardError.ReadToEnd()
   $process.WaitForExit()
   $exitCode = $process.ExitCode
+
+  $script:LastCommandStdout = $stdout
+  $script:LastCommandStderr = $stderr
+  $script:LastCommandExitCode = $exitCode
 
   if (-not [string]::IsNullOrEmpty($stdout)) {
     Write-Host ($stdout.TrimEnd("`r", "`n"))
@@ -130,16 +159,32 @@ function Invoke-Exec(
 }
 
 function Ensure-RepoRoot() {
-  $root = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
-  Set-Location $root
-  if (-not (Test-Path ".\package.json")) {
-    throw "package.json not found. Run at repo root. Current: $root"
+    $scriptDir = $PSScriptRoot
+  if ([string]::IsNullOrWhiteSpace($scriptDir)) { $scriptDir = Split-Path -Parent $PSCommandPath }
+  if ([string]::IsNullOrWhiteSpace($scriptDir)) { $scriptDir = (Get-Location).Path }
+  $root = ''
+  $script:GitAvailable = $false
+
+  if (Get-Command git -ErrorAction SilentlyContinue) {
+    $gitRootRaw = (& git -C $scriptDir rev-parse --show-toplevel) 2>$null
+    if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($gitRootRaw)) {
+      $root = ($gitRootRaw | Select-Object -First 1).Trim()
+      $script:GitAvailable = $true
+    }
   }
-  return (Get-Location).Path
+
+  if ([string]::IsNullOrWhiteSpace($root)) {
+    $root = $scriptDir
+  }
+
+  if (-not (Test-Path -LiteralPath (Join-Path $root 'package.json'))) {
+    throw "package.json not found. Current: $root"
+  }
+  return $root
 }
 
 function Get-GitValue([string[]]$Args, [string]$ErrorMessage) {
-  $value = (& git @Args) 2>$null
+  $value = (& git -C $script:RepoRoot @Args) 2>$null
   if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($value)) {
     throw $ErrorMessage
   }
@@ -160,6 +205,125 @@ function Assert-ScriptParses([string]$ScriptPath) {
   if ($errors -and $errors.Count -gt 0) {
     $firstError = $errors | Select-Object -First 1
     throw ("PowerShell parser error in {0}: {1}" -f $ScriptPath, $firstError.Message)
+  }
+}
+
+function Get-FirstTypeScriptErrorLocation([string]$Text) {
+  if ([string]::IsNullOrWhiteSpace($Text)) { return '' }
+  $lines = $Text -split "`r?`n"
+  foreach ($line in $lines) {
+    if ([string]::IsNullOrWhiteSpace($line)) { continue }
+    if ($line -match '([A-Za-z]:\\[^:\n]+\\.(ts|tsx))\(([0-9]+),([0-9]+)\)') {
+      return ("{0}:{1}" -f $Matches[1], $Matches[3])
+    }
+    if ($line -match '([A-Za-z]:\\[^:\n]+\\.(ts|tsx))[:]([0-9]+)') {
+      return ("{0}:{1}" -f $Matches[1], $Matches[3])
+    }
+    if ($line -match '([^\s]+\.(ts|tsx))[:](\d+)[:](\d+)') {
+      return ("{0}:{1}" -f $Matches[1], $Matches[3])
+    }
+  }
+  return ''
+}
+
+function New-PmrDebugBundle([string]$RepoRootPath, [string]$Reason) {
+  $opsDir = Join-Path $RepoRootPath 'ops'
+  if (-not (Test-Path -LiteralPath $opsDir)) {
+    New-Item -ItemType Directory -Path $opsDir -Force | Out-Null
+  }
+
+  $stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
+  $safeReason = if ([string]::IsNullOrWhiteSpace($Reason)) { 'run' } else { ($Reason -replace '[^A-Za-z0-9_.-]', '_') }
+  $bundleDir = Join-Path $opsDir ("pmr_debug_bundle_{0}_{1}" -f $stamp, $safeReason)
+  New-Item -ItemType Directory -Path $bundleDir -Force | Out-Null
+
+  $logPath = Join-Path $bundleDir 'pmr_context.txt'
+  $items = @()
+  $items += ("time={0}" -f (Get-Date).ToString('o'))
+  $items += ("stage={0}" -f $script:PmrStage)
+  $items += ("exitCode={0}" -f $script:PmrExitCode)
+  $items += ("failure={0}" -f $script:PmrFailureMessage)
+  $items += ("buildStatus={0}" -f $script:BuildStatus)
+  $items += ("firstTsError={0}" -f $script:BuildFirstTsError)
+  $items += ("prodHeadMatch={0}" -f $script:ProdHeadMatch)
+  $items += ("telemetryHealth={0}" -f $script:TelemetryHealthStatus)
+  $items += ("parityConclusion={0}" -f $script:ParityConclusion)
+  $items += ''
+  $items += 'lastCommandStdout:'
+  $items += $script:LastCommandStdout
+  $items += ''
+  $items += 'lastCommandStderr:'
+  $items += $script:LastCommandStderr
+  $items | Out-File -LiteralPath $logPath -Encoding utf8
+
+  $gitStatusPath = Join-Path $bundleDir 'git_status.txt'
+  $gitLogPath = Join-Path $bundleDir 'git_log_10.txt'
+  try { (& git -C $script:RepoRoot status -sb) | Out-File -LiteralPath $gitStatusPath -Encoding utf8 } catch { 'git status failed' | Out-File -LiteralPath $gitStatusPath -Encoding utf8 }
+  try { (& git -C $script:RepoRoot log -n 10 --oneline --decorate) | Out-File -LiteralPath $gitLogPath -Encoding utf8 } catch { 'git log failed' | Out-File -LiteralPath $gitLogPath -Encoding utf8 }
+
+  $zipPath = Join-Path $opsDir ("pmr_debug_bundle_{0}_{1}.zip" -f $stamp, $safeReason)
+  if (Test-Path -LiteralPath $zipPath) {
+    Remove-Item -LiteralPath $zipPath -Force -ErrorAction SilentlyContinue
+  }
+  Compress-Archive -LiteralPath $bundleDir -DestinationPath $zipPath -Force
+  $script:PmrBundlePath = $zipPath
+  Write-Host ("[OK] Debug bundle: {0}" -f $zipPath) -ForegroundColor Green
+}
+
+function Invoke-ParserPreflight([string]$RepoRootPath) {
+  $scriptPaths = @(
+    (Join-Path $RepoRootPath 'post_merge_routine.ps1'),
+    (Join-Path $RepoRootPath 'ops/verify_pr39_80plus_parity.ps1')
+  )
+  $allErrors = @()
+  foreach ($scriptPath in $scriptPaths) {
+    $tokens = $null
+    $errors = $null
+    [void][System.Management.Automation.Language.Parser]::ParseFile($scriptPath, [ref]$tokens, [ref]$errors)
+    if ($errors -and $errors.Count -gt 0) {
+      foreach ($parseError in $errors) {
+        $entry = [PSCustomObject]@{
+          Path = $scriptPath
+          Message = $parseError.Message
+          Line = $parseError.Extent.StartLineNumber
+          Column = $parseError.Extent.StartColumnNumber
+        }
+        $allErrors += $entry
+      }
+    }
+  }
+
+  if ($allErrors.Count -gt 0) {
+    Write-Host '[ERR] Parser preflight failed.' -ForegroundColor Red
+    $allErrors | Select-Object -First 5 | ForEach-Object {
+      Write-Host ("[ERR] {0}:{1}:{2} {3}" -f $_.Path, $_.Line, $_.Column, $_.Message) -ForegroundColor Red
+    }
+    throw 'PowerShell parser preflight failed.'
+  }
+
+  Write-Host '[OK] Parser preflight passed.' -ForegroundColor Green
+}
+
+function Write-FinalChecklist() {
+  Write-Section 'Final checklist'
+  Write-Host ("Local build: {0}" -f $script:BuildStatus)
+  if (-not [string]::IsNullOrWhiteSpace($script:BuildFirstTsError)) {
+    Write-Host ("First TS error: {0}" -f $script:BuildFirstTsError)
+  }
+  if ($script:PmrExitCode -eq 0) {
+    Write-Host 'PMR: [OK]'
+  } else {
+    Write-Host ("PMR: [ERR] stage={0} exit={1} bundle={2}" -f $script:PmrStage, $script:PmrExitCode, $script:PmrBundlePath)
+  }
+  Write-Host ("Prod commitSha == HEAD?: {0}" -f $script:ProdHeadMatch)
+  Write-Host ("/api/telemetry/health: {0}" -f $script:TelemetryHealthStatus)
+  Write-Host ("parity conclusion: {0}" -f $script:ParityConclusion)
+  if ($script:PmrExitCode -ne 0) {
+    Write-Host 'If this failed, please attach:' -ForegroundColor Yellow
+    Write-Host '1) ops/pmr_debug_bundle_*.zip' -ForegroundColor Yellow
+    Write-Host '2) latest ops/pmr_log_*.txt' -ForegroundColor Yellow
+    Write-Host '3) git status -sb' -ForegroundColor Yellow
+    Write-Host '4) git log -n 10 --oneline --decorate' -ForegroundColor Yellow
   }
 }
 
@@ -185,13 +349,13 @@ while ((Get-Date) -lt `$deadline) {
   try {
     `$resp = Invoke-WebRequest -Uri `$url -UseBasicParsing -TimeoutSec 1
     if (`$resp -and `$resp.StatusCode -ge 200 -and `$resp.StatusCode -lt 400) {
-      Write-Host ('✅ Local 起動OK: {0}' -f `$url) -ForegroundColor Green
+      Write-Host ('[OK] Local ready: {0}' -f `$url) -ForegroundColor Green
       exit 0
     }
   } catch {}
   Start-Sleep -Seconds `$intervalSec
 }
-Write-Host ('⚠️ Local 起動待機 timeout: {0} sec ({1})' -f `$timeoutSec, `$url) -ForegroundColor Yellow
+Write-Host ('[WARN] Local ready timeout: {0} sec ({1})' -f `$timeoutSec, `$url) -ForegroundColor Yellow
 exit 0
 "@
 
@@ -206,7 +370,7 @@ function Run-DevWithReadyBanner(
 ) {
   $localUrl = "http://localhost:$Port"
   Start-LocalReadyProbeProcess -Url $localUrl -TimeoutSec 180 -IntervalSec 1
-  Write-Host ("⏳ Waiting for {0} ..." -f $localUrl) -ForegroundColor DarkYellow
+  Write-Host ("[WARN] Waiting for {0} ..." -f $localUrl) -ForegroundColor DarkYellow
 
   # Keep npm dev in foreground so Ctrl+C reaches the dev process directly.
   & npm run dev -- --webpack -p "$Port"
@@ -255,7 +419,7 @@ function Stop-Port([int]$Port) {
 }
 
 function Test-GitOperationInProgress() {
-  $gitDir = (& git rev-parse --git-dir) 2>$null
+  $gitDir = (& git -C $script:RepoRoot rev-parse --git-dir) 2>$null
   if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($gitDir)) { return $false }
 
   $ops = @(
@@ -272,7 +436,7 @@ function Test-GitOperationInProgress() {
 }
 
 function Resolve-UpstreamRef() {
-  $upstream = (& git rev-parse --abbrev-ref --symbolic-full-name "@{u}") 2>$null
+  $upstream = (& git -C $script:RepoRoot rev-parse --abbrev-ref --symbolic-full-name "@{u}") 2>$null
   if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($upstream)) {
     return ($upstream | Select-Object -First 1).Trim()
   }
@@ -288,7 +452,7 @@ function Assert-NoConflictMarkers() {
 
   if ($existingPaths.Count -eq 0) { return }
 
-  $output = (& git grep -n -I -E -e '^<<<<<<<' -e '^=======$' -e '^>>>>>>>' -- @existingPaths) 2>$null
+  $output = (& git -C $script:RepoRoot grep -n -I -E -e '^<<<<<<<' -e '^=======$' -e '^>>>>>>>' -- @existingPaths) 2>$null
   $exitCode = $LASTEXITCODE
 
   if ($exitCode -eq 0) {
@@ -305,7 +469,7 @@ function Assert-NoConflictMarkers() {
 }
 
 function Ensure-CleanWorkingTree() {
-  $dirty = (& git status --porcelain) 2>$null
+  $dirty = (& git -C $script:RepoRoot status --porcelain) 2>$null
   if ($LASTEXITCODE -ne 0) {
     throw 'Unable to inspect working tree (git status failed).'
   }
@@ -316,7 +480,7 @@ function Ensure-CleanWorkingTree() {
 }
 
 function Test-WorkingTreeClean() {
-  $dirty = (& git status --porcelain) 2>$null
+  $dirty = (& git -C $script:RepoRoot status --porcelain) 2>$null
   if ($LASTEXITCODE -ne 0) { return $false }
   return [string]::IsNullOrWhiteSpace(($dirty -join "`n"))
 }
@@ -341,7 +505,7 @@ function Ensure-OnProdBranchIfNeeded([string]$EffectiveProdBranch, [bool]$Enable
 }
 
 function Get-AheadBehind([string]$UpstreamRef) {
-  $countRaw = (& git rev-list --left-right --count "$UpstreamRef...HEAD") 2>$null
+  $countRaw = (& git -C $script:RepoRoot rev-list --left-right --count "$UpstreamRef...HEAD") 2>$null
   if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($countRaw)) {
     throw "Unable to compare local with '$UpstreamRef'."
   }
@@ -481,7 +645,7 @@ function Resolve-VercelPreviewHost([string]$ProvidedValue) {
 }
 
 function Infer-ProdBranchFromOriginHead([string]$FallbackBranch = 'main') {
-  $symbolic = (& git symbolic-ref --quiet --short refs/remotes/origin/HEAD) 2>$null
+  $symbolic = (& git -C $script:RepoRoot symbolic-ref --quiet --short refs/remotes/origin/HEAD) 2>$null
   if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($symbolic)) {
     $remoteRef = ($symbolic | Select-Object -First 1).Trim()
     if ($remoteRef -match '^origin/(.+)$') {
@@ -540,7 +704,7 @@ function Resolve-ParityTargetHost([string]$CurrentBranch, [string]$EffectiveProd
     ShouldRun = $false
     Target = 'skip'
     Host = ''
-    Message = ("你在 feature branch（{0}），Production 不會是這個 commit；請設定 preview host 或先 merge。" -f $CurrentBranch)
+    Message = ("Feature branch ({0}) cannot be validated against production commit. Configure preview host or merge first." -f $CurrentBranch)
   }
 }
 
@@ -548,7 +712,8 @@ function Invoke-VersionEndpoint([string]$ProdHost) {
   [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
   $timestamp = [int][DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
   $url = "https://$ProdHost/api/version?t=$timestamp"
-  $response = Invoke-WebRequest -Uri $url -Method Get -Headers @{ 'Cache-Control'='no-cache'; 'Pragma'='no-cache' } -TimeoutSec 15 -ErrorAction Stop
+  $httpResult = Invoke-WebRequestWithSingleRedirect -Url $url -TimeoutSec 15
+  $response = $httpResult.Response
 
   $body = $response.Content
   $json = $null
@@ -564,7 +729,7 @@ function Invoke-VersionEndpoint([string]$ProdHost) {
     StatusCode = [int]$response.StatusCode
     Json = $json
     Body = $body
-    Url = $url
+    Url = $httpResult.FinalUrl
   }
 }
 
@@ -583,8 +748,39 @@ function Get-WebExceptionStatusCode([System.Exception]$Exception) {
   return $null
 }
 
+function Invoke-WebRequestWithSingleRedirect([string]$Url, [int]$TimeoutSec = 15) {
+  $safeTimeoutSec = if ($TimeoutSec -gt 0) { $TimeoutSec } else { 15 }
+  $attemptUrl = $Url
+  $didFollow = $false
+
+  for ($i = 0; $i -lt 2; $i++) {
+    try {
+      $resp = Invoke-WebRequest -Uri $attemptUrl -Method Get -UseBasicParsing -MaximumRedirection 0 -TimeoutSec $safeTimeoutSec -Headers @{ 'Cache-Control'='no-cache'; 'Pragma'='no-cache' } -ErrorAction Stop
+      return [PSCustomObject]@{ Response = $resp; FinalUrl = $attemptUrl; Redirected = $didFollow }
+    } catch {
+      $statusCode = Get-WebExceptionStatusCode -Exception $_.Exception
+      $location = $null
+      if ($_.Exception -and $_.Exception.Response -and $_.Exception.Response.Headers) {
+        $location = $_.Exception.Response.Headers['Location']
+      }
+
+      if (($statusCode -in @(301,302,307,308)) -and -not [string]::IsNullOrWhiteSpace($location) -and -not $didFollow) {
+        Write-Host ("[WARN] Redirect {0} -> {1}" -f $statusCode, $location) -ForegroundColor Yellow
+        if ($location -notmatch '^https?://') {
+          $baseUri = New-Object System.Uri($attemptUrl)
+          $location = (New-Object System.Uri($baseUri, $location)).AbsoluteUri
+        }
+        $attemptUrl = $location
+        $didFollow = $true
+        continue
+      }
+      throw
+    }
+  }
+}
+
 function Assert-VersionRouteExistsInHead() {
-  & git cat-file -e 'HEAD:app/api/version/route.ts' 2>$null
+  & git -C $script:RepoRoot cat-file -e 'HEAD:app/api/version/route.ts' 2>$null
   if ($LASTEXITCODE -ne 0) {
     throw 'Missing app/api/version/route.ts in HEAD commit. The route may exist only in your working tree. Please git add/commit/push this route, then rerun parity gate.'
   }
@@ -659,7 +855,7 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
         continue
       }
 
-      Write-Host ("VERCEL == LOCAL ✅ ({0}) (vercelEnv={1})" -f $LocalSha, $vercelEnvValue) -ForegroundColor Green
+      Write-Host ("VERCEL == LOCAL [OK] ({0}) (vercelEnv={1})" -f $LocalSha, $vercelEnvValue) -ForegroundColor Green
       $result | Add-Member -NotePropertyName Success -NotePropertyValue $true -Force
       $result | Add-Member -NotePropertyName FailureMessage -NotePropertyValue '' -Force
       return $result
@@ -677,7 +873,7 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
           $probeUrl = "https://$ProdHost/api/telemetry/health"
           $probeStatus = 'unavailable'
           try {
-            $probeResp = Invoke-WebRequest -Uri $probeUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
+            $probeResp = Invoke-WebRequest -Uri $probeUrl -Method Get -UseBasicParsing -TimeoutSec 10 -ErrorAction Stop
             $probeStatus = [string]$probeResp.StatusCode
           } catch {
             $probeCode = Get-WebExceptionStatusCode -Exception $_.Exception
@@ -702,7 +898,7 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
 
   if ($lastStatusCode -eq 404) {
     $result | Add-Member -NotePropertyName Success -NotePropertyValue $false -Force
-    $result | Add-Member -NotePropertyName FailureMessage -NotePropertyValue ("PARITY 404: /api/version not found after {0} tries (host={1}, branch={2}, telemetryHealth={3}). 檢查 host 是否指向正確環境，或等待部署完成。" -f $maxAttempts, $ProdHost, $branchName, $result.TelemetryHealthStatus) -Force
+    $result | Add-Member -NotePropertyName FailureMessage -NotePropertyValue ("PARITY 404: /api/version not found after {0} tries (host={1}, branch={2}, telemetryHealth={3}). Check host mapping or wait for deployment readiness." -f $maxAttempts, $ProdHost, $branchName, $result.TelemetryHealthStatus) -Force
     return $result
   }
 
@@ -737,235 +933,321 @@ function Write-ParitySnapshot([string]$LocalSha, [string]$OriginSha, [string]$Ve
   Write-Host ("Saved parity snapshot: {0}" -f $snapshotPath) -ForegroundColor Green
 }
 
-Write-Section "Boot"
 $repoRoot = Ensure-RepoRoot
-Write-Host ("Time: {0}" -f (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")) -ForegroundColor Gray
-Write-Host ("Repo: {0}" -f $repoRoot) -ForegroundColor Gray
-
-Assert-ScriptParses -ScriptPath (Join-Path $repoRoot "post_merge_routine.ps1")
-Write-Host "PowerShell parser check: OK" -ForegroundColor Green
-
-Write-Section "Git context"
-$gitOk = $false
-if (Get-Command git -ErrorAction SilentlyContinue) {
-  $isRepo = (& git rev-parse --is-inside-work-tree) 2>$null
-  if ($LASTEXITCODE -eq 0 -and $isRepo -eq 'true') { $gitOk = $true }
+$script:RepoRoot = $repoRoot
+Set-Location -LiteralPath $repoRoot
+$opsDirForLog = Join-Path $repoRoot 'ops'
+if (-not (Test-Path -LiteralPath $opsDirForLog)) {
+  New-Item -ItemType Directory -Path $opsDirForLog -Force | Out-Null
 }
+$logStamp = Get-Date -Format 'yyyyMMdd_HHmmss'
+$script:PmrLogPath = Join-Path $opsDirForLog ("pmr_log_{0}.txt" -f $logStamp)
+Start-Transcript -LiteralPath $script:PmrLogPath -Force | Out-Null
 
-if (-not $gitOk) {
-  throw 'git is required for this routine (not a git repo or git not found).'
-}
+try {
+  $script:PmrStage = 'boot'
+  Write-Section "Boot"
+  Write-Host ("Time: {0}" -f (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")) -ForegroundColor Gray
+  Write-Host ("Repo: {0}" -f $repoRoot) -ForegroundColor Gray
 
-$branch = (& git rev-parse --abbrev-ref HEAD) 2>$null
-$commit = (& git rev-parse --short HEAD) 2>$null
-$head = (& git log -1 --oneline) 2>$null
-Write-Host ("Branch: {0}" -f $branch) -ForegroundColor Green
-Write-Host ("Commit: {0}" -f $commit) -ForegroundColor Green
-Write-Host ("Head:   {0}" -f $head) -ForegroundColor Green
+  $script:PmrStage = 'parser-preflight'
+  Invoke-ParserPreflight -RepoRootPath $repoRoot
 
-Write-Section "Git preflight parity"
-if (Test-GitOperationInProgress) {
-  throw "Git operation in progress (merge/rebase/cherry-pick). Run git status, resolve or abort, then rerun .\post_merge_routine.ps1."
-}
-
-$unmerged = (& git diff --name-only --diff-filter=U) 2>$null
-if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace(($unmerged -join "`n"))) {
-  throw "Unmerged files detected. Run git status and resolve conflicts before rerunning .\post_merge_routine.ps1."
-}
-
-Assert-NoConflictMarkers
-Ensure-CleanWorkingTree
-Run 'git' @('fetch','--all','--prune')
-
-$effectiveProdBranch = Resolve-VercelProdBranch -ProvidedValue $ProdBranch -FallbackBranch 'main'
-Write-Host ("Resolved production branch: {0}" -f $effectiveProdBranch) -ForegroundColor Green
-Ensure-OnProdBranchIfNeeded -EffectiveProdBranch $effectiveProdBranch -EnableAutoCheckout $AutoCheckoutProdBranch
-
-if (-not $SkipPull) {
-  $upstream = Resolve-UpstreamRef
-  if (-not [string]::IsNullOrWhiteSpace($upstream)) {
-    Run 'git' @('pull','--ff-only')
-  }
-} else {
-  Write-Host 'SkipPull enabled.' -ForegroundColor DarkGray
-}
-
-Write-Host 'Preflight: OK' -ForegroundColor Green
-
-Write-Section "Optional: feature fingerprint check"
-if ($Expect.Count -gt 0) {
-  $paths = @()
-  switch ($ExpectScope) {
-    'code' { $paths = @('app','src','components','ops') }
-    'all'  { $paths = @() }
+  Write-Section "Git context"
+  $gitOk = $false
+  if ($script:GitAvailable -and (Get-Command git -ErrorAction SilentlyContinue)) {
+    $isRepo = (& git -C $script:RepoRoot rev-parse --is-inside-work-tree) 2>$null
+    if ($LASTEXITCODE -eq 0 -and $isRepo -eq 'true') { $gitOk = $true }
   }
 
-  $existingExpectPaths = @()
-  foreach ($path in $paths) {
-    if (Test-Path ".\$path") { $existingExpectPaths += $path }
-  }
-  if ($ExpectScope -eq 'code' -and $existingExpectPaths.Count -eq 0) {
-    throw 'EXPECT FAILED: code scope paths (app/src/components/ops) not found. Likely wrong branch/commit.'
-  }
-
-  foreach ($pat in $Expect) {
-    if ([string]::IsNullOrWhiteSpace($pat)) { continue }
-    $expectMode = if ($ExpectRegex) { 'regex' } else { 'fixed-string' }
-    Write-Host ("Expect: {0} (scope={1}, mode={2})" -f $pat, $ExpectScope, $expectMode) -ForegroundColor Cyan
-
-    $expectArgs = @('grep','-n')
-    if (-not $ExpectRegex) { $expectArgs += '-F' }
-    $expectArgs += '--'
-    $expectArgs += $pat
-
-    if ($ExpectScope -eq 'all') {
-      & git @expectArgs | Out-Null
-    } else {
-      & git @expectArgs -- @existingExpectPaths | Out-Null
-    }
-
-    if ($LASTEXITCODE -ne 0) {
-      throw "EXPECT FAILED: pattern '$pat' not found (scope=$ExpectScope, mode=$expectMode). Likely wrong branch/commit."
-    }
-  }
-  Write-Host 'Expect check: OK' -ForegroundColor Green
-} else {
-  Write-Host 'Expect check: (skipped)' -ForegroundColor DarkGray
-}
-
-Write-Section "Clean build artifacts"
-if ($SkipClean) {
-  Write-Host 'SkipClean enabled.' -ForegroundColor DarkGray
-} else {
-  if (Test-Path '.\.next') {
-    Write-Host 'Removing .next directory' -ForegroundColor Yellow
-    Remove-Item -Recurse -Force '.\.next' -ErrorAction SilentlyContinue
+  if ($gitOk) {
+    $branch = (& git -C $script:RepoRoot rev-parse --abbrev-ref HEAD) 2>$null
+    $commit = (& git -C $script:RepoRoot rev-parse --short HEAD) 2>$null
+    $head = (& git -C $script:RepoRoot log -1 --oneline) 2>$null
+    Write-Host ("Branch: {0}" -f $branch) -ForegroundColor Green
+    Write-Host ("Commit: {0}" -f $commit) -ForegroundColor Green
+    Write-Host ("Head:   {0}" -f $head) -ForegroundColor Green
   } else {
-    Write-Host '.next not found (skip)' -ForegroundColor DarkGray
+    Write-Host '[WARN] git context not confirmed (git unavailable from script path).' -ForegroundColor Yellow
   }
-}
 
-Write-Section "Kill ports"
-if ($SkipKillPorts) {
-  Write-Host 'SkipKillPorts enabled.' -ForegroundColor DarkGray
-} else {
-  foreach ($port in $KillPorts) { Stop-Port -Port $port }
-}
+  $effectiveProdBranch = Resolve-VercelProdBranch -ProvidedValue $ProdBranch -FallbackBranch 'main'
+  $canRunGitParity = $gitOk -and (-not $SkipParity)
 
-Write-Section "Install (npm ci)"
-if (-not $SkipNpmCi) { Run 'npm' @('ci') }
-else { Write-Host 'SkipNpmCi enabled.' -ForegroundColor DarkGray }
+  if ($SkipParity) {
+    $script:ParityConclusion = 'skipped(reason: SkipParity)'
+    Write-Host 'Git preflight parity skipped (SkipParity).' -ForegroundColor Yellow
+  } elseif (-not $gitOk) {
+    $script:ParityConclusion = 'not confirmed'
+    Write-Host '[WARN] Git preflight parity not confirmed (git unavailable).' -ForegroundColor Yellow
+  } else {
+    $script:PmrStage = 'git-preflight'
+    Write-Section "Git preflight parity"
+    try {
+      if (Test-GitOperationInProgress) {
+        throw "Git operation in progress (merge/rebase/cherry-pick). Run git status, resolve or abort, then rerun .\post_merge_routine.ps1."
+      }
 
-Write-Section "Lint (npm run lint)"
-if ($SkipLint) {
-  Write-Host 'SkipLint enabled.' -ForegroundColor DarkGray
-} else {
-  try {
+      $unmerged = (& git -C $script:RepoRoot diff --name-only --diff-filter=U) 2>$null
+      if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace(($unmerged -join "`n"))) {
+        throw "Unmerged files detected. Run git status and resolve conflicts before rerunning .\post_merge_routine.ps1."
+      }
+
+      Assert-NoConflictMarkers
+      Ensure-CleanWorkingTree
+      Run 'git' @('fetch','--all','--prune')
+
+      Write-Host ("Resolved production branch: {0}" -f $effectiveProdBranch) -ForegroundColor Green
+      Ensure-OnProdBranchIfNeeded -EffectiveProdBranch $effectiveProdBranch -EnableAutoCheckout $AutoCheckoutProdBranch
+
+      if (-not $SkipPull) {
+        $upstream = Resolve-UpstreamRef
+        if (-not [string]::IsNullOrWhiteSpace($upstream)) {
+          Run 'git' @('pull','--ff-only')
+        }
+      } else {
+        Write-Host 'SkipPull enabled.' -ForegroundColor DarkGray
+      }
+
+      Write-Host 'Preflight: OK' -ForegroundColor Green
+    } catch {
+      $script:ParityConclusion = 'not confirmed'
+      $canRunGitParity = $false
+      Write-Host ("[WARN] Git preflight parity not confirmed: {0}" -f $_.Exception.Message) -ForegroundColor Yellow
+      if ($StrictParity) { throw }
+    }
+  }
+
+  Write-Section "Optional: feature fingerprint check"
+  if ($Expect.Count -gt 0) {
+    if (-not $gitOk) {
+      Write-Host '[WARN] Expect check skipped (git unavailable).' -ForegroundColor Yellow
+    } elseif ($SkipParity) {
+      Write-Host '[WARN] Expect check skipped (SkipParity).' -ForegroundColor Yellow
+    } else {
+    $paths = @()
+    switch ($ExpectScope) {
+      'code' { $paths = @('app','src','components','ops') }
+      'all'  { $paths = @() }
+    }
+
+    $existingExpectPaths = @()
+    foreach ($path in $paths) {
+      if (Test-Path ".\$path") { $existingExpectPaths += $path }
+    }
+    if ($ExpectScope -eq 'code' -and $existingExpectPaths.Count -eq 0) {
+      throw 'EXPECT FAILED: code scope paths (app/src/components/ops) not found. Likely wrong branch/commit.'
+    }
+
+    foreach ($pat in $Expect) {
+      if ([string]::IsNullOrWhiteSpace($pat)) { continue }
+      $expectMode = if ($ExpectRegex) { 'regex' } else { 'fixed-string' }
+      Write-Host ("Expect: {0} (scope={1}, mode={2})" -f $pat, $ExpectScope, $expectMode) -ForegroundColor Cyan
+
+      $expectArgs = @('grep','-n')
+      if (-not $ExpectRegex) { $expectArgs += '-F' }
+      $expectArgs += '--'
+      $expectArgs += $pat
+
+      if ($ExpectScope -eq 'all') {
+        & git -C $script:RepoRoot @expectArgs | Out-Null
+      } else {
+        & git -C $script:RepoRoot @expectArgs -- @existingExpectPaths | Out-Null
+      }
+
+      if ($LASTEXITCODE -ne 0) {
+        throw "EXPECT FAILED: pattern '$pat' not found (scope=$ExpectScope, mode=$expectMode). Likely wrong branch/commit."
+      }
+    }
+    Write-Host 'Expect check: OK' -ForegroundColor Green
+    }
+  } else {
+    Write-Host 'Expect check: (skipped)' -ForegroundColor DarkGray
+  }
+
+  $script:PmrStage = 'clean'
+  Write-Section "Clean build artifacts"
+  if ($SkipClean) {
+    Write-Host 'SkipClean enabled.' -ForegroundColor DarkGray
+  } else {
+    if (Test-Path -LiteralPath '.\.next') {
+      Write-Host 'Removing .next directory' -ForegroundColor Yellow
+      Remove-Item -Recurse -Force -LiteralPath '.\.next' -ErrorAction SilentlyContinue
+    } else {
+      Write-Host '.next not found (skip)' -ForegroundColor DarkGray
+    }
+  }
+
+  Write-Section "Kill ports"
+  if ($SkipKillPorts) {
+    Write-Host 'SkipKillPorts enabled.' -ForegroundColor DarkGray
+  } else {
+    foreach ($port in $KillPorts) { Stop-Port -Port $port }
+  }
+
+  $script:PmrStage = 'npm-ci'
+  Write-Section "Install (npm ci)"
+  if (-not $SkipNpmCi) { Run 'npm' @('ci') }
+  else { Write-Host 'SkipNpmCi enabled.' -ForegroundColor DarkGray }
+
+  $script:PmrStage = 'lint'
+  Write-Section "Lint (npm run lint)"
+  if ($SkipLint) {
+    Write-Host 'SkipLint enabled.' -ForegroundColor DarkGray
+  } else {
     Run 'npm' @('run','lint')
     Write-Host 'LINT OK' -ForegroundColor Green
-  } catch {
-    throw 'Lint failed; fix before build/deploy'
   }
-}
 
-Write-Section "Build (npm run build)"
-if (-not $SkipBuild) {
-  Run 'npm' @('run','build')
-  Write-Host 'BUILD OK' -ForegroundColor Green
-} else {
-  Write-Host 'SkipBuild enabled.' -ForegroundColor DarkGray
-}
+  $script:PmrStage = 'build'
+  Write-Section "Build (npm run build)"
+  if (-not $SkipBuild) {
+    try {
+      Run 'npm' @('run','build')
+      $script:BuildStatus = 'PASS'
+      Write-Host 'BUILD OK' -ForegroundColor Green
+    } catch {
+      $allBuildText = ("{0}`n{1}" -f $script:LastCommandStdout, $script:LastCommandStderr)
+      $script:BuildFirstTsError = Get-FirstTypeScriptErrorLocation -Text $allBuildText
+      $script:BuildStatus = 'FAIL'
+      throw
+    }
+  } else {
+    $script:BuildStatus = 'SKIPPED'
+    Write-Host 'SkipBuild enabled.' -ForegroundColor DarkGray
+  }
 
-Write-Section "Vercel parity gate (branch-aware)"
-$runVercelParity = $false
-if ($ParityTarget -eq 'off') {
+  $script:PmrStage = 'vercel-parity'
+  Write-Section "Vercel parity gate (branch-aware)"
   $runVercelParity = $false
-} elseif ($VercelParityMode -ne 'off' -and ((-not $SkipVercelParity) -or $RequireVercelSameCommit)) {
-  $runVercelParity = $true
-}
-$finalLocalSha = ''
-$finalOriginSha = ''
-$finalVercelSha = ''
-$finalVercelEnv = ''
-$productionDomainHost = ''
-$parityFailed = $false
-$parityFailureMessage = ''
+  if ($SkipParity) {
+    $runVercelParity = $false
+  } elseif ($ParityTarget -eq 'off') {
+    $runVercelParity = $false
+  } elseif ($canRunGitParity -and $VercelParityMode -ne 'off' -and ((-not $SkipVercelParity) -or $RequireVercelSameCommit)) {
+    $runVercelParity = $true
+  }
+  $finalLocalSha = ''
+  $finalOriginSha = ''
+  $finalVercelSha = ''
+  $finalVercelEnv = ''
+  $productionDomainHost = ''
+  $parityFailed = $false
+  $parityFailureMessage = ''
 
-if ($runVercelParity) {
-  Assert-VersionRouteExistsInHead
+  if ($runVercelParity) {
+    Assert-VersionRouteExistsInHead
 
-  Ensure-CleanWorkingTree
-  $parityState = Ensure-GitRemoteParity -SkipAutoPush:$SkipPush
-  $finalLocalSha = $parityState.LocalSha
-  $finalOriginSha = $parityState.OriginSha
+    Ensure-CleanWorkingTree
+    $parityState = Ensure-GitRemoteParity -SkipAutoPush:$SkipPush
+    $finalLocalSha = $parityState.LocalSha
+    $finalOriginSha = $parityState.OriginSha
 
-  $hostTarget = Resolve-ParityTargetHost -CurrentBranch $parityState.Branch -EffectiveProdBranch $effectiveProdBranch -RequestedTarget $ParityTarget -ProvidedProdHost $VercelProdUrlOrHost -ProvidedPreviewHost $PreviewHost
-  if (-not $hostTarget.ShouldRun) {
-    Write-Host ("Vercel parity skipped: {0}" -f $hostTarget.Message) -ForegroundColor Yellow
-  } else {
-    $productionDomainHost = $hostTarget.Host
-    $expectedVercelEnv = if ($hostTarget.Target -eq 'preview') { 'preview' } elseif ($VercelEnv -eq 'preview') { 'production' } else { $VercelEnv }
-
-    $effectiveParityRetries = if (-not [string]::IsNullOrWhiteSpace($env:OSH_VERCEL_PARITY_RETRIES)) { [int]$env:OSH_VERCEL_PARITY_RETRIES } else { $VercelParityRetries }
-    $effectiveParityDelaySec = if (-not [string]::IsNullOrWhiteSpace($env:OSH_VERCEL_PARITY_DELAY_SEC)) { [int]$env:OSH_VERCEL_PARITY_DELAY_SEC } else { $null }
-    $effectivePollIntervalSec = if ($effectiveParityDelaySec -and $effectiveParityDelaySec -gt 0) { $effectiveParityDelaySec } else { $VercelPollIntervalSec }
-    $effectiveMaxWaitSec = 0
-    if ($VercelMaxWaitSec -and $VercelMaxWaitSec -gt 0) {
-      $effectiveMaxWaitSec = $VercelMaxWaitSec
-    } elseif ($effectiveParityRetries -and $effectiveParityRetries -gt 0) {
-      $effectiveMaxWaitSec = [Math]::Max(1, ($effectivePollIntervalSec * ([Math]::Max(1, $effectiveParityRetries - 1))) + 1)
+    $hostTarget = Resolve-ParityTargetHost -CurrentBranch $parityState.Branch -EffectiveProdBranch $effectiveProdBranch -RequestedTarget $ParityTarget -ProvidedProdHost $VercelProdUrlOrHost -ProvidedPreviewHost $PreviewHost
+    if (-not $hostTarget.ShouldRun) {
+      $script:ParityConclusion = ('skipped({0})' -f $hostTarget.Message)
+      Write-Host ("Vercel parity skipped: {0}" -f $hostTarget.Message) -ForegroundColor Yellow
     } else {
-      $effectiveMaxWaitSec = 600
+      $productionDomainHost = $hostTarget.Host
+      $expectedVercelEnv = if ($hostTarget.Target -eq 'preview') { 'preview' } elseif ($VercelEnv -eq 'preview') { 'production' } else { $VercelEnv }
+
+      $effectiveParityRetries = if (-not [string]::IsNullOrWhiteSpace($env:OSH_VERCEL_PARITY_RETRIES)) { [int]$env:OSH_VERCEL_PARITY_RETRIES } else { $VercelParityRetries }
+      $effectiveParityDelaySec = if (-not [string]::IsNullOrWhiteSpace($env:OSH_VERCEL_PARITY_DELAY_SEC)) { [int]$env:OSH_VERCEL_PARITY_DELAY_SEC } else { $null }
+      $effectivePollIntervalSec = if ($effectiveParityDelaySec -and $effectiveParityDelaySec -gt 0) { $effectiveParityDelaySec } else { $VercelPollIntervalSec }
+      $effectiveMaxWaitSec = 0
+      if ($VercelMaxWaitSec -and $VercelMaxWaitSec -gt 0) {
+        $effectiveMaxWaitSec = $VercelMaxWaitSec
+      } elseif ($effectiveParityRetries -and $effectiveParityRetries -gt 0) {
+        $effectiveMaxWaitSec = [Math]::Max(1, ($effectivePollIntervalSec * ([Math]::Max(1, $effectiveParityRetries - 1))) + 1)
+      } else {
+        $effectiveMaxWaitSec = 600
+      }
+
+      $allowPreviewForTarget = $AllowPreviewHost -or $hostTarget.Target -eq 'preview'
+      $vercelState = Wait-VercelCommitParity -ProdHost $productionDomainHost -LocalSha $finalLocalSha -ExpectedEnv $expectedVercelEnv -AllowPreview:$allowPreviewForTarget -MaxWaitSec $effectiveMaxWaitSec -PollIntervalSec $effectivePollIntervalSec
+      if (-not [string]::IsNullOrWhiteSpace($vercelState.TelemetryHealthStatus)) {
+        $script:TelemetryHealthStatus = $vercelState.TelemetryHealthStatus
+      }
+      if (-not [string]::IsNullOrWhiteSpace($vercelState.CommitSha) -and -not [string]::IsNullOrWhiteSpace($finalLocalSha)) {
+        $script:ProdHeadMatch = [string]($vercelState.CommitSha -eq $finalLocalSha)
+      }
+      if (-not $vercelState.Success) {
+        $parityFailed = $true
+        $parityFailureMessage = $vercelState.FailureMessage
+        $script:ParityConclusion = 'not confirmed'
+        Write-Host ("Vercel parity failed: {0}" -f $parityFailureMessage) -ForegroundColor Yellow
+      } else {
+        $script:ParityConclusion = 'ok'
+      }
+      $finalVercelSha = $vercelState.CommitSha
+      $finalVercelEnv = $vercelState.VercelEnv
+
+      Write-Host ("PARITY TARGET: {0}" -f $hostTarget.Target) -ForegroundColor Green
+      Write-Host ("LOCAL SHA:     {0}" -f $finalLocalSha) -ForegroundColor Green
+      Write-Host ("ORIGIN SHA:    {0}" -f $finalOriginSha) -ForegroundColor Green
+      Write-Host ("VERCEL SHA:    {0}" -f $finalVercelSha) -ForegroundColor Green
+      Write-Host ("VERCEL ENV:    {0}" -f $finalVercelEnv) -ForegroundColor Green
+
+      Write-ParitySnapshot -LocalSha $finalLocalSha -OriginSha $finalOriginSha -VercelSha $finalVercelSha -VercelEnvValue $finalVercelEnv -ProdHost $productionDomainHost
     }
-
-    $allowPreviewForTarget = $AllowPreviewHost -or $hostTarget.Target -eq 'preview'
-    $vercelState = Wait-VercelCommitParity -ProdHost $productionDomainHost -LocalSha $finalLocalSha -ExpectedEnv $expectedVercelEnv -AllowPreview:$allowPreviewForTarget -MaxWaitSec $effectiveMaxWaitSec -PollIntervalSec $effectivePollIntervalSec
-    if (-not $vercelState.Success) {
-      $parityFailed = $true
-      $parityFailureMessage = $vercelState.FailureMessage
-      Write-Host ("Vercel parity failed: {0}" -f $parityFailureMessage) -ForegroundColor Yellow
+  } else {
+    if ($SkipParity) {
+      $script:ParityConclusion = 'skipped(reason: SkipParity)'
+      Write-Host 'Parity skipped by SkipParity.' -ForegroundColor Yellow
+    } elseif ($ParityTarget -eq 'off' -or $VercelParityMode -eq 'off') {
+      $script:ParityConclusion = 'skipped(off)'
+      Write-Host 'Vercel parity skipped (off).' -ForegroundColor Yellow
+    } else {
+      $script:ParityConclusion = 'skipped(SkipVercelParity)'
+      Write-Host 'SkipVercelParity enabled.' -ForegroundColor Yellow
     }
-    $finalVercelSha = $vercelState.CommitSha
-    $finalVercelEnv = $vercelState.VercelEnv
-
-    Write-Host ("PARITY TARGET: {0}" -f $hostTarget.Target) -ForegroundColor Green
-    Write-Host ("LOCAL SHA:     {0}" -f $finalLocalSha) -ForegroundColor Green
-    Write-Host ("ORIGIN SHA:    {0}" -f $finalOriginSha) -ForegroundColor Green
-    Write-Host ("VERCEL SHA:    {0}" -f $finalVercelSha) -ForegroundColor Green
-    Write-Host ("VERCEL ENV:    {0}" -f $finalVercelEnv) -ForegroundColor Green
-
-    Write-ParitySnapshot -LocalSha $finalLocalSha -OriginSha $finalOriginSha -VercelSha $finalVercelSha -VercelEnvValue $finalVercelEnv -ProdHost $productionDomainHost
   }
-} else {
-  if ($ParityTarget -eq 'off' -or $VercelParityMode -eq 'off') {
-    Write-Host 'Vercel parity skipped (off).' -ForegroundColor Yellow
+
+  Write-Section "Summary"
+  if ($parityFailed) {
+    Write-Host ("PARITY SUMMARY: FAIL - {0}" -f $parityFailureMessage) -ForegroundColor Yellow
+    Write-Host 'Next step: verify host mapping for current branch and retry parity after deployment is ready.' -ForegroundColor Yellow
+    if ($StrictParity) {
+      throw 'StrictParity enabled and parity failed.'
+    }
   } else {
-    Write-Host 'SkipVercelParity enabled.' -ForegroundColor Yellow
+    Write-Host 'PARITY SUMMARY: OK or skipped.' -ForegroundColor Green
   }
-}
 
-Write-Section "Summary"
-if ($parityFailed) {
-  Write-Host ("PARITY SUMMARY: FAIL - {0}" -f $parityFailureMessage) -ForegroundColor Yellow
-  Write-Host 'Next step: verify host mapping for current branch and retry parity after deployment is ready.' -ForegroundColor Yellow
-  if ($StrictParity) {
-    Write-Host 'StrictParity enabled: exiting with non-zero code.' -ForegroundColor Red
-    exit 2
-  }
-} else {
-  Write-Host 'PARITY SUMMARY: OK or skipped.' -ForegroundColor Green
-}
-
-Write-Section "Runtime server"
-if (-not $SkipDev) {
-  if ($ProdSmoke) {
-    Write-Host 'ProdSmoke approximates Vercel runtime; dev may differ.' -ForegroundColor Yellow
-    Write-Host ("Starting prod smoke: npm run start -- -p {0}" -f $DevPort) -ForegroundColor Cyan
-    Run 'npm' @('run','start','--','-p',"$DevPort")
+  $script:PmrStage = 'runtime'
+  Write-Section "Runtime server"
+  if (-not $SkipDev) {
+    if ($ProdSmoke) {
+      Write-Host 'ProdSmoke approximates Vercel runtime; dev may differ.' -ForegroundColor Yellow
+      Write-Host ("Starting prod smoke: npm run start -- -p {0}" -f $DevPort) -ForegroundColor Cyan
+      Run 'npm' @('run','start','--','-p',"$DevPort")
+    } else {
+      Write-Host ("Starting dev: npm run dev -- --webpack -p {0}" -f $DevPort) -ForegroundColor Cyan
+      Run-DevWithReadyBanner -Port $DevPort
+    }
   } else {
-    Write-Host ("Starting dev: npm run dev -- --webpack -p {0}" -f $DevPort) -ForegroundColor Cyan
-    Run-DevWithReadyBanner -Port $DevPort
+    Write-Host 'SkipDev enabled.' -ForegroundColor DarkGray
   }
-} else {
-  Write-Host 'SkipDev enabled.' -ForegroundColor DarkGray
+
+  $script:PmrExitCode = 0
+} catch {
+  $script:PmrExitCode = 1
+  $msg = if ($_.Exception -and -not [string]::IsNullOrWhiteSpace($_.Exception.Message)) { $_.Exception.Message } else { [string]$_ }
+  $script:PmrFailureMessage = $msg
+  Write-Host ("[ERR] stage={0} {1}" -f $script:PmrStage, $msg) -ForegroundColor Red
+} finally {
+  try { Stop-Transcript | Out-Null } catch {}
+  if ($script:BuildStatus -eq 'not run') {
+    $script:BuildStatus = 'SKIPPED'
+  }
+  if ([string]::IsNullOrWhiteSpace($script:ParityConclusion)) {
+    $script:ParityConclusion = 'not confirmed'
+  }
+  $bundleReason = 'failure'
+  if ($script:PmrExitCode -eq 0) { $bundleReason = 'success' }
+  New-PmrDebugBundle -RepoRootPath $repoRoot -Reason $bundleReason
+  Write-FinalChecklist
+  Write-Host ("PMR log: {0}" -f $script:PmrLogPath)
+  exit $script:PmrExitCode
 }
+
