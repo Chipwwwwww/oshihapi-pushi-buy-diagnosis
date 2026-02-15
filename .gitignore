@@ -46,3 +46,9 @@ next-env.d.ts
 
 # local ops config
 ops/vercel_prod_host.txt
+
+# post-merge routine artifacts
+ops/pmr_log_*.txt
+ops/pmr_debug_bundle_*
+ops/hardreset_main_log_*.txt
+post_merge_routine.ps1.bak_fix_*
