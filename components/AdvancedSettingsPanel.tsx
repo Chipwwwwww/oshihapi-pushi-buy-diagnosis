@@ -34,6 +34,8 @@ type AdvancedSettingsPanelProps = {
   priceYenHelpText?: string;
   deadlineHelpText?: string;
   itemKindHelpText?: string;
+  optionalInputTitle?: string;
+  fieldOrder?: ReadonlyArray<"itemKind" | "priceYen" | "deadline" | "itemName">;
   onStyleModeChange: (mode: StyleMode) => void;
   onDecisivenessChange: (value: Decisiveness) => void;
   onItemNameChange: (value: string) => void;
@@ -63,6 +65,8 @@ export default function AdvancedSettingsPanel({
   priceYenHelpText,
   deadlineHelpText,
   itemKindHelpText,
+  optionalInputTitle = "入力（任意）",
+  fieldOrder = ["itemName", "priceYen", "deadline", "itemKind"],
   onStyleModeChange,
   onDecisivenessChange,
   onItemNameChange,
@@ -70,6 +74,69 @@ export default function AdvancedSettingsPanel({
   onDeadlineChange,
   onItemKindChange,
 }: AdvancedSettingsPanelProps) {
+  const fields = {
+    itemName: (
+      <label key="itemName" className="grid gap-2 text-sm font-semibold text-foreground">
+        商品名
+        {itemNameHelpText ? <span className={helperTextClass}>{itemNameHelpText}</span> : null}
+        <input
+          value={itemName}
+          onChange={(event) => onItemNameChange(event.target.value)}
+          className={inputBaseClass}
+          placeholder={itemNamePlaceholder}
+        />
+      </label>
+    ),
+    priceYen: (
+      <label key="priceYen" className="grid gap-2 text-sm font-semibold text-foreground">
+        価格（円）
+        {priceYenHelpText ? <span className={helperTextClass}>{priceYenHelpText}</span> : null}
+        <input
+          type="number"
+          min="0"
+          value={priceYen}
+          onChange={(event) => onPriceYenChange(event.target.value)}
+          className={inputBaseClass}
+          placeholder="例：8800"
+        />
+      </label>
+    ),
+    deadline: (
+      <label key="deadline" className="grid gap-2 text-sm font-semibold text-foreground">
+        締切
+        {deadlineHelpText ? <span className={helperTextClass}>{deadlineHelpText}</span> : null}
+        <select
+          value={deadline}
+          onChange={(event) => onDeadlineChange(event.target.value as DeadlineValue)}
+          className={inputBaseClass}
+        >
+          {deadlineOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
+    ),
+    itemKind: (
+      <label key="itemKind" className="grid gap-2 text-sm font-semibold text-foreground">
+        種別
+        {itemKindHelpText ? <span className={helperTextClass}>{itemKindHelpText}</span> : null}
+        <select
+          value={itemKind}
+          onChange={(event) => onItemKindChange(event.target.value as ItemKind)}
+          className={inputBaseClass}
+        >
+          {itemKindOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
+    ),
+  } as const;
+
   return (
     <div className="space-y-4">
       {showStyleSection ? (
@@ -119,7 +186,7 @@ export default function AdvancedSettingsPanel({
 
       <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
         <div className="flex items-center justify-between gap-2">
-          <h2 className={sectionTitleClass}>入力（任意）</h2>
+          <h2 className={sectionTitleClass}>{optionalInputTitle}</h2>
           {onToggleOptionalInput ? (
             <Button variant="outline" onClick={onToggleOptionalInput} className="px-3 py-1 text-sm">
               {isOptionalInputOpen ? "閉じる" : "入力を追加"}
@@ -128,60 +195,7 @@ export default function AdvancedSettingsPanel({
         </div>
 
         {isOptionalInputOpen ? (
-          <div className="grid gap-4">
-            <label className="grid gap-2 text-sm font-semibold text-foreground">
-              商品名
-              {itemNameHelpText ? <span className={helperTextClass}>{itemNameHelpText}</span> : null}
-              <input
-                value={itemName}
-                onChange={(event) => onItemNameChange(event.target.value)}
-                className={inputBaseClass}
-                placeholder={itemNamePlaceholder}
-              />
-            </label>
-            <label className="grid gap-2 text-sm font-semibold text-foreground">
-              価格（円）
-              {priceYenHelpText ? <span className={helperTextClass}>{priceYenHelpText}</span> : null}
-              <input
-                type="number"
-                min="0"
-                value={priceYen}
-                onChange={(event) => onPriceYenChange(event.target.value)}
-                className={inputBaseClass}
-                placeholder="例：8800"
-              />
-            </label>
-            <label className="grid gap-2 text-sm font-semibold text-foreground">
-              締切
-              {deadlineHelpText ? <span className={helperTextClass}>{deadlineHelpText}</span> : null}
-              <select
-                value={deadline}
-                onChange={(event) => onDeadlineChange(event.target.value as DeadlineValue)}
-                className={inputBaseClass}
-              >
-                {deadlineOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm font-semibold text-foreground">
-              種別
-              {itemKindHelpText ? <span className={helperTextClass}>{itemKindHelpText}</span> : null}
-              <select
-                value={itemKind}
-                onChange={(event) => onItemKindChange(event.target.value as ItemKind)}
-                className={inputBaseClass}
-              >
-                {itemKindOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
+          <div className="grid gap-4">{fieldOrder.map((fieldKey) => fields[fieldKey])}</div>
         ) : (
           <p className={helperTextClass}>必要なときだけ入力を追加できます。</p>
         )}

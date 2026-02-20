@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Decisiveness } from "@/src/oshihapi/model";
 import { parseDecisiveness, DECISIVENESS_STORAGE_KEY } from "@/src/oshihapi/decisiveness";
@@ -40,6 +41,7 @@ export default function ConfirmSettingsClient() {
   const priceYen = searchParams.get("priceYen") ?? "";
 
   const modeCopy = COPY_BY_MODE[styleMode];
+  const [isOptionalInputOpen, setIsOptionalInputOpen] = useState(false);
   const itemNamePlaceholder =
     itemKind === "game_billing"
       ? "例：限定ガチャ10連 / 月パス / コラボスキン"
@@ -62,11 +64,11 @@ export default function ConfirmSettingsClient() {
   };
 
   return (
-    <div className={`${containerClass} flex min-h-screen flex-col gap-5 py-8`}>
-      <header className="space-y-2">
+    <div className={`${containerClass} flex min-h-screen flex-col gap-4 pb-36 pt-6`}>
+      <header className="space-y-1.5">
         <p className="text-sm font-semibold text-accent">確認/調整（任意）</p>
         <h1 className={pageTitleClass}>入力（任意）を追加</h1>
-        <p className={helperTextClass}>必要な情報だけ追加して診断に進めます。</p>
+        <p className={`${helperTextClass} truncate`}>必要な情報だけ追加して診断に進めます。</p>
       </header>
 
       <AdvancedSettingsPanel
@@ -84,7 +86,10 @@ export default function ConfirmSettingsClient() {
         itemKind={itemKind}
         deadlineOptions={deadlineOptions}
         itemKindOptions={itemKindOptions}
-        isOptionalInputOpen
+        isOptionalInputOpen={isOptionalInputOpen}
+        onToggleOptionalInput={() => setIsOptionalInputOpen((prev) => !prev)}
+        optionalInputTitle="詳細入力（任意）"
+        fieldOrder={["itemKind", "priceYen", "deadline", "itemName"]}
         itemNameHelpText="空でもOK（例：推しアクスタ 2025）"
         priceYenHelpText="だいたいでOK（例：8800）"
         deadlineHelpText="未定でもOK"
@@ -97,13 +102,17 @@ export default function ConfirmSettingsClient() {
         onItemKindChange={(value) => replaceQuery({ itemKind: parseItemKindValue(value) })}
       />
 
-      <div className="grid gap-3">
-        <Button onClick={() => router.push(buildFlowUrl(searchParams))} className="w-full text-base">
-          この設定で診断へ
-        </Button>
-        <Button variant="outline" onClick={() => router.push(buildConfirmUrl(searchParams))} className="w-full text-base">
-          戻る
-        </Button>
+      <div
+        className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200/80 bg-white/95 px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur-sm dark:border-white/10 dark:bg-slate-950/90"
+      >
+        <div className={`${containerClass} grid gap-2.5 !px-0 !py-0`}>
+          <Button onClick={() => router.push(buildFlowUrl(searchParams))} className="w-full text-base">
+            この設定で診断へ
+          </Button>
+          <Button variant="outline" onClick={() => router.push(buildConfirmUrl(searchParams))} className="w-full text-base">
+            戻る
+          </Button>
+        </div>
       </div>
     </div>
   );
