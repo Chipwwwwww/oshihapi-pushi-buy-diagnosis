@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Decisiveness, InputMeta, ItemKind, Mode } from "@/src/oshihapi/model";
+import { MODE_META } from "@/src/oshihapi/modeConfig";
 import {
   MODE_LABELS,
   SCENARIO_CARDS_JA,
@@ -115,12 +116,7 @@ export default function Home() {
     [itemName, parsedPriceYen, deadline, itemKind],
   );
 
-  const getModeDescription = (targetMode: Mode) =>
-    targetMode === "short"
-      ? "急いで決めたい人向け（短め）"
-      : targetMode === "medium"
-        ? "比較しながら決めたい人向け（標準）"
-        : "AIに深掘り相談したい人向け（長診断）";
+  const getModeDescription = (targetMode: Mode) => MODE_META[targetMode].homeDescription;
 
   const modeDescription = useMemo(() => getModeDescription(mode), [mode]);
   const itemNamePlaceholder =
@@ -240,20 +236,20 @@ export default function Home() {
         <h2 className={sectionTitleClass}>診断コース</h2>
         <div className="grid gap-4">
           <RadioCard
-            title="急いで決める（30秒）"
-            description="時間がなくてもサクッと判断。"
+            title="即決（30秒）"
+            description="いま買う？やめる？迷いを最短で整理"
             isSelected={mode === "short"}
             onClick={() => handleSelectMode("short")}
           />
           <RadioCard
-            title="じっくり決める（60秒〜2分）"
-            description="比較しながら安心して決めたいとき。"
+            title="標準（60秒〜2分）"
+            description="理由と不安をバランスよく整理"
             isSelected={mode === "medium"}
             onClick={() => handleSelectMode("medium")}
           />
           <RadioCard
-            title="AIに相談する（長診断）"
-            description="深掘り用プロンプトも作って相談。"
+            title="深掘り（長診断）"
+            description="比較・優先度・後悔ポイントまでじっくり（最後にAIで深掘りも可）"
             isSelected={mode === "long"}
             onClick={() => handleSelectMode("long")}
           />
@@ -409,7 +405,7 @@ export default function Home() {
           診断をはじめる
         </Button>
         <p className="text-sm text-slate-600 dark:text-zinc-300">
-          迷ったらまずは短診断でOK。途中で戻ることもできます。
+          迷ったらまずは即決でOK。途中で戻ることもできます。
         </p>
       </div>
     </div>
