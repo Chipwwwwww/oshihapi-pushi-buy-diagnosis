@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import DecisionScale from "@/components/DecisionScale";
 import ModeToggle from "@/components/ModeToggle";
+import AiConsultCta from "@/components/AiConsultCta";
 import MarketCheckCard from "@/components/MarketCheckCard";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -450,27 +451,6 @@ export default function ResultPage() {
         </div>
       </Card>
 
-      <Card className="space-y-4 border-emerald-200 bg-emerald-50 dark:ring-1 dark:ring-white/10">
-        <div className="space-y-2">
-          <h2 className="text-lg font-semibold text-emerald-900">AIに相談する（プロンプト）</h2>
-          <p className="text-sm text-emerald-800">
-            {run.mode === "long"
-              ? "長診断の内容をまとめたプロンプトです。"
-              : "もっと深掘りしたいときに使えます。"}
-          </p>
-        </div>
-        <textarea
-          readOnly
-          value={longPrompt}
-          className="min-h-[180px] w-full rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm text-emerald-900"
-        />
-        <Button
-          onClick={handleCopyPrompt}
-          className="w-full rounded-xl bg-emerald-600 text-white hover:bg-emerald-700"
-        >
-          プロンプトをコピー
-        </Button>
-      </Card>
 
       <Card className="space-y-4">
         <ModeToggle value={styleMode} onChange={updateStyleMode} />
@@ -570,6 +550,8 @@ export default function ResultPage() {
           {telemetrySubmitted ? "送信済み" : "送信する"}
         </Button>
       </Card>
+
+      <AiConsultCta longPrompt={longPrompt} onCopyPrompt={handleCopyPrompt} />
 
       <div className="grid gap-4">
         <Button

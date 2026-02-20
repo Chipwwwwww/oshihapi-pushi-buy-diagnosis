@@ -24,6 +24,7 @@ import {
 } from "@/src/oshihapi/modes/useStyleMode";
 import { MODE_DICTIONARY } from "@/src/oshihapi/modes/mode_dictionary";
 import { parseDecisiveness } from "@/src/oshihapi/decisiveness";
+import { MODE_META, normalizeMode } from "@/src/oshihapi/modeConfig";
 import { shouldAskStorage } from "@/src/oshihapi/storageGate";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -37,7 +38,6 @@ import {
   sectionTitleClass,
 } from "@/components/ui/tokens";
 
-const MODE_FALLBACK: Mode = "medium";
 const DEADLINE_VALUES = [
   "today",
   "tomorrow",
@@ -61,11 +61,6 @@ const isDeadlineValue = (value: string): value is DeadlineValue =>
 
 const isItemKindValue = (value: string): value is ItemKind =>
   ITEM_KIND_VALUES.includes(value as ItemKind);
-
-const parseMode = (value: string | null): Mode =>
-  value === "short" || value === "medium" || value === "long"
-    ? value
-    : MODE_FALLBACK;
 
 const parsePriceYen = (value: string | null): number | undefined => {
   if (!value) return undefined;
@@ -126,7 +121,7 @@ const ADDON_BY_ITEM_KIND: Partial<Record<ItemKind, readonly string[]>> = {
 export default function FlowPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const mode = parseMode(searchParams.get("mode"));
+  const mode: Mode = normalizeMode(searchParams.get("mode"));
   const itemName = searchParams.get("itemName") ?? undefined;
   const priceYen = parsePriceYen(searchParams.get("priceYen"));
   const deadline = parseDeadline(searchParams.get("deadline"));
@@ -373,11 +368,7 @@ export default function FlowPage() {
         <div className="space-y-2">
           <p className="text-sm font-semibold text-accent">質問フロー</p>
           <h1 className={pageTitleClass}>
-            {mode === "short"
-              ? "急いで診断"
-              : mode === "medium"
-                ? "じっくり診断"
-                : "AIに相談する長診断"}
+            {MODE_META[mode].flowTitle}
           </h1>
         </div>
         <Progress value={currentIndex + 1} max={questions.length} />

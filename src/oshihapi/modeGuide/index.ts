@@ -177,7 +177,7 @@ export function recommendMode(meta: InputMeta): ModeRecommendation {
 }
 
 export const MODE_LABELS: Record<Mode, string> = {
-  short: "短め",
+  short: "即決",
   medium: "標準",
-  long: "長診断",
+  long: "深掘り（長診断）",
 };
