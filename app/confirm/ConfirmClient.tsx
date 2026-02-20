@@ -75,6 +75,23 @@ export default function ConfirmClient() {
       </Card>
 
       <Card className="space-y-2 border border-slate-200 bg-white p-4 text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
+        <h2 className={sectionTitleClass}>決め切り度</h2>
+        <div className="grid grid-cols-3 gap-2">
+          {decisivenessOptions.map((option) => (
+            <Button
+              key={option.value}
+              variant={decisiveness === option.value ? "primary" : "outline"}
+              onClick={() => handleDecisivenessChange(option.value)}
+              className="rounded-xl px-2"
+            >
+              {option.label}
+            </Button>
+          ))}
+        </div>
+        <p className={helperTextClass}>いまは「{decisivenessLabels[decisiveness]}」。</p>
+      </Card>
+
+      <Card className="space-y-2 border border-slate-200 bg-white p-4 text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
         <h2 className={sectionTitleClass}>表示スタイル</h2>
         <p className={`${helperTextClass} truncate`}>文言・トーンのみ切り替わります（判定ロジックは共通です）。</p>
         <div className="grid grid-cols-3 gap-2 rounded-2xl border border-slate-200 bg-slate-100 p-2 dark:border-white/10 dark:bg-white/6">
@@ -94,23 +111,6 @@ export default function ConfirmClient() {
             </button>
           ))}
         </div>
-      </Card>
-
-      <Card className="space-y-2 border border-slate-200 bg-white p-4 text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
-        <h2 className={sectionTitleClass}>決め切り度</h2>
-        <div className="grid grid-cols-3 gap-2">
-          {decisivenessOptions.map((option) => (
-            <Button
-              key={option.value}
-              variant={decisiveness === option.value ? "primary" : "outline"}
-              onClick={() => handleDecisivenessChange(option.value)}
-              className="rounded-xl px-2"
-            >
-              {option.label}
-            </Button>
-          ))}
-        </div>
-        <p className={helperTextClass}>いまは「{decisivenessLabels[decisiveness]}」。</p>
       </Card>
 
       <div className="sticky bottom-0 mt-auto -mx-4 grid gap-2 border-t border-slate-200 bg-white/95 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] backdrop-blur dark:border-white/10 dark:bg-[#0B1220]/95 sm:mx-0 sm:rounded-2xl sm:border sm:px-3">
