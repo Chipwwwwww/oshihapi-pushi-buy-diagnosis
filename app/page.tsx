@@ -26,14 +26,8 @@ import {
   pageTitleClass,
   sectionTitleClass,
 } from "@/components/ui/tokens";
-import { COPY_BY_MODE } from "@/src/oshihapi/modes/copy_dictionary";
-import {
-  getStyleModeFromLocalStorage,
-  setStyleModeToLocalStorage,
-  type StyleMode,
-} from "@/src/oshihapi/modes/useStyleMode";
+import { getStyleModeFromLocalStorage, type StyleMode } from "@/src/oshihapi/modes/useStyleMode";
 import StartTemplateDrawer from "@/components/StartTemplateDrawer";
-import HomeAdvancedSettings from "@/components/HomeAdvancedSettings";
 import StickyStartBar from "@/components/StickyStartBar";
 
 const deadlineOptions = [
@@ -117,9 +111,9 @@ export default function Home() {
   const [priceYen, setPriceYen] = useState("");
   const [deadline, setDeadline] = useState<DeadlineValue>("unknown");
   const [itemKind, setItemKind] = useState<ItemKind>("goods");
-  const [styleMode, setStyleMode] = useState<StyleMode>(() => getStyleModeFromLocalStorage());
+  const [styleMode] = useState<StyleMode>(() => getStyleModeFromLocalStorage());
   const [isTemplateDrawerOpen, setIsTemplateDrawerOpen] = useState(false);
-  const modeCopy = COPY_BY_MODE[styleMode];
+  const [hasTemplateSelection, setHasTemplateSelection] = useState(false);
   const [decisiveness, setDecisiveness] = useState<Decisiveness>(() => {
     if (typeof window === "undefined") return "standard";
     return parseDecisiveness(window.localStorage.getItem(DECISIVENESS_STORAGE_KEY));
@@ -140,11 +134,6 @@ export default function Home() {
   const getModeDescription = (targetMode: Mode) => MODE_META[targetMode].homeDescription;
   const modeDescription = useMemo(() => getModeDescription(mode), [mode]);
 
-  const itemNamePlaceholder =
-    itemKind === "game_billing"
-      ? "例：限定ガチャ10連 / 月パス / コラボスキン"
-      : "例：推しアクスタ 2025";
-
   const handleStart = () => {
     const params = new URLSearchParams();
     params.set("mode", mode);
@@ -158,12 +147,8 @@ export default function Home() {
     const normalizedItemKind = parseItemKindValue(itemKind);
     if (normalizedItemKind) params.set("itemKind", normalizedItemKind);
     params.set("decisiveness", decisiveness);
-    router.push(`/flow?${params.toString()}`);
-  };
-
-  const handleStyleModeChange = (nextMode: StyleMode) => {
-    setStyleMode(nextMode);
-    setStyleModeToLocalStorage(nextMode);
+    if (hasTemplateSelection) params.set("templateUsed", "1");
+    router.push(`/${mode === "short" ? "flow" : "confirm"}?${params.toString()}`);
   };
 
   const handleDecisivenessChange = (value: Decisiveness) => {
@@ -194,6 +179,7 @@ export default function Home() {
     if (templateDeadline !== undefined) setDeadline(templateDeadline);
     if (templateItemKind !== undefined) setItemKind(templateItemKind);
     if (templateDecisiveness !== undefined) handleDecisivenessChange(templateDecisiveness);
+    setHasTemplateSelection(true);
     setIsTemplateDrawerOpen(false);
   };
 
@@ -280,26 +266,9 @@ export default function Home() {
         </div>
       </Card>
 
-      <HomeAdvancedSettings
-        styleMode={styleMode}
-        styleOptionLabel={modeCopy.ui.styleOptionLabel}
-        styleSectionTitle={modeCopy.ui.styleSectionTitle}
-        styleSectionHelp={modeCopy.ui.styleSectionHelp}
-        decisiveness={decisiveness}
-        itemName={itemName}
-        itemNamePlaceholder={itemNamePlaceholder}
-        priceYen={priceYen}
-        deadline={deadline}
-        itemKind={itemKind}
-        deadlineOptions={deadlineOptions}
-        itemKindOptions={itemKindOptions}
-        onStyleModeChange={handleStyleModeChange}
-        onDecisivenessChange={handleDecisivenessChange}
-        onItemNameChange={setItemName}
-        onPriceYenChange={setPriceYen}
-        onDeadlineChange={(value) => setDeadline(parseDeadlineValue(value))}
-        onItemKindChange={(value) => setItemKind(parseItemKindValue(value))}
-      />
+      <p className="text-sm text-slate-600 dark:text-zinc-300">
+        必要なら次の画面で詳細設定を調整できます（任意）。
+      </p>
 
       <StickyStartBar onStart={handleStart} />
 
