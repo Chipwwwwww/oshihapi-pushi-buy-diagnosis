@@ -69,6 +69,7 @@ $script:TelemetryHealthStatus = 'not confirmed'
 $script:ParityConclusion = 'not confirmed'
 $script:RepoRoot = ''
 $script:GitAvailable = $false
+$script:NpmCmdPath = ''
 
 function Write-Section([string]$Title) {
   Write-Host ""
@@ -227,6 +228,65 @@ function Assert-ScriptParses([string]$ScriptPath) {
   if ($errors -and $errors.Count -gt 0) {
     $firstError = $errors | Select-Object -First 1
     throw ("PowerShell parser error in {0}: {1}" -f $ScriptPath, $firstError.Message)
+  }
+}
+
+function Resolve-NpmCmdPath() {
+  $preferred = Join-Path $env:ProgramFiles 'nodejs\npm.cmd'
+  if (-not [string]::IsNullOrWhiteSpace($preferred) -and (Test-Path -LiteralPath $preferred)) {
+    return $preferred
+  }
+
+  $nodePath = $null
+  try {
+    $nodeCandidates = (& where.exe node) 2>$null
+    if ($LASTEXITCODE -eq 0 -and $nodeCandidates) {
+      $nodePath = ($nodeCandidates | Select-Object -First 1).Trim()
+    }
+  } catch {}
+
+  if (-not [string]::IsNullOrWhiteSpace($nodePath)) {
+    $nodeDir = Split-Path -Parent $nodePath
+    if (-not [string]::IsNullOrWhiteSpace($nodeDir)) {
+      $fallback = Join-Path $nodeDir 'npm.cmd'
+      if (Test-Path -LiteralPath $fallback) {
+        return $fallback
+      }
+    }
+  }
+
+  throw 'Unable to resolve npm.cmd. Node.js installation appears invalid. Expected %ProgramFiles%\nodejs\npm.cmd or npm.cmd alongside the first where.exe node result.'
+}
+
+function Write-NpmResolutionDiagnostics([string]$ResolvedNpmCmdPath) {
+  Write-Host ("Resolved npm.cmd path: {0}" -f $ResolvedNpmCmdPath) -ForegroundColor Cyan
+
+  try {
+    Write-Host 'where.exe npm:' -ForegroundColor DarkGray
+    $whereNpm = (& where.exe npm) 2>&1
+    if ($whereNpm) {
+      $whereNpm | ForEach-Object { Write-Host $_ -ForegroundColor DarkGray }
+    } else {
+      Write-Host '(no output)' -ForegroundColor DarkGray
+    }
+  } catch {
+    Write-Host ("where.exe npm failed (best effort): {0}" -f $_.Exception.Message) -ForegroundColor Yellow
+  }
+
+  try {
+    Write-Host 'Get-Command npm -All:' -ForegroundColor DarkGray
+    $cmdEntries = Get-Command npm -All -ErrorAction Stop
+    if ($cmdEntries) {
+      $cmdEntries | ForEach-Object {
+        $source = ''
+        if ($_.Source) { $source = $_.Source }
+        Write-Host ("- {0} [{1}] {2}" -f $_.Name, $_.CommandType, $source) -ForegroundColor DarkGray
+      }
+    } else {
+      Write-Host '(no entries)' -ForegroundColor DarkGray
+    }
+  } catch {
+    Write-Host ("Get-Command npm -All failed (best effort): {0}" -f $_.Exception.Message) -ForegroundColor Yellow
   }
 }
 
@@ -395,11 +455,11 @@ function Run-DevWithReadyBanner(
   Write-Host ("[WARN] Waiting for {0} ..." -f $localUrl) -ForegroundColor DarkYellow
 
   # Keep npm dev in foreground so Ctrl+C reaches the dev process directly.
-  & npm run dev -- --webpack -p "$Port"
+  & $script:NpmCmdPath run dev -- --webpack -p "$Port"
 
   $devExitCode = $LASTEXITCODE
   if ($devExitCode -ne 0) {
-    throw ("Command failed (exit={0}): npm run dev -- --webpack -p {1}" -f $devExitCode, $Port)
+    throw ("Command failed (exit={0}): {1} run dev -- --webpack -p {2}" -f $devExitCode, $script:NpmCmdPath, $Port)
   }
 }
 
@@ -1109,7 +1169,9 @@ try {
 
   $script:PmrStage = 'npm-ci'
   Write-Section "Install (npm ci)"
-  if (-not $SkipNpmCi) { Run 'npm' @('ci') }
+  $script:NpmCmdPath = Resolve-NpmCmdPath
+  Write-NpmResolutionDiagnostics -ResolvedNpmCmdPath $script:NpmCmdPath
+  if (-not $SkipNpmCi) { Run $script:NpmCmdPath @('ci') }
   else { Write-Host 'SkipNpmCi enabled.' -ForegroundColor DarkGray }
 
   $script:PmrStage = 'lint'
@@ -1117,7 +1179,7 @@ try {
   if ($SkipLint) {
     Write-Host 'SkipLint enabled.' -ForegroundColor DarkGray
   } else {
-    Run 'npm' @('run','lint')
+    Run $script:NpmCmdPath @('run','lint')
     Write-Host 'LINT OK' -ForegroundColor Green
   }
 
@@ -1125,7 +1187,7 @@ try {
   Write-Section "Build (npm run build)"
   if (-not $SkipBuild) {
     try {
-      Run 'npm' @('run','build')
+      Run $script:NpmCmdPath @('run','build')
       $script:BuildStatus = 'PASS'
       Write-Host 'BUILD OK' -ForegroundColor Green
     } catch {
@@ -1242,7 +1304,7 @@ try {
     if ($ProdSmoke) {
       Write-Host 'ProdSmoke approximates Vercel runtime; dev may differ.' -ForegroundColor Yellow
       Write-Host ("Starting prod smoke: npm run start -- -p {0}" -f $DevPort) -ForegroundColor Cyan
-      Run 'npm' @('run','start','--','-p',"$DevPort")
+      Run $script:NpmCmdPath @('run','start','--','-p',"$DevPort")
     } else {
       Write-Host ("Starting dev: npm run dev -- --webpack -p {0}" -f $DevPort) -ForegroundColor Cyan
       Run-DevWithReadyBanner -Port $DevPort
