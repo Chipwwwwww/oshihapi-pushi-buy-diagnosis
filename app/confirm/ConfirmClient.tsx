@@ -45,38 +45,38 @@ export default function ConfirmClient() {
   const summary = useMemo(() => {
     return [
       modeLabelMap[mode],
-      searchParams.get("templateUsed") === "1" ? "テンプレあり" : "テンプレなし",
-      `決め切り度: ${decisivenessLabels[decisiveness]}`,
-      `表示スタイル: ${styleModeLabels[styleMode]}`,
+      searchParams.get("templateUsed") === "1" ? "テンプレ有" : "テンプレ無",
+      `決め切り: ${decisivenessLabels[decisiveness]}`,
+      `スタイル: ${styleModeLabels[styleMode]}`,
     ];
   }, [decisiveness, mode, searchParams, styleMode]);
 
   return (
-    <div className={`${containerClass} flex min-h-screen flex-col justify-center gap-5 py-8`}>
+    <div className={`${containerClass} flex min-h-screen flex-col gap-4 py-6`}>
       <header className="space-y-2">
         <p className="text-sm font-semibold text-accent">確認/調整（任意）</p>
         <h1 className={pageTitleClass}>このまま診断へ進みますか？</h1>
-        <p className={helperTextClass}>不要なら変更せず、そのまま次へ進めます。</p>
+        <p className={`${helperTextClass} truncate`}>不要なら変更せず、そのまま次へ進めます。</p>
       </header>
 
-      <Card className="space-y-3 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
+      <Card className="space-y-2 border border-slate-200 bg-white p-4 text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
         <h2 className={sectionTitleClass}>現在の選択サマリー</h2>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex max-h-[4.6rem] flex-wrap gap-1.5 overflow-hidden">
           {summary.map((label) => (
             <Badge
               key={label}
               variant="outline"
-              className="border-slate-200 bg-slate-100 text-slate-700 dark:border-white/10 dark:bg-white/6 dark:text-zinc-200"
+              className="max-w-full border-slate-200 bg-slate-100 text-slate-700 dark:border-white/10 dark:bg-white/6 dark:text-zinc-200"
             >
-              {label}
+              <span className="block max-w-[40vw] truncate">{label}</span>
             </Badge>
           ))}
         </div>
       </Card>
 
-      <Card className="space-y-3 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
+      <Card className="space-y-2 border border-slate-200 bg-white p-4 text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
         <h2 className={sectionTitleClass}>表示スタイル</h2>
-        <p className={helperTextClass}>文言・トーンのみ切り替わります（判定ロジックは共通です）。</p>
+        <p className={`${helperTextClass} truncate`}>文言・トーンのみ切り替わります（判定ロジックは共通です）。</p>
         <div className="grid grid-cols-3 gap-2 rounded-2xl border border-slate-200 bg-slate-100 p-2 dark:border-white/10 dark:bg-white/6">
           {(["standard", "kawaii", "oshi"] as const).map((modeOption) => (
             <button
@@ -96,7 +96,7 @@ export default function ConfirmClient() {
         </div>
       </Card>
 
-      <Card className="space-y-3 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
+      <Card className="space-y-2 border border-slate-200 bg-white p-4 text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
         <h2 className={sectionTitleClass}>決め切り度</h2>
         <div className="grid grid-cols-3 gap-2">
           {decisivenessOptions.map((option) => (
@@ -113,7 +113,7 @@ export default function ConfirmClient() {
         <p className={helperTextClass}>いまは「{decisivenessLabels[decisiveness]}」。</p>
       </Card>
 
-      <div className="grid gap-3">
+      <div className="sticky bottom-0 mt-auto -mx-4 grid gap-2 border-t border-slate-200 bg-white/95 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] backdrop-blur dark:border-white/10 dark:bg-[#0B1220]/95 sm:mx-0 sm:rounded-2xl sm:border sm:px-3">
         <Button onClick={() => router.push(buildConfirmSettingsUrl(searchParams))} className="w-full text-base">
           入力を追加して精度を上げる（任意）
         </Button>
