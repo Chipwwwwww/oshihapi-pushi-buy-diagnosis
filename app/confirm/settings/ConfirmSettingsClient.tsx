@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Decisiveness } from "@/src/oshihapi/model";
 import { parseDecisiveness, DECISIVENESS_STORAGE_KEY } from "@/src/oshihapi/decisiveness";
@@ -40,6 +41,7 @@ export default function ConfirmSettingsClient() {
   const priceYen = searchParams.get("priceYen") ?? "";
 
   const modeCopy = COPY_BY_MODE[styleMode];
+  const [isDetailOpen, setIsDetailOpen] = useState(true);
   const itemNamePlaceholder =
     itemKind === "game_billing"
       ? "例：限定ガチャ10連 / 月パス / コラボスキン"
@@ -62,7 +64,7 @@ export default function ConfirmSettingsClient() {
   };
 
   return (
-    <div className={`${containerClass} flex min-h-screen flex-col gap-5 py-8`}>
+    <div className={`${containerClass} flex min-h-screen flex-col gap-4 py-6`}>
       <header className="space-y-2">
         <p className="text-sm font-semibold text-accent">確認/調整（任意）</p>
         <h1 className={pageTitleClass}>入力（任意）を追加</h1>
@@ -84,11 +86,14 @@ export default function ConfirmSettingsClient() {
         itemKind={itemKind}
         deadlineOptions={deadlineOptions}
         itemKindOptions={itemKindOptions}
-        isOptionalInputOpen
+        isOptionalInputOpen={isDetailOpen}
+        onToggleOptionalInput={() => setIsDetailOpen((prev) => !prev)}
+        optionalSectionTitle="種別・詳細入力（任意）"
         itemNameHelpText="空でもOK（例：推しアクスタ 2025）"
         priceYenHelpText="だいたいでOK（例：8800）"
         deadlineHelpText="未定でもOK"
         itemKindHelpText="迷ったらグッズ"
+        prioritizeItemKind
         onStyleModeChange={handleStyleModeChange}
         onDecisivenessChange={handleDecisivenessChange}
         onItemNameChange={(value) => replaceQuery({ itemName: value.trim() ? value : null })}
@@ -97,7 +102,7 @@ export default function ConfirmSettingsClient() {
         onItemKindChange={(value) => replaceQuery({ itemKind: parseItemKindValue(value) })}
       />
 
-      <div className="grid gap-3">
+      <div className="sticky bottom-0 mt-auto -mx-4 grid gap-2 border-t border-slate-200 bg-white/95 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] backdrop-blur dark:border-white/10 dark:bg-[#0B1220]/95 sm:mx-0 sm:rounded-2xl sm:border sm:px-3">
         <Button onClick={() => router.push(buildFlowUrl(searchParams))} className="w-full text-base">
           この設定で診断へ
         </Button>
