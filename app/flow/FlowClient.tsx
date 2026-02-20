@@ -22,8 +22,9 @@ import {
   setStyleModeToLocalStorage,
   type StyleMode,
 } from "@/src/oshihapi/modes/useStyleMode";
+import AdvancedSettingsPanel from "@/components/AdvancedSettingsPanel";
 import { MODE_DICTIONARY } from "@/src/oshihapi/modes/mode_dictionary";
-import { parseDecisiveness } from "@/src/oshihapi/decisiveness";
+import { DECISIVENESS_STORAGE_KEY, parseDecisiveness } from "@/src/oshihapi/decisiveness";
 import { MODE_META, normalizeMode } from "@/src/oshihapi/modeConfig";
 import { shouldAskStorage } from "@/src/oshihapi/storageGate";
 import Button from "@/components/ui/Button";
@@ -52,6 +53,23 @@ const ITEM_KIND_VALUES: ItemKind[] = [
   "preorder",
   "ticket",
   "game_billing",
+];
+
+const deadlineOptions = [
+  { value: "today", label: "今日" },
+  { value: "tomorrow", label: "明日" },
+  { value: "in3days", label: "3日以内" },
+  { value: "in1week", label: "1週間以内" },
+  { value: "unknown", label: "未定" },
+] as const;
+
+const itemKindOptions: { value: ItemKind; label: string }[] = [
+  { value: "goods", label: "グッズ" },
+  { value: "blind_draw", label: "くじ" },
+  { value: "used", label: "中古" },
+  { value: "preorder", label: "予約" },
+  { value: "ticket", label: "チケット" },
+  { value: "game_billing", label: "ゲーム課金" },
 ];
 
 type DeadlineValue = NonNullable<InputMeta["deadline"]>;
@@ -122,12 +140,20 @@ export default function FlowPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const mode: Mode = normalizeMode(searchParams.get("mode"));
-  const itemName = searchParams.get("itemName") ?? undefined;
-  const priceYen = parsePriceYen(searchParams.get("priceYen"));
+  const itemNameParam = searchParams.get("itemName") ?? "";
+  const priceYenParam = searchParams.get("priceYen") ?? "";
+  const itemName = itemNameParam || undefined;
+  const priceYen = parsePriceYen(priceYenParam);
   const deadline = parseDeadline(searchParams.get("deadline"));
   const itemKind = parseItemKind(searchParams.get("itemKind"));
   const decisiveness: Decisiveness = parseDecisiveness(searchParams.get("decisiveness"));
   const styleMode: StyleMode = getStyleModeFromSearchParams(searchParams) ?? "standard";
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [draftItemName, setDraftItemName] = useState(itemNameParam);
+  const [draftPriceYen, setDraftPriceYen] = useState(priceYenParam);
+  const [draftDeadline, setDraftDeadline] = useState<DeadlineValue>(deadline ?? "unknown");
+  const [draftItemKind, setDraftItemKind] = useState<ItemKind>(itemKind ?? "goods");
+  const [draftDecisiveness, setDraftDecisiveness] = useState<Decisiveness>(decisiveness);
 
   const useCase = itemKind === "game_billing" ? "game_billing" : "merch";
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -162,6 +188,11 @@ export default function FlowPage() {
     : undefined;
   const currentTitle = currentQuestionCopy?.title ?? currentQuestion?.title ?? "";
   const currentHelper = currentQuestionCopy?.helper ?? currentQuestion?.description;
+  const itemNamePlaceholder =
+    draftItemKind === "game_billing"
+      ? "例：限定ガチャ10連 / 月パス / コラボスキン"
+      : "例：推しアクスタ 2025";
+
 
   const getOptionLabel = (questionId: string, optionId: string, fallback: string) =>
     COPY_BY_MODE[styleMode].questions[questionId]?.options?.[optionId] ?? fallback;
@@ -171,6 +202,23 @@ export default function FlowPage() {
     const params = new URLSearchParams(searchParams.toString());
     params.set("styleMode", nextMode);
     router.replace(`/flow?${params.toString()}`);
+  };
+
+  const handleApplyOptionalSettings = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("decisiveness", draftDecisiveness);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(DECISIVENESS_STORAGE_KEY, draftDecisiveness);
+    }
+    if (draftItemName.trim()) params.set("itemName", draftItemName.trim());
+    else params.delete("itemName");
+    const parsedDraftPriceYen = parsePriceYen(draftPriceYen);
+    if (parsedDraftPriceYen !== undefined) params.set("priceYen", String(parsedDraftPriceYen));
+    else params.delete("priceYen");
+    params.set("deadline", draftDeadline);
+    params.set("itemKind", draftItemKind);
+    router.replace(`/flow?${params.toString()}`);
+    setIsSettingsOpen(false);
   };
 
   useEffect(() => {
@@ -370,6 +418,22 @@ export default function FlowPage() {
           <h1 className={pageTitleClass}>
             {MODE_META[mode].flowTitle}
           </h1>
+          {mode === "short" ? (
+            <button
+              type="button"
+              onClick={() => {
+                setDraftItemName(itemNameParam);
+                setDraftPriceYen(priceYenParam);
+                setDraftDeadline(deadline ?? "unknown");
+                setDraftItemKind(itemKind ?? "goods");
+                setDraftDecisiveness(decisiveness);
+                setIsSettingsOpen(true);
+              }}
+              className="text-xs font-semibold text-slate-600 underline underline-offset-4 hover:text-slate-800 dark:text-zinc-300 dark:hover:text-zinc-100"
+            >
+              設定（任意）
+            </button>
+          ) : null}
         </div>
         <Progress value={currentIndex + 1} max={questions.length} />
       </header>
@@ -530,6 +594,38 @@ export default function FlowPage() {
           ))}
         </div>
       </Card>
+
+      {isSettingsOpen ? (
+        <div className="fixed inset-0 z-50 flex items-end bg-slate-900/60 sm:items-center sm:justify-center" role="dialog" aria-modal="true">
+          <div className="max-h-[90vh] w-full overflow-y-auto rounded-t-3xl bg-background p-4 sm:max-w-2xl sm:rounded-3xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className={sectionTitleClass}>設定（任意）</h2>
+              <Button variant="ghost" onClick={() => setIsSettingsOpen(false)} className="px-3">閉じる</Button>
+            </div>
+            <AdvancedSettingsPanel
+              styleMode={styleMode}
+              styleOptionLabel={COPY_BY_MODE[styleMode].ui.styleOptionLabel}
+              styleSectionTitle={COPY_BY_MODE[styleMode].ui.styleSectionTitle}
+              styleSectionHelp={COPY_BY_MODE[styleMode].ui.styleSectionHelp}
+              decisiveness={draftDecisiveness}
+              itemName={draftItemName}
+              itemNamePlaceholder={itemNamePlaceholder}
+              priceYen={draftPriceYen}
+              deadline={draftDeadline}
+              itemKind={draftItemKind}
+              deadlineOptions={deadlineOptions}
+              itemKindOptions={itemKindOptions}
+              onStyleModeChange={handleStyleModeChange}
+              onDecisivenessChange={setDraftDecisiveness}
+              onItemNameChange={setDraftItemName}
+              onPriceYenChange={setDraftPriceYen}
+              onDeadlineChange={setDraftDeadline}
+              onItemKindChange={setDraftItemKind}
+            />
+            <Button onClick={handleApplyOptionalSettings} className="mt-4 w-full">この設定を反映</Button>
+          </div>
+        </div>
+      ) : null}
 
       <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 py-4 backdrop-blur">
         <div className={`${containerClass} flex items-center gap-4`}>
