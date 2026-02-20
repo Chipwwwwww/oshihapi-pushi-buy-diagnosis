@@ -52,21 +52,21 @@ export default function ConfirmClient() {
   }, [decisiveness, mode, searchParams, styleMode]);
 
   return (
-    <div className={`${containerClass} flex min-h-screen flex-col justify-center gap-5 py-8`}>
-      <header className="space-y-2">
+    <div className={`${containerClass} flex min-h-screen flex-col gap-4 pb-36 pt-6`}>
+      <header className="space-y-1.5">
         <p className="text-sm font-semibold text-accent">確認/調整（任意）</p>
         <h1 className={pageTitleClass}>このまま診断へ進みますか？</h1>
-        <p className={helperTextClass}>不要なら変更せず、そのまま次へ進めます。</p>
+        <p className={`${helperTextClass} truncate`}>不要なら変更せず、そのまま次へ進めます。</p>
       </header>
 
-      <Card className="space-y-3 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
+      <Card className="space-y-2.5 border border-slate-200 bg-white p-4 text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
         <h2 className={sectionTitleClass}>現在の選択サマリー</h2>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex max-h-[3.25rem] flex-wrap gap-1.5 overflow-hidden">
           {summary.map((label) => (
             <Badge
               key={label}
               variant="outline"
-              className="border-slate-200 bg-slate-100 text-slate-700 dark:border-white/10 dark:bg-white/6 dark:text-zinc-200"
+              className="max-w-full truncate border-slate-200 bg-slate-100 text-slate-700 dark:border-white/10 dark:bg-white/6 dark:text-zinc-200"
             >
               {label}
             </Badge>
@@ -74,9 +74,9 @@ export default function ConfirmClient() {
         </div>
       </Card>
 
-      <Card className="space-y-3 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
+      <Card className="space-y-2.5 border border-slate-200 bg-white p-4 text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
         <h2 className={sectionTitleClass}>表示スタイル</h2>
-        <p className={helperTextClass}>文言・トーンのみ切り替わります（判定ロジックは共通です）。</p>
+        <p className={`${helperTextClass} truncate`}>文言・トーンのみ切り替わります（判定ロジックは共通です）。</p>
         <div className="grid grid-cols-3 gap-2 rounded-2xl border border-slate-200 bg-slate-100 p-2 dark:border-white/10 dark:bg-white/6">
           {(["standard", "kawaii", "oshi"] as const).map((modeOption) => (
             <button
@@ -96,7 +96,7 @@ export default function ConfirmClient() {
         </div>
       </Card>
 
-      <Card className="space-y-3 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
+      <Card className="space-y-2.5 border border-slate-200 bg-white p-4 text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
         <h2 className={sectionTitleClass}>決め切り度</h2>
         <div className="grid grid-cols-3 gap-2">
           {decisivenessOptions.map((option) => (
@@ -113,14 +113,18 @@ export default function ConfirmClient() {
         <p className={helperTextClass}>いまは「{decisivenessLabels[decisiveness]}」。</p>
       </Card>
 
-      <div className="grid gap-3">
-        <Button onClick={() => router.push(buildConfirmSettingsUrl(searchParams))} className="w-full text-base">
-          入力を追加して精度を上げる（任意）
-        </Button>
-        <p className={`${helperTextClass} -mt-1 text-center`}>種別を選ぶと質問が最適化されます</p>
-        <Button variant="outline" onClick={() => router.push(buildFlowUrl(searchParams))} className="w-full text-base">
-          このまま診断へ（かんたん）
-        </Button>
+      <div
+        className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200/80 bg-white/95 px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur-sm dark:border-white/10 dark:bg-slate-950/90"
+      >
+        <div className={`${containerClass} grid gap-2.5 !px-0 !py-0`}>
+          <Button onClick={() => router.push(buildConfirmSettingsUrl(searchParams))} className="w-full text-base">
+            入力を追加して精度を上げる（任意）
+          </Button>
+          <p className={`${helperTextClass} -mt-1 text-center`}>種別を選ぶと質問が最適化されます</p>
+          <Button variant="outline" onClick={() => router.push(buildFlowUrl(searchParams))} className="w-full text-base">
+            このまま診断へ（かんたん）
+          </Button>
+        </div>
       </div>
     </div>
   );
