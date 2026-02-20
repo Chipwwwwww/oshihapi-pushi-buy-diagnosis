@@ -1,6 +1,4 @@
 "use client";
-
-import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Decisiveness } from "@/src/oshihapi/model";
 import { parseDecisiveness, DECISIVENESS_STORAGE_KEY } from "@/src/oshihapi/decisiveness";
@@ -33,7 +31,6 @@ const parsePriceYen = (value: string): string | null => {
 export default function ConfirmSettingsClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [isOptionalInputOpen, setIsOptionalInputOpen] = useState(false);
 
   const styleMode = getStyleModeFromSearchParams(searchParams) ?? "standard";
   const decisiveness = parseDecisiveness(searchParams.get("decisiveness"));
@@ -68,11 +65,13 @@ export default function ConfirmSettingsClient() {
     <div className={`${containerClass} flex min-h-screen flex-col gap-5 py-8`}>
       <header className="space-y-2">
         <p className="text-sm font-semibold text-accent">確認/調整（任意）</p>
-        <h1 className={pageTitleClass}>設定・入力を調整</h1>
-        <p className={helperTextClass}>表示スタイルや決め切り度を変更してから診断に進めます。</p>
+        <h1 className={pageTitleClass}>入力（任意）を追加</h1>
+        <p className={helperTextClass}>必要な情報だけ追加して診断に進めます。</p>
       </header>
 
       <AdvancedSettingsPanel
+        showStyleSection={false}
+        showDecisivenessSection={false}
         styleMode={styleMode}
         styleOptionLabel={modeCopy.ui.styleOptionLabel}
         styleSectionTitle={modeCopy.ui.styleSectionTitle}
@@ -85,8 +84,11 @@ export default function ConfirmSettingsClient() {
         itemKind={itemKind}
         deadlineOptions={deadlineOptions}
         itemKindOptions={itemKindOptions}
-        isOptionalInputOpen={isOptionalInputOpen}
-        onToggleOptionalInput={() => setIsOptionalInputOpen((prev) => !prev)}
+        isOptionalInputOpen
+        itemNameHelpText="空でもOK（例：推しアクスタ 2025）"
+        priceYenHelpText="だいたいでOK（例：8800）"
+        deadlineHelpText="未定でもOK"
+        itemKindHelpText="迷ったらグッズ"
         onStyleModeChange={handleStyleModeChange}
         onDecisivenessChange={handleDecisivenessChange}
         onItemNameChange={(value) => replaceQuery({ itemName: value.trim() ? value : null })}
