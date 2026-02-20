@@ -38,7 +38,7 @@ export function useStyleMode(initial?: {
     () =>
       getStyleModeFromSearchParams(initial?.searchParams) ??
       (initial?.value ? resolveStyleMode(initial.value) : getStyleModeFromLocalStorage()),
-    [initial?.searchParams, initial?.value],
+    [initial],
   );
 
   const [styleMode, setStyleMode] = useState<StyleMode>(initialMode);
