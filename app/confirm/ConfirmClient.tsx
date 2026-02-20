@@ -114,11 +114,12 @@ export default function ConfirmClient() {
       </Card>
 
       <div className="grid gap-3">
-        <Button onClick={() => router.push(buildFlowUrl(searchParams))} className="w-full text-base">
-          このまま診断へ
+        <Button onClick={() => router.push(buildConfirmSettingsUrl(searchParams))} className="w-full text-base">
+          入力を追加して精度を上げる（任意）
         </Button>
-        <Button variant="outline" onClick={() => router.push(buildConfirmSettingsUrl(searchParams))} className="w-full text-base">
-          入力（任意）を追加
+        <p className={`${helperTextClass} -mt-1 text-center`}>種別を選ぶと質問が最適化されます</p>
+        <Button variant="outline" onClick={() => router.push(buildFlowUrl(searchParams))} className="w-full text-base">
+          このまま診断へ（かんたん）
         </Button>
       </div>
     </div>
