@@ -1,0 +1,43 @@
+retro_report_latest.txt
+======================
+
+主題：Confirm/Settings「盡量不捲動」& 導線優先度（方案C） + /confirm 區塊優先序調整
+日期：2026-02-20
+
+A) 對話復盤（最初問題 → 嘗試 → 失敗 → 根因 → 解法）
+1) 最初問題
+- Mode 用「AI」當入口會導致三條路都走到 AI，差異消失；且日本使用者對 AI 標籤兩極。
+- 首頁/確認頁資訊太長，手機需要捲動，使用者找不到重要選項（尤其是會改題目的「種別」）。
+
+2) 嘗試（方案A：Mode 名稱去 AI，AI 變成共通 CTA）
+- Mode 三選一改成體驗/深度：即決（30秒）/標準（60秒〜2分）/深掘り（長診断）
+- 「AIに相談」移到結果頁末尾作為可選 CTA → 品牌更中立、差異更清楚
+
+3) 嘗試（Confirm/Settings 拆頁）
+- 先把「現在の選択サマリー + 表示スタイル + 決め切り度 + 入力」集中在一頁，造成手機長捲動
+- 改拆成 /confirm（摘要+調整）與 /confirm/settings（入力）
+
+4) 根因
+- 垂直堆疊太多區塊時，手機高度不夠 → 重要 CTA 會被推到螢幕外
+- 其中「種別(itemKind)」會改變後續題目，是高影響分岐，但容易被忽略
+
+5) 解法（採用方案C：compact + sticky CTA）
+- /confirm：壓縮 spacing + 1行說明 + sticky CTA，確保 CTA 首屏可見
+- 導線優先度：Primary 改成「入力を追加して精度を上げる（任意）」；Secondary 才是「このまま診断へ（かんたん）」
+  - 並用一句話解釋：種別を選ぶと質問が最適化されます
+- /confirm 区塊順序：決め切り度を表示スタイルより上（影響更大、應更先選）
+
+B) 踩雷清單 + 避免方式（自動化精神）
+- 只看 merge 訊息/PR 編號判斷完整性（錯）
+  → 改用「證據」：build ✅ / PMR ✅ / prod commitSha==HEAD / telemetry health
+- PowerShell `[]` wildcard、PS7 ternary `?:`、IWR 安全提示卡住
+  → 一律 `-LiteralPath`；一律 if/else；IWR `-UseBasicParsing`
+- 手機體驗靠想像（錯）
+  → 固定 iPhone 實機/DevTools 檢查「CTA 首屏可見、種別可見」作為 release gate
+
+C) 這次的最小驗收流程（deterministic）
+1) `npm run build` ✅
+2) `./post_merge_routine.ps1` ✅（並保留 pmr_debug_bundle）
+3) `./ops/verify_pr39_80plus_parity.ps1`（build 後才做）
+4) iPhone：/confirm 與 /confirm/settings 首屏 CTA/關鍵選項可見
+

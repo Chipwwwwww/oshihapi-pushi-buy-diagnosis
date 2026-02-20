@@ -1,166 +1,27 @@
-# oshihapi 檔案地圖（Current）
+# file_map_current（粗略地圖，請以 repo 實際內容為準）
 
-> 用途：給自己找檔案、給 AI/Codex 對齊用。  
-> Repo（Windows）：`C:\Users\User\dev\oshihapi-pushi-buy-diagnosis\`
-
----
-
-## 0) 專案根目錄（建桌面捷徑就建這個）
-- `C:\Users\User\dev\oshihapi-pushi-buy-diagnosis\`
-
-### Git/換行規則（新增）
-- `.gitattributes`（統一 LF；Windows 建議保留）
-- `.gitignore`（已加入 `*.lnk`，避免 Windows 捷徑混進 repo）
+> 目的：讓「討論→Codex→驗收」時，大家講同一份路徑與責任範圍。
+> 注意：此表是根據近期 PR/對話推定的「高機率存在」路徑；若 repo 已改名/搬移，以實際檔案為準。
 
 ---
 
-## 1) Docs（最常打開/貼給 Codex/貼給 AI）
-- `C:\Users\User\dev\oshihapi-pushi-buy-diagnosis\docs\`
-  - `oshihapi_ops_windows.md`（Windows 操作守則）
-  - `ai_next_phase_ml_ui.md`（下一階段：ML + UI 的 AI 指令）
-  - `status_summary_latest.md`（目前做到哪裡：時間線＋驗收點）
-  - `decision_engine_report_ja.md`（引擎/題庫/設計報告：日文）
-  - `decision_engine_report_zh_TW.md`（同上：繁中）
-  - `開発状況まとめ_latest.md`（開發現況備忘）
-  - `発想メモ_latest.md`（Backlog/發想/方向）
-  - `codex_prompt_*.txt`（貼給 Codex 開 PR 的任務指令）
+## App Router（主要 UI/路由）
+- `app/page.tsx`：首頁（模式/樣式/模板/輸入入口）
+- `app/confirm/page.tsx`：確認/調整（compact；CTA sticky；決め切り度優先）
+- `app/confirm/settings/page.tsx`：入力（任意）（種別優先；CTA sticky）
+- `app/flow/*`：
+  - `app/flow/FlowClient.tsx`：診斷流程 client（讀 query/狀態，導向/正規化）
+- `app/result/[runId]/page.tsx`：結果頁（含 AI 相談 CTA / prompt 展開等）
 
-✅ 一鍵找 Codex prompt：
-```powershell
-cd C:\Users\User\dev\oshihapi-pushi-buy-diagnosis
-Get-ChildItem -Recurse -Filter "codex_prompt*.txt" | Select-Object FullName
-```
+## Domain/Logic（模式、標籤、prompt）
+- `src/oshihapi/modeConfig.ts`（或同等）：模式顯示/所要時間/導線配置
+- `src/oshihapi/modeConfig/index.ts`：mode labels / 常數（例如 `MODE_LABELS`）
+- `src/oshihapi/*`：判定ロジック、prompt 生成（例：buildLongPrompt）
 
----
+## Components
+- `components/AiConsultCta.tsx`：結果頁末尾的「AIに相談」CTA（共通コンポーネント）
 
-## 2) UI（Next.js App Router）
-- `C:\Users\User\dev\oshihapi-pushi-buy-diagnosis\app\`
-  - `page.tsx`（Home）
-  - `flow\page.tsx`（Flow：問答）
-  - `result\[runId]\page.tsx`（Result：結果頁、L1 回饋、送信 UI）
-  - `history\page.tsx`（History：本機紀錄）
-  - `layout.tsx`（lang/metadata/全域 layout）
-
-### API（Next route handlers）
-- `app\api\telemetry\route.ts`（`POST /api/telemetry`）
-- `app\api\telemetry\health\route.ts`（`GET /api/telemetry/health`）
-  - ※ 這裡會用到 `pg`：
-- `app\api\version\route.ts`（`GET /api/version`，給 Vercel parity gate 比對 commit）
-  - build（TypeScript）：需要 `@types/pg`
-  - runtime（Vercel Functions）：需要 `pg` 在 dependencies（不是 devDependencies）
-
----
-
-## 3) 核心引擎/題庫/規則（TS）
-- `C:\Users\User\dev\oshihapi-pushi-buy-diagnosis\src\oshihapi\`
-  - `engine.ts`（evaluate() 決策本體）
-  - `engineConfig.ts`（權重/閾值/可調參）
-  - `merch_v2_ja.ts`（題庫：urgentCore/standard/longOnly）
-  - `reasonRules.ts`（理由/行動/分享文案規則）
-  - `runStorage.ts`（localStorage 保存/讀取 runs）
-  - `promptBuilder.ts`（長診斷的 AI prompt 組裝）
-  - `telemetryClient.ts`（前端送信 payload/build/send）
-  - `modeGuide\recommendMode.ts`（自動推薦：短/中/長；曾修正 pushIf 的 optional boolean 型別）
-  - `supportData.ts`（搜尋連結等）
-  - `model.ts`（型別：DecisionRun/InputMeta 等）
-
----
-
-## 4) 共用元件（UI 呈現）
-- `C:\Users\User\dev\oshihapi-pushi-buy-diagnosis\components\`
-  - `DecisionScale.tsx`（結果頁刻度尺）
-
----
-
-## 4.5) Ops 腳本 / parity 設定
-- `post_merge_routine.ps1`（merge 後唯一入口腳本；含 Vercel parity gate）
-- `ops\vercel_prod_host.txt`（Production host，供 parity gate 使用）
-- `docs\retro_report_latest.txt`（最新回顧記錄）
-
----
-
-## 5) 本機環境設定（非常重要：不要 commit）
-- `C:\Users\User\dev\oshihapi-pushi-buy-diagnosis\.env.local`
-  - 例：`POSTGRES_URL_NON_POOLING=...`（Neon 連線字串）
-
-### Git（本 repo 建議）
-```powershell
-cd C:\Users\User\dev\oshihapi-pushi-buy-diagnosis
-git config core.autocrlf false
-```
-
----
-
-## 6) 下載/解壓包（建議固定位置，避免 copy 找不到）
-- 下載（zip）：`C:\Users\User\Downloads\`
-- 固定解壓根：`C:\Users\User\Downloads\_oshihapi_packs\`
-
----
-
-## 7) 資料去哪裡看（Telemetry / L1）
-- 本機（local）：瀏覽器 localStorage（Runs/History/L1 label 都在這）
-- 遠端（Neon）：`telemetry_runs` table（只有 opt-in + 送信 才會有）
-
-Neon 常用查詢（抽 event/runId/l1Label）：
-```sql
-SELECT
-  created_at,
-  source,
-  data->>'event'   AS event,
-  data->>'runId'   AS run_id,
-  data->>'l1Label' AS l1_label
-FROM telemetry_runs
-ORDER BY created_at DESC
-LIMIT 50;
-```
-
----
-
-## 8) 給 AI/Codex 對齊用（直接複製貼上）
-```text
-Repo 根目錄（Windows）：
-C:\Users\User\dev\oshihapi-pushi-buy-diagnosis\
-
-重要檔案地圖：
-1) docs
-- docs/oshihapi_ops_windows.md
-- docs/ai_next_phase_ml_ui.md
-- docs/status_summary_latest.md
-- docs/decision_engine_report_ja.md
-- docs/decision_engine_report_zh_TW.md
-- docs/codex_prompt_*.txt
-
-2) UI（Next App Router）
-- app/page.tsx
-- app/flow/page.tsx
-- app/result/[runId]/page.tsx
-- app/history/page.tsx
-- app/layout.tsx
-- app/api/telemetry/route.ts
-- app/api/telemetry/health/route.ts
-- app/api/version/route.ts
-- post_merge_routine.ps1
-- ops/vercel_prod_host.txt
-- docs/retro_report_latest.txt
-
-3) Core
-- src/oshihapi/engine.ts
-- src/oshihapi/engineConfig.ts
-- src/oshihapi/merch_v2_ja.ts
-- src/oshihapi/reasonRules.ts
-- src/oshihapi/runStorage.ts
-- src/oshihapi/promptBuilder.ts
-- src/oshihapi/telemetryClient.ts
-- src/oshihapi/model.ts
-- src/oshihapi/supportData.ts
-
-4) Components
-- components/DecisionScale.tsx
-
-環境變數（不要 commit）：
-- .env.local（例 POSTGRES_URL_NON_POOLING=Neon 連線字串）
-
-資料查看位置：
-- localStorage：所有 runs/history + L1 label（本機）
-- Neon：telemetry_runs（opt-in 勾選 + 點「送信する」才會寫入）
-```
+## Ops / Scripts
+- `post_merge_routine.ps1`：merge 後唯一驗收腳本（PMR）
+- `ops/verify_pr39_80plus_parity.ps1`：prod parity gate（commitSha / telemetry / must-have paths）
+- `ops/vercel_prod_branch.txt` / `ops/vercel_prod_host.txt` / `ops/vercel_preview_host.txt`：parity 設定
