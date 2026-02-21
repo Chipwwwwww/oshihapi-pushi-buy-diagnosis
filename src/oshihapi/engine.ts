@@ -111,7 +111,10 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
 
     if (q.type === 'single' && q.options) {
       const opt = q.options.find(o => o.id === ans);
-      if (!opt) continue;
+      if (!opt) {
+        if (q.id === 'q_goal') tags.push('goal_unknown');
+        continue;
+      }
       if (opt.tags) tags.push(...opt.tags);
       if (opt.delta) {
         for (const [dim, val] of Object.entries(opt.delta)) {
@@ -158,7 +161,8 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
   // Determine goal/popularity from tags
   const goal =
     tags.includes('goal_set') ? 'set' :
-    tags.includes('goal_fun') ? 'fun' : 'single';
+    tags.includes('goal_fun') ? 'fun' :
+    tags.includes('goal_unknown') ? 'unknown' : 'single';
   const popularity =
     tags.includes('hot') ? 'hot' :
     tags.includes('cold') ? 'cold' :

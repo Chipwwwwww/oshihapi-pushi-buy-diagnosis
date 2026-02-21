@@ -89,15 +89,16 @@ export const merch_v2_ja: QuestionSet = {
     {
       id: 'q_goal',
       type: 'single',
-      title: '今回の目的は？',
+      title: '今回の買い方（回収スタイル）、どれが近い？',
       description: '買い方提案（中古/BOX/くじ上限）に影響する',
       required: true,
       urgentCore: false,
       standard: true,
       options: [
-        { id: 'single', label: '推し（特定の1つ）だけ欲しい', tags: ['goal_single'] },
-        { id: 'set', label: 'セットで揃えたい', tags: ['goal_set'] },
-        { id: 'fun', label: '引く体験（くじ/ガチャ感）を楽しみたい', tags: ['goal_fun'] },
+        { id: 'single', label: '本命だけ確実に（1点狙い）', tags: ['goal_single'] },
+        { id: 'set', label: 'まとめて揃えたい（セット/複数買い）', tags: ['goal_set'] },
+        { id: 'fun', label: '買う過程も楽しみたい（現場/開封/抽選など）', tags: ['goal_fun'] },
+        { id: 'unknown', label: '該当なし／まだわからない', tags: ['goal_unknown'] },
       ],
     },
     {
