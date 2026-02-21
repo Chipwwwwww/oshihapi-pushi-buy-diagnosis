@@ -1,4 +1,8 @@
 {
+  "schemaVersion": 2,
+  "generated": {
+    "stable": true
+  },
   "branchingMatrix": {
     "merch": {
       "short": {
@@ -265,9 +269,18 @@
       "questionId": "gb_q1_need",
       "questionType": "single",
       "scoringRelevance": "contributes_to_buy_stop_mapping",
+      "impactCategory": null,
+      "behaviorRelevance": null,
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "game_billing/long",
+        "game_billing/medium",
+        "game_billing/short"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "今回の課金、目的ははっきりしてる？",
@@ -286,7 +299,12 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 2,
+            "stopDelta": 0,
+            "netDelta": 2
+          }
         },
         {
           "optionId": "some",
@@ -298,7 +316,12 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 1,
+            "stopDelta": 1,
+            "netDelta": 0
+          }
         },
         {
           "optionId": "unclear",
@@ -310,7 +333,12 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 0,
+            "stopDelta": 2,
+            "netDelta": -2
+          }
         }
       ]
     },
@@ -319,9 +347,16 @@
       "questionId": "gb_q10_pity",
       "questionType": "single",
       "scoringRelevance": "contributes_to_buy_stop_mapping",
+      "impactCategory": null,
+      "behaviorRelevance": null,
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "game_billing/q10_then_pity"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "天井（交換）までの距離は？",
@@ -340,7 +375,12 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 0,
+            "stopDelta": 2,
+            "netDelta": -2
+          }
         },
         {
           "optionId": "mid",
@@ -352,7 +392,12 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 1,
+            "stopDelta": 1,
+            "netDelta": 0
+          }
         },
         {
           "optionId": "near",
@@ -364,7 +409,12 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 2,
+            "stopDelta": 0,
+            "netDelta": 2
+          }
         }
       ]
     },
@@ -373,9 +423,18 @@
       "questionId": "gb_q10_value",
       "questionType": "single",
       "scoringRelevance": "contributes_to_buy_stop_mapping",
+      "impactCategory": null,
+      "behaviorRelevance": null,
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "game_billing/long",
+        "game_billing/medium",
+        "game_billing/q10_else_value"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "内容と価格のバランスはどう感じる？",
@@ -394,7 +453,12 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 2,
+            "stopDelta": 0,
+            "netDelta": 2
+          }
         },
         {
           "optionId": "low",
@@ -406,7 +470,12 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 0,
+            "stopDelta": 2,
+            "netDelta": -2
+          }
         },
         {
           "optionId": "normal",
@@ -418,7 +487,12 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 1,
+            "stopDelta": 1,
+            "netDelta": 0
+          }
         }
       ]
     },
@@ -427,9 +501,18 @@
       "questionId": "gb_q2_type",
       "questionType": "single",
       "scoringRelevance": "contributes_to_buy_stop_mapping",
+      "impactCategory": null,
+      "behaviorRelevance": null,
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "game_billing/long",
+        "game_billing/medium",
+        "game_billing/short"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "課金タイプはどれ？",
@@ -448,7 +531,8 @@
           "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "other",
@@ -460,7 +544,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "pack",
@@ -472,7 +557,8 @@
           "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "pass",
@@ -484,7 +570,8 @@
           "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "skin",
@@ -496,7 +583,8 @@
           "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         }
       ]
     },
@@ -505,9 +593,18 @@
       "questionId": "gb_q3_budget",
       "questionType": "single",
       "scoringRelevance": "contributes_to_buy_stop_mapping",
+      "impactCategory": null,
+      "behaviorRelevance": null,
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "game_billing/long",
+        "game_billing/medium",
+        "game_billing/short"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "この金額、今月の範囲で無理なく払える？",
@@ -526,7 +623,12 @@
           "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 3,
+            "stopDelta": 0,
+            "netDelta": 3
+          }
         },
         {
           "optionId": "hard",
@@ -538,7 +640,12 @@
           "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 0,
+            "stopDelta": 3,
+            "netDelta": -3
+          }
         },
         {
           "optionId": "ok",
@@ -550,7 +657,12 @@
           "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 1,
+            "stopDelta": 1,
+            "netDelta": 0
+          }
         }
       ]
     },
@@ -559,9 +671,18 @@
       "questionId": "gb_q4_use",
       "questionType": "single",
       "scoringRelevance": "contributes_to_buy_stop_mapping",
+      "impactCategory": null,
+      "behaviorRelevance": null,
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "game_billing/long",
+        "game_billing/medium",
+        "game_billing/short"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "買ったあと、使うイメージはある？",
@@ -580,7 +701,12 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 2,
+            "stopDelta": 0,
+            "netDelta": 2
+          }
         },
         {
           "optionId": "low",
@@ -592,7 +718,12 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 0,
+            "stopDelta": 2,
+            "netDelta": -2
+          }
         },
         {
           "optionId": "some",
@@ -604,7 +735,12 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 1,
+            "stopDelta": 1,
+            "netDelta": 0
+          }
         }
       ]
     },
@@ -613,9 +749,18 @@
       "questionId": "gb_q5_now",
       "questionType": "single",
       "scoringRelevance": "contributes_to_buy_stop_mapping",
+      "impactCategory": null,
+      "behaviorRelevance": null,
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "game_billing/long",
+        "game_billing/medium",
+        "game_billing/short"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "今の気分はどれに近い？",
@@ -634,7 +779,12 @@
           "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 2,
+            "stopDelta": 0,
+            "netDelta": 2
+          }
         },
         {
           "optionId": "rush",
@@ -646,7 +796,12 @@
           "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 0,
+            "stopDelta": 2,
+            "netDelta": -2
+          }
         },
         {
           "optionId": "up",
@@ -658,7 +813,12 @@
           "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 1,
+            "stopDelta": 1,
+            "netDelta": 0
+          }
         }
       ]
     },
@@ -667,9 +827,17 @@
       "questionId": "gb_q6_repeat",
       "questionType": "single",
       "scoringRelevance": "contributes_to_buy_stop_mapping",
+      "impactCategory": null,
+      "behaviorRelevance": null,
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "game_billing/long",
+        "game_billing/medium"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "似た課金をして、満足したことが多い？",
@@ -688,7 +856,12 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 1,
+            "stopDelta": 1,
+            "netDelta": 0
+          }
         },
         {
           "optionId": "often",
@@ -700,7 +873,12 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 2,
+            "stopDelta": 0,
+            "netDelta": 2
+          }
         },
         {
           "optionId": "rare",
@@ -712,7 +890,12 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 0,
+            "stopDelta": 2,
+            "netDelta": -2
+          }
         }
       ]
     },
@@ -721,9 +904,17 @@
       "questionId": "gb_q7_alt",
       "questionType": "single",
       "scoringRelevance": "contributes_to_buy_stop_mapping",
+      "impactCategory": null,
+      "behaviorRelevance": null,
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "game_billing/long",
+        "game_billing/medium"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "同じ予算で他に優先したいものはある？",
@@ -742,7 +933,12 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 2,
+            "stopDelta": 0,
+            "netDelta": 2
+          }
         },
         {
           "optionId": "some",
@@ -754,7 +950,12 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 1,
+            "stopDelta": 1,
+            "netDelta": 0
+          }
         },
         {
           "optionId": "yes",
@@ -766,7 +967,12 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 0,
+            "stopDelta": 2,
+            "netDelta": -2
+          }
         }
       ]
     },
@@ -775,9 +981,17 @@
       "questionId": "gb_q8_wait",
       "questionType": "single",
       "scoringRelevance": "contributes_to_buy_stop_mapping",
+      "impactCategory": null,
+      "behaviorRelevance": null,
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "game_billing/long",
+        "game_billing/medium"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "24時間待っても気持ちは変わらなさそう？",
@@ -796,7 +1010,12 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 0,
+            "stopDelta": 2,
+            "netDelta": -2
+          }
         },
         {
           "optionId": "maybe",
@@ -808,7 +1027,12 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 1,
+            "stopDelta": 1,
+            "netDelta": 0
+          }
         },
         {
           "optionId": "same",
@@ -820,7 +1044,12 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 2,
+            "stopDelta": 0,
+            "netDelta": 2
+          }
         }
       ]
     },
@@ -829,9 +1058,17 @@
       "questionId": "gb_q9_info",
       "questionType": "single",
       "scoringRelevance": "contributes_to_buy_stop_mapping",
+      "impactCategory": null,
+      "behaviorRelevance": null,
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "game_billing/long",
+        "game_billing/medium"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "必要な情報（確率/内容/期限）は確認できた？",
@@ -850,7 +1087,12 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 2,
+            "stopDelta": 0,
+            "netDelta": 2
+          }
         },
         {
           "optionId": "none",
@@ -862,7 +1104,12 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 0,
+            "stopDelta": 2,
+            "netDelta": -2
+          }
         },
         {
           "optionId": "part",
@@ -874,7 +1121,12 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": {
+            "buyDelta": 1,
+            "stopDelta": 1,
+            "netDelta": 0
+          }
         }
       ]
     },
@@ -883,9 +1135,23 @@
       "questionId": "q_addon_blind_draw_cap",
       "questionType": "single",
       "scoringRelevance": "none",
+      "impactCategory": "survey_only",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/blind_draw"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "くじ・ブラインドの回数上限は決めた？",
@@ -904,7 +1170,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "none",
@@ -916,7 +1183,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "rough",
@@ -928,7 +1196,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         }
       ]
     },
@@ -937,9 +1206,23 @@
       "questionId": "q_addon_blind_draw_exit",
       "questionType": "single",
       "scoringRelevance": "none",
+      "impactCategory": "survey_only",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/blind_draw"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "撤退ライン（やめどき）はある？",
@@ -958,7 +1241,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "none",
@@ -970,7 +1254,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "some",
@@ -982,7 +1267,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         }
       ]
     },
@@ -991,9 +1277,27 @@
       "questionId": "q_addon_common_info",
       "questionType": "single",
       "scoringRelevance": "none",
+      "impactCategory": "survey_only",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/blind_draw",
+        "merch/long/goods",
+        "merch/long/preorder",
+        "merch/long/ticket",
+        "merch/long/used"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "必要情報は揃っている？",
@@ -1012,7 +1316,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "lack",
@@ -1024,7 +1329,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "partial",
@@ -1036,7 +1342,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         }
       ]
     },
@@ -1045,9 +1352,27 @@
       "questionId": "q_addon_common_priority",
       "questionType": "single",
       "scoringRelevance": "none",
+      "impactCategory": "survey_only",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/blind_draw",
+        "merch/long/goods",
+        "merch/long/preorder",
+        "merch/long/ticket",
+        "merch/long/used"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "今月の推し活の中で優先度は？",
@@ -1066,7 +1391,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "low",
@@ -1078,7 +1404,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "mid",
@@ -1090,7 +1417,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         }
       ]
     },
@@ -1099,9 +1427,23 @@
       "questionId": "q_addon_goods_compare",
       "questionType": "single",
       "scoringRelevance": "none",
+      "impactCategory": "survey_only",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/goods"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "同系統アイテムとの比較はできた？",
@@ -1120,7 +1462,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "none",
@@ -1132,7 +1475,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "partial",
@@ -1144,7 +1488,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         }
       ]
     },
@@ -1153,9 +1498,23 @@
       "questionId": "q_addon_goods_portability",
       "questionType": "single",
       "scoringRelevance": "none",
+      "impactCategory": "survey_only",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/goods"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "持ち歩き・使いどころの想定は？",
@@ -1174,7 +1533,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "rare",
@@ -1186,7 +1546,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "sometimes",
@@ -1198,7 +1559,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         }
       ]
     },
@@ -1207,9 +1569,23 @@
       "questionId": "q_addon_preorder_restock",
       "questionType": "single",
       "scoringRelevance": "none",
+      "impactCategory": "survey_only",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/preorder"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "受注再開・再販の可能性を確認した？",
@@ -1228,7 +1604,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "heard",
@@ -1240,7 +1617,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "unknown",
@@ -1252,7 +1630,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         }
       ]
     },
@@ -1261,9 +1640,23 @@
       "questionId": "q_addon_preorder_timeline",
       "questionType": "single",
       "scoringRelevance": "none",
+      "impactCategory": "survey_only",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/preorder"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "発売・到着タイミングを許容できる？",
@@ -1282,7 +1675,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "maybe",
@@ -1294,7 +1688,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "ok",
@@ -1306,7 +1701,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         }
       ]
     },
@@ -1315,9 +1711,23 @@
       "questionId": "q_addon_ticket_resale_rule",
       "questionType": "single",
       "scoringRelevance": "none",
+      "impactCategory": "survey_only",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/ticket"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "キャンセル・譲渡ルールを確認した？",
@@ -1336,7 +1746,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "not_yet",
@@ -1348,7 +1759,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "partly",
@@ -1360,7 +1772,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         }
       ]
     },
@@ -1369,9 +1782,23 @@
       "questionId": "q_addon_ticket_schedule",
       "questionType": "single",
       "scoringRelevance": "none",
+      "impactCategory": "survey_only",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/ticket"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "日程・移動・体調まで見通せている？",
@@ -1390,7 +1817,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "risk",
@@ -1402,7 +1830,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "some_risk",
@@ -1414,7 +1843,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         }
       ]
     },
@@ -1423,9 +1853,23 @@
       "questionId": "q_addon_used_condition",
       "questionType": "single",
       "scoringRelevance": "none",
+      "impactCategory": "survey_only",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/used"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "中古の状態リスクを許容できる？",
@@ -1444,7 +1888,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "hard",
@@ -1456,7 +1901,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "ok",
@@ -1468,7 +1914,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         }
       ]
     },
@@ -1477,9 +1924,23 @@
       "questionId": "q_addon_used_price_gap",
       "questionType": "single",
       "scoringRelevance": "none",
+      "impactCategory": "survey_only",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/used"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "新品との差額は納得できる？",
@@ -1498,7 +1959,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "unknown",
@@ -1510,7 +1972,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "worth",
@@ -1522,7 +1985,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         }
       ]
     },
@@ -1531,9 +1995,32 @@
       "questionId": "q_alternative_plan",
       "questionType": "single",
       "scoringRelevance": "none",
+      "impactCategory": "survey_only",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/blind_draw",
+        "merch/long/goods",
+        "merch/long/preorder",
+        "merch/long/ticket",
+        "merch/long/used",
+        "merch/medium/blind_draw",
+        "merch/medium/goods",
+        "merch/medium/preorder",
+        "merch/medium/ticket",
+        "merch/medium/used"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "見送る場合の代替案はある？",
@@ -1552,7 +2039,8 @@
           "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "maybe",
@@ -1564,7 +2052,8 @@
           "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "none",
@@ -1576,7 +2065,8 @@
           "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         }
       ]
     },
@@ -1585,6 +2075,16 @@
       "questionId": "q_budget_pain",
       "questionType": "single",
       "scoringRelevance": "delta",
+      "impactCategory": "score",
+      "behaviorRelevance": {
+        "affectsScore": true,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "score",
       "mapTo": null,
       "tags": [
         "budget_force",
@@ -1593,6 +2093,24 @@
         "budget_some"
       ],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/blind_draw",
+        "merch/long/goods",
+        "merch/long/preorder",
+        "merch/long/ticket",
+        "merch/long/used",
+        "merch/medium/blind_draw",
+        "merch/medium/goods",
+        "merch/medium/preorder",
+        "merch/medium/ticket",
+        "merch/medium/used",
+        "merch/short/blind_draw",
+        "merch/short/goods",
+        "merch/short/preorder",
+        "merch/short/ticket",
+        "merch/short/used"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "この出費、あとで痛い？",
@@ -1617,7 +2135,8 @@
           },
           "tags": [
             "budget_force"
-          ]
+          ],
+          "buyStopDelta": null
         },
         {
           "optionId": "hard",
@@ -1634,7 +2153,8 @@
           },
           "tags": [
             "budget_hard"
-          ]
+          ],
+          "buyStopDelta": null
         },
         {
           "optionId": "ok",
@@ -1651,7 +2171,8 @@
           },
           "tags": [
             "budget_ok"
-          ]
+          ],
+          "buyStopDelta": null
         },
         {
           "optionId": "some",
@@ -1668,7 +2189,8 @@
           },
           "tags": [
             "budget_some"
-          ]
+          ],
+          "buyStopDelta": null
         }
       ]
     },
@@ -1677,9 +2199,37 @@
       "questionId": "q_desire",
       "questionType": "scale",
       "scoringRelevance": "mapTo",
+      "impactCategory": "score",
+      "behaviorRelevance": {
+        "affectsScore": true,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "score",
       "mapTo": "desire",
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/blind_draw",
+        "merch/long/goods",
+        "merch/long/preorder",
+        "merch/long/ticket",
+        "merch/long/used",
+        "merch/medium/blind_draw",
+        "merch/medium/goods",
+        "merch/medium/preorder",
+        "merch/medium/ticket",
+        "merch/medium/used",
+        "merch/short/blind_draw",
+        "merch/short/goods",
+        "merch/short/preorder",
+        "merch/short/ticket",
+        "merch/short/used"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "これは「推し度（欲しさ）」どれくらい？",
@@ -1697,6 +2247,16 @@
       "questionId": "q_goal",
       "questionType": "single",
       "scoringRelevance": "none",
+      "impactCategory": "method",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": true,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "method",
       "mapTo": null,
       "tags": [
         "goal_fun",
@@ -1704,6 +2264,19 @@
         "goal_single"
       ],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/blind_draw",
+        "merch/long/goods",
+        "merch/long/preorder",
+        "merch/long/ticket",
+        "merch/long/used",
+        "merch/medium/blind_draw",
+        "merch/medium/goods",
+        "merch/medium/preorder",
+        "merch/medium/ticket",
+        "merch/medium/used"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "今回の目的は？",
@@ -1724,7 +2297,8 @@
           "delta": null,
           "tags": [
             "goal_fun"
-          ]
+          ],
+          "buyStopDelta": null
         },
         {
           "optionId": "set",
@@ -1738,7 +2312,8 @@
           "delta": null,
           "tags": [
             "goal_set"
-          ]
+          ],
+          "buyStopDelta": null
         },
         {
           "optionId": "single",
@@ -1752,7 +2327,8 @@
           "delta": null,
           "tags": [
             "goal_single"
-          ]
+          ],
+          "buyStopDelta": null
         }
       ]
     },
@@ -1761,6 +2337,16 @@
       "questionId": "q_hot_cold",
       "questionType": "single",
       "scoringRelevance": "none",
+      "impactCategory": "survey_only",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [
         "cold",
@@ -1771,6 +2357,19 @@
       "unknownTagHints": [
         "unknown_popularity"
       ],
+      "appearsInBranches": [
+        "merch/long/blind_draw",
+        "merch/long/goods",
+        "merch/long/preorder",
+        "merch/long/ticket",
+        "merch/long/used",
+        "merch/medium/blind_draw",
+        "merch/medium/goods",
+        "merch/medium/preorder",
+        "merch/medium/ticket",
+        "merch/medium/used"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "欲しい枠（推し）は人気枠？（高レート/低レート）",
@@ -1791,7 +2390,8 @@
           "delta": null,
           "tags": [
             "cold"
-          ]
+          ],
+          "buyStopDelta": null
         },
         {
           "optionId": "hot",
@@ -1805,7 +2405,8 @@
           "delta": null,
           "tags": [
             "hot"
-          ]
+          ],
+          "buyStopDelta": null
         },
         {
           "optionId": "normal",
@@ -1819,7 +2420,8 @@
           "delta": null,
           "tags": [
             "normal_popularity"
-          ]
+          ],
+          "buyStopDelta": null
         },
         {
           "optionId": "unknown",
@@ -1833,7 +2435,8 @@
           "delta": null,
           "tags": [
             "unknown_popularity"
-          ]
+          ],
+          "buyStopDelta": null
         }
       ]
     },
@@ -1842,9 +2445,37 @@
       "questionId": "q_impulse_axis_short",
       "questionType": "scale",
       "scoringRelevance": "none",
+      "impactCategory": "flags",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": true,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "flags",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/blind_draw",
+        "merch/long/goods",
+        "merch/long/preorder",
+        "merch/long/ticket",
+        "merch/long/used",
+        "merch/medium/blind_draw",
+        "merch/medium/goods",
+        "merch/medium/preorder",
+        "merch/medium/ticket",
+        "merch/medium/used",
+        "merch/short/blind_draw",
+        "merch/short/goods",
+        "merch/short/preorder",
+        "merch/short/ticket",
+        "merch/short/used"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "今の欲しさ、どっち寄り？",
@@ -1862,9 +2493,21 @@
       "questionId": "q_long_note",
       "questionType": "text",
       "scoringRelevance": "none",
+      "impactCategory": "survey_only",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [],
+      "isOrphan": true,
       "sameAsStandard": false,
       "styles": {
         "standard": "AIに相談したいポイントを一言で書いてください",
@@ -1879,9 +2522,32 @@
       "questionId": "q_motives_multi",
       "questionType": "multi",
       "scoringRelevance": "none",
+      "impactCategory": "flags",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": true,
+        "affectsFutureUseFlag": true,
+        "affectsTrendOrVagueFlag": true,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "flags",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/blind_draw",
+        "merch/long/goods",
+        "merch/long/preorder",
+        "merch/long/ticket",
+        "merch/long/used",
+        "merch/medium/blind_draw",
+        "merch/medium/goods",
+        "merch/medium/preorder",
+        "merch/medium/ticket",
+        "merch/medium/used"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "今「買いたい理由」ってどれ？（複数選択OK）",
@@ -1900,7 +2566,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "fomo",
@@ -1912,7 +2579,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "rush",
@@ -1924,7 +2592,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "support",
@@ -1936,7 +2605,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "trend",
@@ -1948,7 +2618,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "use",
@@ -1960,7 +2631,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "vague",
@@ -1972,7 +2644,8 @@
           "sameAsStandard": true,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         }
       ]
     },
@@ -1981,9 +2654,32 @@
       "questionId": "q_price_feel",
       "questionType": "single",
       "scoringRelevance": "none",
+      "impactCategory": "survey_only",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/blind_draw",
+        "merch/long/goods",
+        "merch/long/preorder",
+        "merch/long/ticket",
+        "merch/long/used",
+        "merch/medium/blind_draw",
+        "merch/medium/goods",
+        "merch/medium/preorder",
+        "merch/medium/ticket",
+        "merch/medium/used"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "価格の納得感は？",
@@ -2002,7 +2698,8 @@
           "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "high",
@@ -2014,7 +2711,8 @@
           "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "normal",
@@ -2026,7 +2724,8 @@
           "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "unknown",
@@ -2038,7 +2737,8 @@
           "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         }
       ]
     },
@@ -2047,6 +2747,16 @@
       "questionId": "q_rarity_restock",
       "questionType": "single",
       "scoringRelevance": "delta",
+      "impactCategory": "score",
+      "behaviorRelevance": {
+        "affectsScore": true,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "score",
       "mapTo": null,
       "tags": [
         "restock_high",
@@ -2057,6 +2767,24 @@
       "unknownTagHints": [
         "unknown_restock"
       ],
+      "appearsInBranches": [
+        "merch/long/blind_draw",
+        "merch/long/goods",
+        "merch/long/preorder",
+        "merch/long/ticket",
+        "merch/long/used",
+        "merch/medium/blind_draw",
+        "merch/medium/goods",
+        "merch/medium/preorder",
+        "merch/medium/ticket",
+        "merch/medium/used",
+        "merch/short/blind_draw",
+        "merch/short/goods",
+        "merch/short/preorder",
+        "merch/short/ticket",
+        "merch/short/used"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "再販（受注/再入荷）しそう？",
@@ -2080,7 +2808,8 @@
           },
           "tags": [
             "restock_high"
-          ]
+          ],
+          "buyStopDelta": null
         },
         {
           "optionId": "maybe",
@@ -2097,7 +2826,8 @@
           },
           "tags": [
             "restock_mid"
-          ]
+          ],
+          "buyStopDelta": null
         },
         {
           "optionId": "unknown",
@@ -2114,7 +2844,8 @@
           },
           "tags": [
             "unknown_restock"
-          ]
+          ],
+          "buyStopDelta": null
         },
         {
           "optionId": "unlikely",
@@ -2131,7 +2862,8 @@
           },
           "tags": [
             "restock_low"
-          ]
+          ],
+          "buyStopDelta": null
         }
       ]
     },
@@ -2140,6 +2872,16 @@
       "questionId": "q_regret_impulse",
       "questionType": "single",
       "scoringRelevance": "delta",
+      "impactCategory": "score",
+      "behaviorRelevance": {
+        "affectsScore": true,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "score",
       "mapTo": null,
       "tags": [
         "state_calm",
@@ -2148,6 +2890,24 @@
         "state_tired"
       ],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/blind_draw",
+        "merch/long/goods",
+        "merch/long/preorder",
+        "merch/long/ticket",
+        "merch/long/used",
+        "merch/medium/blind_draw",
+        "merch/medium/goods",
+        "merch/medium/preorder",
+        "merch/medium/ticket",
+        "merch/medium/used",
+        "merch/short/blind_draw",
+        "merch/short/goods",
+        "merch/short/preorder",
+        "merch/short/ticket",
+        "merch/short/used"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "いまの自分、どれに近い？（衝動/後悔リスク）",
@@ -2171,7 +2931,8 @@
           },
           "tags": [
             "state_calm"
-          ]
+          ],
+          "buyStopDelta": null
         },
         {
           "optionId": "excited",
@@ -2188,7 +2949,8 @@
           },
           "tags": [
             "state_excited"
-          ]
+          ],
+          "buyStopDelta": null
         },
         {
           "optionId": "fomo",
@@ -2206,7 +2968,8 @@
           },
           "tags": [
             "state_fomo"
-          ]
+          ],
+          "buyStopDelta": null
         },
         {
           "optionId": "tired",
@@ -2223,7 +2986,8 @@
           },
           "tags": [
             "state_tired"
-          ]
+          ],
+          "buyStopDelta": null
         }
       ]
     },
@@ -2232,9 +2996,34 @@
       "questionId": "q_storage_fit",
       "questionType": "single",
       "scoringRelevance": "storage_gate",
+      "impactCategory": "storage_gate",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": true
+      },
+      "relevanceSummary": "storage",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/blind_draw",
+        "merch/long/goods",
+        "merch/long/preorder",
+        "merch/long/used",
+        "merch/medium/blind_draw",
+        "merch/medium/goods",
+        "merch/medium/preorder",
+        "merch/medium/used",
+        "merch/short/blind_draw",
+        "merch/short/goods",
+        "merch/short/preorder",
+        "merch/short/used"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "置き場所、決まってる？",
@@ -2253,7 +3042,8 @@
           "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "NONE",
@@ -2265,7 +3055,8 @@
           "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "PROBABLE",
@@ -2277,7 +3068,8 @@
           "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "UNKNOWN",
@@ -2289,7 +3081,8 @@
           "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         }
       ]
     },
@@ -2298,9 +3091,32 @@
       "questionId": "q_storage_space",
       "questionType": "single",
       "scoringRelevance": "none",
+      "impactCategory": "survey_only",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "none",
       "mapTo": null,
       "tags": [],
       "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/blind_draw",
+        "merch/long/goods",
+        "merch/long/preorder",
+        "merch/long/ticket",
+        "merch/long/used",
+        "merch/medium/blind_draw",
+        "merch/medium/goods",
+        "merch/medium/preorder",
+        "merch/medium/ticket",
+        "merch/medium/used"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "置き場所・保管の見通しは？",
@@ -2319,7 +3135,8 @@
           "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "enough",
@@ -2331,7 +3148,8 @@
           "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         },
         {
           "optionId": "tight",
@@ -2343,7 +3161,8 @@
           "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
-          "tags": []
+          "tags": [],
+          "buyStopDelta": null
         }
       ]
     },
@@ -2352,6 +3171,16 @@
       "questionId": "q_urgency",
       "questionType": "single",
       "scoringRelevance": "delta",
+      "impactCategory": "score",
+      "behaviorRelevance": {
+        "affectsScore": true,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "score",
       "mapTo": null,
       "tags": [
         "unknown_urgency",
@@ -2362,6 +3191,24 @@
       "unknownTagHints": [
         "unknown_urgency"
       ],
+      "appearsInBranches": [
+        "merch/long/blind_draw",
+        "merch/long/goods",
+        "merch/long/preorder",
+        "merch/long/ticket",
+        "merch/long/used",
+        "merch/medium/blind_draw",
+        "merch/medium/goods",
+        "merch/medium/preorder",
+        "merch/medium/ticket",
+        "merch/medium/used",
+        "merch/short/blind_draw",
+        "merch/short/goods",
+        "merch/short/preorder",
+        "merch/short/ticket",
+        "merch/short/used"
+      ],
+      "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
         "standard": "今買わないとどうなる？（急ぎ度）",
@@ -2386,7 +3233,8 @@
           },
           "tags": [
             "urgency_high"
-          ]
+          ],
+          "buyStopDelta": null
         },
         {
           "optionId": "low_stock",
@@ -2404,7 +3252,8 @@
           },
           "tags": [
             "urgency_mid"
-          ]
+          ],
+          "buyStopDelta": null
         },
         {
           "optionId": "not_urgent",
@@ -2422,7 +3271,8 @@
           },
           "tags": [
             "urgency_low"
-          ]
+          ],
+          "buyStopDelta": null
         },
         {
           "optionId": "unknown",
@@ -2438,7 +3288,8 @@
           },
           "tags": [
             "unknown_urgency"
-          ]
+          ],
+          "buyStopDelta": null
         }
       ]
     }

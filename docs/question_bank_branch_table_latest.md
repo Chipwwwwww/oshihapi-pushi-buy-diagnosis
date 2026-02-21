@@ -30,12 +30,21 @@
 - mode=long: gb_q1_need -> gb_q2_type -> gb_q3_budget -> gb_q4_use -> gb_q5_now -> gb_q6_repeat -> gb_q7_alt -> gb_q8_wait -> gb_q9_info -> gb_q10_value
 - dynamic branch: q10 = gb_q10_pity if gb_q2_type == gacha, else gb_q10_value
 
-## B. Question Catalog Detail
+## B. Orphan Questions
+
+- q_long_note
+
+## C. Question Catalog Detail
 
 ### gb_q1_need
 - useCase: game_billing
 - type: single
 - scoring relevance: contributes_to_buy_stop_mapping
+- impactCategory: 
+- relevanceSummary: none
+- behaviorRelevance: 
+- appears in: game_billing/long | game_billing/medium | game_billing/short
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -46,11 +55,11 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| clear | はっきりしている | はっきりしている | はっきりしている | true |  |  |
-| some | なんとなくある | なんとなくある | なんとなくある | true |  |  |
-| unclear | まだぼんやり | まだぼんやり | まだぼんやり | true |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| clear | はっきりしている | はっきりしている | はっきりしている | true |  |  | 2 | 0 | 2 |
+| some | なんとなくある | なんとなくある | なんとなくある | true |  |  | 1 | 1 | 0 |
+| unclear | まだぼんやり | まだぼんやり | まだぼんやり | true |  |  | 0 | 2 | -2 |
 
 </details>
 
@@ -58,6 +67,11 @@
 - useCase: game_billing
 - type: single
 - scoring relevance: contributes_to_buy_stop_mapping
+- impactCategory: 
+- relevanceSummary: none
+- behaviorRelevance: 
+- appears in: game_billing/q10_then_pity
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -68,11 +82,11 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| far | 遠い/不明 | 遠い/不明 | 遠い/不明 | true |  |  |
-| mid | 中間くらい | 中間くらい | 中間くらい | true |  |  |
-| near | 近い | 近い | 近い | true |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| far | 遠い/不明 | 遠い/不明 | 遠い/不明 | true |  |  | 0 | 2 | -2 |
+| mid | 中間くらい | 中間くらい | 中間くらい | true |  |  | 1 | 1 | 0 |
+| near | 近い | 近い | 近い | true |  |  | 2 | 0 | 2 |
 
 </details>
 
@@ -80,6 +94,11 @@
 - useCase: game_billing
 - type: single
 - scoring relevance: contributes_to_buy_stop_mapping
+- impactCategory: 
+- relevanceSummary: none
+- behaviorRelevance: 
+- appears in: game_billing/long | game_billing/medium | game_billing/q10_else_value
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -90,11 +109,11 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| good | 納得感がある | 納得感がある | 納得感がある | true |  |  |
-| low | やや低い | やや低い | やや低い | true |  |  |
-| normal | 普通 | 普通 | 普通 | true |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| good | 納得感がある | 納得感がある | 納得感がある | true |  |  | 2 | 0 | 2 |
+| low | やや低い | やや低い | やや低い | true |  |  | 0 | 2 | -2 |
+| normal | 普通 | 普通 | 普通 | true |  |  | 1 | 1 | 0 |
 
 </details>
 
@@ -102,6 +121,11 @@
 - useCase: game_billing
 - type: single
 - scoring relevance: contributes_to_buy_stop_mapping
+- impactCategory: 
+- relevanceSummary: none
+- behaviorRelevance: 
+- appears in: game_billing/long | game_billing/medium | game_billing/short
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -112,13 +136,13 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| gacha | ガチャ | ガチャ | ガチャ案件 | false |  |  |
-| other | その他 | その他 | その他 | true |  |  |
-| pack | お得パック | お得パック | パック案件 | false |  |  |
-| pass | 月パス/継続系 | 月パス系 | 月パス系 | false |  |  |
-| skin | スキン/見た目 | スキン | スキン系 | false |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| gacha | ガチャ | ガチャ | ガチャ案件 | false |  |  |  |  |  |
+| other | その他 | その他 | その他 | true |  |  |  |  |  |
+| pack | お得パック | お得パック | パック案件 | false |  |  |  |  |  |
+| pass | 月パス/継続系 | 月パス系 | 月パス系 | false |  |  |  |  |  |
+| skin | スキン/見た目 | スキン | スキン系 | false |  |  |  |  |  |
 
 </details>
 
@@ -126,6 +150,11 @@
 - useCase: game_billing
 - type: single
 - scoring relevance: contributes_to_buy_stop_mapping
+- impactCategory: 
+- relevanceSummary: none
+- behaviorRelevance: 
+- appears in: game_billing/long | game_billing/medium | game_billing/short
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -136,11 +165,11 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| easy | 無理なく払える | らくらく払える | 余裕あり | false |  |  |
-| hard | ちょっと重い | ちょっと重い | 圧が高い | false |  |  |
-| ok | 調整すれば払える | 調整すればOK | 調整で対応 | false |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| easy | 無理なく払える | らくらく払える | 余裕あり | false |  |  | 3 | 0 | 3 |
+| hard | ちょっと重い | ちょっと重い | 圧が高い | false |  |  | 0 | 3 | -3 |
+| ok | 調整すれば払える | 調整すればOK | 調整で対応 | false |  |  | 1 | 1 | 0 |
 
 </details>
 
@@ -148,6 +177,11 @@
 - useCase: game_billing
 - type: single
 - scoring relevance: contributes_to_buy_stop_mapping
+- impactCategory: 
+- relevanceSummary: none
+- behaviorRelevance: 
+- appears in: game_billing/long | game_billing/medium | game_billing/short
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -158,11 +192,11 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| high | かなりある | かなりある | かなりある | true |  |  |
-| low | あまりない | あまりない | あまりない | true |  |  |
-| some | 少しある | 少しある | 少しある | true |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| high | かなりある | かなりある | かなりある | true |  |  | 2 | 0 | 2 |
+| low | あまりない | あまりない | あまりない | true |  |  | 0 | 2 | -2 |
+| some | 少しある | 少しある | 少しある | true |  |  | 1 | 1 | 0 |
 
 </details>
 
@@ -170,6 +204,11 @@
 - useCase: game_billing
 - type: single
 - scoring relevance: contributes_to_buy_stop_mapping
+- impactCategory: 
+- relevanceSummary: none
+- behaviorRelevance: 
+- appears in: game_billing/long | game_billing/medium | game_billing/short
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -180,11 +219,11 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| calm | 落ち着いている | 落ち着いてる | 平常 | false |  |  |
-| rush | 急いで決めたい | 今すぐ決めたい | 即断モード | false |  |  |
-| up | 少し高まっている | ちょい上がり | 高まり中 | false |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| calm | 落ち着いている | 落ち着いてる | 平常 | false |  |  | 2 | 0 | 2 |
+| rush | 急いで決めたい | 今すぐ決めたい | 即断モード | false |  |  | 0 | 2 | -2 |
+| up | 少し高まっている | ちょい上がり | 高まり中 | false |  |  | 1 | 1 | 0 |
 
 </details>
 
@@ -192,6 +231,11 @@
 - useCase: game_billing
 - type: single
 - scoring relevance: contributes_to_buy_stop_mapping
+- impactCategory: 
+- relevanceSummary: none
+- behaviorRelevance: 
+- appears in: game_billing/long | game_billing/medium
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -202,11 +246,11 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| half | 半々 | 半々 | 半々 | true |  |  |
-| often | 満足したことが多い | 満足したことが多い | 満足したことが多い | true |  |  |
-| rare | 満足しないことも多い | 満足しないことも多い | 満足しないことも多い | true |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| half | 半々 | 半々 | 半々 | true |  |  | 1 | 1 | 0 |
+| often | 満足したことが多い | 満足したことが多い | 満足したことが多い | true |  |  | 2 | 0 | 2 |
+| rare | 満足しないことも多い | 満足しないことも多い | 満足しないことも多い | true |  |  | 0 | 2 | -2 |
 
 </details>
 
@@ -214,6 +258,11 @@
 - useCase: game_billing
 - type: single
 - scoring relevance: contributes_to_buy_stop_mapping
+- impactCategory: 
+- relevanceSummary: none
+- behaviorRelevance: 
+- appears in: game_billing/long | game_billing/medium
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -224,11 +273,11 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| none | 特にない | 特にない | 特にない | true |  |  |
-| some | 少しある | 少しある | 少しある | true |  |  |
-| yes | ある | ある | ある | true |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| none | 特にない | 特にない | 特にない | true |  |  | 2 | 0 | 2 |
+| some | 少しある | 少しある | 少しある | true |  |  | 1 | 1 | 0 |
+| yes | ある | ある | ある | true |  |  | 0 | 2 | -2 |
 
 </details>
 
@@ -236,6 +285,11 @@
 - useCase: game_billing
 - type: single
 - scoring relevance: contributes_to_buy_stop_mapping
+- impactCategory: 
+- relevanceSummary: none
+- behaviorRelevance: 
+- appears in: game_billing/long | game_billing/medium
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -246,11 +300,11 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| drop | 下がりそう | 下がりそう | 下がりそう | true |  |  |
-| maybe | 少し変わるかも | 少し変わるかも | 少し変わるかも | true |  |  |
-| same | 変わらなさそう | 変わらなさそう | 変わらなさそう | true |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| drop | 下がりそう | 下がりそう | 下がりそう | true |  |  | 0 | 2 | -2 |
+| maybe | 少し変わるかも | 少し変わるかも | 少し変わるかも | true |  |  | 1 | 1 | 0 |
+| same | 変わらなさそう | 変わらなさそう | 変わらなさそう | true |  |  | 2 | 0 | 2 |
 
 </details>
 
@@ -258,6 +312,11 @@
 - useCase: game_billing
 - type: single
 - scoring relevance: contributes_to_buy_stop_mapping
+- impactCategory: 
+- relevanceSummary: none
+- behaviorRelevance: 
+- appears in: game_billing/long | game_billing/medium
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -268,11 +327,11 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| done | 確認できた | 確認できた | 確認できた | true |  |  |
-| none | まだ | まだ | まだ | true |  |  |
-| part | 一部だけ | 一部だけ | 一部だけ | true |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| done | 確認できた | 確認できた | 確認できた | true |  |  | 2 | 0 | 2 |
+| none | まだ | まだ | まだ | true |  |  | 0 | 2 | -2 |
+| part | 一部だけ | 一部だけ | 一部だけ | true |  |  | 1 | 1 | 0 |
 
 </details>
 
@@ -280,6 +339,11 @@
 - useCase: merch
 - type: single
 - scoring relevance: none
+- impactCategory: survey_only
+- relevanceSummary: none
+- behaviorRelevance: {"affectsScore":false,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/blind_draw
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -290,11 +354,11 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| fixed | 決めた | 決めた | 決めた | true |  |  |
-| none | まだ決めていない | まだ決めていない | まだ決めていない | true |  |  |
-| rough | だいたい決めた | だいたい決めた | だいたい決めた | true |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| fixed | 決めた | 決めた | 決めた | true |  |  |  |  |  |
+| none | まだ決めていない | まだ決めていない | まだ決めていない | true |  |  |  |  |  |
+| rough | だいたい決めた | だいたい決めた | だいたい決めた | true |  |  |  |  |  |
 
 </details>
 
@@ -302,6 +366,11 @@
 - useCase: merch
 - type: single
 - scoring relevance: none
+- impactCategory: survey_only
+- relevanceSummary: none
+- behaviorRelevance: {"affectsScore":false,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/blind_draw
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -312,11 +381,11 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| clear | 明確にある | 明確にある | 明確にある | true |  |  |
-| none | 特にない | 特にない | 特にない | true |  |  |
-| some | なんとなくある | なんとなくある | なんとなくある | true |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| clear | 明確にある | 明確にある | 明確にある | true |  |  |  |  |  |
+| none | 特にない | 特にない | 特にない | true |  |  |  |  |  |
+| some | なんとなくある | なんとなくある | なんとなくある | true |  |  |  |  |  |
 
 </details>
 
@@ -324,6 +393,11 @@
 - useCase: merch
 - type: single
 - scoring relevance: none
+- impactCategory: survey_only
+- relevanceSummary: none
+- behaviorRelevance: {"affectsScore":false,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/blind_draw | merch/long/goods | merch/long/preorder | merch/long/ticket | merch/long/used
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -334,11 +408,11 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| enough | 十分そろっている | 十分そろっている | 十分そろっている | true |  |  |
-| lack | 不足が多い | 不足が多い | 不足が多い | true |  |  |
-| partial | 一部足りない | 一部足りない | 一部足りない | true |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| enough | 十分そろっている | 十分そろっている | 十分そろっている | true |  |  |  |  |  |
+| lack | 不足が多い | 不足が多い | 不足が多い | true |  |  |  |  |  |
+| partial | 一部足りない | 一部足りない | 一部足りない | true |  |  |  |  |  |
 
 </details>
 
@@ -346,6 +420,11 @@
 - useCase: merch
 - type: single
 - scoring relevance: none
+- impactCategory: survey_only
+- relevanceSummary: none
+- behaviorRelevance: {"affectsScore":false,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/blind_draw | merch/long/goods | merch/long/preorder | merch/long/ticket | merch/long/used
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -356,11 +435,11 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| high | 高い | 高い | 高い | true |  |  |
-| low | 低め | 低め | 低め | true |  |  |
-| mid | 中くらい | 中くらい | 中くらい | true |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| high | 高い | 高い | 高い | true |  |  |  |  |  |
+| low | 低め | 低め | 低め | true |  |  |  |  |  |
+| mid | 中くらい | 中くらい | 中くらい | true |  |  |  |  |  |
 
 </details>
 
@@ -368,6 +447,11 @@
 - useCase: merch
 - type: single
 - scoring relevance: none
+- impactCategory: survey_only
+- relevanceSummary: none
+- behaviorRelevance: {"affectsScore":false,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/goods
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -378,11 +462,11 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| done | 比較済み | 比較済み | 比較済み | true |  |  |
-| none | まだ比較していない | まだ比較していない | まだ比較していない | true |  |  |
-| partial | 一部だけ比較した | 一部だけ比較した | 一部だけ比較した | true |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| done | 比較済み | 比較済み | 比較済み | true |  |  |  |  |  |
+| none | まだ比較していない | まだ比較していない | まだ比較していない | true |  |  |  |  |  |
+| partial | 一部だけ比較した | 一部だけ比較した | 一部だけ比較した | true |  |  |  |  |  |
 
 </details>
 
@@ -390,6 +474,11 @@
 - useCase: merch
 - type: single
 - scoring relevance: none
+- impactCategory: survey_only
+- relevanceSummary: none
+- behaviorRelevance: {"affectsScore":false,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/goods
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -400,11 +489,11 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| often | よく使う想定 | よく使う想定 | よく使う想定 | true |  |  |
-| rare | ほぼ観賞用 | ほぼ観賞用 | ほぼ観賞用 | true |  |  |
-| sometimes | 時々使う想定 | 時々使う想定 | 時々使う想定 | true |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| often | よく使う想定 | よく使う想定 | よく使う想定 | true |  |  |  |  |  |
+| rare | ほぼ観賞用 | ほぼ観賞用 | ほぼ観賞用 | true |  |  |  |  |  |
+| sometimes | 時々使う想定 | 時々使う想定 | 時々使う想定 | true |  |  |  |  |  |
 
 </details>
 
@@ -412,6 +501,11 @@
 - useCase: merch
 - type: single
 - scoring relevance: none
+- impactCategory: survey_only
+- relevanceSummary: none
+- behaviorRelevance: {"affectsScore":false,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/preorder
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -422,11 +516,11 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| checked | 確認した | 確認した | 確認した | true |  |  |
-| heard | 噂レベルで知っている | 噂レベルで知っている | 噂レベルで知っている | true |  |  |
-| unknown | わからない | わからない | わからない | true |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| checked | 確認した | 確認した | 確認した | true |  |  |  |  |  |
+| heard | 噂レベルで知っている | 噂レベルで知っている | 噂レベルで知っている | true |  |  |  |  |  |
+| unknown | わからない | わからない | わからない | true |  |  |  |  |  |
 
 </details>
 
@@ -434,6 +528,11 @@
 - useCase: merch
 - type: single
 - scoring relevance: none
+- impactCategory: survey_only
+- relevanceSummary: none
+- behaviorRelevance: {"affectsScore":false,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/preorder
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -444,11 +543,11 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| hard | 待つのが厳しい | 待つのが厳しい | 待つのが厳しい | true |  |  |
-| maybe | 状況次第 | 状況次第 | 状況次第 | true |  |  |
-| ok | 待てる | 待てる | 待てる | true |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| hard | 待つのが厳しい | 待つのが厳しい | 待つのが厳しい | true |  |  |  |  |  |
+| maybe | 状況次第 | 状況次第 | 状況次第 | true |  |  |  |  |  |
+| ok | 待てる | 待てる | 待てる | true |  |  |  |  |  |
 
 </details>
 
@@ -456,6 +555,11 @@
 - useCase: merch
 - type: single
 - scoring relevance: none
+- impactCategory: survey_only
+- relevanceSummary: none
+- behaviorRelevance: {"affectsScore":false,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/ticket
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -466,11 +570,11 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| checked | 確認済み | 確認済み | 確認済み | true |  |  |
-| not_yet | 未確認 | 未確認 | 未確認 | true |  |  |
-| partly | 一部だけ確認 | 一部だけ確認 | 一部だけ確認 | true |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| checked | 確認済み | 確認済み | 確認済み | true |  |  |  |  |  |
+| not_yet | 未確認 | 未確認 | 未確認 | true |  |  |  |  |  |
+| partly | 一部だけ確認 | 一部だけ確認 | 一部だけ確認 | true |  |  |  |  |  |
 
 </details>
 
@@ -478,6 +582,11 @@
 - useCase: merch
 - type: single
 - scoring relevance: none
+- impactCategory: survey_only
+- relevanceSummary: none
+- behaviorRelevance: {"affectsScore":false,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/ticket
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -488,11 +597,11 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| ready | 問題なし | 問題なし | 問題なし | true |  |  |
-| risk | 不確定が多い | 不確定が多い | 不確定が多い | true |  |  |
-| some_risk | 少し不安あり | 少し不安あり | 少し不安あり | true |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| ready | 問題なし | 問題なし | 問題なし | true |  |  |  |  |  |
+| risk | 不確定が多い | 不確定が多い | 不確定が多い | true |  |  |  |  |  |
+| some_risk | 少し不安あり | 少し不安あり | 少し不安あり | true |  |  |  |  |  |
 
 </details>
 
@@ -500,6 +609,11 @@
 - useCase: merch
 - type: single
 - scoring relevance: none
+- impactCategory: survey_only
+- relevanceSummary: none
+- behaviorRelevance: {"affectsScore":false,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/used
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -510,11 +624,11 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| careful | 条件次第 | 条件次第 | 条件次第 | true |  |  |
-| hard | 不安が大きい | 不安が大きい | 不安が大きい | true |  |  |
-| ok | 許容できる | 許容できる | 許容できる | true |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| careful | 条件次第 | 条件次第 | 条件次第 | true |  |  |  |  |  |
+| hard | 不安が大きい | 不安が大きい | 不安が大きい | true |  |  |  |  |  |
+| ok | 許容できる | 許容できる | 許容できる | true |  |  |  |  |  |
 
 </details>
 
@@ -522,6 +636,11 @@
 - useCase: merch
 - type: single
 - scoring relevance: none
+- impactCategory: survey_only
+- relevanceSummary: none
+- behaviorRelevance: {"affectsScore":false,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/used
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -532,11 +651,11 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| small | 差額が小さい | 差額が小さい | 差額が小さい | true |  |  |
-| unknown | 比較できていない | 比較できていない | 比較できていない | true |  |  |
-| worth | 納得できる | 納得できる | 納得できる | true |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| small | 差額が小さい | 差額が小さい | 差額が小さい | true |  |  |  |  |  |
+| unknown | 比較できていない | 比較できていない | 比較できていない | true |  |  |  |  |  |
+| worth | 納得できる | 納得できる | 納得できる | true |  |  |  |  |  |
 
 </details>
 
@@ -544,6 +663,11 @@
 - useCase: merch
 - type: single
 - scoring relevance: none
+- impactCategory: survey_only
+- relevanceSummary: none
+- behaviorRelevance: {"affectsScore":false,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/blind_draw | merch/long/goods | merch/long/preorder | merch/long/ticket | merch/long/used | merch/medium/blind_draw | merch/medium/goods | merch/medium/preorder | merch/medium/ticket | merch/medium/used
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -554,11 +678,11 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| clear | ある（他の満たし方がある） | あるよ | 明確にある | false |  |  |
-| maybe | たぶんある | たぶんある | 候補あり | false |  |  |
-| none | 特にない | ないかも | 特にない | false |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| clear | ある（他の満たし方がある） | あるよ | 明確にある | false |  |  |  |  |  |
+| maybe | たぶんある | たぶんある | 候補あり | false |  |  |  |  |  |
+| none | 特にない | ないかも | 特にない | false |  |  |  |  |  |
 
 </details>
 
@@ -566,6 +690,11 @@
 - useCase: merch
 - type: single
 - scoring relevance: delta
+- impactCategory: score
+- relevanceSummary: score
+- behaviorRelevance: {"affectsScore":true,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/blind_draw | merch/long/goods | merch/long/preorder | merch/long/ticket | merch/long/used | merch/medium/blind_draw | merch/medium/goods | merch/medium/preorder | merch/medium/ticket | merch/medium/used | merch/short/blind_draw | merch/short/goods | merch/short/preorder | merch/short/ticket | merch/short/used
+- isOrphan: false
 - mapTo: 
 - tags: budget_force, budget_hard, budget_ok, budget_some
 - unknown tags hints: 
@@ -576,12 +705,12 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| force | 無理して払う（危険） | ムリして払うかも | 無理課金コース | false | budget_force | affordability:15;impulse:70;regretRisk:80 |
-| hard | 生活に影響する | 生活にひびきそう | 今月しんどい | false | budget_hard | affordability:35;regretRisk:65 |
-| ok | 全然平気 | ぜんぜん平気 | ノーダメ | false | budget_ok | affordability:85;regretRisk:35 |
-| some | ちょい痛い | ちょっとだけ痛い | ちょいダメージ | false | budget_some | affordability:60;regretRisk:45 |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| force | 無理して払う（危険） | ムリして払うかも | 無理課金コース | false | budget_force | affordability:15;impulse:70;regretRisk:80 |  |  |  |
+| hard | 生活に影響する | 生活にひびきそう | 今月しんどい | false | budget_hard | affordability:35;regretRisk:65 |  |  |  |
+| ok | 全然平気 | ぜんぜん平気 | ノーダメ | false | budget_ok | affordability:85;regretRisk:35 |  |  |  |
+| some | ちょい痛い | ちょっとだけ痛い | ちょいダメージ | false | budget_some | affordability:60;regretRisk:45 |  |  |  |
 
 </details>
 
@@ -589,6 +718,11 @@
 - useCase: merch
 - type: scale
 - scoring relevance: mapTo
+- impactCategory: score
+- relevanceSummary: score
+- behaviorRelevance: {"affectsScore":true,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/blind_draw | merch/long/goods | merch/long/preorder | merch/long/ticket | merch/long/used | merch/medium/blind_draw | merch/medium/goods | merch/medium/preorder | merch/medium/ticket | merch/medium/used | merch/short/blind_draw | merch/short/goods | merch/short/preorder | merch/short/ticket | merch/short/used
+- isOrphan: false
 - mapTo: desire
 - tags: 
 - unknown tags hints: 
@@ -608,6 +742,11 @@
 - useCase: merch
 - type: single
 - scoring relevance: none
+- impactCategory: method
+- relevanceSummary: method
+- behaviorRelevance: {"affectsScore":false,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":true,"affectsStorageGate":false}
+- appears in: merch/long/blind_draw | merch/long/goods | merch/long/preorder | merch/long/ticket | merch/long/used | merch/medium/blind_draw | merch/medium/goods | merch/medium/preorder | merch/medium/ticket | merch/medium/used
+- isOrphan: false
 - mapTo: 
 - tags: goal_fun, goal_set, goal_single
 - unknown tags hints: 
@@ -618,11 +757,11 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| fun | 引く体験（くじ/ガチャ感）を楽しみたい | 引く体験も楽しみたい | 体験重視 | false | goal_fun |  |
-| set | セットで揃えたい | セットでそろえたい | セット回収 | false | goal_set |  |
-| single | 推し（特定の1つ）だけ欲しい | 推し1点狙い | 単推し回収 | false | goal_single |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| fun | 引く体験（くじ/ガチャ感）を楽しみたい | 引く体験も楽しみたい | 体験重視 | false | goal_fun |  |  |  |  |
+| set | セットで揃えたい | セットでそろえたい | セット回収 | false | goal_set |  |  |  |  |
+| single | 推し（特定の1つ）だけ欲しい | 推し1点狙い | 単推し回収 | false | goal_single |  |  |  |  |
 
 </details>
 
@@ -630,6 +769,11 @@
 - useCase: merch
 - type: single
 - scoring relevance: none
+- impactCategory: survey_only
+- relevanceSummary: none
+- behaviorRelevance: {"affectsScore":false,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/blind_draw | merch/long/goods | merch/long/preorder | merch/long/ticket | merch/long/used | merch/medium/blind_draw | merch/medium/goods | merch/medium/preorder | merch/medium/ticket | merch/medium/used
+- isOrphan: false
 - mapTo: 
 - tags: cold, hot, normal_popularity, unknown_popularity
 - unknown tags hints: unknown_popularity
@@ -640,12 +784,12 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| cold | 落ち着いてる（低レートになりやすい） | 落ち着いてる（低レートになりやすい） | 落ち着いてる（低レートになりやすい） | true | cold |  |
-| hot | 人気（高騰/プレ値になりやすい） | 人気（高騰/プレ値になりやすい） | 人気（高騰/プレ値になりやすい） | true | hot |  |
-| normal | 普通 | 普通 | 普通 | true | normal_popularity |  |
-| unknown | わからない | わからない | わからない | true | unknown_popularity |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| cold | 落ち着いてる（低レートになりやすい） | 落ち着いてる（低レートになりやすい） | 落ち着いてる（低レートになりやすい） | true | cold |  |  |  |  |
+| hot | 人気（高騰/プレ値になりやすい） | 人気（高騰/プレ値になりやすい） | 人気（高騰/プレ値になりやすい） | true | hot |  |  |  |  |
+| normal | 普通 | 普通 | 普通 | true | normal_popularity |  |  |  |  |
+| unknown | わからない | わからない | わからない | true | unknown_popularity |  |  |  |  |
 
 </details>
 
@@ -653,6 +797,11 @@
 - useCase: merch
 - type: scale
 - scoring relevance: none
+- impactCategory: flags
+- relevanceSummary: flags
+- behaviorRelevance: {"affectsScore":false,"affectsImpulseFlag":true,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/blind_draw | merch/long/goods | merch/long/preorder | merch/long/ticket | merch/long/used | merch/medium/blind_draw | merch/medium/goods | merch/medium/preorder | merch/medium/ticket | merch/medium/used | merch/short/blind_draw | merch/short/goods | merch/short/preorder | merch/short/ticket | merch/short/used
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -672,6 +821,11 @@
 - useCase: merch
 - type: text
 - scoring relevance: none
+- impactCategory: survey_only
+- relevanceSummary: none
+- behaviorRelevance: {"affectsScore":false,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: 
+- isOrphan: true
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -690,6 +844,11 @@
 - useCase: merch
 - type: multi
 - scoring relevance: none
+- impactCategory: flags
+- relevanceSummary: flags
+- behaviorRelevance: {"affectsScore":false,"affectsImpulseFlag":true,"affectsFutureUseFlag":true,"affectsTrendOrVagueFlag":true,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/blind_draw | merch/long/goods | merch/long/preorder | merch/long/ticket | merch/long/used | merch/medium/blind_draw | merch/medium/goods | merch/medium/preorder | merch/medium/ticket | merch/medium/used
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -700,15 +859,15 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| bonus | 特典が本体（特典目的） | 特典が本体（特典目的） | 特典が本体（特典目的） | true |  |  |
-| fomo | 限定・締切が怖い（取り逃し不安） | 限定・締切が怖い（取り逃し不安） | 限定・締切が怖い（取り逃し不安） | true |  |  |
-| rush | 買えた瞬間の高揚感がほしい（脳汁） | 買えた瞬間の高揚感がほしい（脳汁） | 買えた瞬間の高揚感がほしい（脳汁） | true |  |  |
-| support | 推しを応援したい（気持ち） | 推しを応援したい（気持ち） | 推しを応援したい（気持ち） | true |  |  |
-| trend | みんな買ってる／流行ってる（雰囲気） | みんな買ってる／流行ってる（雰囲気） | みんな買ってる／流行ってる（雰囲気） | true |  |  |
-| use | 飾りたい／使いたい（未来がある） | 飾りたい／使いたい（未来がある） | 飾りたい／使いたい（未来がある） | true |  |  |
-| vague | なんとなく（説明できない） | なんとなく（説明できない） | なんとなく（説明できない） | true |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| bonus | 特典が本体（特典目的） | 特典が本体（特典目的） | 特典が本体（特典目的） | true |  |  |  |  |  |
+| fomo | 限定・締切が怖い（取り逃し不安） | 限定・締切が怖い（取り逃し不安） | 限定・締切が怖い（取り逃し不安） | true |  |  |  |  |  |
+| rush | 買えた瞬間の高揚感がほしい（脳汁） | 買えた瞬間の高揚感がほしい（脳汁） | 買えた瞬間の高揚感がほしい（脳汁） | true |  |  |  |  |  |
+| support | 推しを応援したい（気持ち） | 推しを応援したい（気持ち） | 推しを応援したい（気持ち） | true |  |  |  |  |  |
+| trend | みんな買ってる／流行ってる（雰囲気） | みんな買ってる／流行ってる（雰囲気） | みんな買ってる／流行ってる（雰囲気） | true |  |  |  |  |  |
+| use | 飾りたい／使いたい（未来がある） | 飾りたい／使いたい（未来がある） | 飾りたい／使いたい（未来がある） | true |  |  |  |  |  |
+| vague | なんとなく（説明できない） | なんとなく（説明できない） | なんとなく（説明できない） | true |  |  |  |  |  |
 
 </details>
 
@@ -716,6 +875,11 @@
 - useCase: merch
 - type: single
 - scoring relevance: none
+- impactCategory: survey_only
+- relevanceSummary: none
+- behaviorRelevance: {"affectsScore":false,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/blind_draw | merch/long/goods | merch/long/preorder | merch/long/ticket | merch/long/used | merch/medium/blind_draw | merch/medium/goods | merch/medium/preorder | merch/medium/ticket | merch/medium/used
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -726,12 +890,12 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| good | 納得できる | いい感じ | 納得 | false |  |  |
-| high | 高めに感じる | ちょっと高め | やや高 | false |  |  |
-| normal | 普通 | ふつう | 標準 | false |  |  |
-| unknown | まだ比較できていない | まだ比べてない | 未比較 | false |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| good | 納得できる | いい感じ | 納得 | false |  |  |  |  |  |
+| high | 高めに感じる | ちょっと高め | やや高 | false |  |  |  |  |  |
+| normal | 普通 | ふつう | 標準 | false |  |  |  |  |  |
+| unknown | まだ比較できていない | まだ比べてない | 未比較 | false |  |  |  |  |  |
 
 </details>
 
@@ -739,6 +903,11 @@
 - useCase: merch
 - type: single
 - scoring relevance: delta
+- impactCategory: score
+- relevanceSummary: score
+- behaviorRelevance: {"affectsScore":true,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/blind_draw | merch/long/goods | merch/long/preorder | merch/long/ticket | merch/long/used | merch/medium/blind_draw | merch/medium/goods | merch/medium/preorder | merch/medium/ticket | merch/medium/used | merch/short/blind_draw | merch/short/goods | merch/short/preorder | merch/short/ticket | merch/short/used
+- isOrphan: false
 - mapTo: 
 - tags: restock_high, restock_low, restock_mid, unknown_restock
 - unknown tags hints: unknown_restock
@@ -749,12 +918,12 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| likely | しそう（高い） | しそう（高い） | しそう（高い） | true | restock_high | rarity:35;restockChance:80 |
-| maybe | たぶん（中） | たぶん（中） | たぶん（中） | true | restock_mid | rarity:50;restockChance:55 |
-| unknown | わからない | わからない | わからない | true | unknown_restock | rarity:50;restockChance:50 |
-| unlikely | しなさそう（低い） | しなさそう（低い） | しなさそう（低い） | true | restock_low | rarity:75;restockChance:25 |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| likely | しそう（高い） | しそう（高い） | しそう（高い） | true | restock_high | rarity:35;restockChance:80 |  |  |  |
+| maybe | たぶん（中） | たぶん（中） | たぶん（中） | true | restock_mid | rarity:50;restockChance:55 |  |  |  |
+| unknown | わからない | わからない | わからない | true | unknown_restock | rarity:50;restockChance:50 |  |  |  |
+| unlikely | しなさそう（低い） | しなさそう（低い） | しなさそう（低い） | true | restock_low | rarity:75;restockChance:25 |  |  |  |
 
 </details>
 
@@ -762,6 +931,11 @@
 - useCase: merch
 - type: single
 - scoring relevance: delta
+- impactCategory: score
+- relevanceSummary: score
+- behaviorRelevance: {"affectsScore":true,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/blind_draw | merch/long/goods | merch/long/preorder | merch/long/ticket | merch/long/used | merch/medium/blind_draw | merch/medium/goods | merch/medium/preorder | merch/medium/ticket | merch/medium/used | merch/short/blind_draw | merch/short/goods | merch/short/preorder | merch/short/ticket | merch/short/used
+- isOrphan: false
 - mapTo: 
 - tags: state_calm, state_excited, state_fomo, state_tired
 - unknown tags hints: 
@@ -772,12 +946,12 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| calm | 冷静（後悔しにくい） | 冷静（後悔しにくい） | 冷静（後悔しにくい） | true | state_calm | impulse:25;regretRisk:35 |
-| excited | テンション高め（勢い） | テンション高め（勢い） | テンション高め（勢い） | true | state_excited | impulse:65;regretRisk:55 |
-| fomo | 焦ってる（今しかない圧） | 焦ってる（今しかない圧） | 焦ってる（今しかない圧） | true | state_fomo | impulse:75;regretRisk:65;urgency:70 |
-| tired | 疲れてる/メンタル弱り気味 | 疲れてる/メンタル弱り気味 | 疲れてる/メンタル弱り気味 | true | state_tired | impulse:70;regretRisk:70 |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| calm | 冷静（後悔しにくい） | 冷静（後悔しにくい） | 冷静（後悔しにくい） | true | state_calm | impulse:25;regretRisk:35 |  |  |  |
+| excited | テンション高め（勢い） | テンション高め（勢い） | テンション高め（勢い） | true | state_excited | impulse:65;regretRisk:55 |  |  |  |
+| fomo | 焦ってる（今しかない圧） | 焦ってる（今しかない圧） | 焦ってる（今しかない圧） | true | state_fomo | impulse:75;regretRisk:65;urgency:70 |  |  |  |
+| tired | 疲れてる/メンタル弱り気味 | 疲れてる/メンタル弱り気味 | 疲れてる/メンタル弱り気味 | true | state_tired | impulse:70;regretRisk:70 |  |  |  |
 
 </details>
 
@@ -785,6 +959,11 @@
 - useCase: merch
 - type: single
 - scoring relevance: storage_gate
+- impactCategory: storage_gate
+- relevanceSummary: storage
+- behaviorRelevance: {"affectsScore":false,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":true}
+- appears in: merch/long/blind_draw | merch/long/goods | merch/long/preorder | merch/long/used | merch/medium/blind_draw | merch/medium/goods | merch/medium/preorder | merch/medium/used | merch/short/blind_draw | merch/short/goods | merch/short/preorder | merch/short/used
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -795,12 +974,12 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| CONFIRMED | ある（もう決まってる） | あるよ！（もう決めた） | 確保済み（勝ち） | false |  |  |
-| NONE | 今はない | いまはない… | 今はムリ（圧迫） | false |  |  |
-| PROBABLE | たぶんある（片付ければ） | たぶんある…！（片付ければ） | 片付ければいける | false |  |  |
-| UNKNOWN | わからない（先に確認する） | わかんない（先に見てくる） | 未確認（先に確認） | false |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| CONFIRMED | ある（もう決まってる） | あるよ！（もう決めた） | 確保済み（勝ち） | false |  |  |  |  |  |
+| NONE | 今はない | いまはない… | 今はムリ（圧迫） | false |  |  |  |  |  |
+| PROBABLE | たぶんある（片付ければ） | たぶんある…！（片付ければ） | 片付ければいける | false |  |  |  |  |  |
+| UNKNOWN | わからない（先に確認する） | わかんない（先に見てくる） | 未確認（先に確認） | false |  |  |  |  |  |
 
 </details>
 
@@ -808,6 +987,11 @@
 - useCase: merch
 - type: single
 - scoring relevance: none
+- impactCategory: survey_only
+- relevanceSummary: none
+- behaviorRelevance: {"affectsScore":false,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/blind_draw | merch/long/goods | merch/long/preorder | merch/long/ticket | merch/long/used | merch/medium/blind_draw | merch/medium/goods | merch/medium/preorder | merch/medium/ticket | merch/medium/used
+- isOrphan: false
 - mapTo: 
 - tags: 
 - unknown tags hints: 
@@ -818,11 +1002,11 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| adjust | 少し工夫が必要 | 少し工夫する | 調整が必要 | false |  |  |
-| enough | 問題ない | 問題ない | 問題なし | false |  |  |
-| tight | かなり厳しい | かなりきびしい | 厳しい | false |  |  |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| adjust | 少し工夫が必要 | 少し工夫する | 調整が必要 | false |  |  |  |  |  |
+| enough | 問題ない | 問題ない | 問題なし | false |  |  |  |  |  |
+| tight | かなり厳しい | かなりきびしい | 厳しい | false |  |  |  |  |  |
 
 </details>
 
@@ -830,6 +1014,11 @@
 - useCase: merch
 - type: single
 - scoring relevance: delta
+- impactCategory: score
+- relevanceSummary: score
+- behaviorRelevance: {"affectsScore":true,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/blind_draw | merch/long/goods | merch/long/preorder | merch/long/ticket | merch/long/used | merch/medium/blind_draw | merch/medium/goods | merch/medium/preorder | merch/medium/ticket | merch/medium/used | merch/short/blind_draw | merch/short/goods | merch/short/preorder | merch/short/ticket | merch/short/used
+- isOrphan: false
 - mapTo: 
 - tags: unknown_urgency, urgency_high, urgency_low, urgency_mid
 - unknown tags hints: unknown_urgency
@@ -840,12 +1029,12 @@
 <details>
 <summary>Options</summary>
 
-| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta |
-|---|---|---|---|---|---|---|
-| last | ほぼラスト/今日が期限 | ほぼラスト/今日まで | 実質ラストチャンス | false | urgency_high | rarity:70;restockChance:25;urgency:85 |
-| low_stock | 在庫が減ってる/締切が近い | 在庫へってる/締切近い | 残数少なめ/締切近い | false | urgency_mid | rarity:55;restockChance:45;urgency:55 |
-| not_urgent | いつでも買えそう | あとでも買えそう | まだ追える | false | urgency_low | rarity:30;restockChance:70;urgency:20 |
-| unknown | わからない | まだわからない | 情報不足 | false | unknown_urgency | urgency:50 |
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| last | ほぼラスト/今日が期限 | ほぼラスト/今日まで | 実質ラストチャンス | false | urgency_high | rarity:70;restockChance:25;urgency:85 |  |  |  |
+| low_stock | 在庫が減ってる/締切が近い | 在庫へってる/締切近い | 残数少なめ/締切近い | false | urgency_mid | rarity:55;restockChance:45;urgency:55 |  |  |  |
+| not_urgent | いつでも買えそう | あとでも買えそう | まだ追える | false | urgency_low | rarity:30;restockChance:70;urgency:20 |  |  |  |
+| unknown | わからない | まだわからない | 情報不足 | false | unknown_urgency | urgency:50 |  |  |  |
 
 </details>
 
