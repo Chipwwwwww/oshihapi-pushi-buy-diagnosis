@@ -131,15 +131,15 @@ export const merch_v2_ja: QuestionSet = {
     {
       id: 'q_hot_cold',
       type: 'single',
-      title: '欲しい枠（推し）は人気枠？（高レート/低レート）',
+      title: 'このアイテム、あとで高くなりやすい？（相場/プレ値）',
       required: true,
       urgentCore: false,
       standard: true,
       options: [
-        { id: 'hot', label: '人気（高騰/プレ値になりやすい）', tags: ['hot'] },
-        { id: 'normal', label: '普通', tags: ['normal_popularity'] },
-        { id: 'cold', label: '落ち着いてる（低レートになりやすい）', tags: ['cold'] },
-        { id: 'unknown', label: 'わからない', tags: ['unknown_popularity'] },
+        { id: 'hot', label: '高騰しやすい（プレ値になりやすい）', tags: ['hot'] },
+        { id: 'normal', label: '普通（大きくは動かなそう）', tags: ['normal_popularity'] },
+        { id: 'cold', label: '落ち着いてる（上がりにくい/安定しそう）', tags: ['cold'] },
+        { id: 'unknown', label: 'わからない（相場未確認）', tags: ['unknown_popularity'] },
       ],
     },
     {

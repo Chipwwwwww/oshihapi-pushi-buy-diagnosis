@@ -58,7 +58,15 @@ export const QUESTION_COPY: Record<ModeId, Record<string, QuestionCopy>> = {
         habit: { label: "習慣でつい買ってしまう" },
       },
     },
-    q_hot_cold: { title: "推し枠って人気どのくらい？" },
+    q_hot_cold: {
+      title: "これ、あとで高くなりそう？（相場/プレ値）",
+      options: {
+        hot: { label: "高騰しやすい（プレ値になりやすい）" },
+        normal: { label: "普通（大きくは動かなそう）" },
+        cold: { label: "落ち着いてる（上がりにくい/安定しそう）" },
+        unknown: { label: "わからない（相場未確認）" },
+      },
+    },
     q_impulse_axis_short: {
       title: "今の気持ち、どれに近い？",
       options: {
@@ -157,7 +165,15 @@ export const QUESTION_COPY: Record<ModeId, Record<string, QuestionCopy>> = {
         habit: { label: "習慣購買" },
       },
     },
-    q_hot_cold: { title: "推し枠レート、どの温度感？" },
+    q_hot_cold: {
+      title: "相場（プレ値）リスク、どの温度感？",
+      options: {
+        hot: { label: "高騰しやすい（プレ値になりやすい）" },
+        normal: { label: "普通（大きくは動かなそう）" },
+        cold: { label: "落ち着いてる（上がりにくい/安定しそう）" },
+        unknown: { label: "わからない（相場未確認）" },
+      },
+    },
     q_impulse_axis_short: {
       title: "今の気持ち、どれに近い？",
       options: {
