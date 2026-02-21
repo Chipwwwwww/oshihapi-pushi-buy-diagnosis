@@ -64,6 +64,8 @@ const ITEM_KIND_VALUES: ItemKind[] = [
 ];
 const GOODS_SUBTYPE_VALUES: GoodsSubtype[] = ["general", "itaBag_badge"];
 const GOODS_CLASS_VALUES: GoodsClass[] = ["small_collection", "paper", "wearable", "display_large", "tech", "itabag_badge"];
+const LEGACY_ITABAG_GOODS_DETAIL_VALUES = ["itabag", "pain_badge", "painBadge", "itabag_badge", "itaBag_badge"] as const;
+const LEGACY_GENERAL_GOODS_DETAIL_VALUES = ["general", "default"] as const;
 
 const deadlineOptions = [
   { value: "today", label: "今日" },
@@ -82,10 +84,6 @@ const itemKindOptions: { value: ItemKind; label: string }[] = [
   { value: "game_billing", label: "ゲーム課金" },
 ];
 
-const goodsSubtypeOptions: { value: GoodsSubtype; label: string }[] = [
-  { value: "general", label: "グッズ（一般）" },
-  { value: "itaBag_badge", label: "痛バ（缶バッジ複数）" },
-];
 
 const goodsClassOptions: { value: GoodsClass; label: string }[] = [
   { value: "small_collection", label: "小物コレクション（迷ったらこれ）" },
@@ -127,8 +125,26 @@ const parseItemKind = (value: string | null): InputMeta["itemKind"] => {
 const parseGoodsSubtype = (value: string | null): GoodsSubtype =>
   value && isGoodsSubtypeValue(value) ? value : "general";
 
-const parseGoodsClass = (value: string | null): GoodsClass =>
-  value && isGoodsClassValue(value) ? value : "small_collection";
+const parseLegacyGoodsDetailToGoodsClass = (value: string | null): GoodsClass | null => {
+  if (!value) return null;
+  if (LEGACY_ITABAG_GOODS_DETAIL_VALUES.includes(value as (typeof LEGACY_ITABAG_GOODS_DETAIL_VALUES)[number])) {
+    return "itabag_badge";
+  }
+  if (LEGACY_GENERAL_GOODS_DETAIL_VALUES.includes(value as (typeof LEGACY_GENERAL_GOODS_DETAIL_VALUES)[number])) {
+    return "small_collection";
+  }
+  return null;
+};
+
+type SearchParamsLike = { get: (key: string) => string | null };
+
+const parseGoodsClassFromQuery = (searchParams: SearchParamsLike): GoodsClass => {
+  const canonicalGoodsClass = searchParams.get("gc") ?? searchParams.get("goodsClass");
+  if (canonicalGoodsClass && isGoodsClassValue(canonicalGoodsClass)) {
+    return canonicalGoodsClass;
+  }
+  return parseLegacyGoodsDetailToGoodsClass(searchParams.get("goodsDetail")) ?? "small_collection";
+};
 
 const decisionLabels: Record<string, string> = {
   BUY: "買う",
@@ -147,7 +163,7 @@ export default function FlowPage() {
   const deadline = parseDeadline(searchParams.get("deadline"));
   const itemKind = parseItemKind(searchParams.get("itemKind"));
   const goodsSubtype = parseGoodsSubtype(searchParams.get("goodsSubtype"));
-  const goodsClass = parseGoodsClass(searchParams.get("gc") ?? searchParams.get("goodsClass"));
+  const goodsClass = parseGoodsClassFromQuery(searchParams);
   const decisiveness: Decisiveness = parseDecisiveness(searchParams.get("decisiveness"));
   const styleMode: StyleMode = getStyleModeFromSearchParams(searchParams) ?? "standard";
   const basketId = searchParams.get("basketId") ?? undefined;
@@ -157,7 +173,6 @@ export default function FlowPage() {
   const [draftPriceYen, setDraftPriceYen] = useState(priceYenParam);
   const [draftDeadline, setDraftDeadline] = useState<DeadlineValue>(deadline ?? "unknown");
   const [draftItemKind, setDraftItemKind] = useState<ItemKind>(itemKind ?? "goods");
-  const [draftGoodsSubtype, setDraftGoodsSubtype] = useState<GoodsSubtype>(goodsSubtype);
   const [draftGoodsClass, setDraftGoodsClass] = useState<GoodsClass>(goodsClass);
   const [draftDecisiveness, setDraftDecisiveness] = useState<Decisiveness>(decisiveness);
 
@@ -226,8 +241,6 @@ export default function FlowPage() {
     else params.delete("priceYen");
     params.set("deadline", draftDeadline);
     params.set("itemKind", draftItemKind);
-    if (draftItemKind === "goods") params.set("goodsSubtype", draftGoodsSubtype);
-    else params.delete("goodsSubtype");
     if (draftItemKind === "goods" || draftItemKind === "preorder" || draftItemKind === "used") params.set("gc", draftGoodsClass);
     else params.delete("gc");
     router.replace(`/flow?${params.toString()}`);
@@ -442,7 +455,6 @@ export default function FlowPage() {
                 setDraftPriceYen(priceYenParam);
                 setDraftDeadline(deadline ?? "unknown");
                 setDraftItemKind(itemKind ?? "goods");
-                setDraftGoodsSubtype(goodsSubtype);
                 setDraftGoodsClass(goodsClass);
                 setDraftDecisiveness(decisiveness);
                 setIsSettingsOpen(true);
@@ -631,8 +643,6 @@ export default function FlowPage() {
               priceYen={draftPriceYen}
               deadline={draftDeadline}
               itemKind={draftItemKind}
-              goodsSubtype={draftGoodsSubtype}
-              goodsSubtypeOptions={goodsSubtypeOptions}
               goodsClass={draftGoodsClass}
               goodsClassOptions={goodsClassOptions}
               deadlineOptions={deadlineOptions}
@@ -644,9 +654,7 @@ export default function FlowPage() {
               onDeadlineChange={setDraftDeadline}
               onItemKindChange={(nextKind) => {
                 setDraftItemKind(nextKind);
-                if (nextKind !== "goods") setDraftGoodsSubtype("general");
               }}
-              onGoodsSubtypeChange={setDraftGoodsSubtype}
               onGoodsClassChange={setDraftGoodsClass}
             />
             <Button onClick={handleApplyOptionalSettings} className="mt-4 w-full">この設定を反映</Button>

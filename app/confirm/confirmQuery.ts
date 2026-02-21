@@ -46,6 +46,8 @@ const DEADLINE_VALUES = deadlineOptions.map((option) => option.value);
 const ITEM_KIND_VALUES = itemKindOptions.map((option) => option.value);
 const GOODS_SUBTYPE_VALUES = goodsSubtypeOptions.map((option) => option.value);
 const GOODS_CLASS_VALUES = goodsClassOptions.map((option) => option.value);
+const LEGACY_ITABAG_GOODS_DETAIL_VALUES = ["itabag", "pain_badge", "painBadge", "itabag_badge", "itaBag_badge"] as const;
+const LEGACY_GENERAL_GOODS_DETAIL_VALUES = ["general", "default"] as const;
 
 const isDeadlineValue = (value: string): value is DeadlineValue => DEADLINE_VALUES.includes(value as DeadlineValue);
 const isItemKindValue = (value: string): value is ItemKind => ITEM_KIND_VALUES.includes(value as ItemKind);
@@ -59,6 +61,25 @@ export const parseGoodsSubtypeValue = (value: string | null | undefined): GoodsS
   value && isGoodsSubtypeValue(value) ? value : "general";
 export const parseGoodsClassValue = (value: string | null | undefined): GoodsClass =>
   value && isGoodsClassValue(value) ? value : "small_collection";
+
+export const parseLegacyGoodsDetailToGoodsClass = (value: string | null | undefined): GoodsClass | null => {
+  if (!value) return null;
+  if (LEGACY_ITABAG_GOODS_DETAIL_VALUES.includes(value as (typeof LEGACY_ITABAG_GOODS_DETAIL_VALUES)[number])) {
+    return "itabag_badge";
+  }
+  if (LEGACY_GENERAL_GOODS_DETAIL_VALUES.includes(value as (typeof LEGACY_GENERAL_GOODS_DETAIL_VALUES)[number])) {
+    return "small_collection";
+  }
+  return null;
+};
+
+export const parseGoodsClassFromQuery = (searchParams: SearchParamsLike): GoodsClass => {
+  const canonicalGoodsClass = searchParams.get("gc") ?? searchParams.get("goodsClass");
+  if (canonicalGoodsClass && isGoodsClassValue(canonicalGoodsClass)) {
+    return canonicalGoodsClass;
+  }
+  return parseLegacyGoodsDetailToGoodsClass(searchParams.get("goodsDetail")) ?? "small_collection";
+};
 
 export function buildUrl(
   pathname: string,
@@ -88,4 +109,3 @@ export const buildConfirmSettingsUrl = (
 
 export const buildFlowUrl = (baseSearchParams: SearchParamsLike, updates?: Record<string, string | null | undefined>) =>
   buildUrl("/flow", baseSearchParams, updates);
-

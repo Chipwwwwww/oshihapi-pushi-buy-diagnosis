@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { Decisiveness, GoodsClass, GoodsSubtype } from "@/src/oshihapi/model";
+import type { Decisiveness, GoodsClass } from "@/src/oshihapi/model";
 import { parseDecisiveness, DECISIVENESS_STORAGE_KEY } from "@/src/oshihapi/decisiveness";
 import { COPY_BY_MODE } from "@/src/oshihapi/modes/copy_dictionary";
 import {
@@ -18,11 +18,10 @@ import {
   buildFlowUrl,
   deadlineOptions,
   goodsClassOptions,
-  goodsSubtypeOptions,
   itemKindOptions,
   parseDeadlineValue,
+  parseGoodsClassFromQuery,
   parseGoodsClassValue,
-  parseGoodsSubtypeValue,
   parseItemKindValue,
 } from "../confirmQuery";
 
@@ -41,8 +40,7 @@ export default function ConfirmSettingsClient() {
   const decisiveness = parseDecisiveness(searchParams.get("decisiveness"));
   const deadline = parseDeadlineValue(searchParams.get("deadline") ?? "unknown");
   const itemKind = parseItemKindValue(searchParams.get("itemKind") ?? "goods");
-  const goodsSubtype = parseGoodsSubtypeValue(searchParams.get("goodsSubtype"));
-  const goodsClass = parseGoodsClassValue(searchParams.get("gc") ?? searchParams.get("goodsClass"));
+  const goodsClass = parseGoodsClassFromQuery(searchParams);
   const itemName = searchParams.get("itemName") ?? "";
   const priceYen = searchParams.get("priceYen") ?? "";
 
@@ -90,15 +88,13 @@ export default function ConfirmSettingsClient() {
         priceYen={priceYen}
         deadline={deadline}
         itemKind={itemKind}
-        goodsSubtype={goodsSubtype}
-        goodsSubtypeOptions={goodsSubtypeOptions}
         goodsClass={goodsClass}
         goodsClassOptions={goodsClassOptions}
         deadlineOptions={deadlineOptions}
         itemKindOptions={itemKindOptions}
         isOptionalInputOpen={isDetailOpen}
         onToggleOptionalInput={() => setIsDetailOpen((prev) => !prev)}
-        optionalSectionTitle="種別・詳細入力（任意）"
+        optionalSectionTitle="種別入力（任意）"
         itemNameHelpText="空でもOK（例：推しアクスタ 2025）"
         priceYenHelpText="だいたいでOK（例：8800）"
         deadlineHelpText="未定でもOK"
@@ -112,12 +108,8 @@ export default function ConfirmSettingsClient() {
         onItemKindChange={(value) =>
           replaceQuery({
             itemKind: parseItemKindValue(value),
-            goodsSubtype: value === "goods" ? goodsSubtype : null,
             gc: value === "goods" || value === "preorder" || value === "used" ? goodsClass : null,
           })
-        }
-        onGoodsSubtypeChange={(value: GoodsSubtype) =>
-          replaceQuery({ goodsSubtype: parseGoodsSubtypeValue(value) })
         }
         onGoodsClassChange={(value: GoodsClass) => replaceQuery({ gc: parseGoodsClassValue(value) })}
       />

@@ -1,6 +1,6 @@
 "use client";
 
-import type { Decisiveness, GoodsClass, GoodsSubtype, ItemKind } from "@/src/oshihapi/model";
+import type { Decisiveness, GoodsClass, ItemKind } from "@/src/oshihapi/model";
 import type { StyleMode } from "@/src/oshihapi/modes/useStyleMode";
 import { decisivenessLabels, decisivenessOptions } from "@/src/oshihapi/decisiveness";
 import Button from "@/components/ui/Button";
@@ -26,8 +26,6 @@ type AdvancedSettingsPanelProps = {
   priceYen: string;
   deadline: DeadlineValue;
   itemKind: ItemKind;
-  goodsSubtype?: GoodsSubtype;
-  goodsSubtypeOptions?: ReadonlyArray<{ value: GoodsSubtype; label: string }>;
   goodsClass?: GoodsClass;
   goodsClassOptions?: ReadonlyArray<{ value: GoodsClass; label: string }>;
   deadlineOptions: ReadonlyArray<{ value: DeadlineValue; label: string }>;
@@ -46,7 +44,6 @@ type AdvancedSettingsPanelProps = {
   onPriceYenChange: (value: string) => void;
   onDeadlineChange: (value: DeadlineValue) => void;
   onItemKindChange: (value: ItemKind) => void;
-  onGoodsSubtypeChange?: (value: GoodsSubtype) => void;
   onGoodsClassChange?: (value: GoodsClass) => void;
 };
 
@@ -63,8 +60,6 @@ export default function AdvancedSettingsPanel({
   priceYen,
   deadline,
   itemKind,
-  goodsSubtype = "general",
-  goodsSubtypeOptions = [],
   goodsClass = "small_collection",
   goodsClassOptions = [],
   deadlineOptions,
@@ -83,7 +78,6 @@ export default function AdvancedSettingsPanel({
   onPriceYenChange,
   onDeadlineChange,
   onItemKindChange,
-  onGoodsSubtypeChange,
   onGoodsClassChange,
 }: AdvancedSettingsPanelProps) {
   return (
@@ -162,25 +156,9 @@ export default function AdvancedSettingsPanel({
                     ))}
                   </select>
                 </label>
-                {itemKind === "goods" && goodsSubtypeOptions.length > 0 ? (
-                  <label className="grid gap-1.5 text-sm font-semibold text-foreground">
-                    グッズ詳細（任意）
-                    <select
-                      value={goodsSubtype}
-                      onChange={(event) => onGoodsSubtypeChange?.(event.target.value as GoodsSubtype)}
-                      className={inputBaseClass}
-                    >
-                      {goodsSubtypeOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                ) : null}
                 {itemKind === "goods" || itemKind === "preorder" || itemKind === "used" ? (
                   <label className="grid gap-1.5 text-sm font-semibold text-foreground">
-                    グッズ分類
+                    グッズの種類（任意）
                     <select
                       value={goodsClass}
                       onChange={(event) => onGoodsClassChange?.(event.target.value as GoodsClass)}
@@ -192,6 +170,7 @@ export default function AdvancedSettingsPanel({
                         </option>
                       ))}
                     </select>
+                    <span className={helperTextClass}>迷ったら「小物コレクション」／痛バは例外（保管質問をスキップ）</span>
                   </label>
                 ) : null}
                 <label className="grid gap-1.5 text-sm font-semibold text-foreground">
@@ -286,25 +265,9 @@ export default function AdvancedSettingsPanel({
                     ))}
                   </select>
                 </label>
-                {itemKind === "goods" && goodsSubtypeOptions.length > 0 ? (
-                  <label className="grid gap-2 text-sm font-semibold text-foreground">
-                    グッズ詳細（任意）
-                    <select
-                      value={goodsSubtype}
-                      onChange={(event) => onGoodsSubtypeChange?.(event.target.value as GoodsSubtype)}
-                      className={inputBaseClass}
-                    >
-                      {goodsSubtypeOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                ) : null}
                 {itemKind === "goods" || itemKind === "preorder" || itemKind === "used" ? (
                   <label className="grid gap-2 text-sm font-semibold text-foreground">
-                    グッズ分類
+                    グッズの種類（任意）
                     <select
                       value={goodsClass}
                       onChange={(event) => onGoodsClassChange?.(event.target.value as GoodsClass)}
@@ -316,6 +279,7 @@ export default function AdvancedSettingsPanel({
                         </option>
                       ))}
                     </select>
+                    <span className={helperTextClass}>迷ったら「小物コレクション」／痛バは例外（保管質問をスキップ）</span>
                   </label>
                 ) : null}
               </>
