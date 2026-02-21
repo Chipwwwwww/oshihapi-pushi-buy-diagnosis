@@ -748,11 +748,12 @@ function Resolve-VercelPreviewHost([string]$ProvidedValue) {
   return Resolve-HostValue -ProvidedValue $ProvidedValue -EnvName 'OSH_VERCEL_PREVIEW_HOST' -FilePath '.\ops\vercel_preview_host.txt' -Label 'Vercel preview'
 }
 
-function Get-VercelBypassSecretSafe() {
-  $secretPath = '.\ops\vercel_protection_bypass_secret.txt'
+function Get-VercelBypassSecretSafe([string]$RepoRoot = $script:RepoRoot) {
+  $basePath = if ([string]::IsNullOrWhiteSpace($RepoRoot)) { (Get-Location).Path } else { $RepoRoot }
+  $secretPath = Join-Path $basePath 'ops\vercel_protection_bypass_secret.txt'
   try {
     if (Test-Path -LiteralPath $secretPath) {
-      $line = Get-Content -LiteralPath $secretPath -TotalCount 1 -ErrorAction SilentlyContinue
+      $line = Get-Content -LiteralPath $secretPath -ErrorAction SilentlyContinue | Select-Object -First 1
       if (-not [string]::IsNullOrWhiteSpace($line)) {
         return $line.Trim()
       }
@@ -767,6 +768,53 @@ function Get-VercelBypassSecretSafe() {
   } catch {}
 
   return $null
+}
+
+function Invoke-WebRequestSafe {
+  param(
+    [string]$Url,
+    [hashtable]$Headers
+  )
+
+  $result = @{ status = $null; body = $null; reason = $null }
+  try {
+    $resp = Invoke-WebRequest -UseBasicParsing -Headers $Headers -Uri $Url
+    $result.status = [int]$resp.StatusCode
+    $result.body = $resp.Content
+    return $result
+  } catch {
+    try {
+      $webResp = $_.Exception.Response
+      if ($webResp) {
+        try { $result.status = [int]$webResp.StatusCode } catch {}
+        $stream = $webResp.GetResponseStream()
+        if ($stream) {
+          $sr = New-Object System.IO.StreamReader($stream)
+          $result.body = $sr.ReadToEnd()
+          $sr.Close()
+        }
+        if ($result.status) {
+          $result.reason = ('HTTP {0}' -f $result.status)
+        }
+        return $result
+      }
+    } catch {}
+    if ($_.Exception -and -not [string]::IsNullOrWhiteSpace($_.Exception.Message)) {
+      $result.reason = $_.Exception.Message
+    } else {
+      $result.reason = 'request failed'
+    }
+    return $result
+  }
+}
+
+function ConvertFrom-JsonSafe {
+  param([string]$Text)
+  try {
+    return ($Text | ConvertFrom-Json)
+  } catch {
+    return $null
+  }
 }
 
 function Infer-ProdBranchFromOriginHead([string]$FallbackBranch = 'main') {
@@ -918,162 +966,105 @@ function Assert-VersionRouteExistsInHead() {
 }
 
 function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$ExpectedEnv, [switch]$AllowPreview, [int]$MaxWaitSec = 600, [int]$PollIntervalSec = 10, [string]$BypassSecret = $null) {
-  $started = Get-Date
-  $attempt = 0
-  $safeIntervalSec = [Math]::Max(1, $PollIntervalSec)
-  $maxAttempts = [Math]::Max(1, [int][Math]::Floor($MaxWaitSec / $safeIntervalSec) + 1)
-  $lastStatusCode = $null
-  $hadParsedCommitSha = $false
-  $branchName = Get-GitValue -Args @('rev-parse','--abbrev-ref','HEAD') -ErrorMessage 'Unable to determine current branch for diagnostics.'
-  $did404Diagnosis = $false
-
   $result = [PSCustomObject]@{
     CommitSha = ''
     VercelEnv = ''
     VercelUrl = ''
     GitRef = ''
     StatusCode = 0
-    TelemetryHealthStatus = ''
+    TelemetryHealthStatus = 'not confirmed'
     ProdHeadMatchStatus = 'not confirmed'
+    Success = $false
+    FailureMessage = ''
   }
-  $requestHeaders = $null
+
+  if ([string]::IsNullOrWhiteSpace($ProdHost)) {
+    $result.FailureMessage = 'prod host missing'
+    return $result
+  }
+
+  if ([string]::IsNullOrWhiteSpace($LocalSha)) {
+    $result.FailureMessage = 'Unable to determine local HEAD commit.'
+    return $result
+  }
+
+  [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+  $timestamp = [int][DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+  $versionUrl = "https://$ProdHost/api/version?t=$timestamp"
+  $healthUrl = "https://$ProdHost/api/telemetry/health"
+
+  $requestHeaders = @{}
   if (-not [string]::IsNullOrWhiteSpace($BypassSecret)) {
-    $requestHeaders = @{ 'x-vercel-protection-bypass' = $BypassSecret }
+    $requestHeaders['x-vercel-protection-bypass'] = $BypassSecret
   }
 
-  while ($attempt -lt $maxAttempts) {
-    $attempt++
-    $elapsedSec = [int]((Get-Date) - $started).TotalSeconds
+  $versionResp = Invoke-WebRequestSafe -Url $versionUrl -Headers $requestHeaders
+  if ($versionResp.status) {
+    $result.StatusCode = [int]$versionResp.status
+  }
 
-    try {
-      $versionResponse = Invoke-VersionEndpoint -ProdHost $ProdHost -Headers $requestHeaders
-      $statusCode = $versionResponse.StatusCode
-      $lastStatusCode = $statusCode
-      $result.StatusCode = $statusCode
+  $versionJson = ConvertFrom-JsonSafe -Text ([string]$versionResp.body)
+  if ($versionJson) {
+    if ($versionJson.commitSha) { $result.CommitSha = [string]$versionJson.commitSha }
+    if ($versionJson.vercelEnv) { $result.VercelEnv = [string]$versionJson.vercelEnv }
+    if ($versionJson.vercelUrl) { $result.VercelUrl = [string]$versionJson.vercelUrl }
+    if ($versionJson.gitRef) { $result.GitRef = [string]$versionJson.gitRef }
+  }
 
-      if ($statusCode -eq 404) {
-        throw "404"
-      }
-
-      if ($statusCode -ne 200) {
-        throw ("Unexpected status {0} from {1}." -f $statusCode, $versionResponse.Url)
-      }
-
-      $json = $versionResponse.Json
-      $vercelSha = if ($json -and $json.commitSha) { [string]$json.commitSha } else { '' }
-      $vercelEnvValue = if ($json -and $json.vercelEnv) { [string]$json.vercelEnv } else { '' }
-      $vercelUrl = if ($json -and $json.vercelUrl) { [string]$json.vercelUrl } else { '' }
-      $gitRef = if ($json -and $json.gitRef) { [string]$json.gitRef } else { '' }
-
-      $result.CommitSha = $vercelSha
-      $result.VercelEnv = $vercelEnvValue
-      $result.VercelUrl = $vercelUrl
-      $result.GitRef = $gitRef
-
-      if (-not $AllowPreview -and $vercelEnvValue -eq 'preview') {
-        throw "Host '$ProdHost' is preview (vercelEnv=preview). Use Production domain or rerun with -AllowPreviewHost."
-      }
-
-      if ($ExpectedEnv -ne 'any' -and -not [string]::IsNullOrWhiteSpace($vercelEnvValue) -and $vercelEnvValue -ne $ExpectedEnv) {
-        throw ("Vercel environment mismatch: expected={0} actual={1} host={2}." -f $ExpectedEnv, $vercelEnvValue, $ProdHost)
-      }
-
-      if ([string]::IsNullOrWhiteSpace($vercelSha) -or $vercelSha -eq 'unknown') {
-        Write-Host ("/api/version returned commitSha='$vercelSha'. waited=${elapsedSec}s/${MaxWaitSec}s") -ForegroundColor Yellow
-        if ($attempt -lt $maxAttempts) { Start-Sleep -Seconds $safeIntervalSec }
-        continue
-      }
-
-      $hadParsedCommitSha = $true
-      if ($vercelSha -ne $LocalSha) {
-        $result.ProdHeadMatchStatus = 'not confirmed(commit mismatch)'
-        Write-Host ("Vercel commit mismatch: local=$LocalSha vercel=$vercelSha host=$ProdHost vercelEnv=$vercelEnvValue waited=${elapsedSec}s/${MaxWaitSec}s") -ForegroundColor Yellow
-        if ($attempt -lt $maxAttempts) { Start-Sleep -Seconds $safeIntervalSec }
-        continue
-      }
-
+  if ($versionResp.status -eq 401 -and [string]::IsNullOrWhiteSpace($BypassSecret)) {
+    $result.FailureMessage = 'Deployment Protection (401). Provide bypass secret.'
+  } elseif ($null -eq $versionJson) {
+    if ($versionResp.status) {
+      $result.FailureMessage = ('Unable to parse /api/version JSON (status={0}).' -f $versionResp.status)
+    } elseif (-not [string]::IsNullOrWhiteSpace($versionResp.reason)) {
+      $result.FailureMessage = ('Unable to fetch /api/version: {0}' -f $versionResp.reason)
+    } else {
+      $result.FailureMessage = 'Unable to fetch /api/version.'
+    }
+  } elseif ([string]::IsNullOrWhiteSpace($result.CommitSha) -or $result.CommitSha -eq 'unknown') {
+    $result.FailureMessage = '/api/version missing commitSha.'
+  } else {
+    if (-not $AllowPreview -and $result.VercelEnv -eq 'preview') {
+      $result.ProdHeadMatchStatus = 'not confirmed'
+      $result.FailureMessage = "Host '$ProdHost' is preview (vercelEnv=preview)."
+    } elseif ($ExpectedEnv -ne 'any' -and -not [string]::IsNullOrWhiteSpace($result.VercelEnv) -and $result.VercelEnv -ne $ExpectedEnv) {
+      $result.ProdHeadMatchStatus = 'not confirmed'
+      $result.FailureMessage = ('Vercel environment mismatch: expected={0} actual={1}.' -f $ExpectedEnv, $result.VercelEnv)
+    } elseif ($result.CommitSha -eq $LocalSha) {
       $result.ProdHeadMatchStatus = 'ok'
+      $result.Success = $true
+    } else {
+      $result.ProdHeadMatchStatus = 'not confirmed'
+      $result.FailureMessage = 'prod commitSha != HEAD'
+    }
+  }
 
-      $healthUrl = "https://$ProdHost/api/telemetry/health"
-      try {
-        $healthResp = Invoke-WebRequest -Uri $healthUrl -Method Get -UseBasicParsing -TimeoutSec 10 -Headers $requestHeaders -ErrorAction Stop
-        if ($healthResp -and [int]$healthResp.StatusCode -eq 200) {
-          $result.TelemetryHealthStatus = 'ok'
-        } else {
-          $result.TelemetryHealthStatus = ('not confirmed(status {0})' -f [int]$healthResp.StatusCode)
-        }
-      } catch {
-        $healthCode = Get-WebExceptionStatusCode -Exception $_.Exception
-        if ($null -ne $healthCode) {
-          $result.TelemetryHealthStatus = ('not confirmed(status {0})' -f $healthCode)
-        } else {
-          $result.TelemetryHealthStatus = ('not confirmed({0})' -f (Shorten-Text -Text $_.Exception.Message -MaxLen 120))
-        }
-      }
+  $healthResp = Invoke-WebRequestSafe -Url $healthUrl -Headers $requestHeaders
+  if ($healthResp.status -eq 200) {
+    $result.TelemetryHealthStatus = 'ok'
+  } elseif ($healthResp.status) {
+    $result.TelemetryHealthStatus = ('not confirmed(status={0})' -f $healthResp.status)
+  } elseif (-not [string]::IsNullOrWhiteSpace($healthResp.reason)) {
+    $result.TelemetryHealthStatus = ('not confirmed({0})' -f (Shorten-Text -Text $healthResp.reason -MaxLen 120))
+  }
 
-      Write-Host ("VERCEL == LOCAL [OK] ({0}) (vercelEnv={1})" -f $LocalSha, $vercelEnvValue) -ForegroundColor Green
-      $result | Add-Member -NotePropertyName Success -NotePropertyValue $true -Force
-      $result | Add-Member -NotePropertyName FailureMessage -NotePropertyValue '' -Force
-      return $result
-    } catch {
-      $statusCode = Get-WebExceptionStatusCode -Exception $_.Exception
-      if ($_.Exception.Message -eq '404') { $statusCode = 404 }
-      if ($null -ne $statusCode) {
-        $lastStatusCode = $statusCode
-        $result.StatusCode = $statusCode
-      }
+  if ($result.Success -and $result.TelemetryHealthStatus -ne 'ok') {
+    $result.Success = $false
+    if ([string]::IsNullOrWhiteSpace($result.FailureMessage)) {
+      $result.FailureMessage = ('health {0}' -f $result.TelemetryHealthStatus)
+    }
+  }
 
-      if ($statusCode -eq 404) {
-        $result.ProdHeadMatchStatus = 'not confirmed(status 404)'
-        if (-not $did404Diagnosis) {
-          $did404Diagnosis = $true
-          $probeUrl = "https://$ProdHost/api/telemetry/health"
-          $probeStatus = 'not confirmed(unavailable)'
-          try {
-            $probeResp = Invoke-WebRequest -Uri $probeUrl -Method Get -UseBasicParsing -TimeoutSec 10 -Headers $requestHeaders -ErrorAction Stop
-            if ($probeResp -and [int]$probeResp.StatusCode -eq 200) {
-              $probeStatus = 'ok'
-            } else {
-              $probeStatus = ('not confirmed(status {0})' -f [int]$probeResp.StatusCode)
-            }
-          } catch {
-            $probeCode = Get-WebExceptionStatusCode -Exception $_.Exception
-            if ($null -ne $probeCode) { $probeStatus = ('not confirmed(status {0})' -f $probeCode) }
-          }
-          $result.TelemetryHealthStatus = $probeStatus
-          Write-Host ("/api/version 404 diagnosed once: host={0}, branch={1}, telemetryHealth={2}." -f $ProdHost, $branchName, $probeStatus) -ForegroundColor Yellow
-        } elseif (($attempt % 10) -eq 0 -or $attempt -eq $maxAttempts) {
-          Write-Host ("/api/version still 404 (attempt {0}/{1}); waiting..." -f $attempt, $maxAttempts) -ForegroundColor DarkYellow
-        }
-      } else {
-        if ($null -ne $statusCode) {
-          $result.ProdHeadMatchStatus = ('not confirmed(status {0})' -f $statusCode)
-        }
-        $shortMsg = Shorten-Text -Text $_.Exception.Message -MaxLen 240
-        Write-Host ("Vercel parity probe retry: status=$statusCode detail=$shortMsg waited=${elapsedSec}s/${MaxWaitSec}s") -ForegroundColor Yellow
-      }
-
-      if ($attempt -lt $maxAttempts) {
-        Start-Sleep -Seconds $safeIntervalSec
-        continue
+  if ($versionResp.status -eq 401 -or $healthResp.status -eq 401) {
+    if ([string]::IsNullOrWhiteSpace($BypassSecret)) {
+      $result.Success = $false
+      $result.ProdHeadMatchStatus = 'not confirmed'
+      if ([string]::IsNullOrWhiteSpace($result.FailureMessage)) {
+        $result.FailureMessage = 'Deployment Protection (401). Provide bypass secret.'
       }
     }
   }
 
-  if ($lastStatusCode -eq 404) {
-    $result | Add-Member -NotePropertyName Success -NotePropertyValue $false -Force
-    $result | Add-Member -NotePropertyName FailureMessage -NotePropertyValue ("PARITY 404: /api/version not found after {0} tries (host={1}, branch={2}, telemetryHealth={3}). Check host mapping or wait for deployment readiness." -f $maxAttempts, $ProdHost, $branchName, $result.TelemetryHealthStatus) -Force
-    return $result
-  }
-
-  if (-not $hadParsedCommitSha) {
-    $result | Add-Member -NotePropertyName Success -NotePropertyValue $false -Force
-    $result | Add-Member -NotePropertyName FailureMessage -NotePropertyValue ("VERCEL PARITY PROBE FAILED: unable to obtain commitSha from /api/version after {0} tries (host={1}, branch={2}, lastStatus={3})." -f $maxAttempts, $ProdHost, $branchName, $lastStatusCode) -Force
-    return $result
-  }
-
-  $result | Add-Member -NotePropertyName Success -NotePropertyValue $false -Force
-  $result | Add-Member -NotePropertyName FailureMessage -NotePropertyValue ("VERCEL MISMATCH after {0} tries: host={1}, remoteSha={2}, localSha={3}, vercelEnv={4}" -f $maxAttempts, $ProdHost, $result.CommitSha, $LocalSha, $result.VercelEnv) -Force
   return $result
 }
 
@@ -1303,13 +1294,13 @@ try {
   }
 
   $script:PmrStage = 'vercel-parity'
-  Write-Section "Vercel parity gate (branch-aware)"
+  Write-Section "Vercel parity gate"
   $runVercelParity = $false
   if ($SkipParity) {
     $runVercelParity = $false
-  } elseif ($ParityTarget -eq 'off') {
+  } elseif ($ParityTarget -eq 'off' -or $VercelParityMode -eq 'off') {
     $runVercelParity = $false
-  } elseif ($canRunGitParity -and $VercelParityMode -ne 'off' -and ((-not $SkipVercelParity) -or $RequireVercelSameCommit)) {
+  } elseif ((-not $SkipVercelParity) -or $RequireVercelSameCommit) {
     $runVercelParity = $true
   }
   $finalLocalSha = ''
@@ -1321,58 +1312,66 @@ try {
   $parityFailureMessage = ''
 
   if ($runVercelParity) {
-    Assert-VersionRouteExistsInHead
+    $headRaw = (& git -C $script:RepoRoot rev-parse HEAD) 2>$null
+    if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($headRaw)) {
+      $finalLocalSha = ($headRaw | Select-Object -First 1).ToString().Trim()
+    }
 
-    Ensure-CleanWorkingTree
-    $parityState = Ensure-GitRemoteParity -SkipAutoPush:$SkipPush
-    $finalLocalSha = $parityState.LocalSha
-    $finalOriginSha = $parityState.OriginSha
+    $originRaw = (& git -C $script:RepoRoot rev-parse origin/$effectiveProdBranch) 2>$null
+    if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($originRaw)) {
+      $finalOriginSha = ($originRaw | Select-Object -First 1).ToString().Trim()
+    }
 
-    $hostTarget = Resolve-ParityTargetHost -CurrentBranch $parityState.Branch -EffectiveProdBranch $effectiveProdBranch -RequestedTarget $ParityTarget -ProvidedProdHost $VercelProdUrlOrHost -ProvidedPreviewHost $PreviewHost
-    if (-not $hostTarget.ShouldRun) {
-      $script:ParityConclusion = ('skipped({0})' -f $hostTarget.Message)
-      Write-Host ("Vercel parity skipped: {0}" -f $hostTarget.Message) -ForegroundColor Yellow
+    $branchMeta = Get-GitBranchSafe -RepoRoot $script:RepoRoot
+    if ([string]::IsNullOrWhiteSpace($branchMeta)) {
+      Write-Host '[WARN] Branch metadata unknown (detached HEAD or git error). Continuing parity.' -ForegroundColor Yellow
     } else {
-      $productionDomainHost = $hostTarget.Host
-      $expectedVercelEnv = if ($hostTarget.Target -eq 'preview') { 'preview' } elseif ($VercelEnv -eq 'preview') { 'production' } else { $VercelEnv }
+      Write-Host ("Branch metadata: {0}" -f $branchMeta) -ForegroundColor DarkGray
+    }
 
-      $effectiveParityRetries = if (-not [string]::IsNullOrWhiteSpace($env:OSH_VERCEL_PARITY_RETRIES)) { [int]$env:OSH_VERCEL_PARITY_RETRIES } else { $VercelParityRetries }
-      $effectiveParityDelaySec = if (-not [string]::IsNullOrWhiteSpace($env:OSH_VERCEL_PARITY_DELAY_SEC)) { [int]$env:OSH_VERCEL_PARITY_DELAY_SEC } else { $null }
-      $effectivePollIntervalSec = if ($effectiveParityDelaySec -and $effectiveParityDelaySec -gt 0) { $effectiveParityDelaySec } else { $VercelPollIntervalSec }
-      $effectiveMaxWaitSec = 0
-      if ($VercelMaxWaitSec -and $VercelMaxWaitSec -gt 0) {
-        $effectiveMaxWaitSec = $VercelMaxWaitSec
-      } elseif ($effectiveParityRetries -and $effectiveParityRetries -gt 0) {
-        $effectiveMaxWaitSec = [Math]::Max(1, ($effectivePollIntervalSec * ([Math]::Max(1, $effectiveParityRetries - 1))) + 1)
-      } else {
-        $effectiveMaxWaitSec = 600
-      }
+    $productionDomainHost = Resolve-VercelProdHost -ProvidedValue $VercelProdUrlOrHost
+    if ([string]::IsNullOrWhiteSpace($productionDomainHost)) {
+      $script:ParityConclusion = 'skipped(reason: prod host missing)'
+      $script:ParityReason = 'prod host missing'
+      Write-Host 'Vercel parity skipped: prod host missing (set -ProdHost/-VercelHost or ops/vercel_prod_host.txt).' -ForegroundColor Yellow
+    } elseif ([string]::IsNullOrWhiteSpace($finalLocalSha)) {
+      $script:ParityConclusion = 'not confirmed'
+      $script:ParityReason = 'Unable to determine local HEAD commit.'
+      $script:ProdHeadMatch = 'not confirmed'
+      Write-Host ("Vercel parity not confirmed: {0}" -f $script:ParityReason) -ForegroundColor Yellow
+    } else {
+      $expectedVercelEnv = if ($VercelEnv -eq 'preview') { 'production' } else { $VercelEnv }
+      $vercelBypassSecret = Get-VercelBypassSecretSafe -RepoRoot $script:RepoRoot
+      $vercelState = Wait-VercelCommitParity -ProdHost $productionDomainHost -LocalSha $finalLocalSha -ExpectedEnv $expectedVercelEnv -AllowPreview:$AllowPreviewHost -BypassSecret $vercelBypassSecret
 
-      $allowPreviewForTarget = $AllowPreviewHost -or $hostTarget.Target -eq 'preview'
-      $vercelBypassSecret = Get-VercelBypassSecretSafe
-      $vercelState = Wait-VercelCommitParity -ProdHost $productionDomainHost -LocalSha $finalLocalSha -ExpectedEnv $expectedVercelEnv -AllowPreview:$allowPreviewForTarget -MaxWaitSec $effectiveMaxWaitSec -PollIntervalSec $effectivePollIntervalSec -BypassSecret $vercelBypassSecret
       if (-not [string]::IsNullOrWhiteSpace($vercelState.TelemetryHealthStatus)) {
         $script:TelemetryHealthStatus = $vercelState.TelemetryHealthStatus
       }
       if (-not [string]::IsNullOrWhiteSpace($vercelState.ProdHeadMatchStatus)) {
         $script:ProdHeadMatch = $vercelState.ProdHeadMatchStatus
       }
-      if (-not $vercelState.Success) {
+
+      if ($vercelState.Success) {
+        $script:ParityConclusion = 'ok'
+        $script:ParityReason = ''
+      } else {
         $parityFailed = $true
         $parityFailureMessage = $vercelState.FailureMessage
         $script:ParityConclusion = 'not confirmed'
-        Write-Host ("Vercel parity failed: {0}" -f $parityFailureMessage) -ForegroundColor Yellow
-      } else {
-        $script:ParityConclusion = 'ok'
+        $script:ParityReason = $parityFailureMessage
+        Write-Host ("Vercel parity not confirmed: {0}" -f $parityFailureMessage) -ForegroundColor Yellow
       }
+
       $finalVercelSha = $vercelState.CommitSha
       $finalVercelEnv = $vercelState.VercelEnv
 
-      Write-Host ("PARITY TARGET: {0}" -f $hostTarget.Target) -ForegroundColor Green
+      Write-Host 'PARITY TARGET: prod' -ForegroundColor Green
       Write-Host ("LOCAL SHA:     {0}" -f $finalLocalSha) -ForegroundColor Green
       Write-Host ("ORIGIN SHA:    {0}" -f $finalOriginSha) -ForegroundColor Green
       Write-Host ("VERCEL SHA:    {0}" -f $finalVercelSha) -ForegroundColor Green
       Write-Host ("VERCEL ENV:    {0}" -f $finalVercelEnv) -ForegroundColor Green
+      Write-Host ("Prod commitSha == HEAD?: {0}" -f $script:ProdHeadMatch) -ForegroundColor Green
+      Write-Host ("Health: {0}" -f $script:TelemetryHealthStatus) -ForegroundColor Green
 
       Write-ParitySnapshot -LocalSha $finalLocalSha -OriginSha $finalOriginSha -VercelSha $finalVercelSha -VercelEnvValue $finalVercelEnv -ProdHost $productionDomainHost
     }
@@ -1381,20 +1380,12 @@ try {
       $script:ParityConclusion = 'skipped(reason: SkipParity)'
       $script:ParityReason = 'SkipParity'
       Write-Host 'Parity skipped by SkipParity.' -ForegroundColor Yellow
-    } elseif (-not $canRunGitParity) {
-      if ([string]::IsNullOrWhiteSpace($script:ParityConclusion)) {
-        $script:ParityConclusion = 'not confirmed'
-      }
-      if ([string]::IsNullOrWhiteSpace($script:ParityReason)) {
-        $script:ParityReason = 'git parity preflight not confirmed'
-      }
-      Write-Host ("[WARN] Vercel parity skipped because git parity preflight was not confirmed: {0}" -f $script:ParityReason) -ForegroundColor Yellow
     } elseif ($ParityTarget -eq 'off' -or $VercelParityMode -eq 'off') {
       $script:ParityConclusion = 'skipped(off)'
       $script:ParityReason = 'ParityTarget/VercelParityMode off'
       Write-Host 'Vercel parity skipped (off).' -ForegroundColor Yellow
     } else {
-      $script:ParityConclusion = 'skipped(SkipVercelParity)'
+      $script:ParityConclusion = 'skipped(reason: SkipVercelParity)'
       $script:ParityReason = 'SkipVercelParity'
       Write-Host 'SkipVercelParity enabled.' -ForegroundColor Yellow
     }
