@@ -1,4 +1,4 @@
-import type { GoodsSubtype, ItemKind } from "@/src/oshihapi/model";
+import type { GoodsClass, GoodsSubtype, ItemKind } from "@/src/oshihapi/model";
 import { shouldAskStorage as baseShouldAskStorage } from "@/src/oshihapi/storageGate";
 
 export const QUICK_QUESTION_IDS = [
@@ -38,6 +38,16 @@ export const ADDON_BY_ITEM_KIND: Partial<Record<ItemKind, readonly string[]>> = 
 export function shouldAskStorage(itemKind?: ItemKind, goodsSubtype?: GoodsSubtype): boolean {
   return baseShouldAskStorage(itemKind, goodsSubtype);
 }
+
+
+export const ADDON_BY_GOODS_CLASS: Record<GoodsClass, readonly string[]> = {
+  small_collection: ["q_addon_goods_collection_goal", "q_addon_goods_duplicate_tolerance"],
+  paper: ["q_addon_goods_paper_care", "q_addon_goods_paper_view_freq"],
+  wearable: ["q_addon_goods_wear_freq", "q_addon_goods_wear_fit"],
+  display_large: ["q_addon_goods_display_space_plan", "q_addon_goods_display_move_risk"],
+  tech: ["q_addon_goods_tech_compat", "q_addon_goods_tech_after_use"],
+  itabag_badge: ["q_storage_space", "q_addon_goods_itabag_target"],
+};
 
 export const GAME_BILLING_SHORT_QUESTION_IDS = [
   "gb_q1_need",

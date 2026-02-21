@@ -6,6 +6,13 @@ export type UseCase = 'merch' | 'game_billing';
 
 export type ItemKind = 'goods' | 'blind_draw' | 'used' | 'preorder' | 'ticket' | 'game_billing';
 export type GoodsSubtype = 'general' | 'itaBag_badge';
+export type GoodsClass =
+  | 'small_collection'
+  | 'paper'
+  | 'wearable'
+  | 'display_large'
+  | 'tech'
+  | 'itabag_badge';
 
 export type QuestionType = 'single' | 'multi' | 'scale' | 'number' | 'text';
 
@@ -77,6 +84,7 @@ export type InputMeta = {
   deadline?: 'today' | 'tomorrow' | 'in3days' | 'in1week' | 'unknown';
   itemKind?: ItemKind;
   goodsSubtype?: GoodsSubtype;
+  goodsClass?: GoodsClass;
   basketId?: string;
   basketItemId?: string;
 };

@@ -8,6 +8,7 @@ import type {
   DecisionRun,
   Decisiveness,
   InputMeta,
+  GoodsClass,
   GoodsSubtype,
   ItemKind,
   Mode,
@@ -28,6 +29,7 @@ import { MODE_DICTIONARY } from "@/src/oshihapi/modes/mode_dictionary";
 import { DECISIVENESS_STORAGE_KEY, parseDecisiveness } from "@/src/oshihapi/decisiveness";
 import { MODE_META, normalizeMode } from "@/src/oshihapi/modeConfig";
 import {
+  ADDON_BY_GOODS_CLASS,
   ADDON_BY_ITEM_KIND,
   CORE_12_QUESTION_IDS,
   QUICK_QUESTION_IDS,
@@ -61,6 +63,7 @@ const ITEM_KIND_VALUES: ItemKind[] = [
   "game_billing",
 ];
 const GOODS_SUBTYPE_VALUES: GoodsSubtype[] = ["general", "itaBag_badge"];
+const GOODS_CLASS_VALUES: GoodsClass[] = ["small_collection", "paper", "wearable", "display_large", "tech", "itabag_badge"];
 
 const deadlineOptions = [
   { value: "today", label: "今日" },
@@ -84,6 +87,15 @@ const goodsSubtypeOptions: { value: GoodsSubtype; label: string }[] = [
   { value: "itaBag_badge", label: "痛バ（缶バッジ複数）" },
 ];
 
+const goodsClassOptions: { value: GoodsClass; label: string }[] = [
+  { value: "small_collection", label: "小物コレクション（迷ったらこれ）" },
+  { value: "paper", label: "紙もの" },
+  { value: "wearable", label: "身につける" },
+  { value: "display_large", label: "飾る・大きめ" },
+  { value: "tech", label: "機能系" },
+  { value: "itabag_badge", label: "例外：痛バ・缶バ大量回収" },
+];
+
 type DeadlineValue = NonNullable<InputMeta["deadline"]>;
 
 const isDeadlineValue = (value: string): value is DeadlineValue =>
@@ -94,6 +106,7 @@ const isItemKindValue = (value: string): value is ItemKind =>
 
 const isGoodsSubtypeValue = (value: string): value is GoodsSubtype =>
   GOODS_SUBTYPE_VALUES.includes(value as GoodsSubtype);
+const isGoodsClassValue = (value: string): value is GoodsClass => GOODS_CLASS_VALUES.includes(value as GoodsClass);
 
 const parsePriceYen = (value: string | null): number | undefined => {
   if (!value) return undefined;
@@ -114,6 +127,9 @@ const parseItemKind = (value: string | null): InputMeta["itemKind"] => {
 const parseGoodsSubtype = (value: string | null): GoodsSubtype =>
   value && isGoodsSubtypeValue(value) ? value : "general";
 
+const parseGoodsClass = (value: string | null): GoodsClass =>
+  value && isGoodsClassValue(value) ? value : "small_collection";
+
 const decisionLabels: Record<string, string> = {
   BUY: "買う",
   THINK: "保留",
@@ -131,6 +147,7 @@ export default function FlowPage() {
   const deadline = parseDeadline(searchParams.get("deadline"));
   const itemKind = parseItemKind(searchParams.get("itemKind"));
   const goodsSubtype = parseGoodsSubtype(searchParams.get("goodsSubtype"));
+  const goodsClass = parseGoodsClass(searchParams.get("gc") ?? searchParams.get("goodsClass"));
   const decisiveness: Decisiveness = parseDecisiveness(searchParams.get("decisiveness"));
   const styleMode: StyleMode = getStyleModeFromSearchParams(searchParams) ?? "standard";
   const basketId = searchParams.get("basketId") ?? undefined;
@@ -141,6 +158,7 @@ export default function FlowPage() {
   const [draftDeadline, setDraftDeadline] = useState<DeadlineValue>(deadline ?? "unknown");
   const [draftItemKind, setDraftItemKind] = useState<ItemKind>(itemKind ?? "goods");
   const [draftGoodsSubtype, setDraftGoodsSubtype] = useState<GoodsSubtype>(goodsSubtype);
+  const [draftGoodsClass, setDraftGoodsClass] = useState<GoodsClass>(goodsClass);
   const [draftDecisiveness, setDraftDecisiveness] = useState<Decisiveness>(decisiveness);
 
   const useCase = itemKind === "game_billing" ? "game_billing" : "merch";
@@ -153,15 +171,18 @@ export default function FlowPage() {
     }
 
     const baseIds = mode === "short" ? QUICK_QUESTION_IDS : CORE_12_QUESTION_IDS;
-    const addonIds = mode === "long" && itemKind ? (ADDON_BY_ITEM_KIND[itemKind] ?? []) : [];
-    const ids = [...baseIds, ...addonIds].filter((id) => {
+    const itemKindAddonIds = mode === "long" && itemKind ? (ADDON_BY_ITEM_KIND[itemKind] ?? []) : [];
+    const enableGoodsClass = mode === "long" && (itemKind === "goods" || itemKind === "preorder" || itemKind === "used");
+    const goodsClassAddonIds = enableGoodsClass ? ADDON_BY_GOODS_CLASS[goodsClass] ?? [] : [];
+    const ids = [...baseIds, ...itemKindAddonIds, ...goodsClassAddonIds].filter((id) => {
       if (id !== "q_storage_fit") return true;
+      if (goodsClass === "itabag_badge") return false;
       return shouldAskStorage(itemKind, goodsSubtype);
     });
     return ids
       .map((id) => merch_v2_ja.questions.find((question) => question.id === id))
       .filter((question): question is Question => Boolean(question));
-  }, [answers, goodsSubtype, itemKind, mode, useCase]);
+  }, [answers, goodsClass, goodsSubtype, itemKind, mode, useCase]);
 
   const [submitting, setSubmitting] = useState(false);
   const startTimeRef = useRef<number>(0);
@@ -207,6 +228,8 @@ export default function FlowPage() {
     params.set("itemKind", draftItemKind);
     if (draftItemKind === "goods") params.set("goodsSubtype", draftGoodsSubtype);
     else params.delete("goodsSubtype");
+    if (draftItemKind === "goods" || draftItemKind === "preorder" || draftItemKind === "used") params.set("gc", draftGoodsClass);
+    else params.delete("gc");
     router.replace(`/flow?${params.toString()}`);
     setIsSettingsOpen(false);
   };
@@ -337,7 +360,7 @@ export default function FlowPage() {
           })()
         : evaluate({
             questionSet: { ...merch_v2_ja, questions },
-            meta: { itemName, priceYen, deadline, itemKind, goodsSubtype, basketId, basketItemId },
+            meta: { itemName, priceYen, deadline, itemKind, goodsSubtype, goodsClass, basketId, basketItemId },
             answers: normalizedAnswers,
             mode,
             decisiveness,
@@ -359,7 +382,7 @@ export default function FlowPage() {
       useCase,
       mode,
       decisiveness,
-      meta: { itemName, priceYen, deadline, itemKind, goodsSubtype, basketId, basketItemId },
+      meta: { itemName, priceYen, deadline, itemKind, goodsSubtype, goodsClass, basketId, basketItemId },
       answers: normalizedAnswers,
       gameBillingAnswers: useCase === "game_billing" ? normalizedAnswers : undefined,
       output,
@@ -420,6 +443,7 @@ export default function FlowPage() {
                 setDraftDeadline(deadline ?? "unknown");
                 setDraftItemKind(itemKind ?? "goods");
                 setDraftGoodsSubtype(goodsSubtype);
+                setDraftGoodsClass(goodsClass);
                 setDraftDecisiveness(decisiveness);
                 setIsSettingsOpen(true);
               }}
@@ -609,6 +633,8 @@ export default function FlowPage() {
               itemKind={draftItemKind}
               goodsSubtype={draftGoodsSubtype}
               goodsSubtypeOptions={goodsSubtypeOptions}
+              goodsClass={draftGoodsClass}
+              goodsClassOptions={goodsClassOptions}
               deadlineOptions={deadlineOptions}
               itemKindOptions={itemKindOptions}
               onStyleModeChange={handleStyleModeChange}
@@ -621,6 +647,7 @@ export default function FlowPage() {
                 if (nextKind !== "goods") setDraftGoodsSubtype("general");
               }}
               onGoodsSubtypeChange={setDraftGoodsSubtype}
+              onGoodsClassChange={setDraftGoodsClass}
             />
             <Button onClick={handleApplyOptionalSettings} className="mt-4 w-full">この設定を反映</Button>
           </div>

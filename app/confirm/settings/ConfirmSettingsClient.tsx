@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { Decisiveness, GoodsSubtype } from "@/src/oshihapi/model";
+import type { Decisiveness, GoodsClass, GoodsSubtype } from "@/src/oshihapi/model";
 import { parseDecisiveness, DECISIVENESS_STORAGE_KEY } from "@/src/oshihapi/decisiveness";
 import { COPY_BY_MODE } from "@/src/oshihapi/modes/copy_dictionary";
 import {
@@ -17,9 +17,11 @@ import {
   buildConfirmUrl,
   buildFlowUrl,
   deadlineOptions,
+  goodsClassOptions,
   goodsSubtypeOptions,
   itemKindOptions,
   parseDeadlineValue,
+  parseGoodsClassValue,
   parseGoodsSubtypeValue,
   parseItemKindValue,
 } from "../confirmQuery";
@@ -40,6 +42,7 @@ export default function ConfirmSettingsClient() {
   const deadline = parseDeadlineValue(searchParams.get("deadline") ?? "unknown");
   const itemKind = parseItemKindValue(searchParams.get("itemKind") ?? "goods");
   const goodsSubtype = parseGoodsSubtypeValue(searchParams.get("goodsSubtype"));
+  const goodsClass = parseGoodsClassValue(searchParams.get("gc") ?? searchParams.get("goodsClass"));
   const itemName = searchParams.get("itemName") ?? "";
   const priceYen = searchParams.get("priceYen") ?? "";
 
@@ -89,6 +92,8 @@ export default function ConfirmSettingsClient() {
         itemKind={itemKind}
         goodsSubtype={goodsSubtype}
         goodsSubtypeOptions={goodsSubtypeOptions}
+        goodsClass={goodsClass}
+        goodsClassOptions={goodsClassOptions}
         deadlineOptions={deadlineOptions}
         itemKindOptions={itemKindOptions}
         isOptionalInputOpen={isDetailOpen}
@@ -108,11 +113,13 @@ export default function ConfirmSettingsClient() {
           replaceQuery({
             itemKind: parseItemKindValue(value),
             goodsSubtype: value === "goods" ? goodsSubtype : null,
+            gc: value === "goods" || value === "preorder" || value === "used" ? goodsClass : null,
           })
         }
         onGoodsSubtypeChange={(value: GoodsSubtype) =>
           replaceQuery({ goodsSubtype: parseGoodsSubtypeValue(value) })
         }
+        onGoodsClassChange={(value: GoodsClass) => replaceQuery({ gc: parseGoodsClassValue(value) })}
       />
 
       <div className="sticky bottom-0 mt-auto -mx-4 grid gap-2 border-t border-slate-200 bg-white/95 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] backdrop-blur dark:border-white/10 dark:bg-[#0B1220]/95 sm:mx-0 sm:rounded-2xl sm:border sm:px-3">
