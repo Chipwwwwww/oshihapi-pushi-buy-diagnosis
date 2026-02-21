@@ -20,6 +20,7 @@ import {
 import { merch_v2_ja } from "@/src/oshihapi/merch_v2_ja";
 import { buildLongPrompt } from "@/src/oshihapi/promptBuilder";
 import type { DecisionRun, FeedbackImmediate } from "@/src/oshihapi/model";
+import type { BasketInput } from "@/src/oshihapi/basket_c0";
 import { decisivenessLabels } from "@/src/oshihapi/decisiveness";
 import { buildPresentation } from "@/src/oshihapi/decisionPresentation";
 import { clamp, engineConfig, normalize01ToSigned } from "@/src/oshihapi/engineConfig";
@@ -44,6 +45,7 @@ const decisionLabels: Record<string, string> = {
   THINK: "保留",
   SKIP: "やめる",
 };
+const BASKET_STORAGE_KEY = "oshihapi_basket_last";
 
 
 function getDefaultSearchWord(run: DecisionRun): string {
@@ -132,6 +134,10 @@ export default function ResultPage() {
   }, [runId]);
 
   const feedback = localFeedback ?? run?.feedback_immediate;
+  const basketId = run?.meta.basketId ?? searchParams.get("basketId") ?? undefined;
+  const basketItemId = run?.meta.basketItemId ?? searchParams.get("basketItemId") ?? undefined;
+  const canWriteBackToBasket = Boolean(basketId && basketItemId);
+
 
   useEffect(() => {
     setStyleMode(getStyleModeFromSearchParams(searchParams) ?? "standard");
@@ -324,6 +330,44 @@ export default function ResultPage() {
       showToast("送信に失敗しました。時間をおいて再試行してください。");
     } finally {
       setTelemetrySubmitting(false);
+    }
+  };
+
+  const handleWriteBackToBasket = () => {
+    if (!run || !basketId || !basketItemId || typeof window === "undefined") return;
+    const raw = window.localStorage.getItem(BASKET_STORAGE_KEY);
+    if (!raw) {
+      showToast("バスケットが見つかりませんでした");
+      return;
+    }
+    try {
+      const parsed = JSON.parse(raw) as BasketInput & { basketId?: string; totalBudgetInput?: string };
+      if (parsed.basketId && parsed.basketId !== basketId) {
+        showToast("別のバスケットです");
+        return;
+      }
+      if (!Array.isArray(parsed.items)) {
+        showToast("バスケット形式が不正です");
+        return;
+      }
+      const shortReasons = run.output.reasons.slice(0, 3).map((reason) => reason.text).filter(Boolean);
+      const updatedItems = parsed.items.map((item) =>
+        item.id === basketItemId
+          ? {
+              ...item,
+              singleResultOverride: {
+                decision: run.output.decision,
+                confidence: run.output.confidence,
+                reasons: shortReasons,
+                sourceRunId: run.runId,
+              },
+            }
+          : item,
+      );
+      window.localStorage.setItem(BASKET_STORAGE_KEY, JSON.stringify({ ...parsed, basketId, items: updatedItems }));
+      router.push(`/basket?resume=1#item-${basketItemId}`);
+    } catch {
+      showToast("反映に失敗しました");
     }
   };
 
@@ -554,6 +598,11 @@ export default function ResultPage() {
       <AiConsultCta longPrompt={longPrompt} onCopyPrompt={handleCopyPrompt} />
 
       <div className="grid gap-4">
+        {canWriteBackToBasket ? (
+          <Button onClick={handleWriteBackToBasket} className="w-full rounded-xl">
+            バスケットに反映して戻る
+          </Button>
+        ) : null}
         <Button
           variant="outline"
           onClick={() => router.push("/")}

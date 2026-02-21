@@ -133,6 +133,8 @@ export default function FlowPage() {
   const goodsSubtype = parseGoodsSubtype(searchParams.get("goodsSubtype"));
   const decisiveness: Decisiveness = parseDecisiveness(searchParams.get("decisiveness"));
   const styleMode: StyleMode = getStyleModeFromSearchParams(searchParams) ?? "standard";
+  const basketId = searchParams.get("basketId") ?? undefined;
+  const basketItemId = searchParams.get("basketItemId") ?? undefined;
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [draftItemName, setDraftItemName] = useState(itemNameParam);
   const [draftPriceYen, setDraftPriceYen] = useState(priceYenParam);
@@ -335,7 +337,7 @@ export default function FlowPage() {
           })()
         : evaluate({
             questionSet: { ...merch_v2_ja, questions },
-            meta: { itemName, priceYen, deadline, itemKind, goodsSubtype },
+            meta: { itemName, priceYen, deadline, itemKind, goodsSubtype, basketId, basketItemId },
             answers: normalizedAnswers,
             mode,
             decisiveness,
@@ -357,7 +359,7 @@ export default function FlowPage() {
       useCase,
       mode,
       decisiveness,
-      meta: { itemName, priceYen, deadline, itemKind, goodsSubtype },
+      meta: { itemName, priceYen, deadline, itemKind, goodsSubtype, basketId, basketItemId },
       answers: normalizedAnswers,
       gameBillingAnswers: useCase === "game_billing" ? normalizedAnswers : undefined,
       output,
@@ -366,7 +368,10 @@ export default function FlowPage() {
 
     setSubmitting(true);
     saveRun(run);
-    router.push(`/result/${runId}?styleMode=${styleMode}`);
+    const params = new URLSearchParams({ styleMode });
+    if (basketId) params.set("basketId", basketId);
+    if (basketItemId) params.set("basketItemId", basketItemId);
+    router.push(`/result/${runId}?${params.toString()}`);
   };
 
   const handleBack = () => {
