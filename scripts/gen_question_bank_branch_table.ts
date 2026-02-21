@@ -23,7 +23,6 @@ import {
 } from "@/src/oshihapi/question_sets";
 
 const ITEM_KINDS: ItemKind[] = ["goods", "blind_draw", "ticket", "preorder", "used"];
-const GOODS_SUBTYPES: GoodsSubtype[] = ["general", "itaBag_badge"];
 const GOODS_CLASSES: GoodsClass[] = ["small_collection", "paper", "wearable", "display_large", "tech", "itabag_badge"];
 const STYLES = ["standard", "kawaii", "oshi"] as const;
 type Style = (typeof STYLES)[number];
@@ -98,18 +97,10 @@ function toBuyStopDelta(questionId: string, optionId: string): BuyStopDelta | nu
 const getMerchBranchVariants = (mode: "short" | "medium" | "long", itemKind: ItemKind) => {
   const shouldExpandGoodsClass = mode === "long" && ["goods", "preorder", "used"].includes(itemKind);
   const goodsClassVariants = shouldExpandGoodsClass ? GOODS_CLASSES : (["small_collection"] as GoodsClass[]);
-  if (itemKind !== "goods") {
-    return goodsClassVariants.map((goodsClass) => ({
-      branchSuffix: shouldExpandGoodsClass ? `#gc=${goodsClass}` : "#gc=N/A",
-      questionIds: getMerchQuestionIds(mode, itemKind, "general", goodsClass),
-    }));
-  }
-  return GOODS_SUBTYPES.flatMap((goodsSubtype) =>
-    goodsClassVariants.map((goodsClass) => ({
-      branchSuffix: `${goodsSubtype === "general" ? "" : `#${goodsSubtype}`}#gc=${shouldExpandGoodsClass ? goodsClass : "N/A"}`,
-      questionIds: getMerchQuestionIds(mode, itemKind, goodsSubtype, goodsClass),
-    })),
-  );
+  return goodsClassVariants.map((goodsClass) => ({
+    branchSuffix: shouldExpandGoodsClass ? `#gc=${goodsClass}` : "#gc=N/A",
+    questionIds: getMerchQuestionIds(mode, itemKind, "general", goodsClass),
+  }));
 };
 
 const merchBranching = {
