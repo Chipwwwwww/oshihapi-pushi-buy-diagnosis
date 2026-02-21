@@ -64,7 +64,7 @@ $script:PmrLogPath = ''
 $script:PmrBundlePath = ''
 $script:BuildStatus = 'not run'
 $script:BuildFirstTsError = ''
-$script:ProdHeadMatch = 'Not confirmed'
+$script:ProdHeadMatch = 'not confirmed'
 $script:TelemetryHealthStatus = 'not confirmed'
 $script:ParityConclusion = 'not confirmed'
 $script:ParityReason = ''
@@ -416,9 +416,9 @@ function Write-FinalChecklist() {
   } else {
     Write-Host ("PMR: [ERR] stage={0} exit={1} bundle={2}" -f $script:PmrStage, $script:PmrExitCode, $script:PmrBundlePath)
   }
+  Write-Host ("Parity: {0}" -f $script:ParityConclusion)
   Write-Host ("Prod commitSha == HEAD?: {0}" -f $script:ProdHeadMatch)
-  Write-Host ("/api/telemetry/health: {0}" -f $script:TelemetryHealthStatus)
-  Write-Host ("parity conclusion: {0}" -f $script:ParityConclusion)
+  Write-Host ("Health: {0}" -f $script:TelemetryHealthStatus)
   if (-not [string]::IsNullOrWhiteSpace($script:ParityReason)) {
     Write-Host ("parity reason: {0}" -f $script:ParityReason)
   }
@@ -748,6 +748,27 @@ function Resolve-VercelPreviewHost([string]$ProvidedValue) {
   return Resolve-HostValue -ProvidedValue $ProvidedValue -EnvName 'OSH_VERCEL_PREVIEW_HOST' -FilePath '.\ops\vercel_preview_host.txt' -Label 'Vercel preview'
 }
 
+function Get-VercelBypassSecretSafe() {
+  $secretPath = '.\ops\vercel_protection_bypass_secret.txt'
+  try {
+    if (Test-Path -LiteralPath $secretPath) {
+      $line = Get-Content -LiteralPath $secretPath -TotalCount 1 -ErrorAction SilentlyContinue
+      if (-not [string]::IsNullOrWhiteSpace($line)) {
+        return $line.Trim()
+      }
+    }
+  } catch {}
+
+  try {
+    $envSecret = [Environment]::GetEnvironmentVariable('VERCEL_PROTECTION_BYPASS_SECRET')
+    if (-not [string]::IsNullOrWhiteSpace($envSecret)) {
+      return $envSecret.Trim()
+    }
+  } catch {}
+
+  return $null
+}
+
 function Infer-ProdBranchFromOriginHead([string]$FallbackBranch = 'main') {
   $symbolic = (& git -C $script:RepoRoot symbolic-ref --quiet --short refs/remotes/origin/HEAD) 2>$null
   if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($symbolic)) {
@@ -812,11 +833,11 @@ function Resolve-ParityTargetHost([string]$CurrentBranch, [string]$EffectiveProd
   }
 }
 
-function Invoke-VersionEndpoint([string]$ProdHost) {
+function Invoke-VersionEndpoint([string]$ProdHost, [hashtable]$Headers = $null) {
   [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
   $timestamp = [int][DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
   $url = "https://$ProdHost/api/version?t=$timestamp"
-  $httpResult = Invoke-WebRequestWithSingleRedirect -Url $url -TimeoutSec 15
+  $httpResult = Invoke-WebRequestWithSingleRedirect -Url $url -TimeoutSec 15 -Headers $Headers
   $response = $httpResult.Response
 
   $body = $response.Content
@@ -852,14 +873,20 @@ function Get-WebExceptionStatusCode([System.Exception]$Exception) {
   return $null
 }
 
-function Invoke-WebRequestWithSingleRedirect([string]$Url, [int]$TimeoutSec = 15) {
+function Invoke-WebRequestWithSingleRedirect([string]$Url, [int]$TimeoutSec = 15, [hashtable]$Headers = $null) {
   $safeTimeoutSec = if ($TimeoutSec -gt 0) { $TimeoutSec } else { 15 }
   $attemptUrl = $Url
   $didFollow = $false
+  $requestHeaders = @{ 'Cache-Control'='no-cache'; 'Pragma'='no-cache' }
+  if ($Headers) {
+    foreach ($key in $Headers.Keys) {
+      $requestHeaders[$key] = $Headers[$key]
+    }
+  }
 
   for ($i = 0; $i -lt 2; $i++) {
     try {
-      $resp = Invoke-WebRequest -Uri $attemptUrl -Method Get -UseBasicParsing -MaximumRedirection 0 -TimeoutSec $safeTimeoutSec -Headers @{ 'Cache-Control'='no-cache'; 'Pragma'='no-cache' } -ErrorAction Stop
+      $resp = Invoke-WebRequest -Uri $attemptUrl -Method Get -UseBasicParsing -MaximumRedirection 0 -TimeoutSec $safeTimeoutSec -Headers $requestHeaders -ErrorAction Stop
       return [PSCustomObject]@{ Response = $resp; FinalUrl = $attemptUrl; Redirected = $didFollow }
     } catch {
       $statusCode = Get-WebExceptionStatusCode -Exception $_.Exception
@@ -890,7 +917,7 @@ function Assert-VersionRouteExistsInHead() {
   }
 }
 
-function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$ExpectedEnv, [switch]$AllowPreview, [int]$MaxWaitSec = 600, [int]$PollIntervalSec = 10) {
+function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$ExpectedEnv, [switch]$AllowPreview, [int]$MaxWaitSec = 600, [int]$PollIntervalSec = 10, [string]$BypassSecret = $null) {
   $started = Get-Date
   $attempt = 0
   $safeIntervalSec = [Math]::Max(1, $PollIntervalSec)
@@ -907,6 +934,11 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
     GitRef = ''
     StatusCode = 0
     TelemetryHealthStatus = ''
+    ProdHeadMatchStatus = 'not confirmed'
+  }
+  $requestHeaders = $null
+  if (-not [string]::IsNullOrWhiteSpace($BypassSecret)) {
+    $requestHeaders = @{ 'x-vercel-protection-bypass' = $BypassSecret }
   }
 
   while ($attempt -lt $maxAttempts) {
@@ -914,7 +946,7 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
     $elapsedSec = [int]((Get-Date) - $started).TotalSeconds
 
     try {
-      $versionResponse = Invoke-VersionEndpoint -ProdHost $ProdHost
+      $versionResponse = Invoke-VersionEndpoint -ProdHost $ProdHost -Headers $requestHeaders
       $statusCode = $versionResponse.StatusCode
       $lastStatusCode = $statusCode
       $result.StatusCode = $statusCode
@@ -954,9 +986,29 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
 
       $hadParsedCommitSha = $true
       if ($vercelSha -ne $LocalSha) {
+        $result.ProdHeadMatchStatus = 'not confirmed(commit mismatch)'
         Write-Host ("Vercel commit mismatch: local=$LocalSha vercel=$vercelSha host=$ProdHost vercelEnv=$vercelEnvValue waited=${elapsedSec}s/${MaxWaitSec}s") -ForegroundColor Yellow
         if ($attempt -lt $maxAttempts) { Start-Sleep -Seconds $safeIntervalSec }
         continue
+      }
+
+      $result.ProdHeadMatchStatus = 'ok'
+
+      $healthUrl = "https://$ProdHost/api/telemetry/health"
+      try {
+        $healthResp = Invoke-WebRequest -Uri $healthUrl -Method Get -UseBasicParsing -TimeoutSec 10 -Headers $requestHeaders -ErrorAction Stop
+        if ($healthResp -and [int]$healthResp.StatusCode -eq 200) {
+          $result.TelemetryHealthStatus = 'ok'
+        } else {
+          $result.TelemetryHealthStatus = ('not confirmed(status {0})' -f [int]$healthResp.StatusCode)
+        }
+      } catch {
+        $healthCode = Get-WebExceptionStatusCode -Exception $_.Exception
+        if ($null -ne $healthCode) {
+          $result.TelemetryHealthStatus = ('not confirmed(status {0})' -f $healthCode)
+        } else {
+          $result.TelemetryHealthStatus = ('not confirmed({0})' -f (Shorten-Text -Text $_.Exception.Message -MaxLen 120))
+        }
       }
 
       Write-Host ("VERCEL == LOCAL [OK] ({0}) (vercelEnv={1})" -f $LocalSha, $vercelEnvValue) -ForegroundColor Green
@@ -972,16 +1024,21 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
       }
 
       if ($statusCode -eq 404) {
+        $result.ProdHeadMatchStatus = 'not confirmed(status 404)'
         if (-not $did404Diagnosis) {
           $did404Diagnosis = $true
           $probeUrl = "https://$ProdHost/api/telemetry/health"
-          $probeStatus = 'unavailable'
+          $probeStatus = 'not confirmed(unavailable)'
           try {
-            $probeResp = Invoke-WebRequest -Uri $probeUrl -Method Get -UseBasicParsing -TimeoutSec 10 -ErrorAction Stop
-            $probeStatus = [string]$probeResp.StatusCode
+            $probeResp = Invoke-WebRequest -Uri $probeUrl -Method Get -UseBasicParsing -TimeoutSec 10 -Headers $requestHeaders -ErrorAction Stop
+            if ($probeResp -and [int]$probeResp.StatusCode -eq 200) {
+              $probeStatus = 'ok'
+            } else {
+              $probeStatus = ('not confirmed(status {0})' -f [int]$probeResp.StatusCode)
+            }
           } catch {
             $probeCode = Get-WebExceptionStatusCode -Exception $_.Exception
-            if ($null -ne $probeCode) { $probeStatus = [string]$probeCode }
+            if ($null -ne $probeCode) { $probeStatus = ('not confirmed(status {0})' -f $probeCode) }
           }
           $result.TelemetryHealthStatus = $probeStatus
           Write-Host ("/api/version 404 diagnosed once: host={0}, branch={1}, telemetryHealth={2}." -f $ProdHost, $branchName, $probeStatus) -ForegroundColor Yellow
@@ -989,6 +1046,9 @@ function Wait-VercelCommitParity([string]$ProdHost, [string]$LocalSha, [string]$
           Write-Host ("/api/version still 404 (attempt {0}/{1}); waiting..." -f $attempt, $maxAttempts) -ForegroundColor DarkYellow
         }
       } else {
+        if ($null -ne $statusCode) {
+          $result.ProdHeadMatchStatus = ('not confirmed(status {0})' -f $statusCode)
+        }
         $shortMsg = Shorten-Text -Text $_.Exception.Message -MaxLen 240
         Write-Host ("Vercel parity probe retry: status=$statusCode detail=$shortMsg waited=${elapsedSec}s/${MaxWaitSec}s") -ForegroundColor Yellow
       }
@@ -1289,12 +1349,13 @@ try {
       }
 
       $allowPreviewForTarget = $AllowPreviewHost -or $hostTarget.Target -eq 'preview'
-      $vercelState = Wait-VercelCommitParity -ProdHost $productionDomainHost -LocalSha $finalLocalSha -ExpectedEnv $expectedVercelEnv -AllowPreview:$allowPreviewForTarget -MaxWaitSec $effectiveMaxWaitSec -PollIntervalSec $effectivePollIntervalSec
+      $vercelBypassSecret = Get-VercelBypassSecretSafe
+      $vercelState = Wait-VercelCommitParity -ProdHost $productionDomainHost -LocalSha $finalLocalSha -ExpectedEnv $expectedVercelEnv -AllowPreview:$allowPreviewForTarget -MaxWaitSec $effectiveMaxWaitSec -PollIntervalSec $effectivePollIntervalSec -BypassSecret $vercelBypassSecret
       if (-not [string]::IsNullOrWhiteSpace($vercelState.TelemetryHealthStatus)) {
         $script:TelemetryHealthStatus = $vercelState.TelemetryHealthStatus
       }
-      if (-not [string]::IsNullOrWhiteSpace($vercelState.CommitSha) -and -not [string]::IsNullOrWhiteSpace($finalLocalSha)) {
-        $script:ProdHeadMatch = [string]($vercelState.CommitSha -eq $finalLocalSha)
+      if (-not [string]::IsNullOrWhiteSpace($vercelState.ProdHeadMatchStatus)) {
+        $script:ProdHeadMatch = $vercelState.ProdHeadMatchStatus
       }
       if (-not $vercelState.Success) {
         $parityFailed = $true
