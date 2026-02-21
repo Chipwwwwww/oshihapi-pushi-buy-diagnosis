@@ -1401,19 +1401,19 @@
 - mapTo: 
 - tags: cold, hot, normal_popularity, unknown_popularity
 - unknown tags hints: unknown_popularity
-- text_standard: 欲しい枠（推し）は人気枠？（高レート/低レート）
-- text_kawaii: 推し枠って人気どのくらい？
-- text_oshi: 推し枠レート、どの温度感？
+- text_standard: このアイテム、あとで高くなりやすい？（相場/プレ値）
+- text_kawaii: これ、あとで高くなりそう？（相場/プレ値）
+- text_oshi: 相場（プレ値）リスク、どの温度感？
 - sameAsStandard: false
 <details>
 <summary>Options</summary>
 
 | optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
 |---|---|---|---|---|---|---|---|---|---|
-| cold | 落ち着いてる（低レートになりやすい） | 落ち着いてる（低レートになりやすい） | 落ち着いてる（低レートになりやすい） | true | cold |  |  |  |  |
-| hot | 人気（高騰/プレ値になりやすい） | 人気（高騰/プレ値になりやすい） | 人気（高騰/プレ値になりやすい） | true | hot |  |  |  |  |
-| normal | 普通 | 普通 | 普通 | true | normal_popularity |  |  |  |  |
-| unknown | わからない | わからない | わからない | true | unknown_popularity |  |  |  |  |
+| cold | 落ち着いてる（上がりにくい/安定しそう） | 落ち着いてる（上がりにくい/安定しそう） | 落ち着いてる（上がりにくい/安定しそう） | true | cold |  |  |  |  |
+| hot | 高騰しやすい（プレ値になりやすい） | 高騰しやすい（プレ値になりやすい） | 高騰しやすい（プレ値になりやすい） | true | hot |  |  |  |  |
+| normal | 普通（大きくは動かなそう） | 普通（大きくは動かなそう） | 普通（大きくは動かなそう） | true | normal_popularity |  |  |  |  |
+| unknown | わからない（相場未確認） | わからない（相場未確認） | わからない（相場未確認） | true | unknown_popularity |  |  |  |  |
 
 </details>
 

@@ -4542,18 +4542,18 @@
       "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
-        "standard": "欲しい枠（推し）は人気枠？（高レート/低レート）",
-        "kawaii": "推し枠って人気どのくらい？",
-        "oshi": "推し枠レート、どの温度感？"
+        "standard": "このアイテム、あとで高くなりやすい？（相場/プレ値）",
+        "kawaii": "これ、あとで高くなりそう？（相場/プレ値）",
+        "oshi": "相場（プレ値）リスク、どの温度感？"
       },
       "scaleLabels": null,
       "options": [
         {
           "optionId": "cold",
           "labels": {
-            "standard": "落ち着いてる（低レートになりやすい）",
-            "kawaii": "落ち着いてる（低レートになりやすい）",
-            "oshi": "落ち着いてる（低レートになりやすい）"
+            "standard": "落ち着いてる（上がりにくい/安定しそう）",
+            "kawaii": "落ち着いてる（上がりにくい/安定しそう）",
+            "oshi": "落ち着いてる（上がりにくい/安定しそう）"
           },
           "sameAsStandard": true,
           "mapTo": null,
@@ -4566,9 +4566,9 @@
         {
           "optionId": "hot",
           "labels": {
-            "standard": "人気（高騰/プレ値になりやすい）",
-            "kawaii": "人気（高騰/プレ値になりやすい）",
-            "oshi": "人気（高騰/プレ値になりやすい）"
+            "standard": "高騰しやすい（プレ値になりやすい）",
+            "kawaii": "高騰しやすい（プレ値になりやすい）",
+            "oshi": "高騰しやすい（プレ値になりやすい）"
           },
           "sameAsStandard": true,
           "mapTo": null,
@@ -4581,9 +4581,9 @@
         {
           "optionId": "normal",
           "labels": {
-            "standard": "普通",
-            "kawaii": "普通",
-            "oshi": "普通"
+            "standard": "普通（大きくは動かなそう）",
+            "kawaii": "普通（大きくは動かなそう）",
+            "oshi": "普通（大きくは動かなそう）"
           },
           "sameAsStandard": true,
           "mapTo": null,
@@ -4596,9 +4596,9 @@
         {
           "optionId": "unknown",
           "labels": {
-            "standard": "わからない",
-            "kawaii": "わからない",
-            "oshi": "わからない"
+            "standard": "わからない（相場未確認）",
+            "kawaii": "わからない（相場未確認）",
+            "oshi": "わからない（相場未確認）"
           },
           "sameAsStandard": true,
           "mapTo": null,
