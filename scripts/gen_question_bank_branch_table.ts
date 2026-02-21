@@ -3,6 +3,7 @@ import { join } from "node:path";
 import type { GoodsSubtype, ItemKind, Question } from "@/src/oshihapi/model";
 import { GAME_BILLING_OPTION_DELTAS, getGameBillingQuestions } from "@/src/oshihapi/gameBillingNeutralV1";
 import { merch_v2_ja } from "@/src/oshihapi/merch_v2_ja";
+import { basket_questions_ja } from "@/src/oshihapi/basket_questions_ja";
 import { resolveOptionLabel, resolveQuestionText } from "@/src/oshihapi/modes/question_copy_resolver";
 import {
   getBehaviorRelevance,
@@ -47,8 +48,9 @@ function getMerchQuestionIds(
   );
 }
 
-function getScoringRelevance(useCase: "merch" | "game_billing", question: Question): string {
+function getScoringRelevance(useCase: "merch" | "game_billing" | "basket", question: Question): string {
   if (useCase === "game_billing") return "contributes_to_buy_stop_mapping";
+  if (useCase === "basket") return "basket_context_or_item_schema";
   const hasMapTo = Boolean(question.mapTo);
   const hasDelta = Boolean(question.options?.some((option) => option.delta && Object.keys(option.delta).length > 0));
   const isStorageGate = question.id === "q_storage_fit";
@@ -134,6 +136,10 @@ const gameBillingBranching = {
   },
 };
 
+const basketBranching = {
+  core: basket_questions_ja.map((entry) => entry.question.id),
+};
+
 const appearsInByQuestionId = new Map<string, Set<string>>();
 const appendAppearsIn = (questionId: string, branchKey: string) => {
   const current = appearsInByQuestionId.get(questionId) ?? new Set<string>();
@@ -156,10 +162,14 @@ for (const mode of ["short", "medium", "long"] as const) {
 }
 appendAppearsIn(GAME_BILLING_Q10_SPLIT_RULE.thenQuestionId, "game_billing/q10_then_pity");
 appendAppearsIn(GAME_BILLING_Q10_SPLIT_RULE.elseQuestionId, "game_billing/q10_else_value");
+for (const questionId of basketBranching.core) {
+  appendAppearsIn(questionId, "basket/core");
+}
 
 const allQuestions = [
   ...merch_v2_ja.questions.map((question) => ({ useCase: "merch" as const, question })),
   ...Array.from(gameBillingQuestionMap.values()).map((question) => ({ useCase: "game_billing" as const, question })),
+  ...basket_questions_ja.map((entry) => ({ useCase: "basket" as const, question: entry.question })),
 ].sort((a, b) => a.question.id.localeCompare(b.question.id));
 
 const questionsJson = allQuestions.map(({ useCase, question }) => {
@@ -216,6 +226,8 @@ md.push(`- mode=short: ${gameBillingBranching.short.join(" -> ")}`);
 md.push(`- mode=medium: ${gameBillingBranching.medium.join(" -> ")}`);
 md.push(`- mode=long: ${gameBillingBranching.long.join(" -> ")}`);
 md.push(`- dynamic branch: q10 = ${GAME_BILLING_Q10_SPLIT_RULE.thenQuestionId} if ${GAME_BILLING_Q10_SPLIT_RULE.conditionQuestionId} == ${GAME_BILLING_Q10_SPLIT_RULE.whenOptionId}, else ${GAME_BILLING_Q10_SPLIT_RULE.elseQuestionId}`);
+md.push("", "### Basket");
+md.push(`- mode=core: ${basketBranching.core.join(" -> ")}`);
 md.push("", "## B. Orphan Questions", "");
 md.push(orphanQuestionIds.length > 0 ? `- ${orphanQuestionIds.join(", ")}` : "- (none)");
 md.push("", "## C. Question Catalog Detail", "");
@@ -329,7 +341,7 @@ for (const q of questionsJson) {
 const jsonOutput = {
   schemaVersion: 2,
   generated: { stable: true },
-  branchingMatrix: { merch: merchBranching, game_billing: gameBillingBranching },
+  branchingMatrix: { merch: merchBranching, game_billing: gameBillingBranching, basket: basketBranching },
   questions: questionsJson,
 };
 mkdirSync(join(process.cwd(), "docs"), { recursive: true });
