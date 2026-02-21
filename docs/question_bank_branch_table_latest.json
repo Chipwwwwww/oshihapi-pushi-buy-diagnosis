@@ -4800,20 +4800,72 @@
       "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
-        "standard": "今「買いたい理由」ってどれ？（複数選択OK）",
-        "kawaii": "買いたい気持ち、どれに近い？",
-        "oshi": "回収動機、どれが強い？"
+        "standard": "今「買いたい理由」ってどれ？（当てはまるだけ選んでOK／迷ったら1〜3個でもOK）",
+        "kawaii": "買いたい気持ち、どれに近い？（いくつでもOKだよ）",
+        "oshi": "回収動機どれ？（複数OK／迷ったら少なめでもOK）"
       },
       "scaleLabels": null,
       "options": [
         {
+          "optionId": "archive",
+          "labels": {
+            "standard": "手元に保存・アーカイブしたい",
+            "kawaii": "手元に保存・アーカイブしたい",
+            "oshi": "アーカイブ保全"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
           "optionId": "bonus",
           "labels": {
             "standard": "特典が本体（特典目的）",
-            "kawaii": "特典が本体（特典目的）",
-            "oshi": "特典が本体（特典目的）"
+            "kawaii": "特典が本体",
+            "oshi": "特典本体"
           },
-          "sameAsStandard": true,
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "complete",
+          "labels": {
+            "standard": "揃えたい／コンプしたい",
+            "kawaii": "揃えたい／コンプしたい",
+            "oshi": "収集完成欲"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "content",
+          "labels": {
+            "standard": "中身（絵/文章/デザイン）が好き",
+            "kawaii": "中身（絵/文章/デザイン）が好き",
+            "oshi": "内容物が刺さる"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "display",
+          "labels": {
+            "standard": "飾って眺めたい",
+            "kawaii": "飾って眺めたい",
+            "oshi": "展示鑑賞目的"
+          },
+          "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
           "tags": [],
@@ -4823,10 +4875,62 @@
           "optionId": "fomo",
           "labels": {
             "standard": "限定・締切が怖い（取り逃し不安）",
-            "kawaii": "限定・締切が怖い（取り逃し不安）",
-            "oshi": "限定・締切が怖い（取り逃し不安）"
+            "kawaii": "限定・締切がこわい",
+            "oshi": "取り逃し圧が強い"
           },
-          "sameAsStandard": true,
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "habit",
+          "labels": {
+            "standard": "習慣でつい買ってしまう（ルーティン）",
+            "kawaii": "習慣でつい買ってしまう",
+            "oshi": "習慣購買"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "memory",
+          "labels": {
+            "standard": "記念・思い出として残したい",
+            "kawaii": "記念・思い出として残したい",
+            "oshi": "記念保存"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "price_up",
+          "labels": {
+            "standard": "あとで高くなりそう（相場/プレ値）",
+            "kawaii": "あとで高くなりそう",
+            "oshi": "将来相場上昇見込み"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "reward",
+          "labels": {
+            "standard": "自分へのご褒美",
+            "kawaii": "自分へのご褒美",
+            "oshi": "自己報酬"
+          },
+          "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
           "tags": [],
@@ -4836,10 +4940,23 @@
           "optionId": "rush",
           "labels": {
             "standard": "買えた瞬間の高揚感がほしい（脳汁）",
-            "kawaii": "買えた瞬間の高揚感がほしい（脳汁）",
-            "oshi": "買えた瞬間の高揚感がほしい（脳汁）"
+            "kawaii": "買えた瞬間のドキドキ",
+            "oshi": "取得時の高揚"
           },
-          "sameAsStandard": true,
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "scarce",
+          "labels": {
+            "standard": "今逃すと後悔しそう（再入手が難しそう）",
+            "kawaii": "今逃すと後悔しそう",
+            "oshi": "再入手難の懸念"
+          },
+          "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
           "tags": [],
@@ -4849,10 +4966,10 @@
           "optionId": "support",
           "labels": {
             "standard": "推しを応援したい（気持ち）",
-            "kawaii": "推しを応援したい（気持ち）",
-            "oshi": "推しを応援したい（気持ち）"
+            "kawaii": "推しを応援したい",
+            "oshi": "推し支援"
           },
-          "sameAsStandard": true,
+          "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
           "tags": [],
@@ -4862,10 +4979,10 @@
           "optionId": "trend",
           "labels": {
             "standard": "みんな買ってる／流行ってる（雰囲気）",
-            "kawaii": "みんな買ってる／流行ってる（雰囲気）",
-            "oshi": "みんな買ってる／流行ってる（雰囲気）"
+            "kawaii": "みんな買ってる",
+            "oshi": "界隈トレンド"
           },
-          "sameAsStandard": true,
+          "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
           "tags": [],
@@ -4875,10 +4992,10 @@
           "optionId": "use",
           "labels": {
             "standard": "飾りたい／使いたい（未来がある）",
-            "kawaii": "飾りたい／使いたい（未来がある）",
-            "oshi": "飾りたい／使いたい（未来がある）"
+            "kawaii": "飾りたい／使いたい",
+            "oshi": "運用・展示したい"
           },
-          "sameAsStandard": true,
+          "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
           "tags": [],
@@ -4888,10 +5005,10 @@
           "optionId": "vague",
           "labels": {
             "standard": "なんとなく（説明できない）",
-            "kawaii": "なんとなく（説明できない）",
-            "oshi": "なんとなく（説明できない）"
+            "kawaii": "なんとなく",
+            "oshi": "言語化しづらい"
           },
-          "sameAsStandard": true,
+          "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
           "tags": [],
