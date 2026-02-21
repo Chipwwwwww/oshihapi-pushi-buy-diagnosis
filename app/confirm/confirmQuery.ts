@@ -1,5 +1,5 @@
 import type { ReadonlyURLSearchParams } from "next/navigation";
-import type { InputMeta, ItemKind, Mode } from "@/src/oshihapi/model";
+import type { GoodsSubtype, InputMeta, ItemKind, Mode } from "@/src/oshihapi/model";
 
 type SearchParamsLike = URLSearchParams | ReadonlyURLSearchParams;
 
@@ -22,6 +22,11 @@ export const itemKindOptions: { value: ItemKind; label: string }[] = [
   { value: "game_billing", label: "ゲーム課金" },
 ];
 
+
+export const goodsSubtypeOptions: { value: GoodsSubtype; label: string }[] = [
+  { value: "general", label: "グッズ（一般）" },
+  { value: "itaBag_badge", label: "痛バ（缶バッジ複数）" },
+];
 export const modeLabelMap: Record<Mode, string> = {
   short: "即決（30秒）",
   medium: "標準（60秒〜2分）",
@@ -30,12 +35,17 @@ export const modeLabelMap: Record<Mode, string> = {
 
 const DEADLINE_VALUES = deadlineOptions.map((option) => option.value);
 const ITEM_KIND_VALUES = itemKindOptions.map((option) => option.value);
+const GOODS_SUBTYPE_VALUES = goodsSubtypeOptions.map((option) => option.value);
 
 const isDeadlineValue = (value: string): value is DeadlineValue => DEADLINE_VALUES.includes(value as DeadlineValue);
 const isItemKindValue = (value: string): value is ItemKind => ITEM_KIND_VALUES.includes(value as ItemKind);
+const isGoodsSubtypeValue = (value: string): value is GoodsSubtype =>
+  GOODS_SUBTYPE_VALUES.includes(value as GoodsSubtype);
 
 export const parseDeadlineValue = (value: string): DeadlineValue => (isDeadlineValue(value) ? value : "unknown");
 export const parseItemKindValue = (value: string): ItemKind => (isItemKindValue(value) ? value : "goods");
+export const parseGoodsSubtypeValue = (value: string | null | undefined): GoodsSubtype =>
+  value && isGoodsSubtypeValue(value) ? value : "general";
 
 export function buildUrl(
   pathname: string,

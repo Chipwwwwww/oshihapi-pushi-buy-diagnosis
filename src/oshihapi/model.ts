@@ -5,6 +5,7 @@ export type Category = 'merch';
 export type UseCase = 'merch' | 'game_billing';
 
 export type ItemKind = 'goods' | 'blind_draw' | 'used' | 'preorder' | 'ticket' | 'game_billing';
+export type GoodsSubtype = 'general' | 'itaBag_badge';
 
 export type QuestionType = 'single' | 'multi' | 'scale' | 'number' | 'text';
 
@@ -75,6 +76,7 @@ export type InputMeta = {
   priceYen?: number;
   deadline?: 'today' | 'tomorrow' | 'in3days' | 'in1week' | 'unknown';
   itemKind?: ItemKind;
+  goodsSubtype?: GoodsSubtype;
 };
 
 export type AnswerValue = string | number | boolean | null | string[];
