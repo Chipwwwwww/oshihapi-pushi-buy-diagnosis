@@ -1,5 +1,5 @@
 import type { ReadonlyURLSearchParams } from "next/navigation";
-import type { GoodsSubtype, InputMeta, ItemKind, Mode } from "@/src/oshihapi/model";
+import type { GoodsClass, GoodsSubtype, InputMeta, ItemKind, Mode } from "@/src/oshihapi/model";
 
 type SearchParamsLike = URLSearchParams | ReadonlyURLSearchParams;
 
@@ -27,6 +27,15 @@ export const goodsSubtypeOptions: { value: GoodsSubtype; label: string }[] = [
   { value: "general", label: "グッズ（一般）" },
   { value: "itaBag_badge", label: "痛バ（缶バッジ複数）" },
 ];
+
+export const goodsClassOptions: { value: GoodsClass; label: string }[] = [
+  { value: "small_collection", label: "小物コレクション（迷ったらこれ）" },
+  { value: "paper", label: "紙もの" },
+  { value: "wearable", label: "身につける" },
+  { value: "display_large", label: "飾る・大きめ" },
+  { value: "tech", label: "機能系" },
+  { value: "itabag_badge", label: "例外：痛バ・缶バ大量回収" },
+];
 export const modeLabelMap: Record<Mode, string> = {
   short: "即決（30秒）",
   medium: "標準（60秒〜2分）",
@@ -36,16 +45,20 @@ export const modeLabelMap: Record<Mode, string> = {
 const DEADLINE_VALUES = deadlineOptions.map((option) => option.value);
 const ITEM_KIND_VALUES = itemKindOptions.map((option) => option.value);
 const GOODS_SUBTYPE_VALUES = goodsSubtypeOptions.map((option) => option.value);
+const GOODS_CLASS_VALUES = goodsClassOptions.map((option) => option.value);
 
 const isDeadlineValue = (value: string): value is DeadlineValue => DEADLINE_VALUES.includes(value as DeadlineValue);
 const isItemKindValue = (value: string): value is ItemKind => ITEM_KIND_VALUES.includes(value as ItemKind);
 const isGoodsSubtypeValue = (value: string): value is GoodsSubtype =>
   GOODS_SUBTYPE_VALUES.includes(value as GoodsSubtype);
+const isGoodsClassValue = (value: string): value is GoodsClass => GOODS_CLASS_VALUES.includes(value as GoodsClass);
 
 export const parseDeadlineValue = (value: string): DeadlineValue => (isDeadlineValue(value) ? value : "unknown");
 export const parseItemKindValue = (value: string): ItemKind => (isItemKindValue(value) ? value : "goods");
 export const parseGoodsSubtypeValue = (value: string | null | undefined): GoodsSubtype =>
   value && isGoodsSubtypeValue(value) ? value : "general";
+export const parseGoodsClassValue = (value: string | null | undefined): GoodsClass =>
+  value && isGoodsClassValue(value) ? value : "small_collection";
 
 export function buildUrl(
   pathname: string,

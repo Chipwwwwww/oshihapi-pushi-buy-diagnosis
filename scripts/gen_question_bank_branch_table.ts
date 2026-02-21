@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { GoodsSubtype, ItemKind, Question } from "@/src/oshihapi/model";
+import type { GoodsClass, GoodsSubtype, ItemKind, Question } from "@/src/oshihapi/model";
 import { GAME_BILLING_OPTION_DELTAS, getGameBillingQuestions } from "@/src/oshihapi/gameBillingNeutralV1";
 import { merch_v2_ja } from "@/src/oshihapi/merch_v2_ja";
 import { basket_questions_ja } from "@/src/oshihapi/basket_questions_ja";
@@ -11,6 +11,7 @@ import {
   getRelevanceSummary,
 } from "@/src/oshihapi/question_behavior_relevance";
 import {
+  ADDON_BY_GOODS_CLASS,
   ADDON_BY_ITEM_KIND,
   CORE_12_QUESTION_IDS,
   GAME_BILLING_FULL_BASE_QUESTION_IDS,
@@ -23,6 +24,7 @@ import {
 
 const ITEM_KINDS: ItemKind[] = ["goods", "blind_draw", "ticket", "preorder", "used"];
 const GOODS_SUBTYPES: GoodsSubtype[] = ["general", "itaBag_badge"];
+const GOODS_CLASSES: GoodsClass[] = ["small_collection", "paper", "wearable", "display_large", "tech", "itabag_badge"];
 const STYLES = ["standard", "kawaii", "oshi"] as const;
 type Style = (typeof STYLES)[number];
 
@@ -40,12 +42,17 @@ function getMerchQuestionIds(
   mode: "short" | "medium" | "long",
   itemKind: ItemKind,
   goodsSubtype: GoodsSubtype = "general",
+  goodsClass: GoodsClass = "small_collection",
 ): string[] {
   const baseIds = mode === "short" ? [...QUICK_QUESTION_IDS] : [...CORE_12_QUESTION_IDS];
-  const addonIds = mode === "long" ? [...(ADDON_BY_ITEM_KIND[itemKind] ?? [])] : [];
-  return [...baseIds, ...addonIds].filter(
-    (id) => id !== "q_storage_fit" || shouldAskStorage(itemKind, goodsSubtype),
-  );
+  const itemKindAddonIds = mode === "long" ? [...(ADDON_BY_ITEM_KIND[itemKind] ?? [])] : [];
+  const enableGoodsClass = mode === "long" && ["goods", "preorder", "used"].includes(itemKind);
+  const goodsClassAddonIds = enableGoodsClass ? [...(ADDON_BY_GOODS_CLASS[goodsClass] ?? [])] : [];
+  return [...baseIds, ...itemKindAddonIds, ...goodsClassAddonIds].filter((id) => {
+    if (id !== "q_storage_fit") return true;
+    if (goodsClass === "itabag_badge") return false;
+    return shouldAskStorage(itemKind, goodsSubtype);
+  });
 }
 
 function getScoringRelevance(useCase: "merch" | "game_billing" | "basket", question: Question): string {
@@ -89,13 +96,20 @@ function toBuyStopDelta(questionId: string, optionId: string): BuyStopDelta | nu
 }
 
 const getMerchBranchVariants = (mode: "short" | "medium" | "long", itemKind: ItemKind) => {
+  const shouldExpandGoodsClass = mode === "long" && ["goods", "preorder", "used"].includes(itemKind);
+  const goodsClassVariants = shouldExpandGoodsClass ? GOODS_CLASSES : (["small_collection"] as GoodsClass[]);
   if (itemKind !== "goods") {
-    return [{ branchSuffix: "", questionIds: getMerchQuestionIds(mode, itemKind) }];
+    return goodsClassVariants.map((goodsClass) => ({
+      branchSuffix: shouldExpandGoodsClass ? `#gc=${goodsClass}` : "#gc=N/A",
+      questionIds: getMerchQuestionIds(mode, itemKind, "general", goodsClass),
+    }));
   }
-  return GOODS_SUBTYPES.map((goodsSubtype) => ({
-    branchSuffix: goodsSubtype === "general" ? "" : `#${goodsSubtype}`,
-    questionIds: getMerchQuestionIds(mode, itemKind, goodsSubtype),
-  }));
+  return GOODS_SUBTYPES.flatMap((goodsSubtype) =>
+    goodsClassVariants.map((goodsClass) => ({
+      branchSuffix: `${goodsSubtype === "general" ? "" : `#${goodsSubtype}`}#gc=${shouldExpandGoodsClass ? goodsClass : "N/A"}`,
+      questionIds: getMerchQuestionIds(mode, itemKind, goodsSubtype, goodsClass),
+    })),
+  );
 };
 
 const merchBranching = {
@@ -148,7 +162,7 @@ const appendAppearsIn = (questionId: string, branchKey: string) => {
 };
 
 for (const mode of ["short", "medium", "long"] as const) {
-  for (const [branchItemKind, questionIds] of Object.entries(merchBranching[mode])) {
+  for (const [branchItemKind, questionIds] of Object.entries(merchBranching[mode]).sort(([a], [b]) => a.localeCompare(b))) {
     for (const questionId of questionIds) {
       appendAppearsIn(questionId, `merch/${mode}/${branchItemKind}`);
     }
@@ -216,7 +230,7 @@ const orphanQuestionIds = questionsJson.filter((q) => q.isOrphan).map((q) => q.q
 const md: string[] = ["# Question Bank Branching Table", "", "## A. Branching Matrix", "", "### Merch"];
 for (const mode of ["short", "medium", "long"] as const) {
   md.push(`#### mode=${mode}`);
-  for (const [branchItemKind, questionIds] of Object.entries(merchBranching[mode])) {
+  for (const [branchItemKind, questionIds] of Object.entries(merchBranching[mode]).sort(([a], [b]) => a.localeCompare(b))) {
     md.push(`- itemKind=${branchItemKind}: ${questionIds.join(" -> ")}`);
   }
   md.push("");
