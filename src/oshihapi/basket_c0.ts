@@ -18,6 +18,14 @@ export type BasketCategory =
   | "unknown";
 export type BasketRarity = "low" | "mid" | "high" | "unknown";
 
+export type BasketSingleResultOverride = {
+  decision: "BUY" | "THINK" | "SKIP";
+  confidence?: number;
+  reasons?: string[];
+  sourceRunId?: string;
+  sourceTimestamp?: number;
+};
+
 export type BasketItem = {
   id: string;
   name: string;
@@ -25,9 +33,11 @@ export type BasketItem = {
   category: BasketCategory;
   rarity: BasketRarity;
   mustBuy: boolean;
+  singleResultOverride?: BasketSingleResultOverride;
 };
 
 export type BasketInput = {
+  basketId?: string;
   shopContext: BasketShopContext;
   purpose: BasketPurpose;
   totalBudgetJPY: number;
@@ -114,7 +124,21 @@ const scoreItem = (item: BasketItem, input: BasketInput): { priorityScore: numbe
     reasonTokens.push("unknownCategory");
   }
 
-  const priorityScore = clamp(Math.round(score), 0, 100);
+  const thresholdDelta = input.decisiveness === "careful" ? 4 : input.decisiveness === "quick" ? -4 : 0;
+  const buyThreshold = 65 + thresholdDelta;
+  const skipThreshold = 35 + thresholdDelta;
+
+  let priorityScore = clamp(Math.round(score), 0, 100);
+  const override = item.singleResultOverride;
+  if (override?.decision === "SKIP") {
+    priorityScore = Math.min(priorityScore, skipThreshold - 5);
+    reasonTokens.push("deepDive:skip");
+  } else if (override?.decision === "BUY") {
+    priorityScore = Math.max(priorityScore, buyThreshold + 10);
+    reasonTokens.push("deepDive:buy");
+  } else if (override?.decision === "THINK") {
+    reasonTokens.push("deepDive:think");
+  }
 
   const reasons: string[] = [];
   if (item.mustBuy) reasons.push("必須条件（特典・依頼・期限）を満たすため優先");
@@ -122,6 +146,9 @@ const scoreItem = (item: BasketItem, input: BasketInput): { priorityScore: numbe
   if (item.rarity === "low") reasons.push("再販期待が低めで先送りリスクあり");
   if (pressure >= 20) reasons.push("予算比で価格が重め");
   if (item.category === "unknown") reasons.push("カテゴリ情報が不足");
+  if (override?.decision === "BUY") reasons.push("単品深掘りで「買う」判定を反映");
+  if (override?.decision === "SKIP") reasons.push("単品深掘りで「やめる」判定を反映");
+  if (override?.decision === "THINK") reasons.push("単品深掘りで「保留」判定を反映");
   if (reasons.length === 0) reasons.push("総合スコアは中間帯");
 
   return { priorityScore, reasonTokens, reasons: reasons.slice(0, 3) };
@@ -167,6 +194,11 @@ export function evaluateBasketC0(input: BasketInput): BasketResult {
       buyNow.push(item);
       remainingBudget -= item.priceJPY;
       usedBudget += item.priceJPY;
+      continue;
+    }
+
+    if (item.singleResultOverride?.decision === "THINK") {
+      hold.push(item);
       continue;
     }
 

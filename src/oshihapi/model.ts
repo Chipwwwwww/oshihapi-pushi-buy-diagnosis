@@ -77,6 +77,8 @@ export type InputMeta = {
   deadline?: 'today' | 'tomorrow' | 'in3days' | 'in1week' | 'unknown';
   itemKind?: ItemKind;
   goodsSubtype?: GoodsSubtype;
+  basketId?: string;
+  basketItemId?: string;
 };
 
 export type AnswerValue = string | number | boolean | null | string[];
