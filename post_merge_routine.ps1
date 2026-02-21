@@ -67,6 +67,7 @@ $script:BuildFirstTsError = ''
 $script:ProdHeadMatch = 'Not confirmed'
 $script:TelemetryHealthStatus = 'not confirmed'
 $script:ParityConclusion = 'not confirmed'
+$script:ParityReason = ''
 $script:RepoRoot = ''
 $script:GitAvailable = $false
 $script:NpmCmdPath = ''
@@ -212,6 +213,24 @@ function Get-GitValue([string[]]$Args, [string]$ErrorMessage) {
     throw $ErrorMessage
   }
   return ($value | Select-Object -First 1).Trim()
+}
+
+function Get-GitBranchSafe([string]$RepoRoot) {
+  $old = Get-Location
+  try {
+    Set-Location -LiteralPath $RepoRoot
+    $branchRaw = (& git rev-parse --abbrev-ref HEAD) 2>$null
+    if ($LASTEXITCODE -ne 0 -or $null -eq $branchRaw) { return $null }
+
+    $branch = ($branchRaw | Select-Object -First 1).ToString().Trim()
+    if ([string]::IsNullOrWhiteSpace($branch) -or $branch -eq 'HEAD') { return $null }
+
+    return $branch
+  } catch {
+    return $null
+  } finally {
+    try { Set-Location -LiteralPath $old.Path } catch {}
+  }
 }
 
 function Shorten-Text([string]$Text, [int]$MaxLen = 240) {
@@ -400,6 +419,9 @@ function Write-FinalChecklist() {
   Write-Host ("Prod commitSha == HEAD?: {0}" -f $script:ProdHeadMatch)
   Write-Host ("/api/telemetry/health: {0}" -f $script:TelemetryHealthStatus)
   Write-Host ("parity conclusion: {0}" -f $script:ParityConclusion)
+  if (-not [string]::IsNullOrWhiteSpace($script:ParityReason)) {
+    Write-Host ("parity reason: {0}" -f $script:ParityReason)
+  }
   if ($script:PmrExitCode -ne 0) {
     Write-Host 'If this failed, please attach:' -ForegroundColor Yellow
     Write-Host '1) ops/pmr_debug_bundle_*.zip' -ForegroundColor Yellow
@@ -1058,9 +1080,11 @@ try {
 
   if ($SkipParity) {
     $script:ParityConclusion = 'skipped(reason: SkipParity)'
+    $script:ParityReason = 'SkipParity'
     Write-Host 'Git preflight parity skipped (SkipParity).' -ForegroundColor Yellow
   } elseif (-not $gitOk) {
     $script:ParityConclusion = 'not confirmed'
+    $script:ParityReason = 'git unavailable'
     Write-Host '[WARN] Git preflight parity not confirmed (git unavailable).' -ForegroundColor Yellow
   } else {
     $script:PmrStage = 'git-preflight'
@@ -1079,21 +1103,38 @@ try {
       Ensure-CleanWorkingTree
       Run 'git' @('fetch','--all','--prune')
 
-      Write-Host ("Resolved production branch: {0}" -f $effectiveProdBranch) -ForegroundColor Green
-      Ensure-OnProdBranchIfNeeded -EffectiveProdBranch $effectiveProdBranch -EnableAutoCheckout $AutoCheckoutProdBranch
+      $currentBranch = Get-GitBranchSafe -RepoRoot $script:RepoRoot
+      if ($null -eq $currentBranch) {
+        $script:ParityConclusion = 'not confirmed'
+        $script:ParityReason = 'Unable to determine current branch (detached HEAD or git error)'
+        $canRunGitParity = $false
+        Write-Host ("[WARN] Git preflight parity not confirmed: {0}" -f $script:ParityReason) -ForegroundColor Yellow
+      } else {
+        $script:ParityReason = ''
+      }
 
-      if (-not $SkipPull) {
+      Write-Host ("Resolved production branch: {0}" -f $effectiveProdBranch) -ForegroundColor Green
+      if ($canRunGitParity) {
+        Ensure-OnProdBranchIfNeeded -EffectiveProdBranch $effectiveProdBranch -EnableAutoCheckout $AutoCheckoutProdBranch
+      }
+
+      if ($canRunGitParity -and -not $SkipPull) {
         $upstream = Resolve-UpstreamRef
         if (-not [string]::IsNullOrWhiteSpace($upstream)) {
           Run 'git' @('pull','--ff-only')
         }
-      } else {
+      } elseif ($canRunGitParity) {
         Write-Host 'SkipPull enabled.' -ForegroundColor DarkGray
       }
 
-      Write-Host 'Preflight: OK' -ForegroundColor Green
+      if ($canRunGitParity) {
+        Write-Host 'Preflight: OK' -ForegroundColor Green
+      }
     } catch {
       $script:ParityConclusion = 'not confirmed'
+      if ([string]::IsNullOrWhiteSpace($script:ParityReason)) {
+        $script:ParityReason = $_.Exception.Message
+      }
       $canRunGitParity = $false
       Write-Host ("[WARN] Git preflight parity not confirmed: {0}" -f $_.Exception.Message) -ForegroundColor Yellow
       if ($StrictParity) { throw }
@@ -1277,12 +1318,23 @@ try {
   } else {
     if ($SkipParity) {
       $script:ParityConclusion = 'skipped(reason: SkipParity)'
+      $script:ParityReason = 'SkipParity'
       Write-Host 'Parity skipped by SkipParity.' -ForegroundColor Yellow
+    } elseif (-not $canRunGitParity) {
+      if ([string]::IsNullOrWhiteSpace($script:ParityConclusion)) {
+        $script:ParityConclusion = 'not confirmed'
+      }
+      if ([string]::IsNullOrWhiteSpace($script:ParityReason)) {
+        $script:ParityReason = 'git parity preflight not confirmed'
+      }
+      Write-Host ("[WARN] Vercel parity skipped because git parity preflight was not confirmed: {0}" -f $script:ParityReason) -ForegroundColor Yellow
     } elseif ($ParityTarget -eq 'off' -or $VercelParityMode -eq 'off') {
       $script:ParityConclusion = 'skipped(off)'
+      $script:ParityReason = 'ParityTarget/VercelParityMode off'
       Write-Host 'Vercel parity skipped (off).' -ForegroundColor Yellow
     } else {
       $script:ParityConclusion = 'skipped(SkipVercelParity)'
+      $script:ParityReason = 'SkipVercelParity'
       Write-Host 'SkipVercelParity enabled.' -ForegroundColor Yellow
     }
   }
