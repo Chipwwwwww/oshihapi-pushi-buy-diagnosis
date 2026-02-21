@@ -33,11 +33,312 @@
 - mode=long: gb_q1_need -> gb_q2_type -> gb_q3_budget -> gb_q4_use -> gb_q5_now -> gb_q6_repeat -> gb_q7_alt -> gb_q8_wait -> gb_q9_info -> gb_q10_value
 - dynamic branch: q10 = gb_q10_pity if gb_q2_type == gacha, else gb_q10_value
 
+### Basket
+- mode=core: bq_shop_context -> bq_purpose -> bq_total_budget_jpy -> bq_hard_cap -> bq_time_pressure -> bq_decisiveness -> bq_item_name -> bq_item_price_jpy -> bq_item_category -> bq_item_rarity -> bq_item_must_buy
+
 ## B. Orphan Questions
 
 - q_long_note
 
 ## C. Question Catalog Detail
+
+### bq_decisiveness
+- useCase: basket
+- type: single
+- scoring relevance: basket_context_or_item_schema
+- impactCategory: 
+- relevanceSummary: none
+- behaviorRelevance: 
+- appears in: basket/core
+- isOrphan: false
+- mapTo: 
+- tags: 
+- unknown tags hints: 
+- text_standard: 判断スタイルは？
+- text_kawaii: 判断スタイルは？
+- text_oshi: 判断スタイルは？
+- sameAsStandard: true
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| careful | 慎重 | 慎重 | 慎重 | true |  |  |  |  |  |
+| quick | 即決 | 即決 | 即決 | true |  |  |  |  |  |
+| standard | 標準 | 標準 | 標準 | true |  |  |  |  |  |
+
+</details>
+
+### bq_hard_cap
+- useCase: basket
+- type: single
+- scoring relevance: basket_context_or_item_schema
+- impactCategory: 
+- relevanceSummary: none
+- behaviorRelevance: 
+- appears in: basket/core
+- isOrphan: false
+- mapTo: 
+- tags: 
+- unknown tags hints: 
+- text_standard: 予算の上限は？
+- text_kawaii: 予算の上限は？
+- text_oshi: 予算の上限は？
+- sameAsStandard: true
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| flex | 多少ならOK | 多少ならOK | 多少ならOK | true |  |  |  |  |  |
+| strict | 絶対超えない | 絶対超えない | 絶対超えない | true |  |  |  |  |  |
+| undecided | 未定 | 未定 | 未定 | true |  |  |  |  |  |
+
+</details>
+
+### bq_item_category
+- useCase: basket
+- type: single
+- scoring relevance: basket_context_or_item_schema
+- impactCategory: 
+- relevanceSummary: none
+- behaviorRelevance: 
+- appears in: basket/core
+- isOrphan: false
+- mapTo: 
+- tags: 
+- unknown tags hints: 
+- text_standard: カテゴリ
+- text_kawaii: カテゴリ
+- text_oshi: カテゴリ
+- sameAsStandard: true
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| apparel | アパレル | アパレル | アパレル | true |  |  |  |  |  |
+| badge | 缶バッジ | 缶バッジ | 缶バッジ | true |  |  |  |  |  |
+| book | 商業本 | 商業本 | 商業本 | true |  |  |  |  |  |
+| doujin | 同人誌 | 同人誌 | 同人誌 | true |  |  |  |  |  |
+| figure | フィギュア | フィギュア | フィギュア | true |  |  |  |  |  |
+| media_cd_bd | CD/BD | CD/BD | CD/BD | true |  |  |  |  |  |
+| other | その他 | その他 | その他 | true |  |  |  |  |  |
+| random_blind | ランダム/ブラインド | ランダム/ブラインド | ランダム/ブラインド | true |  |  |  |  |  |
+| standee | アクスタ | アクスタ | アクスタ | true |  |  |  |  |  |
+| unknown | 不明 | 不明 | 不明 | true |  |  |  |  |  |
+
+</details>
+
+### bq_item_must_buy
+- useCase: basket
+- type: single
+- scoring relevance: basket_context_or_item_schema
+- impactCategory: 
+- relevanceSummary: none
+- behaviorRelevance: 
+- appears in: basket/core
+- isOrphan: false
+- mapTo: 
+- tags: 
+- unknown tags hints: 
+- text_standard: 必須購入？
+- text_kawaii: 必須購入？
+- text_oshi: 必須購入？
+- sameAsStandard: true
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| no | いいえ | いいえ | いいえ | true |  |  |  |  |  |
+| yes | はい | はい | はい | true |  |  |  |  |  |
+
+</details>
+
+### bq_item_name
+- useCase: basket
+- type: text
+- scoring relevance: basket_context_or_item_schema
+- impactCategory: 
+- relevanceSummary: none
+- behaviorRelevance: 
+- appears in: basket/core
+- isOrphan: false
+- mapTo: 
+- tags: 
+- unknown tags hints: 
+- text_standard: 商品名
+- text_kawaii: 商品名
+- text_oshi: 商品名
+- sameAsStandard: true
+<details>
+<summary>Options</summary>
+
+(none)
+
+</details>
+
+### bq_item_price_jpy
+- useCase: basket
+- type: number
+- scoring relevance: basket_context_or_item_schema
+- impactCategory: 
+- relevanceSummary: none
+- behaviorRelevance: 
+- appears in: basket/core
+- isOrphan: false
+- mapTo: 
+- tags: 
+- unknown tags hints: 
+- text_standard: 価格（円）
+- text_kawaii: 価格（円）
+- text_oshi: 価格（円）
+- sameAsStandard: true
+<details>
+<summary>Options</summary>
+
+(none)
+
+</details>
+
+### bq_item_rarity
+- useCase: basket
+- type: single
+- scoring relevance: basket_context_or_item_schema
+- impactCategory: 
+- relevanceSummary: none
+- behaviorRelevance: 
+- appears in: basket/core
+- isOrphan: false
+- mapTo: 
+- tags: 
+- unknown tags hints: 
+- text_standard: 再販の期待
+- text_kawaii: 再販の期待
+- text_oshi: 再販の期待
+- sameAsStandard: true
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| high | 高い | 高い | 高い | true |  |  |  |  |  |
+| low | 低い | 低い | 低い | true |  |  |  |  |  |
+| mid | 中くらい | 中くらい | 中くらい | true |  |  |  |  |  |
+| unknown | 不明 | 不明 | 不明 | true |  |  |  |  |  |
+
+</details>
+
+### bq_purpose
+- useCase: basket
+- type: single
+- scoring relevance: basket_context_or_item_schema
+- impactCategory: 
+- relevanceSummary: none
+- behaviorRelevance: 
+- appears in: basket/core
+- isOrphan: false
+- mapTo: 
+- tags: 
+- unknown tags hints: 
+- text_standard: 今回の目的は？
+- text_kawaii: 今回の目的は？
+- text_oshi: 今回の目的は？
+- sameAsStandard: true
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| collection | コレクション | コレクション | コレクション | true |  |  |  |  |  |
+| display | 飾る | 飾る | 飾る | true |  |  |  |  |  |
+| gift | プレゼント | プレゼント | プレゼント | true |  |  |  |  |  |
+| itabag | 痛バ | 痛バ | 痛バ | true |  |  |  |  |  |
+| mixed | 混在 | 混在 | 混在 | true |  |  |  |  |  |
+| reading | 読む | 読む | 読む | true |  |  |  |  |  |
+
+</details>
+
+### bq_shop_context
+- useCase: basket
+- type: single
+- scoring relevance: basket_context_or_item_schema
+- impactCategory: 
+- relevanceSummary: none
+- behaviorRelevance: 
+- appears in: basket/core
+- isOrphan: false
+- mapTo: 
+- tags: 
+- unknown tags hints: 
+- text_standard: どこで買う予定？
+- text_kawaii: どこで買う予定？
+- text_oshi: どこで買う予定？
+- sameAsStandard: true
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| animate | アニメイト | アニメイト | アニメイト | true |  |  |  |  |  |
+| event_venue | イベント会場 | イベント会場 | イベント会場 | true |  |  |  |  |  |
+| melonbooks | メロンブックス | メロンブックス | メロンブックス | true |  |  |  |  |  |
+| online | 通販 | 通販 | 通販 | true |  |  |  |  |  |
+| other | その他 | その他 | その他 | true |  |  |  |  |  |
+
+</details>
+
+### bq_time_pressure
+- useCase: basket
+- type: single
+- scoring relevance: basket_context_or_item_schema
+- impactCategory: 
+- relevanceSummary: none
+- behaviorRelevance: 
+- appears in: basket/core
+- isOrphan: false
+- mapTo: 
+- tags: 
+- unknown tags hints: 
+- text_standard: いつまでに決めたい？
+- text_kawaii: いつまでに決めたい？
+- text_oshi: いつまでに決めたい？
+- sameAsStandard: true
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| few_days | 数日以内 | 数日以内 | 数日以内 | true |  |  |  |  |  |
+| not_urgent | 急がない | 急がない | 急がない | true |  |  |  |  |  |
+| today | 今日中 | 今日中 | 今日中 | true |  |  |  |  |  |
+| unknown | わからない | わからない | わからない | true |  |  |  |  |  |
+
+</details>
+
+### bq_total_budget_jpy
+- useCase: basket
+- type: number
+- scoring relevance: basket_context_or_item_schema
+- impactCategory: 
+- relevanceSummary: none
+- behaviorRelevance: 
+- appears in: basket/core
+- isOrphan: false
+- mapTo: 
+- tags: 
+- unknown tags hints: 
+- text_standard: 今回の合計予算（円）は？
+- text_kawaii: 今回の合計予算（円）は？
+- text_oshi: 今回の合計予算（円）は？
+- sameAsStandard: true
+<details>
+<summary>Options</summary>
+
+(none)
+
+</details>
 
 ### gb_q1_need
 - useCase: game_billing

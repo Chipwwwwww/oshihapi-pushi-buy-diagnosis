@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Decisiveness, InputMeta, ItemKind, Mode } from "@/src/oshihapi/model";
 import { MODE_META } from "@/src/oshihapi/modeConfig";
@@ -208,6 +209,7 @@ export default function Home() {
         <p className="text-sm font-semibold uppercase tracking-widest text-accent">オシハピ</p>
         <h1 className={pageTitleClass}>推し買い診断</h1>
         <p className={bodyTextClass}>推しグッズの「買う/保留/やめる」を60秒で。くじ・中古・予約もOK。</p>
+        <Link href="/basket" className="text-sm text-primary underline underline-offset-4">まとめ買い（β）</Link>
       </header>
 
       <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">

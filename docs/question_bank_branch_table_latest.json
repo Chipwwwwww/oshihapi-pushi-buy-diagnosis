@@ -301,9 +301,777 @@
         "then": "gb_q10_pity",
         "else": "gb_q10_value"
       }
+    },
+    "basket": {
+      "core": [
+        "bq_shop_context",
+        "bq_purpose",
+        "bq_total_budget_jpy",
+        "bq_hard_cap",
+        "bq_time_pressure",
+        "bq_decisiveness",
+        "bq_item_name",
+        "bq_item_price_jpy",
+        "bq_item_category",
+        "bq_item_rarity",
+        "bq_item_must_buy"
+      ]
     }
   },
   "questions": [
+    {
+      "useCase": "basket",
+      "questionId": "bq_decisiveness",
+      "questionType": "single",
+      "scoringRelevance": "basket_context_or_item_schema",
+      "impactCategory": null,
+      "behaviorRelevance": null,
+      "relevanceSummary": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "appearsInBranches": [
+        "basket/core"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": true,
+      "styles": {
+        "standard": "判断スタイルは？",
+        "kawaii": "判断スタイルは？",
+        "oshi": "判断スタイルは？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "careful",
+          "labels": {
+            "standard": "慎重",
+            "kawaii": "慎重",
+            "oshi": "慎重"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "quick",
+          "labels": {
+            "standard": "即決",
+            "kawaii": "即決",
+            "oshi": "即決"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "standard",
+          "labels": {
+            "standard": "標準",
+            "kawaii": "標準",
+            "oshi": "標準"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "basket",
+      "questionId": "bq_hard_cap",
+      "questionType": "single",
+      "scoringRelevance": "basket_context_or_item_schema",
+      "impactCategory": null,
+      "behaviorRelevance": null,
+      "relevanceSummary": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "appearsInBranches": [
+        "basket/core"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": true,
+      "styles": {
+        "standard": "予算の上限は？",
+        "kawaii": "予算の上限は？",
+        "oshi": "予算の上限は？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "flex",
+          "labels": {
+            "standard": "多少ならOK",
+            "kawaii": "多少ならOK",
+            "oshi": "多少ならOK"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "strict",
+          "labels": {
+            "standard": "絶対超えない",
+            "kawaii": "絶対超えない",
+            "oshi": "絶対超えない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "undecided",
+          "labels": {
+            "standard": "未定",
+            "kawaii": "未定",
+            "oshi": "未定"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "basket",
+      "questionId": "bq_item_category",
+      "questionType": "single",
+      "scoringRelevance": "basket_context_or_item_schema",
+      "impactCategory": null,
+      "behaviorRelevance": null,
+      "relevanceSummary": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "appearsInBranches": [
+        "basket/core"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": true,
+      "styles": {
+        "standard": "カテゴリ",
+        "kawaii": "カテゴリ",
+        "oshi": "カテゴリ"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "apparel",
+          "labels": {
+            "standard": "アパレル",
+            "kawaii": "アパレル",
+            "oshi": "アパレル"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "badge",
+          "labels": {
+            "standard": "缶バッジ",
+            "kawaii": "缶バッジ",
+            "oshi": "缶バッジ"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "book",
+          "labels": {
+            "standard": "商業本",
+            "kawaii": "商業本",
+            "oshi": "商業本"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "doujin",
+          "labels": {
+            "standard": "同人誌",
+            "kawaii": "同人誌",
+            "oshi": "同人誌"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "figure",
+          "labels": {
+            "standard": "フィギュア",
+            "kawaii": "フィギュア",
+            "oshi": "フィギュア"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "media_cd_bd",
+          "labels": {
+            "standard": "CD/BD",
+            "kawaii": "CD/BD",
+            "oshi": "CD/BD"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "other",
+          "labels": {
+            "standard": "その他",
+            "kawaii": "その他",
+            "oshi": "その他"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "random_blind",
+          "labels": {
+            "standard": "ランダム/ブラインド",
+            "kawaii": "ランダム/ブラインド",
+            "oshi": "ランダム/ブラインド"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "standee",
+          "labels": {
+            "standard": "アクスタ",
+            "kawaii": "アクスタ",
+            "oshi": "アクスタ"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "不明",
+            "kawaii": "不明",
+            "oshi": "不明"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "basket",
+      "questionId": "bq_item_must_buy",
+      "questionType": "single",
+      "scoringRelevance": "basket_context_or_item_schema",
+      "impactCategory": null,
+      "behaviorRelevance": null,
+      "relevanceSummary": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "appearsInBranches": [
+        "basket/core"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": true,
+      "styles": {
+        "standard": "必須購入？",
+        "kawaii": "必須購入？",
+        "oshi": "必須購入？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "no",
+          "labels": {
+            "standard": "いいえ",
+            "kawaii": "いいえ",
+            "oshi": "いいえ"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "yes",
+          "labels": {
+            "standard": "はい",
+            "kawaii": "はい",
+            "oshi": "はい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "basket",
+      "questionId": "bq_item_name",
+      "questionType": "text",
+      "scoringRelevance": "basket_context_or_item_schema",
+      "impactCategory": null,
+      "behaviorRelevance": null,
+      "relevanceSummary": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "appearsInBranches": [
+        "basket/core"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": true,
+      "styles": {
+        "standard": "商品名",
+        "kawaii": "商品名",
+        "oshi": "商品名"
+      },
+      "scaleLabels": null,
+      "options": []
+    },
+    {
+      "useCase": "basket",
+      "questionId": "bq_item_price_jpy",
+      "questionType": "number",
+      "scoringRelevance": "basket_context_or_item_schema",
+      "impactCategory": null,
+      "behaviorRelevance": null,
+      "relevanceSummary": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "appearsInBranches": [
+        "basket/core"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": true,
+      "styles": {
+        "standard": "価格（円）",
+        "kawaii": "価格（円）",
+        "oshi": "価格（円）"
+      },
+      "scaleLabels": null,
+      "options": []
+    },
+    {
+      "useCase": "basket",
+      "questionId": "bq_item_rarity",
+      "questionType": "single",
+      "scoringRelevance": "basket_context_or_item_schema",
+      "impactCategory": null,
+      "behaviorRelevance": null,
+      "relevanceSummary": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "appearsInBranches": [
+        "basket/core"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": true,
+      "styles": {
+        "standard": "再販の期待",
+        "kawaii": "再販の期待",
+        "oshi": "再販の期待"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "high",
+          "labels": {
+            "standard": "高い",
+            "kawaii": "高い",
+            "oshi": "高い"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "low",
+          "labels": {
+            "standard": "低い",
+            "kawaii": "低い",
+            "oshi": "低い"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "mid",
+          "labels": {
+            "standard": "中くらい",
+            "kawaii": "中くらい",
+            "oshi": "中くらい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "不明",
+            "kawaii": "不明",
+            "oshi": "不明"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "basket",
+      "questionId": "bq_purpose",
+      "questionType": "single",
+      "scoringRelevance": "basket_context_or_item_schema",
+      "impactCategory": null,
+      "behaviorRelevance": null,
+      "relevanceSummary": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "appearsInBranches": [
+        "basket/core"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": true,
+      "styles": {
+        "standard": "今回の目的は？",
+        "kawaii": "今回の目的は？",
+        "oshi": "今回の目的は？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "collection",
+          "labels": {
+            "standard": "コレクション",
+            "kawaii": "コレクション",
+            "oshi": "コレクション"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "display",
+          "labels": {
+            "standard": "飾る",
+            "kawaii": "飾る",
+            "oshi": "飾る"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "gift",
+          "labels": {
+            "standard": "プレゼント",
+            "kawaii": "プレゼント",
+            "oshi": "プレゼント"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "itabag",
+          "labels": {
+            "standard": "痛バ",
+            "kawaii": "痛バ",
+            "oshi": "痛バ"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "mixed",
+          "labels": {
+            "standard": "混在",
+            "kawaii": "混在",
+            "oshi": "混在"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "reading",
+          "labels": {
+            "standard": "読む",
+            "kawaii": "読む",
+            "oshi": "読む"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "basket",
+      "questionId": "bq_shop_context",
+      "questionType": "single",
+      "scoringRelevance": "basket_context_or_item_schema",
+      "impactCategory": null,
+      "behaviorRelevance": null,
+      "relevanceSummary": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "appearsInBranches": [
+        "basket/core"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": true,
+      "styles": {
+        "standard": "どこで買う予定？",
+        "kawaii": "どこで買う予定？",
+        "oshi": "どこで買う予定？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "animate",
+          "labels": {
+            "standard": "アニメイト",
+            "kawaii": "アニメイト",
+            "oshi": "アニメイト"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "event_venue",
+          "labels": {
+            "standard": "イベント会場",
+            "kawaii": "イベント会場",
+            "oshi": "イベント会場"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "melonbooks",
+          "labels": {
+            "standard": "メロンブックス",
+            "kawaii": "メロンブックス",
+            "oshi": "メロンブックス"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "online",
+          "labels": {
+            "standard": "通販",
+            "kawaii": "通販",
+            "oshi": "通販"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "other",
+          "labels": {
+            "standard": "その他",
+            "kawaii": "その他",
+            "oshi": "その他"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "basket",
+      "questionId": "bq_time_pressure",
+      "questionType": "single",
+      "scoringRelevance": "basket_context_or_item_schema",
+      "impactCategory": null,
+      "behaviorRelevance": null,
+      "relevanceSummary": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "appearsInBranches": [
+        "basket/core"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": true,
+      "styles": {
+        "standard": "いつまでに決めたい？",
+        "kawaii": "いつまでに決めたい？",
+        "oshi": "いつまでに決めたい？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "few_days",
+          "labels": {
+            "standard": "数日以内",
+            "kawaii": "数日以内",
+            "oshi": "数日以内"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "not_urgent",
+          "labels": {
+            "standard": "急がない",
+            "kawaii": "急がない",
+            "oshi": "急がない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "today",
+          "labels": {
+            "standard": "今日中",
+            "kawaii": "今日中",
+            "oshi": "今日中"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "わからない",
+            "kawaii": "わからない",
+            "oshi": "わからない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "basket",
+      "questionId": "bq_total_budget_jpy",
+      "questionType": "number",
+      "scoringRelevance": "basket_context_or_item_schema",
+      "impactCategory": null,
+      "behaviorRelevance": null,
+      "relevanceSummary": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "appearsInBranches": [
+        "basket/core"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": true,
+      "styles": {
+        "standard": "今回の合計予算（円）は？",
+        "kawaii": "今回の合計予算（円）は？",
+        "oshi": "今回の合計予算（円）は？"
+      },
+      "scaleLabels": null,
+      "options": []
+    },
     {
       "useCase": "game_billing",
       "questionId": "gb_q1_need",
