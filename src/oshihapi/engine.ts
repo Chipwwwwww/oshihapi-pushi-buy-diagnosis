@@ -70,11 +70,26 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     ? motivesAnswer.filter((entry): entry is string => typeof entry === 'string')
     : [];
   const impulseShortRaw = input.answers.q_impulse_axis_short;
-  const impulseShort =
-    typeof impulseShortRaw === 'number' && Number.isFinite(impulseShortRaw)
+  const impulseShortState =
+    typeof impulseShortRaw === 'string'
       ? impulseShortRaw
-      : null;
-  const impulseFlag = motives.includes('rush') || (impulseShort !== null && impulseShort >= 4);
+      : typeof impulseShortRaw === 'number' && Number.isFinite(impulseShortRaw)
+        ? (() => {
+            const normalized = impulseShortRaw > 1 ? impulseShortRaw / 5 : impulseShortRaw;
+            if (normalized <= 0.33) return 'plan';
+            if (normalized >= 0.66) return 'mood';
+            return 'both';
+          })()
+        : null;
+  const impulseShortAxisValue =
+    impulseShortState === 'plan'
+      ? 0.2
+      : impulseShortState === 'mood'
+        ? 0.8
+        : impulseShortState === 'both' || impulseShortState === 'unknown'
+          ? 0.5
+          : null;
+  const impulseFlag = motives.includes('rush') || (impulseShortAxisValue !== null && impulseShortAxisValue >= 0.8);
   const futureUseFlag = motives.includes('use');
   const trendOrVagueFlag = motives.includes('trend') || motives.includes('vague');
 
