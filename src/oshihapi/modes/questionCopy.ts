@@ -36,7 +36,7 @@ export const QUESTION_COPY: Record<ModeId, Record<string, QuestionCopy>> = {
       },
     },
     q_rarity_restock: { title: "また会えそう？" },
-    q_goal: { title: "今回いちばん叶えたいことは？", options: { single: { label: "推し1点狙い" }, set: { label: "セットでそろえたい" }, fun: { label: "引く体験も楽しみたい" } } },
+    q_goal: { title: "今回の買い方、どれが近いかな？", options: { single: { label: "推し1点狙い（本命だけ）" }, set: { label: "セットでそろえたい（まとめ買い）" }, fun: { label: "買う過程も楽しみたい（ワクワクしたい）" }, unknown: { label: "まだわからない" } } },
     q_motives_multi: { title: "買いたい気持ち、どれに近い？" },
     q_hot_cold: { title: "推し枠って人気どのくらい？" },
     q_impulse_axis_short: {
@@ -115,7 +115,7 @@ export const QUESTION_COPY: Record<ModeId, Record<string, QuestionCopy>> = {
       },
     },
     q_rarity_restock: { title: "再販導線、ありそう？" },
-    q_goal: { title: "今回の回収目的は？", options: { single: { label: "単推し回収" }, set: { label: "セット回収" }, fun: { label: "体験重視" } } },
+    q_goal: { title: "今回の回収スタイル、どれ？", options: { single: { label: "本命1点狙い" }, set: { label: "セット/複数回収" }, fun: { label: "過程/体験重視" }, unknown: { label: "該当なし/保留" } } },
     q_motives_multi: { title: "回収動機、どれが強い？" },
     q_hot_cold: { title: "推し枠レート、どの温度感？" },
     q_impulse_axis_short: {

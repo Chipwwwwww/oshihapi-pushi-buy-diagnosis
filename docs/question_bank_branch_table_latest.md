@@ -1371,20 +1371,21 @@
 - appears in: merch/long/blind_draw#gc=N/A | merch/long/goods#gc=display_large | merch/long/goods#gc=itabag_badge | merch/long/goods#gc=paper | merch/long/goods#gc=small_collection | merch/long/goods#gc=tech | merch/long/goods#gc=wearable | merch/long/preorder#gc=display_large | merch/long/preorder#gc=itabag_badge | merch/long/preorder#gc=paper | merch/long/preorder#gc=small_collection | merch/long/preorder#gc=tech | merch/long/preorder#gc=wearable | merch/long/ticket#gc=N/A | merch/long/used#gc=display_large | merch/long/used#gc=itabag_badge | merch/long/used#gc=paper | merch/long/used#gc=small_collection | merch/long/used#gc=tech | merch/long/used#gc=wearable | merch/medium/blind_draw#gc=N/A | merch/medium/goods#gc=N/A | merch/medium/preorder#gc=N/A | merch/medium/ticket#gc=N/A | merch/medium/used#gc=N/A
 - isOrphan: false
 - mapTo: 
-- tags: goal_fun, goal_set, goal_single
+- tags: goal_fun, goal_set, goal_single, goal_unknown
 - unknown tags hints: 
-- text_standard: 今回の目的は？
-- text_kawaii: 今回いちばん叶えたいことは？
-- text_oshi: 今回の回収目的は？
+- text_standard: 今回の買い方（回収スタイル）、どれが近い？
+- text_kawaii: 今回の買い方、どれが近いかな？
+- text_oshi: 今回の回収スタイル、どれ？
 - sameAsStandard: false
 <details>
 <summary>Options</summary>
 
 | optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
 |---|---|---|---|---|---|---|---|---|---|
-| fun | 引く体験（くじ/ガチャ感）を楽しみたい | 引く体験も楽しみたい | 体験重視 | false | goal_fun |  |  |  |  |
-| set | セットで揃えたい | セットでそろえたい | セット回収 | false | goal_set |  |  |  |  |
-| single | 推し（特定の1つ）だけ欲しい | 推し1点狙い | 単推し回収 | false | goal_single |  |  |  |  |
+| fun | 買う過程も楽しみたい（現場/開封/抽選など） | 買う過程も楽しみたい（ワクワクしたい） | 過程/体験重視 | false | goal_fun |  |  |  |  |
+| set | まとめて揃えたい（セット/複数買い） | セットでそろえたい（まとめ買い） | セット/複数回収 | false | goal_set |  |  |  |  |
+| single | 本命だけ確実に（1点狙い） | 推し1点狙い（本命だけ） | 本命1点狙い | false | goal_single |  |  |  |  |
+| unknown | 該当なし／まだわからない | まだわからない | 該当なし/保留 | false | goal_unknown |  |  |  |  |
 
 </details>
 

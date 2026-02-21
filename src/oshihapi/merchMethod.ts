@@ -4,7 +4,7 @@ import { clamp } from './engineConfig';
 type MethodContext = {
   tags: string[];
   scores: Record<ScoreDimension, number>;
-  goal?: 'single' | 'set' | 'fun';
+  goal?: 'single' | 'set' | 'fun' | 'unknown';
   popularity?: 'hot' | 'normal' | 'cold' | 'unknown';
   resaleOk?: boolean; // future; MVP can infer from tags if you add a question
 };
@@ -27,7 +27,8 @@ export function decideMerchMethod(ctx: MethodContext): { method: MerchMethod; ca
     ctx.goal ??
     (has('goal_single', ctx.tags) ? 'single' :
      has('goal_set', ctx.tags) ? 'set' :
-     has('goal_fun', ctx.tags) ? 'fun' : 'single');
+     has('goal_fun', ctx.tags) ? 'fun' :
+     has('goal_unknown', ctx.tags) ? 'unknown' : 'single');
 
   const popularity =
     ctx.popularity ??
@@ -50,6 +51,11 @@ export function decideMerchMethod(ctx: MethodContext): { method: MerchMethod; ca
     const penalty = regretHigh ? 3 : 0;
     const cap = clamp(1, 10, base - penalty);
     return { method: 'BLIND_DRAW', cap, note: `楽しむ目的ならOK。上限${cap}回で止めよう。` };
+  }
+
+  // Goal: unknown / no preference
+  if (goal === 'unknown') {
+    return { method: 'USED_SINGLE', note: '買い方が未定なら、まずは単品相場の確認から始めると安全。' };
   }
 
   // Goal: single target

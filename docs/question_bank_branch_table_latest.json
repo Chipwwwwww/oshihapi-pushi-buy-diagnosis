@@ -4385,7 +4385,8 @@
       "tags": [
         "goal_fun",
         "goal_set",
-        "goal_single"
+        "goal_single",
+        "goal_unknown"
       ],
       "unknownTagHints": [],
       "appearsInBranches": [
@@ -4418,18 +4419,18 @@
       "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
-        "standard": "今回の目的は？",
-        "kawaii": "今回いちばん叶えたいことは？",
-        "oshi": "今回の回収目的は？"
+        "standard": "今回の買い方（回収スタイル）、どれが近い？",
+        "kawaii": "今回の買い方、どれが近いかな？",
+        "oshi": "今回の回収スタイル、どれ？"
       },
       "scaleLabels": null,
       "options": [
         {
           "optionId": "fun",
           "labels": {
-            "standard": "引く体験（くじ/ガチャ感）を楽しみたい",
-            "kawaii": "引く体験も楽しみたい",
-            "oshi": "体験重視"
+            "standard": "買う過程も楽しみたい（現場/開封/抽選など）",
+            "kawaii": "買う過程も楽しみたい（ワクワクしたい）",
+            "oshi": "過程/体験重視"
           },
           "sameAsStandard": false,
           "mapTo": null,
@@ -4442,9 +4443,9 @@
         {
           "optionId": "set",
           "labels": {
-            "standard": "セットで揃えたい",
-            "kawaii": "セットでそろえたい",
-            "oshi": "セット回収"
+            "standard": "まとめて揃えたい（セット/複数買い）",
+            "kawaii": "セットでそろえたい（まとめ買い）",
+            "oshi": "セット/複数回収"
           },
           "sameAsStandard": false,
           "mapTo": null,
@@ -4457,15 +4458,30 @@
         {
           "optionId": "single",
           "labels": {
-            "standard": "推し（特定の1つ）だけ欲しい",
-            "kawaii": "推し1点狙い",
-            "oshi": "単推し回収"
+            "standard": "本命だけ確実に（1点狙い）",
+            "kawaii": "推し1点狙い（本命だけ）",
+            "oshi": "本命1点狙い"
           },
           "sameAsStandard": false,
           "mapTo": null,
           "delta": null,
           "tags": [
             "goal_single"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "該当なし／まだわからない",
+            "kawaii": "まだわからない",
+            "oshi": "該当なし/保留"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": [
+            "goal_unknown"
           ],
           "buyStopDelta": null
         }
