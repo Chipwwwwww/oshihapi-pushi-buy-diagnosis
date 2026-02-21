@@ -122,7 +122,7 @@ export function buildLongPrompt({
   const deadline = meta.deadline ?? '未定';
   const motiveLine = `- 購入動機（複数選択）: ${motives || "（未回答）"}`;
   const impulseLine = impulseAxis
-    ? `- 欲しさ軸（0-5）: ${impulseAxis}（0=未来寄り, 5=快感寄り）`
+    ? `- 衝動傾向（計画/気分）: ${impulseAxis}`
     : "";
 
   return `あなたは推し活の購買判断を整理するアシスタントです。

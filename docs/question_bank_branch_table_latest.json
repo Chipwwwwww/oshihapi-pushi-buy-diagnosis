@@ -4597,7 +4597,7 @@
     {
       "useCase": "merch",
       "questionId": "q_impulse_axis_short",
-      "questionType": "scale",
+      "questionType": "single",
       "scoringRelevance": "none",
       "impactCategory": "flags",
       "behaviorRelevance": {
@@ -4645,17 +4645,67 @@
         "merch/short/used#gc=N/A"
       ],
       "isOrphan": false,
-      "sameAsStandard": false,
+      "sameAsStandard": true,
       "styles": {
-        "standard": "今の欲しさ、どっち寄り？",
-        "kawaii": "今の欲しさ、どっちより？",
-        "oshi": "いまの推し熱、どっち寄り？"
+        "standard": "今の気持ち、どれに近い？",
+        "kawaii": "今の気持ち、どれに近い？",
+        "oshi": "今の気持ち、どれに近い？"
       },
-      "scaleLabels": {
-        "left": "未来（飾る/使う）寄り",
-        "right": "買う瞬間の快感寄り"
-      },
-      "options": []
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "both",
+          "labels": {
+            "standard": "両方ある（計画もあるし、今も高まってる）",
+            "kawaii": "両方ある（計画もあるし、今も高まってる）",
+            "oshi": "両方ある（計画もあるし、今も高まってる）"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "mood",
+          "labels": {
+            "standard": "今のテンションで欲しい（計画はまだ）",
+            "kawaii": "今のテンションで欲しい（計画はまだ）",
+            "oshi": "今のテンションで欲しい（計画はまだ）"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "plan",
+          "labels": {
+            "standard": "見返す/保管までイメージできてる（計画型）",
+            "kawaii": "見返す/保管までイメージできてる（計画型）",
+            "oshi": "見返す/保管までイメージできてる（計画型）"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "まだわからない",
+            "kawaii": "まだわからない",
+            "oshi": "まだわからない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        }
+      ]
     },
     {
       "useCase": "merch",

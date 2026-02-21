@@ -1418,7 +1418,7 @@
 
 ### q_impulse_axis_short
 - useCase: merch
-- type: scale
+- type: single
 - scoring relevance: none
 - impactCategory: flags
 - relevanceSummary: flags
@@ -1428,15 +1428,19 @@
 - mapTo: 
 - tags: 
 - unknown tags hints: 
-- text_standard: 今の欲しさ、どっち寄り？
-- text_kawaii: 今の欲しさ、どっちより？
-- text_oshi: いまの推し熱、どっち寄り？
-- sameAsStandard: false
-- scaleLabels: left=未来（飾る/使う）寄り, right=買う瞬間の快感寄り
+- text_standard: 今の気持ち、どれに近い？
+- text_kawaii: 今の気持ち、どれに近い？
+- text_oshi: 今の気持ち、どれに近い？
+- sameAsStandard: true
 <details>
 <summary>Options</summary>
 
-(none)
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| both | 両方ある（計画もあるし、今も高まってる） | 両方ある（計画もあるし、今も高まってる） | 両方ある（計画もあるし、今も高まってる） | true |  |  |  |  |  |
+| mood | 今のテンションで欲しい（計画はまだ） | 今のテンションで欲しい（計画はまだ） | 今のテンションで欲しい（計画はまだ） | true |  |  |  |  |  |
+| plan | 見返す/保管までイメージできてる（計画型） | 見返す/保管までイメージできてる（計画型） | 見返す/保管までイメージできてる（計画型） | true |  |  |  |  |  |
+| unknown | まだわからない | まだわからない | まだわからない | true |  |  |  |  |  |
 
 </details>
 

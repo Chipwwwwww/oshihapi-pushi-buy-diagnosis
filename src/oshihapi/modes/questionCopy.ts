@@ -39,7 +39,15 @@ export const QUESTION_COPY: Record<ModeId, Record<string, QuestionCopy>> = {
     q_goal: { title: "今回いちばん叶えたいことは？", options: { single: { label: "推し1点狙い" }, set: { label: "セットでそろえたい" }, fun: { label: "引く体験も楽しみたい" } } },
     q_motives_multi: { title: "買いたい気持ち、どれに近い？" },
     q_hot_cold: { title: "推し枠って人気どのくらい？" },
-    q_impulse_axis_short: { title: "今の欲しさ、どっちより？" },
+    q_impulse_axis_short: {
+      title: "今の気持ち、どれに近い？",
+      options: {
+        plan: { label: "見返す/保管までイメージできてる（計画型）" },
+        mood: { label: "今のテンションで欲しい（計画はまだ）" },
+        both: { label: "両方ある（計画もあるし、今も高まってる）" },
+        unknown: { label: "まだわからない" },
+      },
+    },
     q_regret_impulse: { title: "いまの気分、どれが近い？" },
     q_long_note: { title: "AIに相談したいことをメモしよう" },
 
@@ -110,7 +118,15 @@ export const QUESTION_COPY: Record<ModeId, Record<string, QuestionCopy>> = {
     q_goal: { title: "今回の回収目的は？", options: { single: { label: "単推し回収" }, set: { label: "セット回収" }, fun: { label: "体験重視" } } },
     q_motives_multi: { title: "回収動機、どれが強い？" },
     q_hot_cold: { title: "推し枠レート、どの温度感？" },
-    q_impulse_axis_short: { title: "いまの推し熱、どっち寄り？" },
+    q_impulse_axis_short: {
+      title: "今の気持ち、どれに近い？",
+      options: {
+        plan: { label: "見返す/保管までイメージできてる（計画型）" },
+        mood: { label: "今のテンションで欲しい（計画はまだ）" },
+        both: { label: "両方ある（計画もあるし、今も高まってる）" },
+        unknown: { label: "まだわからない" },
+      },
+    },
     q_regret_impulse: { title: "現在のメンタル状態、どれに近い？" },
     q_long_note: { title: "AI相談用メモを残す" },
 
