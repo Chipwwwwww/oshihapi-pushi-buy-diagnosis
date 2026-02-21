@@ -1,4 +1,10 @@
 import type { AnswerValue, Decision, Question } from "./model";
+import {
+  GAME_BILLING_FULL_BASE_QUESTION_IDS,
+  GAME_BILLING_Q10_SPLIT_RULE,
+  GAME_BILLING_SHORT_QUESTION_IDS,
+  resolveGameBillingQ10QuestionId,
+} from "./question_sets";
 
 export type GameBillingType = "gacha" | "pass" | "skin" | "pack" | "other";
 export type GameBillingAnswers = Record<string, AnswerValue>;
@@ -161,12 +167,26 @@ const q10Generic: Question = {
   ],
 };
 
+const GAME_BILLING_QUESTION_MAP: Record<string, Question> = {
+  gb_q1_need: q1,
+  gb_q2_type: q2,
+  gb_q3_budget: q3,
+  gb_q4_use: q4,
+  gb_q5_now: q5,
+  gb_q6_repeat: q6,
+  gb_q7_alt: q7,
+  gb_q8_wait: q8,
+  gb_q9_info: q9,
+  gb_q10_pity: q10Gacha,
+  gb_q10_value: q10Generic,
+};
+
 export function getGameBillingQuestions(mode: "short" | "medium" | "long", answers: GameBillingAnswers): Question[] {
-  const core = [q1, q2, q3, q4, q5];
-  if (mode === "short") return core;
-  const type = answers.gb_q2_type;
-  const q10 = type === "gacha" ? q10Gacha : q10Generic;
-  return [...core, q6, q7, q8, q9, q10];
+  if (mode === "short") {
+    return GAME_BILLING_SHORT_QUESTION_IDS.map((id) => GAME_BILLING_QUESTION_MAP[id]);
+  }
+  const q10QuestionId = resolveGameBillingQ10QuestionId(answers[GAME_BILLING_Q10_SPLIT_RULE.conditionQuestionId]);
+  return [...GAME_BILLING_FULL_BASE_QUESTION_IDS, q10QuestionId].map((id) => GAME_BILLING_QUESTION_MAP[id]);
 }
 
 function sumMap(value: AnswerValue, map: Record<string, number>): number {
