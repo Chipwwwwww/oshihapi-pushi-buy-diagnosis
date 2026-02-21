@@ -17,6 +17,61 @@ export type GameBillingEvaluation = {
   score: number;
 };
 
+type BuyStopDelta = { buyDelta: number; stopDelta: number };
+
+export const GAME_BILLING_OPTION_DELTAS: Record<string, Record<string, BuyStopDelta>> = {
+  gb_q1_need: {
+    clear: { buyDelta: 2, stopDelta: 0 },
+    some: { buyDelta: 1, stopDelta: 1 },
+    unclear: { buyDelta: 0, stopDelta: 2 },
+  },
+  gb_q3_budget: {
+    easy: { buyDelta: 3, stopDelta: 0 },
+    ok: { buyDelta: 1, stopDelta: 1 },
+    hard: { buyDelta: 0, stopDelta: 3 },
+  },
+  gb_q4_use: {
+    high: { buyDelta: 2, stopDelta: 0 },
+    some: { buyDelta: 1, stopDelta: 1 },
+    low: { buyDelta: 0, stopDelta: 2 },
+  },
+  gb_q5_now: {
+    calm: { buyDelta: 2, stopDelta: 0 },
+    up: { buyDelta: 1, stopDelta: 1 },
+    rush: { buyDelta: 0, stopDelta: 2 },
+  },
+  gb_q6_repeat: {
+    often: { buyDelta: 2, stopDelta: 0 },
+    half: { buyDelta: 1, stopDelta: 1 },
+    rare: { buyDelta: 0, stopDelta: 2 },
+  },
+  gb_q7_alt: {
+    none: { buyDelta: 2, stopDelta: 0 },
+    some: { buyDelta: 1, stopDelta: 1 },
+    yes: { buyDelta: 0, stopDelta: 2 },
+  },
+  gb_q8_wait: {
+    same: { buyDelta: 2, stopDelta: 0 },
+    maybe: { buyDelta: 1, stopDelta: 1 },
+    drop: { buyDelta: 0, stopDelta: 2 },
+  },
+  gb_q9_info: {
+    done: { buyDelta: 2, stopDelta: 0 },
+    part: { buyDelta: 1, stopDelta: 1 },
+    none: { buyDelta: 0, stopDelta: 2 },
+  },
+  gb_q10_pity: {
+    near: { buyDelta: 2, stopDelta: 0 },
+    mid: { buyDelta: 1, stopDelta: 1 },
+    far: { buyDelta: 0, stopDelta: 2 },
+  },
+  gb_q10_value: {
+    good: { buyDelta: 2, stopDelta: 0 },
+    normal: { buyDelta: 1, stopDelta: 1 },
+    low: { buyDelta: 0, stopDelta: 2 },
+  },
+};
+
 const q1: Question = {
   id: "gb_q1_need",
   type: "single",
@@ -189,45 +244,46 @@ export function getGameBillingQuestions(mode: "short" | "medium" | "long", answe
   return [...GAME_BILLING_FULL_BASE_QUESTION_IDS, q10QuestionId].map((id) => GAME_BILLING_QUESTION_MAP[id]);
 }
 
-function sumMap(value: AnswerValue, map: Record<string, number>): number {
-  if (typeof value !== "string") return 0;
-  return map[value] ?? 0;
+
+function sumDelta(answer: AnswerValue, questionId: keyof typeof GAME_BILLING_OPTION_DELTAS, key: keyof BuyStopDelta): number {
+  if (typeof answer !== "string") return 0;
+  return GAME_BILLING_OPTION_DELTAS[questionId]?.[answer]?.[key] ?? 0;
 }
 
 export function evaluateGameBillingV1(answers: GameBillingAnswers): GameBillingEvaluation {
   let buyScore = 0;
   let stopScore = 0;
 
-  buyScore += sumMap(answers.gb_q1_need, { clear: 2, some: 1, unclear: 0 });
-  stopScore += sumMap(answers.gb_q1_need, { clear: 0, some: 1, unclear: 2 });
+  buyScore += sumDelta(answers.gb_q1_need, "gb_q1_need", "buyDelta");
+  stopScore += sumDelta(answers.gb_q1_need, "gb_q1_need", "stopDelta");
 
-  buyScore += sumMap(answers.gb_q3_budget, { easy: 3, ok: 1, hard: 0 });
-  stopScore += sumMap(answers.gb_q3_budget, { easy: 0, ok: 1, hard: 3 });
+  buyScore += sumDelta(answers.gb_q3_budget, "gb_q3_budget", "buyDelta");
+  stopScore += sumDelta(answers.gb_q3_budget, "gb_q3_budget", "stopDelta");
 
-  buyScore += sumMap(answers.gb_q4_use, { high: 2, some: 1, low: 0 });
-  stopScore += sumMap(answers.gb_q4_use, { high: 0, some: 1, low: 2 });
+  buyScore += sumDelta(answers.gb_q4_use, "gb_q4_use", "buyDelta");
+  stopScore += sumDelta(answers.gb_q4_use, "gb_q4_use", "stopDelta");
 
-  buyScore += sumMap(answers.gb_q5_now, { calm: 2, up: 1, rush: 0 });
-  stopScore += sumMap(answers.gb_q5_now, { calm: 0, up: 1, rush: 2 });
+  buyScore += sumDelta(answers.gb_q5_now, "gb_q5_now", "buyDelta");
+  stopScore += sumDelta(answers.gb_q5_now, "gb_q5_now", "stopDelta");
 
-  buyScore += sumMap(answers.gb_q6_repeat, { often: 2, half: 1, rare: 0 });
-  stopScore += sumMap(answers.gb_q6_repeat, { often: 0, half: 1, rare: 2 });
+  buyScore += sumDelta(answers.gb_q6_repeat, "gb_q6_repeat", "buyDelta");
+  stopScore += sumDelta(answers.gb_q6_repeat, "gb_q6_repeat", "stopDelta");
 
-  buyScore += sumMap(answers.gb_q7_alt, { none: 2, some: 1, yes: 0 });
-  stopScore += sumMap(answers.gb_q7_alt, { none: 0, some: 1, yes: 2 });
+  buyScore += sumDelta(answers.gb_q7_alt, "gb_q7_alt", "buyDelta");
+  stopScore += sumDelta(answers.gb_q7_alt, "gb_q7_alt", "stopDelta");
 
-  buyScore += sumMap(answers.gb_q8_wait, { same: 2, maybe: 1, drop: 0 });
-  stopScore += sumMap(answers.gb_q8_wait, { same: 0, maybe: 1, drop: 2 });
+  buyScore += sumDelta(answers.gb_q8_wait, "gb_q8_wait", "buyDelta");
+  stopScore += sumDelta(answers.gb_q8_wait, "gb_q8_wait", "stopDelta");
 
-  buyScore += sumMap(answers.gb_q9_info, { done: 2, part: 1, none: 0 });
-  stopScore += sumMap(answers.gb_q9_info, { done: 0, part: 1, none: 2 });
+  buyScore += sumDelta(answers.gb_q9_info, "gb_q9_info", "buyDelta");
+  stopScore += sumDelta(answers.gb_q9_info, "gb_q9_info", "stopDelta");
 
   if (answers.gb_q2_type === "gacha") {
-    buyScore += sumMap(answers.gb_q10_pity, { near: 2, mid: 1, far: 0 });
-    stopScore += sumMap(answers.gb_q10_pity, { near: 0, mid: 1, far: 2 });
+    buyScore += sumDelta(answers.gb_q10_pity, "gb_q10_pity", "buyDelta");
+    stopScore += sumDelta(answers.gb_q10_pity, "gb_q10_pity", "stopDelta");
   } else {
-    buyScore += sumMap(answers.gb_q10_value, { good: 2, normal: 1, low: 0 });
-    stopScore += sumMap(answers.gb_q10_value, { good: 0, normal: 1, low: 2 });
+    buyScore += sumDelta(answers.gb_q10_value, "gb_q10_value", "buyDelta");
+    stopScore += sumDelta(answers.gb_q10_value, "gb_q10_value", "stopDelta");
   }
 
   const score = buyScore - stopScore;
