@@ -1,0 +1,2446 @@
+{
+  "branchingMatrix": {
+    "merch": {
+      "short": {
+        "goods": [
+          "q_storage_fit",
+          "q_desire",
+          "q_budget_pain",
+          "q_urgency",
+          "q_rarity_restock",
+          "q_regret_impulse",
+          "q_impulse_axis_short"
+        ],
+        "blind_draw": [
+          "q_storage_fit",
+          "q_desire",
+          "q_budget_pain",
+          "q_urgency",
+          "q_rarity_restock",
+          "q_regret_impulse",
+          "q_impulse_axis_short"
+        ],
+        "ticket": [
+          "q_desire",
+          "q_budget_pain",
+          "q_urgency",
+          "q_rarity_restock",
+          "q_regret_impulse",
+          "q_impulse_axis_short"
+        ],
+        "preorder": [
+          "q_storage_fit",
+          "q_desire",
+          "q_budget_pain",
+          "q_urgency",
+          "q_rarity_restock",
+          "q_regret_impulse",
+          "q_impulse_axis_short"
+        ],
+        "used": [
+          "q_storage_fit",
+          "q_desire",
+          "q_budget_pain",
+          "q_urgency",
+          "q_rarity_restock",
+          "q_regret_impulse",
+          "q_impulse_axis_short"
+        ]
+      },
+      "medium": {
+        "goods": [
+          "q_storage_fit",
+          "q_desire",
+          "q_budget_pain",
+          "q_urgency",
+          "q_rarity_restock",
+          "q_goal",
+          "q_motives_multi",
+          "q_hot_cold",
+          "q_regret_impulse",
+          "q_impulse_axis_short",
+          "q_price_feel",
+          "q_storage_space",
+          "q_alternative_plan"
+        ],
+        "blind_draw": [
+          "q_storage_fit",
+          "q_desire",
+          "q_budget_pain",
+          "q_urgency",
+          "q_rarity_restock",
+          "q_goal",
+          "q_motives_multi",
+          "q_hot_cold",
+          "q_regret_impulse",
+          "q_impulse_axis_short",
+          "q_price_feel",
+          "q_storage_space",
+          "q_alternative_plan"
+        ],
+        "ticket": [
+          "q_desire",
+          "q_budget_pain",
+          "q_urgency",
+          "q_rarity_restock",
+          "q_goal",
+          "q_motives_multi",
+          "q_hot_cold",
+          "q_regret_impulse",
+          "q_impulse_axis_short",
+          "q_price_feel",
+          "q_storage_space",
+          "q_alternative_plan"
+        ],
+        "preorder": [
+          "q_storage_fit",
+          "q_desire",
+          "q_budget_pain",
+          "q_urgency",
+          "q_rarity_restock",
+          "q_goal",
+          "q_motives_multi",
+          "q_hot_cold",
+          "q_regret_impulse",
+          "q_impulse_axis_short",
+          "q_price_feel",
+          "q_storage_space",
+          "q_alternative_plan"
+        ],
+        "used": [
+          "q_storage_fit",
+          "q_desire",
+          "q_budget_pain",
+          "q_urgency",
+          "q_rarity_restock",
+          "q_goal",
+          "q_motives_multi",
+          "q_hot_cold",
+          "q_regret_impulse",
+          "q_impulse_axis_short",
+          "q_price_feel",
+          "q_storage_space",
+          "q_alternative_plan"
+        ]
+      },
+      "long": {
+        "goods": [
+          "q_storage_fit",
+          "q_desire",
+          "q_budget_pain",
+          "q_urgency",
+          "q_rarity_restock",
+          "q_goal",
+          "q_motives_multi",
+          "q_hot_cold",
+          "q_regret_impulse",
+          "q_impulse_axis_short",
+          "q_price_feel",
+          "q_storage_space",
+          "q_alternative_plan",
+          "q_addon_common_info",
+          "q_addon_common_priority",
+          "q_addon_goods_compare",
+          "q_addon_goods_portability"
+        ],
+        "blind_draw": [
+          "q_storage_fit",
+          "q_desire",
+          "q_budget_pain",
+          "q_urgency",
+          "q_rarity_restock",
+          "q_goal",
+          "q_motives_multi",
+          "q_hot_cold",
+          "q_regret_impulse",
+          "q_impulse_axis_short",
+          "q_price_feel",
+          "q_storage_space",
+          "q_alternative_plan",
+          "q_addon_common_info",
+          "q_addon_common_priority",
+          "q_addon_blind_draw_cap",
+          "q_addon_blind_draw_exit"
+        ],
+        "ticket": [
+          "q_desire",
+          "q_budget_pain",
+          "q_urgency",
+          "q_rarity_restock",
+          "q_goal",
+          "q_motives_multi",
+          "q_hot_cold",
+          "q_regret_impulse",
+          "q_impulse_axis_short",
+          "q_price_feel",
+          "q_storage_space",
+          "q_alternative_plan",
+          "q_addon_common_info",
+          "q_addon_common_priority",
+          "q_addon_ticket_schedule",
+          "q_addon_ticket_resale_rule"
+        ],
+        "preorder": [
+          "q_storage_fit",
+          "q_desire",
+          "q_budget_pain",
+          "q_urgency",
+          "q_rarity_restock",
+          "q_goal",
+          "q_motives_multi",
+          "q_hot_cold",
+          "q_regret_impulse",
+          "q_impulse_axis_short",
+          "q_price_feel",
+          "q_storage_space",
+          "q_alternative_plan",
+          "q_addon_common_info",
+          "q_addon_common_priority",
+          "q_addon_preorder_timeline",
+          "q_addon_preorder_restock"
+        ],
+        "used": [
+          "q_storage_fit",
+          "q_desire",
+          "q_budget_pain",
+          "q_urgency",
+          "q_rarity_restock",
+          "q_goal",
+          "q_motives_multi",
+          "q_hot_cold",
+          "q_regret_impulse",
+          "q_impulse_axis_short",
+          "q_price_feel",
+          "q_storage_space",
+          "q_alternative_plan",
+          "q_addon_common_info",
+          "q_addon_common_priority",
+          "q_addon_used_condition",
+          "q_addon_used_price_gap"
+        ]
+      }
+    },
+    "game_billing": {
+      "short": [
+        "gb_q1_need",
+        "gb_q2_type",
+        "gb_q3_budget",
+        "gb_q4_use",
+        "gb_q5_now"
+      ],
+      "medium": [
+        "gb_q1_need",
+        "gb_q2_type",
+        "gb_q3_budget",
+        "gb_q4_use",
+        "gb_q5_now",
+        "gb_q6_repeat",
+        "gb_q7_alt",
+        "gb_q8_wait",
+        "gb_q9_info",
+        "gb_q10_value"
+      ],
+      "long": [
+        "gb_q1_need",
+        "gb_q2_type",
+        "gb_q3_budget",
+        "gb_q4_use",
+        "gb_q5_now",
+        "gb_q6_repeat",
+        "gb_q7_alt",
+        "gb_q8_wait",
+        "gb_q9_info",
+        "gb_q10_value"
+      ],
+      "dynamicBranch": {
+        "rule": "gb_q2_type == gacha",
+        "then": "gb_q10_pity",
+        "else": "gb_q10_value"
+      }
+    }
+  },
+  "questions": [
+    {
+      "useCase": "game_billing",
+      "questionId": "gb_q1_need",
+      "questionType": "single",
+      "scoringRelevance": "contributes_to_buy_stop_mapping",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "今回の課金、目的ははっきりしてる？",
+        "kawaii": "今回の課金目的、はっきりしてる？",
+        "oshi": "今回の課金目的、明確？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "clear",
+          "labels": {
+            "standard": "はっきりしている",
+            "kawaii": "はっきりしている",
+            "oshi": "はっきりしている"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "some",
+          "labels": {
+            "standard": "なんとなくある",
+            "kawaii": "なんとなくある",
+            "oshi": "なんとなくある"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "unclear",
+          "labels": {
+            "standard": "まだぼんやり",
+            "kawaii": "まだぼんやり",
+            "oshi": "まだぼんやり"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "game_billing",
+      "questionId": "gb_q10_pity",
+      "questionType": "single",
+      "scoringRelevance": "contributes_to_buy_stop_mapping",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "天井（交換）までの距離は？",
+        "kawaii": "天井までの距離は？",
+        "oshi": "天井距離はどの位置？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "far",
+          "labels": {
+            "standard": "遠い/不明",
+            "kawaii": "遠い/不明",
+            "oshi": "遠い/不明"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "mid",
+          "labels": {
+            "standard": "中間くらい",
+            "kawaii": "中間くらい",
+            "oshi": "中間くらい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "near",
+          "labels": {
+            "standard": "近い",
+            "kawaii": "近い",
+            "oshi": "近い"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "game_billing",
+      "questionId": "gb_q10_value",
+      "questionType": "single",
+      "scoringRelevance": "contributes_to_buy_stop_mapping",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "内容と価格のバランスはどう感じる？",
+        "kawaii": "内容の納得感は？",
+        "oshi": "施策内容の納得感は？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "good",
+          "labels": {
+            "standard": "納得感がある",
+            "kawaii": "納得感がある",
+            "oshi": "納得感がある"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "low",
+          "labels": {
+            "standard": "やや低い",
+            "kawaii": "やや低い",
+            "oshi": "やや低い"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "normal",
+          "labels": {
+            "standard": "普通",
+            "kawaii": "普通",
+            "oshi": "普通"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "game_billing",
+      "questionId": "gb_q2_type",
+      "questionType": "single",
+      "scoringRelevance": "contributes_to_buy_stop_mapping",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "課金タイプはどれ？",
+        "kawaii": "どのタイプに課金する？",
+        "oshi": "どの施策を回す？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "gacha",
+          "labels": {
+            "standard": "ガチャ",
+            "kawaii": "ガチャ",
+            "oshi": "ガチャ案件"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "other",
+          "labels": {
+            "standard": "その他",
+            "kawaii": "その他",
+            "oshi": "その他"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "pack",
+          "labels": {
+            "standard": "お得パック",
+            "kawaii": "お得パック",
+            "oshi": "パック案件"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "pass",
+          "labels": {
+            "standard": "月パス/継続系",
+            "kawaii": "月パス系",
+            "oshi": "月パス系"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "skin",
+          "labels": {
+            "standard": "スキン/見た目",
+            "kawaii": "スキン",
+            "oshi": "スキン系"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "game_billing",
+      "questionId": "gb_q3_budget",
+      "questionType": "single",
+      "scoringRelevance": "contributes_to_buy_stop_mapping",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "この金額、今月の範囲で無理なく払える？",
+        "kawaii": "お財布への負担はどう？",
+        "oshi": "資金圧はどの程度？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "easy",
+          "labels": {
+            "standard": "無理なく払える",
+            "kawaii": "らくらく払える",
+            "oshi": "余裕あり"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "hard",
+          "labels": {
+            "standard": "ちょっと重い",
+            "kawaii": "ちょっと重い",
+            "oshi": "圧が高い"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "ok",
+          "labels": {
+            "standard": "調整すれば払える",
+            "kawaii": "調整すればOK",
+            "oshi": "調整で対応"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "game_billing",
+      "questionId": "gb_q4_use",
+      "questionType": "single",
+      "scoringRelevance": "contributes_to_buy_stop_mapping",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "買ったあと、使うイメージはある？",
+        "kawaii": "使う見込みはどれくらい？",
+        "oshi": "活用見込みはある？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "high",
+          "labels": {
+            "standard": "かなりある",
+            "kawaii": "かなりある",
+            "oshi": "かなりある"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "low",
+          "labels": {
+            "standard": "あまりない",
+            "kawaii": "あまりない",
+            "oshi": "あまりない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "some",
+          "labels": {
+            "standard": "少しある",
+            "kawaii": "少しある",
+            "oshi": "少しある"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "game_billing",
+      "questionId": "gb_q5_now",
+      "questionType": "single",
+      "scoringRelevance": "contributes_to_buy_stop_mapping",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "今の気分はどれに近い？",
+        "kawaii": "いまのテンションは？",
+        "oshi": "いまの熱量は？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "calm",
+          "labels": {
+            "standard": "落ち着いている",
+            "kawaii": "落ち着いてる",
+            "oshi": "平常"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "rush",
+          "labels": {
+            "standard": "急いで決めたい",
+            "kawaii": "今すぐ決めたい",
+            "oshi": "即断モード"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "up",
+          "labels": {
+            "standard": "少し高まっている",
+            "kawaii": "ちょい上がり",
+            "oshi": "高まり中"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "game_billing",
+      "questionId": "gb_q6_repeat",
+      "questionType": "single",
+      "scoringRelevance": "contributes_to_buy_stop_mapping",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "似た課金をして、満足したことが多い？",
+        "kawaii": "過去の課金、満足できた？",
+        "oshi": "過去課金の満足度は？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "half",
+          "labels": {
+            "standard": "半々",
+            "kawaii": "半々",
+            "oshi": "半々"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "often",
+          "labels": {
+            "standard": "満足したことが多い",
+            "kawaii": "満足したことが多い",
+            "oshi": "満足したことが多い"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "rare",
+          "labels": {
+            "standard": "満足しないことも多い",
+            "kawaii": "満足しないことも多い",
+            "oshi": "満足しないことも多い"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "game_billing",
+      "questionId": "gb_q7_alt",
+      "questionType": "single",
+      "scoringRelevance": "contributes_to_buy_stop_mapping",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "同じ予算で他に優先したいものはある？",
+        "kawaii": "他の手段はある？",
+        "oshi": "代替手段はある？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "none",
+          "labels": {
+            "standard": "特にない",
+            "kawaii": "特にない",
+            "oshi": "特にない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "some",
+          "labels": {
+            "standard": "少しある",
+            "kawaii": "少しある",
+            "oshi": "少しある"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "yes",
+          "labels": {
+            "standard": "ある",
+            "kawaii": "ある",
+            "oshi": "ある"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "game_billing",
+      "questionId": "gb_q8_wait",
+      "questionType": "single",
+      "scoringRelevance": "contributes_to_buy_stop_mapping",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "24時間待っても気持ちは変わらなさそう？",
+        "kawaii": "少し待つと気持ち変わりそう？",
+        "oshi": "待機すると温度は変わる？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "drop",
+          "labels": {
+            "standard": "下がりそう",
+            "kawaii": "下がりそう",
+            "oshi": "下がりそう"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "maybe",
+          "labels": {
+            "standard": "少し変わるかも",
+            "kawaii": "少し変わるかも",
+            "oshi": "少し変わるかも"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "same",
+          "labels": {
+            "standard": "変わらなさそう",
+            "kawaii": "変わらなさそう",
+            "oshi": "変わらなさそう"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "game_billing",
+      "questionId": "gb_q9_info",
+      "questionType": "single",
+      "scoringRelevance": "contributes_to_buy_stop_mapping",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "必要な情報（確率/内容/期限）は確認できた？",
+        "kawaii": "必要な情報、確認できた？",
+        "oshi": "必要情報の確認状況は？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "done",
+          "labels": {
+            "standard": "確認できた",
+            "kawaii": "確認できた",
+            "oshi": "確認できた"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "none",
+          "labels": {
+            "standard": "まだ",
+            "kawaii": "まだ",
+            "oshi": "まだ"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "part",
+          "labels": {
+            "standard": "一部だけ",
+            "kawaii": "一部だけ",
+            "oshi": "一部だけ"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_blind_draw_cap",
+      "questionType": "single",
+      "scoringRelevance": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "くじ・ブラインドの回数上限は決めた？",
+        "kawaii": "回す回数の上限きめた？",
+        "oshi": "回数上限（天井管理）は決めた？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "fixed",
+          "labels": {
+            "standard": "決めた",
+            "kawaii": "決めた",
+            "oshi": "決めた"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "none",
+          "labels": {
+            "standard": "まだ決めていない",
+            "kawaii": "まだ決めていない",
+            "oshi": "まだ決めていない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "rough",
+          "labels": {
+            "standard": "だいたい決めた",
+            "kawaii": "だいたい決めた",
+            "oshi": "だいたい決めた"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_blind_draw_exit",
+      "questionType": "single",
+      "scoringRelevance": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "撤退ライン（やめどき）はある？",
+        "kawaii": "やめどきライン、ある？",
+        "oshi": "撤退ラインは設定済み？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "clear",
+          "labels": {
+            "standard": "明確にある",
+            "kawaii": "明確にある",
+            "oshi": "明確にある"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "none",
+          "labels": {
+            "standard": "特にない",
+            "kawaii": "特にない",
+            "oshi": "特にない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "some",
+          "labels": {
+            "standard": "なんとなくある",
+            "kawaii": "なんとなくある",
+            "oshi": "なんとなくある"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_common_info",
+      "questionType": "single",
+      "scoringRelevance": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "必要情報は揃っている？",
+        "kawaii": "必要な情報、そろってる？",
+        "oshi": "判断材料は十分に揃ってる？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "enough",
+          "labels": {
+            "standard": "十分そろっている",
+            "kawaii": "十分そろっている",
+            "oshi": "十分そろっている"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "lack",
+          "labels": {
+            "standard": "不足が多い",
+            "kawaii": "不足が多い",
+            "oshi": "不足が多い"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "partial",
+          "labels": {
+            "standard": "一部足りない",
+            "kawaii": "一部足りない",
+            "oshi": "一部足りない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_common_priority",
+      "questionType": "single",
+      "scoringRelevance": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "今月の推し活の中で優先度は？",
+        "kawaii": "今月の優先度は高い？",
+        "oshi": "今月案件の中で優先度は？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "high",
+          "labels": {
+            "standard": "高い",
+            "kawaii": "高い",
+            "oshi": "高い"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "low",
+          "labels": {
+            "standard": "低め",
+            "kawaii": "低め",
+            "oshi": "低め"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "mid",
+          "labels": {
+            "standard": "中くらい",
+            "kawaii": "中くらい",
+            "oshi": "中くらい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_goods_compare",
+      "questionType": "single",
+      "scoringRelevance": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "同系統アイテムとの比較はできた？",
+        "kawaii": "似てるグッズと比べられた？",
+        "oshi": "類似案件との比較は済んだ？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "done",
+          "labels": {
+            "standard": "比較済み",
+            "kawaii": "比較済み",
+            "oshi": "比較済み"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "none",
+          "labels": {
+            "standard": "まだ比較していない",
+            "kawaii": "まだ比較していない",
+            "oshi": "まだ比較していない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "partial",
+          "labels": {
+            "standard": "一部だけ比較した",
+            "kawaii": "一部だけ比較した",
+            "oshi": "一部だけ比較した"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_goods_portability",
+      "questionType": "single",
+      "scoringRelevance": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "持ち歩き・使いどころの想定は？",
+        "kawaii": "使う場面、イメージできる？",
+        "oshi": "運用シーンを想定できてる？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "often",
+          "labels": {
+            "standard": "よく使う想定",
+            "kawaii": "よく使う想定",
+            "oshi": "よく使う想定"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "rare",
+          "labels": {
+            "standard": "ほぼ観賞用",
+            "kawaii": "ほぼ観賞用",
+            "oshi": "ほぼ観賞用"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "sometimes",
+          "labels": {
+            "standard": "時々使う想定",
+            "kawaii": "時々使う想定",
+            "oshi": "時々使う想定"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_preorder_restock",
+      "questionType": "single",
+      "scoringRelevance": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "受注再開・再販の可能性を確認した？",
+        "kawaii": "再販の可能性しらべた？",
+        "oshi": "再販導線の確認状況は？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "checked",
+          "labels": {
+            "standard": "確認した",
+            "kawaii": "確認した",
+            "oshi": "確認した"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "heard",
+          "labels": {
+            "standard": "噂レベルで知っている",
+            "kawaii": "噂レベルで知っている",
+            "oshi": "噂レベルで知っている"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "わからない",
+            "kawaii": "わからない",
+            "oshi": "わからない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_preorder_timeline",
+      "questionType": "single",
+      "scoringRelevance": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "発売・到着タイミングを許容できる？",
+        "kawaii": "到着まで待てそう？",
+        "oshi": "到着待機を許容できる？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "hard",
+          "labels": {
+            "standard": "待つのが厳しい",
+            "kawaii": "待つのが厳しい",
+            "oshi": "待つのが厳しい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "maybe",
+          "labels": {
+            "standard": "状況次第",
+            "kawaii": "状況次第",
+            "oshi": "状況次第"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "ok",
+          "labels": {
+            "standard": "待てる",
+            "kawaii": "待てる",
+            "oshi": "待てる"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_ticket_resale_rule",
+      "questionType": "single",
+      "scoringRelevance": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "キャンセル・譲渡ルールを確認した？",
+        "kawaii": "キャンセル・譲渡ルール見た？",
+        "oshi": "キャンセル・譲渡規約は確認済み？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "checked",
+          "labels": {
+            "standard": "確認済み",
+            "kawaii": "確認済み",
+            "oshi": "確認済み"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "not_yet",
+          "labels": {
+            "standard": "未確認",
+            "kawaii": "未確認",
+            "oshi": "未確認"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "partly",
+          "labels": {
+            "standard": "一部だけ確認",
+            "kawaii": "一部だけ確認",
+            "oshi": "一部だけ確認"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_ticket_schedule",
+      "questionType": "single",
+      "scoringRelevance": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "日程・移動・体調まで見通せている？",
+        "kawaii": "日程や移動、だいじょうぶ？",
+        "oshi": "日程・移動の実行性は？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "ready",
+          "labels": {
+            "standard": "問題なし",
+            "kawaii": "問題なし",
+            "oshi": "問題なし"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "risk",
+          "labels": {
+            "standard": "不確定が多い",
+            "kawaii": "不確定が多い",
+            "oshi": "不確定が多い"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "some_risk",
+          "labels": {
+            "standard": "少し不安あり",
+            "kawaii": "少し不安あり",
+            "oshi": "少し不安あり"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_used_condition",
+      "questionType": "single",
+      "scoringRelevance": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "中古の状態リスクを許容できる？",
+        "kawaii": "中古の状態、受け入れられる？",
+        "oshi": "中古状態リスクは許容範囲？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "careful",
+          "labels": {
+            "standard": "条件次第",
+            "kawaii": "条件次第",
+            "oshi": "条件次第"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "hard",
+          "labels": {
+            "standard": "不安が大きい",
+            "kawaii": "不安が大きい",
+            "oshi": "不安が大きい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "ok",
+          "labels": {
+            "standard": "許容できる",
+            "kawaii": "許容できる",
+            "oshi": "許容できる"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_used_price_gap",
+      "questionType": "single",
+      "scoringRelevance": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "新品との差額は納得できる？",
+        "kawaii": "新品との差額、納得できる？",
+        "oshi": "新品差額の妥当性は？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "small",
+          "labels": {
+            "standard": "差額が小さい",
+            "kawaii": "差額が小さい",
+            "oshi": "差額が小さい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "比較できていない",
+            "kawaii": "比較できていない",
+            "oshi": "比較できていない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "worth",
+          "labels": {
+            "standard": "納得できる",
+            "kawaii": "納得できる",
+            "oshi": "納得できる"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_alternative_plan",
+      "questionType": "single",
+      "scoringRelevance": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "見送る場合の代替案はある？",
+        "kawaii": "見送るなら別プランある？",
+        "oshi": "見送り時の代替案は？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "clear",
+          "labels": {
+            "standard": "ある（他の満たし方がある）",
+            "kawaii": "あるよ",
+            "oshi": "明確にある"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "maybe",
+          "labels": {
+            "standard": "たぶんある",
+            "kawaii": "たぶんある",
+            "oshi": "候補あり"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "none",
+          "labels": {
+            "standard": "特にない",
+            "kawaii": "ないかも",
+            "oshi": "特にない"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_budget_pain",
+      "questionType": "single",
+      "scoringRelevance": "delta",
+      "mapTo": null,
+      "tags": [
+        "budget_force",
+        "budget_hard",
+        "budget_ok",
+        "budget_some"
+      ],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "この出費、あとで痛い？",
+        "kawaii": "このお買い物、あとでしんどくならない？",
+        "oshi": "この出費、オタ活資金にダメージある？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "force",
+          "labels": {
+            "standard": "無理して払う（危険）",
+            "kawaii": "ムリして払うかも",
+            "oshi": "無理課金コース"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": {
+            "affordability": 15,
+            "regretRisk": 80,
+            "impulse": 70
+          },
+          "tags": [
+            "budget_force"
+          ]
+        },
+        {
+          "optionId": "hard",
+          "labels": {
+            "standard": "生活に影響する",
+            "kawaii": "生活にひびきそう",
+            "oshi": "今月しんどい"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": {
+            "affordability": 35,
+            "regretRisk": 65
+          },
+          "tags": [
+            "budget_hard"
+          ]
+        },
+        {
+          "optionId": "ok",
+          "labels": {
+            "standard": "全然平気",
+            "kawaii": "ぜんぜん平気",
+            "oshi": "ノーダメ"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": {
+            "affordability": 85,
+            "regretRisk": 35
+          },
+          "tags": [
+            "budget_ok"
+          ]
+        },
+        {
+          "optionId": "some",
+          "labels": {
+            "standard": "ちょい痛い",
+            "kawaii": "ちょっとだけ痛い",
+            "oshi": "ちょいダメージ"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": {
+            "affordability": 60,
+            "regretRisk": 45
+          },
+          "tags": [
+            "budget_some"
+          ]
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_desire",
+      "questionType": "scale",
+      "scoringRelevance": "mapTo",
+      "mapTo": "desire",
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "これは「推し度（欲しさ）」どれくらい？",
+        "kawaii": "これ、どれくらいトキメク？",
+        "oshi": "この案件、推し熱どのくらい？"
+      },
+      "scaleLabels": {
+        "left": "気になるだけ",
+        "right": "本命"
+      },
+      "options": []
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_goal",
+      "questionType": "single",
+      "scoringRelevance": "none",
+      "mapTo": null,
+      "tags": [
+        "goal_fun",
+        "goal_set",
+        "goal_single"
+      ],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "今回の目的は？",
+        "kawaii": "今回いちばん叶えたいことは？",
+        "oshi": "今回の回収目的は？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "fun",
+          "labels": {
+            "standard": "引く体験（くじ/ガチャ感）を楽しみたい",
+            "kawaii": "引く体験も楽しみたい",
+            "oshi": "体験重視"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": [
+            "goal_fun"
+          ]
+        },
+        {
+          "optionId": "set",
+          "labels": {
+            "standard": "セットで揃えたい",
+            "kawaii": "セットでそろえたい",
+            "oshi": "セット回収"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": [
+            "goal_set"
+          ]
+        },
+        {
+          "optionId": "single",
+          "labels": {
+            "standard": "推し（特定の1つ）だけ欲しい",
+            "kawaii": "推し1点狙い",
+            "oshi": "単推し回収"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": [
+            "goal_single"
+          ]
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_hot_cold",
+      "questionType": "single",
+      "scoringRelevance": "none",
+      "mapTo": null,
+      "tags": [
+        "cold",
+        "hot",
+        "normal_popularity",
+        "unknown_popularity"
+      ],
+      "unknownTagHints": [
+        "unknown_popularity"
+      ],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "欲しい枠（推し）は人気枠？（高レート/低レート）",
+        "kawaii": "推し枠って人気どのくらい？",
+        "oshi": "推し枠レート、どの温度感？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "cold",
+          "labels": {
+            "standard": "落ち着いてる（低レートになりやすい）",
+            "kawaii": "落ち着いてる（低レートになりやすい）",
+            "oshi": "落ち着いてる（低レートになりやすい）"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [
+            "cold"
+          ]
+        },
+        {
+          "optionId": "hot",
+          "labels": {
+            "standard": "人気（高騰/プレ値になりやすい）",
+            "kawaii": "人気（高騰/プレ値になりやすい）",
+            "oshi": "人気（高騰/プレ値になりやすい）"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [
+            "hot"
+          ]
+        },
+        {
+          "optionId": "normal",
+          "labels": {
+            "standard": "普通",
+            "kawaii": "普通",
+            "oshi": "普通"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [
+            "normal_popularity"
+          ]
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "わからない",
+            "kawaii": "わからない",
+            "oshi": "わからない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [
+            "unknown_popularity"
+          ]
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_impulse_axis_short",
+      "questionType": "scale",
+      "scoringRelevance": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "今の欲しさ、どっち寄り？",
+        "kawaii": "今の欲しさ、どっちより？",
+        "oshi": "いまの推し熱、どっち寄り？"
+      },
+      "scaleLabels": {
+        "left": "未来（飾る/使う）寄り",
+        "right": "買う瞬間の快感寄り"
+      },
+      "options": []
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_long_note",
+      "questionType": "text",
+      "scoringRelevance": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "AIに相談したいポイントを一言で書いてください",
+        "kawaii": "AIに相談したいことをメモしよう",
+        "oshi": "AI相談用メモを残す"
+      },
+      "scaleLabels": null,
+      "options": []
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_motives_multi",
+      "questionType": "multi",
+      "scoringRelevance": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "今「買いたい理由」ってどれ？（複数選択OK）",
+        "kawaii": "買いたい気持ち、どれに近い？",
+        "oshi": "回収動機、どれが強い？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "bonus",
+          "labels": {
+            "standard": "特典が本体（特典目的）",
+            "kawaii": "特典が本体（特典目的）",
+            "oshi": "特典が本体（特典目的）"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "fomo",
+          "labels": {
+            "standard": "限定・締切が怖い（取り逃し不安）",
+            "kawaii": "限定・締切が怖い（取り逃し不安）",
+            "oshi": "限定・締切が怖い（取り逃し不安）"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "rush",
+          "labels": {
+            "standard": "買えた瞬間の高揚感がほしい（脳汁）",
+            "kawaii": "買えた瞬間の高揚感がほしい（脳汁）",
+            "oshi": "買えた瞬間の高揚感がほしい（脳汁）"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "support",
+          "labels": {
+            "standard": "推しを応援したい（気持ち）",
+            "kawaii": "推しを応援したい（気持ち）",
+            "oshi": "推しを応援したい（気持ち）"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "trend",
+          "labels": {
+            "standard": "みんな買ってる／流行ってる（雰囲気）",
+            "kawaii": "みんな買ってる／流行ってる（雰囲気）",
+            "oshi": "みんな買ってる／流行ってる（雰囲気）"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "use",
+          "labels": {
+            "standard": "飾りたい／使いたい（未来がある）",
+            "kawaii": "飾りたい／使いたい（未来がある）",
+            "oshi": "飾りたい／使いたい（未来がある）"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "vague",
+          "labels": {
+            "standard": "なんとなく（説明できない）",
+            "kawaii": "なんとなく（説明できない）",
+            "oshi": "なんとなく（説明できない）"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_price_feel",
+      "questionType": "single",
+      "scoringRelevance": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "価格の納得感は？",
+        "kawaii": "お値段の納得感はどう？",
+        "oshi": "価格感、相場的にどう？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "good",
+          "labels": {
+            "standard": "納得できる",
+            "kawaii": "いい感じ",
+            "oshi": "納得"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "high",
+          "labels": {
+            "standard": "高めに感じる",
+            "kawaii": "ちょっと高め",
+            "oshi": "やや高"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "normal",
+          "labels": {
+            "standard": "普通",
+            "kawaii": "ふつう",
+            "oshi": "標準"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "まだ比較できていない",
+            "kawaii": "まだ比べてない",
+            "oshi": "未比較"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_rarity_restock",
+      "questionType": "single",
+      "scoringRelevance": "delta",
+      "mapTo": null,
+      "tags": [
+        "restock_high",
+        "restock_low",
+        "restock_mid",
+        "unknown_restock"
+      ],
+      "unknownTagHints": [
+        "unknown_restock"
+      ],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "再販（受注/再入荷）しそう？",
+        "kawaii": "また会えそう？",
+        "oshi": "再販導線、ありそう？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "likely",
+          "labels": {
+            "standard": "しそう（高い）",
+            "kawaii": "しそう（高い）",
+            "oshi": "しそう（高い）"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "restockChance": 80,
+            "rarity": 35
+          },
+          "tags": [
+            "restock_high"
+          ]
+        },
+        {
+          "optionId": "maybe",
+          "labels": {
+            "standard": "たぶん（中）",
+            "kawaii": "たぶん（中）",
+            "oshi": "たぶん（中）"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "restockChance": 55,
+            "rarity": 50
+          },
+          "tags": [
+            "restock_mid"
+          ]
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "わからない",
+            "kawaii": "わからない",
+            "oshi": "わからない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "restockChance": 50,
+            "rarity": 50
+          },
+          "tags": [
+            "unknown_restock"
+          ]
+        },
+        {
+          "optionId": "unlikely",
+          "labels": {
+            "standard": "しなさそう（低い）",
+            "kawaii": "しなさそう（低い）",
+            "oshi": "しなさそう（低い）"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "restockChance": 25,
+            "rarity": 75
+          },
+          "tags": [
+            "restock_low"
+          ]
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_regret_impulse",
+      "questionType": "single",
+      "scoringRelevance": "delta",
+      "mapTo": null,
+      "tags": [
+        "state_calm",
+        "state_excited",
+        "state_fomo",
+        "state_tired"
+      ],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "いまの自分、どれに近い？（衝動/後悔リスク）",
+        "kawaii": "いまの気分、どれが近い？",
+        "oshi": "現在のメンタル状態、どれに近い？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "calm",
+          "labels": {
+            "standard": "冷静（後悔しにくい）",
+            "kawaii": "冷静（後悔しにくい）",
+            "oshi": "冷静（後悔しにくい）"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "impulse": 25,
+            "regretRisk": 35
+          },
+          "tags": [
+            "state_calm"
+          ]
+        },
+        {
+          "optionId": "excited",
+          "labels": {
+            "standard": "テンション高め（勢い）",
+            "kawaii": "テンション高め（勢い）",
+            "oshi": "テンション高め（勢い）"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "impulse": 65,
+            "regretRisk": 55
+          },
+          "tags": [
+            "state_excited"
+          ]
+        },
+        {
+          "optionId": "fomo",
+          "labels": {
+            "standard": "焦ってる（今しかない圧）",
+            "kawaii": "焦ってる（今しかない圧）",
+            "oshi": "焦ってる（今しかない圧）"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "impulse": 75,
+            "regretRisk": 65,
+            "urgency": 70
+          },
+          "tags": [
+            "state_fomo"
+          ]
+        },
+        {
+          "optionId": "tired",
+          "labels": {
+            "standard": "疲れてる/メンタル弱り気味",
+            "kawaii": "疲れてる/メンタル弱り気味",
+            "oshi": "疲れてる/メンタル弱り気味"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "impulse": 70,
+            "regretRisk": 70
+          },
+          "tags": [
+            "state_tired"
+          ]
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_storage_fit",
+      "questionType": "single",
+      "scoringRelevance": "storage_gate",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "置き場所、決まってる？",
+        "kawaii": "おうちに置くとこ、ある？",
+        "oshi": "置き場ある？（棚/ケース確保済み？）"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "CONFIRMED",
+          "labels": {
+            "standard": "ある（もう決まってる）",
+            "kawaii": "あるよ！（もう決めた）",
+            "oshi": "確保済み（勝ち）"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "NONE",
+          "labels": {
+            "standard": "今はない",
+            "kawaii": "いまはない…",
+            "oshi": "今はムリ（圧迫）"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "PROBABLE",
+          "labels": {
+            "standard": "たぶんある（片付ければ）",
+            "kawaii": "たぶんある…！（片付ければ）",
+            "oshi": "片付ければいける"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "UNKNOWN",
+          "labels": {
+            "standard": "わからない（先に確認する）",
+            "kawaii": "わかんない（先に見てくる）",
+            "oshi": "未確認（先に確認）"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_storage_space",
+      "questionType": "single",
+      "scoringRelevance": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "置き場所・保管の見通しは？",
+        "kawaii": "置き場所だいじょうぶ？",
+        "oshi": "保管キャパは確保できる？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "adjust",
+          "labels": {
+            "standard": "少し工夫が必要",
+            "kawaii": "少し工夫する",
+            "oshi": "調整が必要"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "enough",
+          "labels": {
+            "standard": "問題ない",
+            "kawaii": "問題ない",
+            "oshi": "問題なし"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        },
+        {
+          "optionId": "tight",
+          "labels": {
+            "standard": "かなり厳しい",
+            "kawaii": "かなりきびしい",
+            "oshi": "厳しい"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_urgency",
+      "questionType": "single",
+      "scoringRelevance": "delta",
+      "mapTo": null,
+      "tags": [
+        "unknown_urgency",
+        "urgency_high",
+        "urgency_low",
+        "urgency_mid"
+      ],
+      "unknownTagHints": [
+        "unknown_urgency"
+      ],
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "今買わないとどうなる？（急ぎ度）",
+        "kawaii": "今買わないとどうなるかな？",
+        "oshi": "今回収しないと取り逃しそう？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "last",
+          "labels": {
+            "standard": "ほぼラスト/今日が期限",
+            "kawaii": "ほぼラスト/今日まで",
+            "oshi": "実質ラストチャンス"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": {
+            "urgency": 85,
+            "rarity": 70,
+            "restockChance": 25
+          },
+          "tags": [
+            "urgency_high"
+          ]
+        },
+        {
+          "optionId": "low_stock",
+          "labels": {
+            "standard": "在庫が減ってる/締切が近い",
+            "kawaii": "在庫へってる/締切近い",
+            "oshi": "残数少なめ/締切近い"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": {
+            "urgency": 55,
+            "rarity": 55,
+            "restockChance": 45
+          },
+          "tags": [
+            "urgency_mid"
+          ]
+        },
+        {
+          "optionId": "not_urgent",
+          "labels": {
+            "standard": "いつでも買えそう",
+            "kawaii": "あとでも買えそう",
+            "oshi": "まだ追える"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": {
+            "urgency": 20,
+            "rarity": 30,
+            "restockChance": 70
+          },
+          "tags": [
+            "urgency_low"
+          ]
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "わからない",
+            "kawaii": "まだわからない",
+            "oshi": "情報不足"
+          },
+          "sameAsStandard": false,
+          "mapTo": null,
+          "delta": {
+            "urgency": 50
+          },
+          "tags": [
+            "unknown_urgency"
+          ]
+        }
+      ]
+    }
+  ]
+}

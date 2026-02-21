@@ -26,7 +26,12 @@ import AdvancedSettingsPanel from "@/components/AdvancedSettingsPanel";
 import { MODE_DICTIONARY } from "@/src/oshihapi/modes/mode_dictionary";
 import { DECISIVENESS_STORAGE_KEY, parseDecisiveness } from "@/src/oshihapi/decisiveness";
 import { MODE_META, normalizeMode } from "@/src/oshihapi/modeConfig";
-import { shouldAskStorage } from "@/src/oshihapi/storageGate";
+import {
+  ADDON_BY_ITEM_KIND,
+  CORE_12_QUESTION_IDS,
+  QUICK_QUESTION_IDS,
+  shouldAskStorage,
+} from "@/src/oshihapi/question_sets";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Progress from "@/components/ui/Progress";
@@ -100,40 +105,6 @@ const decisionLabels: Record<string, string> = {
   BUY: "買う",
   THINK: "保留",
   SKIP: "やめる",
-};
-
-const QUICK_QUESTION_IDS = [
-  "q_storage_fit",
-  "q_desire",
-  "q_budget_pain",
-  "q_urgency",
-  "q_rarity_restock",
-  "q_regret_impulse",
-  "q_impulse_axis_short",
-] as const;
-
-const CORE_12_QUESTION_IDS = [
-  "q_storage_fit",
-  "q_desire",
-  "q_budget_pain",
-  "q_urgency",
-  "q_rarity_restock",
-  "q_goal",
-  "q_motives_multi",
-  "q_hot_cold",
-  "q_regret_impulse",
-  "q_impulse_axis_short",
-  "q_price_feel",
-  "q_storage_space",
-  "q_alternative_plan",
-] as const;
-
-const ADDON_BY_ITEM_KIND: Partial<Record<ItemKind, readonly string[]>> = {
-  goods: ["q_addon_common_info", "q_addon_common_priority", "q_addon_goods_compare", "q_addon_goods_portability"],
-  blind_draw: ["q_addon_common_info", "q_addon_common_priority", "q_addon_blind_draw_cap", "q_addon_blind_draw_exit"],
-  ticket: ["q_addon_common_info", "q_addon_common_priority", "q_addon_ticket_schedule", "q_addon_ticket_resale_rule"],
-  preorder: ["q_addon_common_info", "q_addon_common_priority", "q_addon_preorder_timeline", "q_addon_preorder_restock"],
-  used: ["q_addon_common_info", "q_addon_common_priority", "q_addon_used_condition", "q_addon_used_price_gap"],
 };
 
 export default function FlowPage() {
