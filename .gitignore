@@ -54,3 +54,5 @@ ops/hardreset_main_log_*.txt
 post_merge_routine.ps1.bak_fix_*
 
 ops/vercel_protection_bypass_secret.txt
+
+ops/overlay_apply_latest.json
