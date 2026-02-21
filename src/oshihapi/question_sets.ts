@@ -1,4 +1,4 @@
-import type { ItemKind } from "@/src/oshihapi/model";
+import type { GoodsSubtype, ItemKind } from "@/src/oshihapi/model";
 import { shouldAskStorage as baseShouldAskStorage } from "@/src/oshihapi/storageGate";
 
 export const QUICK_QUESTION_IDS = [
@@ -35,8 +35,8 @@ export const ADDON_BY_ITEM_KIND: Partial<Record<ItemKind, readonly string[]>> = 
   used: ["q_addon_common_info", "q_addon_common_priority", "q_addon_used_condition", "q_addon_used_price_gap"],
 };
 
-export function shouldAskStorage(itemKind?: ItemKind): boolean {
-  return baseShouldAskStorage(itemKind);
+export function shouldAskStorage(itemKind?: ItemKind, goodsSubtype?: GoodsSubtype): boolean {
+  return baseShouldAskStorage(itemKind, goodsSubtype);
 }
 
 export const GAME_BILLING_SHORT_QUESTION_IDS = [

@@ -189,7 +189,7 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     Math.round(50 + Math.abs(scoreSigned) * 70 - unknownPenalty)
   );
 
-  if (shouldAskStorage(input.meta.itemKind)) {
+  if (shouldAskStorage(input.meta.itemKind, input.meta.goodsSubtype)) {
     const storageFit = input.answers.q_storage_fit;
     if (storageFit === 'NONE' || storageFit === 'UNKNOWN') {
       if (decision === 'BUY') {

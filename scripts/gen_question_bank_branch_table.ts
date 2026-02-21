@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { ItemKind, Question } from "@/src/oshihapi/model";
+import type { GoodsSubtype, ItemKind, Question } from "@/src/oshihapi/model";
 import { GAME_BILLING_OPTION_DELTAS, getGameBillingQuestions } from "@/src/oshihapi/gameBillingNeutralV1";
 import { merch_v2_ja } from "@/src/oshihapi/merch_v2_ja";
 import { resolveOptionLabel, resolveQuestionText } from "@/src/oshihapi/modes/question_copy_resolver";
@@ -21,6 +21,7 @@ import {
 } from "@/src/oshihapi/question_sets";
 
 const ITEM_KINDS: ItemKind[] = ["goods", "blind_draw", "ticket", "preorder", "used"];
+const GOODS_SUBTYPES: GoodsSubtype[] = ["general", "itaBag_badge"];
 const STYLES = ["standard", "kawaii", "oshi"] as const;
 type Style = (typeof STYLES)[number];
 
@@ -34,10 +35,16 @@ const gameBillingQuestionMap = new Map(
   ].map((q) => [q.id, q]),
 );
 
-function getMerchQuestionIds(mode: "short" | "medium" | "long", itemKind: ItemKind): string[] {
+function getMerchQuestionIds(
+  mode: "short" | "medium" | "long",
+  itemKind: ItemKind,
+  goodsSubtype: GoodsSubtype = "general",
+): string[] {
   const baseIds = mode === "short" ? [...QUICK_QUESTION_IDS] : [...CORE_12_QUESTION_IDS];
   const addonIds = mode === "long" ? [...(ADDON_BY_ITEM_KIND[itemKind] ?? [])] : [];
-  return [...baseIds, ...addonIds].filter((id) => id !== "q_storage_fit" || shouldAskStorage(itemKind));
+  return [...baseIds, ...addonIds].filter(
+    (id) => id !== "q_storage_fit" || shouldAskStorage(itemKind, goodsSubtype),
+  );
 }
 
 function getScoringRelevance(useCase: "merch" | "game_billing", question: Question): string {
@@ -79,10 +86,41 @@ function toBuyStopDelta(questionId: string, optionId: string): BuyStopDelta | nu
   return { buyDelta: delta.buyDelta, stopDelta: delta.stopDelta, netDelta: delta.buyDelta - delta.stopDelta };
 }
 
+const getMerchBranchVariants = (mode: "short" | "medium" | "long", itemKind: ItemKind) => {
+  if (itemKind !== "goods") {
+    return [{ branchSuffix: "", questionIds: getMerchQuestionIds(mode, itemKind) }];
+  }
+  return GOODS_SUBTYPES.map((goodsSubtype) => ({
+    branchSuffix: goodsSubtype === "general" ? "" : `#${goodsSubtype}`,
+    questionIds: getMerchQuestionIds(mode, itemKind, goodsSubtype),
+  }));
+};
+
 const merchBranching = {
-  short: Object.fromEntries(ITEM_KINDS.map((kind) => [kind, getMerchQuestionIds("short", kind)])),
-  medium: Object.fromEntries(ITEM_KINDS.map((kind) => [kind, getMerchQuestionIds("medium", kind)])),
-  long: Object.fromEntries(ITEM_KINDS.map((kind) => [kind, getMerchQuestionIds("long", kind)])),
+  short: Object.fromEntries(
+    ITEM_KINDS.flatMap((kind) =>
+      getMerchBranchVariants("short", kind).map((variant) => [
+        `${kind}${variant.branchSuffix}`,
+        variant.questionIds,
+      ]),
+    ),
+  ),
+  medium: Object.fromEntries(
+    ITEM_KINDS.flatMap((kind) =>
+      getMerchBranchVariants("medium", kind).map((variant) => [
+        `${kind}${variant.branchSuffix}`,
+        variant.questionIds,
+      ]),
+    ),
+  ),
+  long: Object.fromEntries(
+    ITEM_KINDS.flatMap((kind) =>
+      getMerchBranchVariants("long", kind).map((variant) => [
+        `${kind}${variant.branchSuffix}`,
+        variant.questionIds,
+      ]),
+    ),
+  ),
 };
 
 const gameBillingBranching = {
@@ -104,9 +142,9 @@ const appendAppearsIn = (questionId: string, branchKey: string) => {
 };
 
 for (const mode of ["short", "medium", "long"] as const) {
-  for (const itemKind of ITEM_KINDS) {
-    for (const questionId of merchBranching[mode][itemKind]) {
-      appendAppearsIn(questionId, `merch/${mode}/${itemKind}`);
+  for (const [branchItemKind, questionIds] of Object.entries(merchBranching[mode])) {
+    for (const questionId of questionIds) {
+      appendAppearsIn(questionId, `merch/${mode}/${branchItemKind}`);
     }
   }
 }
@@ -168,7 +206,9 @@ const orphanQuestionIds = questionsJson.filter((q) => q.isOrphan).map((q) => q.q
 const md: string[] = ["# Question Bank Branching Table", "", "## A. Branching Matrix", "", "### Merch"];
 for (const mode of ["short", "medium", "long"] as const) {
   md.push(`#### mode=${mode}`);
-  for (const kind of ITEM_KINDS) md.push(`- itemKind=${kind}: ${merchBranching[mode][kind].join(" -> ")}`);
+  for (const [branchItemKind, questionIds] of Object.entries(merchBranching[mode])) {
+    md.push(`- itemKind=${branchItemKind}: ${questionIds.join(" -> ")}`);
+  }
   md.push("");
 }
 md.push("### Game Billing");

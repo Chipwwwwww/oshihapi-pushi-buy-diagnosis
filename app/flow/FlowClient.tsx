@@ -8,6 +8,7 @@ import type {
   DecisionRun,
   Decisiveness,
   InputMeta,
+  GoodsSubtype,
   ItemKind,
   Mode,
   Question,
@@ -59,6 +60,7 @@ const ITEM_KIND_VALUES: ItemKind[] = [
   "ticket",
   "game_billing",
 ];
+const GOODS_SUBTYPE_VALUES: GoodsSubtype[] = ["general", "itaBag_badge"];
 
 const deadlineOptions = [
   { value: "today", label: "今日" },
@@ -77,6 +79,11 @@ const itemKindOptions: { value: ItemKind; label: string }[] = [
   { value: "game_billing", label: "ゲーム課金" },
 ];
 
+const goodsSubtypeOptions: { value: GoodsSubtype; label: string }[] = [
+  { value: "general", label: "グッズ（一般）" },
+  { value: "itaBag_badge", label: "痛バ（缶バッジ複数）" },
+];
+
 type DeadlineValue = NonNullable<InputMeta["deadline"]>;
 
 const isDeadlineValue = (value: string): value is DeadlineValue =>
@@ -84,6 +91,9 @@ const isDeadlineValue = (value: string): value is DeadlineValue =>
 
 const isItemKindValue = (value: string): value is ItemKind =>
   ITEM_KIND_VALUES.includes(value as ItemKind);
+
+const isGoodsSubtypeValue = (value: string): value is GoodsSubtype =>
+  GOODS_SUBTYPE_VALUES.includes(value as GoodsSubtype);
 
 const parsePriceYen = (value: string | null): number | undefined => {
   if (!value) return undefined;
@@ -101,6 +111,9 @@ const parseItemKind = (value: string | null): InputMeta["itemKind"] => {
   return isItemKindValue(value) ? value : "goods";
 };
 
+const parseGoodsSubtype = (value: string | null): GoodsSubtype =>
+  value && isGoodsSubtypeValue(value) ? value : "general";
+
 const decisionLabels: Record<string, string> = {
   BUY: "買う",
   THINK: "保留",
@@ -117,6 +130,7 @@ export default function FlowPage() {
   const priceYen = parsePriceYen(priceYenParam);
   const deadline = parseDeadline(searchParams.get("deadline"));
   const itemKind = parseItemKind(searchParams.get("itemKind"));
+  const goodsSubtype = parseGoodsSubtype(searchParams.get("goodsSubtype"));
   const decisiveness: Decisiveness = parseDecisiveness(searchParams.get("decisiveness"));
   const styleMode: StyleMode = getStyleModeFromSearchParams(searchParams) ?? "standard";
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -124,6 +138,7 @@ export default function FlowPage() {
   const [draftPriceYen, setDraftPriceYen] = useState(priceYenParam);
   const [draftDeadline, setDraftDeadline] = useState<DeadlineValue>(deadline ?? "unknown");
   const [draftItemKind, setDraftItemKind] = useState<ItemKind>(itemKind ?? "goods");
+  const [draftGoodsSubtype, setDraftGoodsSubtype] = useState<GoodsSubtype>(goodsSubtype);
   const [draftDecisiveness, setDraftDecisiveness] = useState<Decisiveness>(decisiveness);
 
   const useCase = itemKind === "game_billing" ? "game_billing" : "merch";
@@ -139,12 +154,12 @@ export default function FlowPage() {
     const addonIds = mode === "long" && itemKind ? (ADDON_BY_ITEM_KIND[itemKind] ?? []) : [];
     const ids = [...baseIds, ...addonIds].filter((id) => {
       if (id !== "q_storage_fit") return true;
-      return shouldAskStorage(itemKind);
+      return shouldAskStorage(itemKind, goodsSubtype);
     });
     return ids
       .map((id) => merch_v2_ja.questions.find((question) => question.id === id))
       .filter((question): question is Question => Boolean(question));
-  }, [answers, itemKind, mode, useCase]);
+  }, [answers, goodsSubtype, itemKind, mode, useCase]);
 
   const [submitting, setSubmitting] = useState(false);
   const startTimeRef = useRef<number>(0);
@@ -188,6 +203,8 @@ export default function FlowPage() {
     else params.delete("priceYen");
     params.set("deadline", draftDeadline);
     params.set("itemKind", draftItemKind);
+    if (draftItemKind === "goods") params.set("goodsSubtype", draftGoodsSubtype);
+    else params.delete("goodsSubtype");
     router.replace(`/flow?${params.toString()}`);
     setIsSettingsOpen(false);
   };
@@ -318,7 +335,7 @@ export default function FlowPage() {
           })()
         : evaluate({
             questionSet: { ...merch_v2_ja, questions },
-            meta: { itemName, priceYen, deadline, itemKind },
+            meta: { itemName, priceYen, deadline, itemKind, goodsSubtype },
             answers: normalizedAnswers,
             mode,
             decisiveness,
@@ -340,7 +357,7 @@ export default function FlowPage() {
       useCase,
       mode,
       decisiveness,
-      meta: { itemName, priceYen, deadline, itemKind },
+      meta: { itemName, priceYen, deadline, itemKind, goodsSubtype },
       answers: normalizedAnswers,
       gameBillingAnswers: useCase === "game_billing" ? normalizedAnswers : undefined,
       output,
@@ -397,6 +414,7 @@ export default function FlowPage() {
                 setDraftPriceYen(priceYenParam);
                 setDraftDeadline(deadline ?? "unknown");
                 setDraftItemKind(itemKind ?? "goods");
+                setDraftGoodsSubtype(goodsSubtype);
                 setDraftDecisiveness(decisiveness);
                 setIsSettingsOpen(true);
               }}
@@ -584,6 +602,8 @@ export default function FlowPage() {
               priceYen={draftPriceYen}
               deadline={draftDeadline}
               itemKind={draftItemKind}
+              goodsSubtype={draftGoodsSubtype}
+              goodsSubtypeOptions={goodsSubtypeOptions}
               deadlineOptions={deadlineOptions}
               itemKindOptions={itemKindOptions}
               onStyleModeChange={handleStyleModeChange}
@@ -591,7 +611,11 @@ export default function FlowPage() {
               onItemNameChange={setDraftItemName}
               onPriceYenChange={setDraftPriceYen}
               onDeadlineChange={setDraftDeadline}
-              onItemKindChange={setDraftItemKind}
+              onItemKindChange={(nextKind) => {
+                setDraftItemKind(nextKind);
+                if (nextKind !== "goods") setDraftGoodsSubtype("general");
+              }}
+              onGoodsSubtypeChange={setDraftGoodsSubtype}
             />
             <Button onClick={handleApplyOptionalSettings} className="mt-4 w-full">この設定を反映</Button>
           </div>

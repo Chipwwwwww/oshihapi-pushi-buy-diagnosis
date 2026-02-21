@@ -207,7 +207,7 @@ export default function ResultPage() {
   const modeCopy = COPY_BY_MODE[styleMode];
   const normalizedWaitType = outputExt?.waitType ?? (run?.output.decision === "THINK" ? "none" : "none");
   const storageFitValue =
-    run && shouldAskStorage(run.meta.itemKind) && typeof run.answers.q_storage_fit === "string"
+    run && shouldAskStorage(run.meta.itemKind, run.meta.goodsSubtype) && typeof run.answers.q_storage_fit === "string"
       ? STORAGE_FIT_LABEL[run.answers.q_storage_fit] ?? run.answers.q_storage_fit
       : null;
 
