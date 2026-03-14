@@ -1,4 +1,4 @@
-import type { ActionItem, ReasonItem, ScoreDimension } from './model';
+import type { ActionItem, GoodsSubtype, ReasonItem, ScoreDimension } from './model';
 import { buildDefaultLinkOuts, buildSearchQuery } from './supportData';
 import type { InputMeta } from './model';
 
@@ -17,21 +17,18 @@ function has(tag: string, tags: string[]) {
 export function pickReasons(ctx: RuleContext): ReasonItem[] {
   const r: ReasonItem[] = [];
 
-  // Affordability / budget
   if (ctx.scores.affordability <= 30 || has('budget_force', ctx.tags) || has('budget_hard', ctx.tags)) {
     r.push({ id: 'budget', severity: 'strong', text: '今月の負担が大きめ。ここで無理すると後悔に繋がりやすい。' });
   } else if (ctx.scores.affordability >= 70) {
     r.push({ id: 'budget_ok', severity: 'info', text: '予算的には比較的安全。買うなら上限だけ固定するとさらに安心。' });
   }
 
-  // Desire
   if (ctx.scores.desire >= 75) {
     r.push({ id: 'desire_high', severity: 'strong', text: '推し度が高いので、満足度が出やすい買い物。' });
   } else if (ctx.scores.desire <= 35) {
     r.push({ id: 'desire_low', severity: 'warn', text: '推し度はそこまで高くないかも。勢い買いになりやすい。' });
   }
 
-  // Urgency / rarity / restock
   const pressure = ctx.scores.urgency >= 70 && ctx.scores.restockChance <= 40;
   if (pressure && ctx.scores.impulse >= 60) {
     r.push({ id: 'fomo_pressure', severity: 'warn', text: '「今しかない」圧が強いと判断が荒れやすい。いったん呼吸してOK。' });
@@ -41,7 +38,6 @@ export function pickReasons(ctx: RuleContext): ReasonItem[] {
     r.push({ id: 'restock', severity: 'info', text: '再販しそう。今すぐ決めなくても後悔しにくいタイプ。' });
   }
 
-  // Regret / impulse
   if (ctx.scores.regretRisk >= 70) {
     r.push({ id: 'regret_high', severity: 'strong', text: '後悔リスクが高め。買う場合は「条件」を決めて自分を守ろう。' });
   }
@@ -49,7 +45,6 @@ export function pickReasons(ctx: RuleContext): ReasonItem[] {
     r.push({ id: 'impulse_high', severity: 'warn', text: '今は勢いが強い状態。保留→冷却で精度が上がる。' });
   }
 
-  // If we still have too few reasons, add neutral ones
   if (r.length < 3) {
     r.push({ id: 'neutral_1', severity: 'info', text: 'いまの条件を整理できれば、後悔の確率は下げられる。' });
   }
@@ -63,12 +58,10 @@ export function pickReasons(ctx: RuleContext): ReasonItem[] {
 export function pickActions(ctx: RuleContext): ActionItem[] {
   const a: ActionItem[] = [];
 
-  // Basic cooling for THINK or high impulse
   if (ctx.decision === 'THINK' || ctx.scores.impulse >= 65 || ctx.scores.regretRisk >= 70) {
     a.push({ id: 'cooldown', text: '24時間だけ寝かせる（クールダウン）' });
   }
 
-  // Price / market check link-outs (normal mode / when unknown tags exist)
   const unknowns = ctx.tags.filter(t => t.startsWith('unknown_')).length;
   if (unknowns > 0 || ctx.decision === 'THINK') {
     const query = buildSearchQuery(ctx.meta);
@@ -76,18 +69,34 @@ export function pickActions(ctx: RuleContext): ActionItem[] {
     a.push({ id: 'market', text: '相場を1分だけ見る（中古/通販）', linkOut: links[0] });
   }
 
-  // Budget guard
   if (ctx.scores.affordability <= 40 || has('budget_some', ctx.tags) || has('budget_hard', ctx.tags) || has('budget_force', ctx.tags)) {
     a.push({ id: 'budget_cap', text: '上限予算を決めて、超えたら見送る' });
   }
 
-  // Blind draw cap
   if (ctx.blindDrawCap != null) {
     a.push({ id: 'blind_cap', text: `くじ/盲抽は上限${ctx.blindDrawCap}回で止める（当たっても追い追加しない）` });
   }
 
-  // Keep 1-3
   return a.slice(0, 3);
+}
+
+export function getStorageGuidance(goodsSubtype?: GoodsSubtype) {
+  if (goodsSubtype === 'e_ticket') {
+    return {
+      reason: '電子チケットの確認情報が不足。入場条件の取り違えは機会損失になりやすい。',
+      action: '利用端末・表示方法・入場条件を先に確認しよう。',
+    };
+  }
+  if (goodsSubtype === 'digital_goods') {
+    return {
+      reason: 'デジタル特典の保存/利用条件が未確認。後で使えないリスクがある。',
+      action: 'DL期限・閲覧条件・保存先を先に確認しよう。',
+    };
+  }
+  return {
+    reason: '置き場所が未確定（買った後の置き場が決まってない）',
+    action: '先に置き場所を決める（棚/ケース/引き出し）',
+  };
 }
 
 export function buildShareText(decisionJa: string, reasons: ReasonItem[]): string {

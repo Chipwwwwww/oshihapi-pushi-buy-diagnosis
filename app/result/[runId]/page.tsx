@@ -40,11 +40,6 @@ import {
   type StyleMode,
 } from "@/src/oshihapi/modes/useStyleMode";
 
-const decisionLabels: Record<string, string> = {
-  BUY: "買う",
-  THINK: "保留",
-  SKIP: "やめる",
-};
 const BASKET_STORAGE_KEY = "oshihapi_basket_last";
 
 
@@ -124,7 +119,8 @@ export default function ResultPage() {
   const [skipPrice, setSkipPrice] = useState(true);
   const [skipItemName, setSkipItemName] = useState(true);
   const [showAlternatives, setShowAlternatives] = useState(false);
-  const [selectedHeadline, setSelectedHeadline] = useState<string | null>(null);
+  const [showAllReasons, setShowAllReasons] = useState(false);
+  const [showAllActions, setShowAllActions] = useState(false);
   const [styleMode, setStyleMode] = useState<StyleMode>(() => getStyleModeFromSearchParams(searchParams) ?? "standard");
 
   const runId = params?.runId;
@@ -180,10 +176,10 @@ export default function ResultPage() {
   );
   useEffect(() => {
     setShowAlternatives(false);
-    setSelectedHeadline(null);
+    setShowAllReasons(false);
+    setShowAllActions(false);
   }, [runId]);
 
-  const headline = selectedHeadline ?? presentation?.headline ?? decisionLabels[run?.output.decision ?? "THINK"];
   const alternatives = presentation?.alternatives ?? [];
 
   const modeFormattedResult = useMemo(() => {
@@ -434,7 +430,6 @@ export default function ResultPage() {
                   <li key={alt}>
                     <button
                       type="button"
-                      onClick={() => setSelectedHeadline(alt)}
                       className="w-full rounded-xl border border-border bg-background px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
                     >
                       {alt}
@@ -461,7 +456,7 @@ export default function ResultPage() {
       <Card className="space-y-4">
         <h2 className={sectionTitleClass}>{modeCopy.ui.actionsTitle}</h2>
         <ul className="grid gap-4">
-          {displayActions.map((action) => {
+          {(showAllActions ? displayActions : displayActions.slice(0, 3)).map((action) => {
             const actionLink = getActionLink(action);
             return (
               <li key={action.id} className="rounded-2xl border border-border p-4">
@@ -482,17 +477,27 @@ export default function ResultPage() {
             );
           })}
         </ul>
+        {displayActions.length > 3 ? (
+          <Button variant="ghost" onClick={() => setShowAllActions((prev) => !prev)} className="w-full">
+            {showAllActions ? "提案をたたむ" : `もっと見る（残り${displayActions.length - 3}件）`}
+          </Button>
+        ) : null}
       </Card>
 
       <Card className="space-y-4">
         <h2 className={sectionTitleClass}>{modeCopy.ui.reasonsTitle}</h2>
         <div className="grid gap-4">
-          {run.output.reasons.map((reason) => (
+          {(showAllReasons ? run.output.reasons : run.output.reasons.slice(0, 6)).map((reason) => (
             <div key={reason.id} className="rounded-2xl border border-border p-4">
               <p className={bodyTextClass}>{modeCopy.result.reasonTagLabel[reason.id] ?? reason.text}</p>
             </div>
           ))}
         </div>
+        {run.output.reasons.length > 6 ? (
+          <Button variant="ghost" onClick={() => setShowAllReasons((prev) => !prev)} className="w-full">
+            {showAllReasons ? "理由をたたむ" : `もっと見る（残り${run.output.reasons.length - 6}件）`}
+          </Button>
+        ) : null}
       </Card>
 
 

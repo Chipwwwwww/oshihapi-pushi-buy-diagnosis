@@ -148,10 +148,10 @@ export const merch_v2_ja: QuestionSet = {
       title: '価格の納得感は？',
       required: true,
       options: [
-        { id: 'good', label: '納得できる' },
-        { id: 'normal', label: '普通' },
-        { id: 'high', label: '高めに感じる' },
-        { id: 'unknown', label: 'まだ比較できていない' },
+        { id: 'good', label: '納得できる', delta: { affordability: 80, regretRisk: 40 } },
+        { id: 'normal', label: '普通', delta: { affordability: 60, regretRisk: 50 } },
+        { id: 'high', label: '高めに感じる', delta: { affordability: 35, regretRisk: 70, opportunityCost: 65 } },
+        { id: 'unknown', label: 'まだ比較できていない', tags: ['unknown_price'], delta: { affordability: 50, regretRisk: 55 } },
       ],
     },
     {
@@ -160,9 +160,9 @@ export const merch_v2_ja: QuestionSet = {
       title: '置き場所・保管の見通しは？',
       required: true,
       options: [
-        { id: 'enough', label: '問題ない' },
-        { id: 'adjust', label: '少し工夫が必要' },
-        { id: 'tight', label: 'かなり厳しい' },
+        { id: 'enough', label: '問題ない', delta: { opportunityCost: 30, regretRisk: 35 } },
+        { id: 'adjust', label: '少し工夫が必要', delta: { opportunityCost: 55, regretRisk: 50 } },
+        { id: 'tight', label: 'かなり厳しい', tags: ['unknown_storage'], delta: { opportunityCost: 80, regretRisk: 70 } },
       ],
     },
     {
@@ -178,19 +178,20 @@ export const merch_v2_ja: QuestionSet = {
     },
     {
       id: 'q_impulse_axis_short',
-      type: 'single',
+      type: 'scale',
       title: '今の気持ち、どれに近い？',
-      description: '直感でOK。30秒で終わるやつ。',
+      description: '0=計画型 / 5=今のテンション寄り',
       required: true,
       urgentCore: false,
       standard: false,
       shortOnly: true,
-      options: [
-        { id: 'plan', label: '見返す/保管までイメージできてる（計画型）' },
-        { id: 'mood', label: '今のテンションで欲しい（計画はまだ）' },
-        { id: 'both', label: '両方ある（計画もあるし、今も高まってる）' },
-        { id: 'unknown', label: 'まだわからない' },
-      ],
+      min: 0,
+      max: 5,
+      step: 1,
+      defaultValue: 3,
+      mapTo: 'impulse',
+      leftLabel: '計画型',
+      rightLabel: '気分で買いたい',
     },
     {
       id: 'q_regret_impulse',
@@ -223,9 +224,9 @@ export const merch_v2_ja: QuestionSet = {
       title: '必要情報は揃っている？',
       required: true,
       options: [
-        { id: 'enough', label: '十分そろっている' },
-        { id: 'partial', label: '一部足りない' },
-        { id: 'lack', label: '不足が多い' },
+        { id: 'enough', label: '十分そろっている', delta: { regretRisk: 35, opportunityCost: 40 } },
+        { id: 'partial', label: '一部足りない', tags: ['unknown_info'], delta: { regretRisk: 55, opportunityCost: 55 } },
+        { id: 'lack', label: '不足が多い', tags: ['unknown_info', 'unknown_compare'], delta: { regretRisk: 75, opportunityCost: 75 } },
       ],
     },
     {
@@ -234,9 +235,9 @@ export const merch_v2_ja: QuestionSet = {
       title: '今月の推し活の中で優先度は？',
       required: true,
       options: [
-        { id: 'high', label: '高い' },
-        { id: 'mid', label: '中くらい' },
-        { id: 'low', label: '低め' },
+        { id: 'high', label: '高い', delta: { desire: 75, opportunityCost: 35 } },
+        { id: 'mid', label: '中くらい', delta: { desire: 55, opportunityCost: 50 } },
+        { id: 'low', label: '低め', delta: { desire: 40, opportunityCost: 70 } },
       ],
     },
     {
@@ -271,7 +272,7 @@ export const merch_v2_ja: QuestionSet = {
         { id: 'complete_strict', label: 'コンプ寄り・被りはつらい' },
         { id: 'oshi_tolerant', label: '本命中心・被りは許容できる' },
         { id: 'oshi_strict', label: '本命中心・被りは避けたい' },
-        { id: 'unknown', label: 'まだわからない' },
+        { id: 'unknown', label: 'まだわからない', tags: ['unknown_info'], delta: { regretRisk: 65, opportunityCost: 60 } },
       ],
     },
     {
@@ -283,7 +284,7 @@ export const merch_v2_ja: QuestionSet = {
         { id: 'active', label: '積極的に交換したい' },
         { id: 'maybe', label: '条件が合えば交換したい' },
         { id: 'no', label: '交換はしない予定' },
-        { id: 'unknown', label: 'まだわからない' },
+        { id: 'unknown', label: 'まだわからない', tags: ['unknown_info'], delta: { regretRisk: 65, opportunityCost: 60 } },
       ],
     },
     {
@@ -295,7 +296,7 @@ export const merch_v2_ja: QuestionSet = {
         { id: 'file', label: 'ファイル保管' },
         { id: 'scan', label: 'スキャンする' },
         { id: 'rough', label: '適当に保管' },
-        { id: 'unknown', label: '未定' },
+        { id: 'unknown', label: '未定', tags: ['unknown_info'], delta: { regretRisk: 65, opportunityCost: 60 } },
       ],
     },
     {
@@ -307,7 +308,7 @@ export const merch_v2_ja: QuestionSet = {
         { id: 'often', label: 'よく見る' },
         { id: 'sometimes', label: 'たまに見る' },
         { id: 'rare', label: 'ほぼ見ない' },
-        { id: 'unknown', label: '未定' },
+        { id: 'unknown', label: '未定', tags: ['unknown_info'], delta: { regretRisk: 65, opportunityCost: 60 } },
       ],
     },
     {
@@ -319,7 +320,7 @@ export const merch_v2_ja: QuestionSet = {
         { id: 'high', label: '高い' },
         { id: 'mid', label: '中' },
         { id: 'low', label: '低い' },
-        { id: 'unknown', label: '未定' },
+        { id: 'unknown', label: '未定', tags: ['unknown_info'], delta: { regretRisk: 65, opportunityCost: 60 } },
       ],
     },
     {
@@ -331,7 +332,7 @@ export const merch_v2_ja: QuestionSet = {
         { id: 'confident', label: '自信ある' },
         { id: 'iffy', label: '微妙' },
         { id: 'anxious', label: '不安' },
-        { id: 'unknown', label: '未定' },
+        { id: 'unknown', label: '未定', tags: ['unknown_info'], delta: { regretRisk: 65, opportunityCost: 60 } },
       ],
     },
     {
@@ -343,7 +344,7 @@ export const merch_v2_ja: QuestionSet = {
         { id: 'live_only', label: 'ライブ/現場中心' },
         { id: 'daily', label: '普段使い中心' },
         { id: 'both', label: '両方で使いたい' },
-        { id: 'unknown', label: 'まだわからない' },
+        { id: 'unknown', label: 'まだわからない', tags: ['unknown_info'], delta: { regretRisk: 65, opportunityCost: 60 } },
       ],
     },
     {
@@ -355,7 +356,7 @@ export const merch_v2_ja: QuestionSet = {
         { id: 'yes', label: 'ある' },
         { id: 'rough', label: 'だいたいある' },
         { id: 'none', label: 'ない' },
-        { id: 'unknown', label: '未定' },
+        { id: 'unknown', label: '未定', tags: ['unknown_info'], delta: { regretRisk: 65, opportunityCost: 60 } },
       ],
     },
     {
@@ -367,7 +368,7 @@ export const merch_v2_ja: QuestionSet = {
         { id: 'dont_mind', label: '気にしない' },
         { id: 'some', label: '少し気にする' },
         { id: 'high', label: '強く気にする' },
-        { id: 'unknown', label: '未定' },
+        { id: 'unknown', label: '未定', tags: ['unknown_info'], delta: { regretRisk: 65, opportunityCost: 60 } },
       ],
     },
     {
@@ -379,7 +380,7 @@ export const merch_v2_ja: QuestionSet = {
         { id: 'checked', label: '確認済み' },
         { id: 'maybe', label: 'たぶん大丈夫' },
         { id: 'unchecked', label: '未確認' },
-        { id: 'unknown', label: 'わからない' },
+        { id: 'unknown', label: 'わからない', tags: ['unknown_info'], delta: { regretRisk: 65, opportunityCost: 60 } },
       ],
     },
     {
@@ -391,7 +392,7 @@ export const merch_v2_ja: QuestionSet = {
         { id: 'use', label: '使う' },
         { id: 'maybe', label: 'たぶん使う' },
         { id: 'not_use', label: '使わない' },
-        { id: 'unknown', label: '未定' },
+        { id: 'unknown', label: '未定', tags: ['unknown_info'], delta: { regretRisk: 65, opportunityCost: 60 } },
       ],
     },
     {
@@ -402,7 +403,7 @@ export const merch_v2_ja: QuestionSet = {
       options: [
         { id: 'concrete', label: '具体的にある' },
         { id: 'rough', label: 'だいたいある' },
-        { id: 'unknown', label: '未定' },
+        { id: 'unknown', label: '未定', tags: ['unknown_info'], delta: { regretRisk: 65, opportunityCost: 60 } },
       ],
     },
     {
@@ -414,7 +415,7 @@ export const merch_v2_ja: QuestionSet = {
         { id: 'event', label: '現場で使う予定' },
         { id: 'display', label: '展示・鑑賞中心' },
         { id: 'both', label: '現場と展示の両方' },
-        { id: 'unknown', label: 'まだわからない' },
+        { id: 'unknown', label: 'まだわからない', tags: ['unknown_info'], delta: { regretRisk: 65, opportunityCost: 60 } },
       ],
     },
     {
@@ -426,7 +427,7 @@ export const merch_v2_ja: QuestionSet = {
         { id: 'used_to_it', label: '慣れている（得意寄り）' },
         { id: 'neutral', label: '普通（可もなく不可もなく）' },
         { id: 'not_good', label: '苦手（ストレスになりやすい）' },
-        { id: 'unknown', label: 'まだわからない' },
+        { id: 'unknown', label: 'まだわからない', tags: ['unknown_info'], delta: { regretRisk: 65, opportunityCost: 60 } },
       ],
     },
     {
@@ -438,7 +439,7 @@ export const merch_v2_ja: QuestionSet = {
         { id: 'complete', label: 'できるだけ揃えたい' },
         { id: 'oshi_only', label: '本命だけで十分' },
         { id: 'mixed', label: '状況次第で変える' },
-        { id: 'unknown', label: 'まだわからない' },
+        { id: 'unknown', label: 'まだわからない', tags: ['unknown_info'], delta: { regretRisk: 65, opportunityCost: 60 } },
       ],
     },
     {
@@ -450,7 +451,7 @@ export const merch_v2_ja: QuestionSet = {
         { id: 'yes', label: '交換する予定' },
         { id: 'maybe', label: '条件次第で交換する' },
         { id: 'no', label: '交換しない' },
-        { id: 'unknown', label: 'まだわからない' },
+        { id: 'unknown', label: 'まだわからない', tags: ['unknown_info'], delta: { regretRisk: 65, opportunityCost: 60 } },
       ],
     },
     {
@@ -483,7 +484,7 @@ export const merch_v2_ja: QuestionSet = {
       options: [
         { id: 'yes', label: 'はい（確認済み）' },
         { id: 'no', label: 'いいえ（未確認）' },
-        { id: 'unknown', label: 'わからない' },
+        { id: 'unknown', label: 'わからない', tags: ['unknown_info'], delta: { regretRisk: 65, opportunityCost: 60 } },
       ],
     },
     {
@@ -494,7 +495,7 @@ export const merch_v2_ja: QuestionSet = {
       options: [
         { id: 'checked', label: '確認した' },
         { id: 'heard', label: '噂レベルで知っている' },
-        { id: 'unknown', label: 'わからない' },
+        { id: 'unknown', label: 'わからない', tags: ['unknown_info'], delta: { regretRisk: 65, opportunityCost: 60 } },
       ],
     },
     {
@@ -516,7 +517,7 @@ export const merch_v2_ja: QuestionSet = {
       options: [
         { id: 'worth', label: '納得できる' },
         { id: 'small', label: '差額が小さい' },
-        { id: 'unknown', label: '比較できていない' },
+        { id: 'unknown', label: '比較できていない', tags: ['unknown_info'], delta: { regretRisk: 65, opportunityCost: 60 } },
       ],
     },
     {
@@ -528,7 +529,7 @@ export const merch_v2_ja: QuestionSet = {
         { id: 'checked_ok', label: '確認済みで許容できる' },
         { id: 'partial', label: '一部だけ確認した' },
         { id: 'not_ok', label: '不安がある/未確認' },
-        { id: 'unknown', label: 'わからない' },
+        { id: 'unknown', label: 'わからない', tags: ['unknown_info'], delta: { regretRisk: 65, opportunityCost: 60 } },
       ],
     },
     {
@@ -540,7 +541,7 @@ export const merch_v2_ja: QuestionSet = {
         { id: 'must', label: '必須（証明がないと買わない）' },
         { id: 'prefer', label: 'できれば欲しい' },
         { id: 'not_needed', label: 'あまり重視しない' },
-        { id: 'unknown', label: 'まだわからない' },
+        { id: 'unknown', label: 'まだわからない', tags: ['unknown_info'], delta: { regretRisk: 65, opportunityCost: 60 } },
       ],
     },
   ],

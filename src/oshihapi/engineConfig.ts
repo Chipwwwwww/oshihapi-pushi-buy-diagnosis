@@ -12,12 +12,20 @@ export const engineConfig: EngineConfig = {
     impulse: -0.10,
     opportunityCost: -0.12,
   },
+  decisionWeightProfiles: {
+    used: {
+      regretRisk: -0.20,
+    },
+    blind_draw: {
+      rarity: +0.20,
+    },
+  },
   thresholds: {
-    buy: +0.20,
-    skip: -0.20,
+    buy: +0.25,
+    skip: -0.25,
   },
   // Each important "unknown" increases THINK tendency
-  unknownPenaltyPerTag: 6,
+  unknownPenaltyPerTag: 10,
   blindDrawCap: { min: 1, max: 10 },
 };
 
