@@ -49,7 +49,7 @@ function getMerchQuestionIds(
   const goodsClassAddonIds = enableGoodsClass ? [...(ADDON_BY_GOODS_CLASS[goodsClass] ?? [])] : [];
   return [...baseIds, ...itemKindAddonIds, ...goodsClassAddonIds].filter((id) => {
     if (id !== "q_storage_fit") return true;
-    if (goodsClass === "itabag_badge") return false;
+    if (goodsClass === "itabag_badge" || goodsClass === "display_large") return false;
     return shouldAskStorage(itemKind, goodsSubtype);
   });
 }

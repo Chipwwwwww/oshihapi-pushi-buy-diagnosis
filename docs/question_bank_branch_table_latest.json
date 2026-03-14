@@ -54,114 +54,114 @@
       "medium": {
         "goods#gc=N/A": [
           "q_storage_fit",
+          "q_storage_space",
           "q_desire",
-          "q_budget_pain",
+          "q_goal",
           "q_urgency",
           "q_rarity_restock",
-          "q_goal",
+          "q_budget_pain",
+          "q_price_feel",
           "q_motives_multi",
           "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short",
-          "q_price_feel",
-          "q_storage_space",
           "q_alternative_plan"
         ],
         "blind_draw#gc=N/A": [
           "q_storage_fit",
+          "q_storage_space",
           "q_desire",
-          "q_budget_pain",
+          "q_goal",
           "q_urgency",
           "q_rarity_restock",
-          "q_goal",
+          "q_budget_pain",
+          "q_price_feel",
           "q_motives_multi",
           "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short",
-          "q_price_feel",
-          "q_storage_space",
           "q_alternative_plan"
         ],
         "ticket#gc=N/A": [
+          "q_storage_space",
           "q_desire",
-          "q_budget_pain",
+          "q_goal",
           "q_urgency",
           "q_rarity_restock",
-          "q_goal",
+          "q_budget_pain",
+          "q_price_feel",
           "q_motives_multi",
           "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short",
-          "q_price_feel",
-          "q_storage_space",
           "q_alternative_plan"
         ],
         "preorder#gc=N/A": [
           "q_storage_fit",
+          "q_storage_space",
           "q_desire",
-          "q_budget_pain",
+          "q_goal",
           "q_urgency",
           "q_rarity_restock",
-          "q_goal",
+          "q_budget_pain",
+          "q_price_feel",
           "q_motives_multi",
           "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short",
-          "q_price_feel",
-          "q_storage_space",
           "q_alternative_plan"
         ],
         "used#gc=N/A": [
           "q_storage_fit",
+          "q_storage_space",
           "q_desire",
-          "q_budget_pain",
+          "q_goal",
           "q_urgency",
           "q_rarity_restock",
-          "q_goal",
+          "q_budget_pain",
+          "q_price_feel",
           "q_motives_multi",
           "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short",
-          "q_price_feel",
-          "q_storage_space",
           "q_alternative_plan"
         ]
       },
       "long": {
         "goods#gc=small_collection": [
           "q_storage_fit",
+          "q_storage_space",
           "q_desire",
-          "q_budget_pain",
+          "q_goal",
           "q_urgency",
           "q_rarity_restock",
-          "q_goal",
+          "q_budget_pain",
+          "q_price_feel",
           "q_motives_multi",
           "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short",
-          "q_price_feel",
-          "q_storage_space",
           "q_alternative_plan",
           "q_addon_common_info",
           "q_addon_common_priority",
           "q_addon_goods_compare",
           "q_addon_goods_portability",
           "q_addon_goods_collection_goal",
-          "q_addon_goods_duplicate_tolerance"
+          "q_addon_goods_trade_intent"
         ],
         "goods#gc=paper": [
           "q_storage_fit",
+          "q_storage_space",
           "q_desire",
-          "q_budget_pain",
+          "q_goal",
           "q_urgency",
           "q_rarity_restock",
-          "q_goal",
+          "q_budget_pain",
+          "q_price_feel",
           "q_motives_multi",
           "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short",
-          "q_price_feel",
-          "q_storage_space",
           "q_alternative_plan",
           "q_addon_common_info",
           "q_addon_common_priority",
@@ -172,38 +172,38 @@
         ],
         "goods#gc=wearable": [
           "q_storage_fit",
+          "q_storage_space",
           "q_desire",
-          "q_budget_pain",
+          "q_goal",
           "q_urgency",
           "q_rarity_restock",
-          "q_goal",
+          "q_budget_pain",
+          "q_price_feel",
           "q_motives_multi",
           "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short",
-          "q_price_feel",
-          "q_storage_space",
           "q_alternative_plan",
           "q_addon_common_info",
           "q_addon_common_priority",
           "q_addon_goods_compare",
           "q_addon_goods_portability",
           "q_addon_goods_wear_freq",
-          "q_addon_goods_wear_fit"
+          "q_addon_goods_wear_fit",
+          "q_addon_goods_wear_scene"
         ],
         "goods#gc=display_large": [
-          "q_storage_fit",
+          "q_storage_space",
           "q_desire",
-          "q_budget_pain",
+          "q_goal",
           "q_urgency",
           "q_rarity_restock",
-          "q_goal",
+          "q_budget_pain",
+          "q_price_feel",
           "q_motives_multi",
           "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short",
-          "q_price_feel",
-          "q_storage_space",
           "q_alternative_plan",
           "q_addon_common_info",
           "q_addon_common_priority",
@@ -214,17 +214,17 @@
         ],
         "goods#gc=tech": [
           "q_storage_fit",
+          "q_storage_space",
           "q_desire",
-          "q_budget_pain",
+          "q_goal",
           "q_urgency",
           "q_rarity_restock",
-          "q_goal",
+          "q_budget_pain",
+          "q_price_feel",
           "q_motives_multi",
           "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short",
-          "q_price_feel",
-          "q_storage_space",
           "q_alternative_plan",
           "q_addon_common_info",
           "q_addon_common_priority",
@@ -234,56 +234,55 @@
           "q_addon_goods_tech_after_use"
         ],
         "goods#gc=itabag_badge": [
+          "q_storage_space",
           "q_desire",
-          "q_budget_pain",
+          "q_goal",
           "q_urgency",
           "q_rarity_restock",
-          "q_goal",
+          "q_budget_pain",
+          "q_price_feel",
           "q_motives_multi",
           "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short",
-          "q_price_feel",
-          "q_storage_space",
           "q_alternative_plan",
           "q_addon_common_info",
           "q_addon_common_priority",
           "q_addon_goods_compare",
           "q_addon_goods_portability",
-          "q_storage_space",
-          "q_addon_goods_itabag_target"
+          "q_addon_goods_itabag_target",
+          "q_addon_goods_itabag_usage"
         ],
         "blind_draw#gc=N/A": [
           "q_storage_fit",
+          "q_storage_space",
           "q_desire",
-          "q_budget_pain",
+          "q_goal",
           "q_urgency",
           "q_rarity_restock",
-          "q_goal",
+          "q_budget_pain",
+          "q_price_feel",
           "q_motives_multi",
           "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short",
-          "q_price_feel",
-          "q_storage_space",
           "q_alternative_plan",
-          "q_addon_common_info",
-          "q_addon_common_priority",
           "q_addon_blind_draw_cap",
-          "q_addon_blind_draw_exit"
+          "q_addon_blind_draw_exit",
+          "q_addon_blind_draw_trade_intent"
         ],
         "ticket#gc=N/A": [
+          "q_storage_space",
           "q_desire",
-          "q_budget_pain",
+          "q_goal",
           "q_urgency",
           "q_rarity_restock",
-          "q_goal",
+          "q_budget_pain",
+          "q_price_feel",
           "q_motives_multi",
           "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short",
-          "q_price_feel",
-          "q_storage_space",
           "q_alternative_plan",
           "q_addon_common_info",
           "q_addon_common_priority",
@@ -292,253 +291,259 @@
         ],
         "preorder#gc=small_collection": [
           "q_storage_fit",
+          "q_storage_space",
           "q_desire",
-          "q_budget_pain",
+          "q_goal",
           "q_urgency",
           "q_rarity_restock",
-          "q_goal",
+          "q_budget_pain",
+          "q_price_feel",
           "q_motives_multi",
           "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short",
-          "q_price_feel",
-          "q_storage_space",
           "q_alternative_plan",
           "q_addon_common_info",
           "q_addon_common_priority",
           "q_addon_preorder_timeline",
-          "q_addon_preorder_restock",
           "q_addon_goods_collection_goal",
-          "q_addon_goods_duplicate_tolerance"
+          "q_addon_goods_trade_intent"
         ],
         "preorder#gc=paper": [
           "q_storage_fit",
+          "q_storage_space",
           "q_desire",
-          "q_budget_pain",
+          "q_goal",
           "q_urgency",
           "q_rarity_restock",
-          "q_goal",
+          "q_budget_pain",
+          "q_price_feel",
           "q_motives_multi",
           "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short",
-          "q_price_feel",
-          "q_storage_space",
           "q_alternative_plan",
           "q_addon_common_info",
           "q_addon_common_priority",
           "q_addon_preorder_timeline",
-          "q_addon_preorder_restock",
           "q_addon_goods_paper_care",
           "q_addon_goods_paper_view_freq"
         ],
         "preorder#gc=wearable": [
           "q_storage_fit",
+          "q_storage_space",
           "q_desire",
-          "q_budget_pain",
+          "q_goal",
           "q_urgency",
           "q_rarity_restock",
-          "q_goal",
+          "q_budget_pain",
+          "q_price_feel",
           "q_motives_multi",
           "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short",
-          "q_price_feel",
-          "q_storage_space",
           "q_alternative_plan",
           "q_addon_common_info",
           "q_addon_common_priority",
           "q_addon_preorder_timeline",
-          "q_addon_preorder_restock",
           "q_addon_goods_wear_freq",
-          "q_addon_goods_wear_fit"
+          "q_addon_goods_wear_fit",
+          "q_addon_goods_wear_scene"
         ],
         "preorder#gc=display_large": [
-          "q_storage_fit",
+          "q_storage_space",
           "q_desire",
-          "q_budget_pain",
+          "q_goal",
           "q_urgency",
           "q_rarity_restock",
-          "q_goal",
+          "q_budget_pain",
+          "q_price_feel",
           "q_motives_multi",
           "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short",
-          "q_price_feel",
-          "q_storage_space",
           "q_alternative_plan",
           "q_addon_common_info",
           "q_addon_common_priority",
           "q_addon_preorder_timeline",
-          "q_addon_preorder_restock",
           "q_addon_goods_display_space_plan",
           "q_addon_goods_display_move_risk"
         ],
         "preorder#gc=tech": [
           "q_storage_fit",
+          "q_storage_space",
           "q_desire",
-          "q_budget_pain",
+          "q_goal",
           "q_urgency",
           "q_rarity_restock",
-          "q_goal",
+          "q_budget_pain",
+          "q_price_feel",
           "q_motives_multi",
           "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short",
-          "q_price_feel",
-          "q_storage_space",
           "q_alternative_plan",
           "q_addon_common_info",
           "q_addon_common_priority",
           "q_addon_preorder_timeline",
-          "q_addon_preorder_restock",
           "q_addon_goods_tech_compat",
           "q_addon_goods_tech_after_use"
         ],
         "preorder#gc=itabag_badge": [
+          "q_storage_space",
           "q_desire",
-          "q_budget_pain",
+          "q_goal",
           "q_urgency",
           "q_rarity_restock",
-          "q_goal",
+          "q_budget_pain",
+          "q_price_feel",
           "q_motives_multi",
           "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short",
-          "q_price_feel",
-          "q_storage_space",
           "q_alternative_plan",
           "q_addon_common_info",
           "q_addon_common_priority",
           "q_addon_preorder_timeline",
-          "q_addon_preorder_restock",
-          "q_storage_space",
-          "q_addon_goods_itabag_target"
+          "q_addon_goods_itabag_target",
+          "q_addon_goods_itabag_usage"
         ],
         "used#gc=small_collection": [
           "q_storage_fit",
+          "q_storage_space",
           "q_desire",
-          "q_budget_pain",
+          "q_goal",
           "q_urgency",
           "q_rarity_restock",
-          "q_goal",
+          "q_budget_pain",
+          "q_price_feel",
           "q_motives_multi",
           "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short",
-          "q_price_feel",
-          "q_storage_space",
           "q_alternative_plan",
           "q_addon_common_info",
           "q_addon_common_priority",
           "q_addon_used_condition",
           "q_addon_used_price_gap",
+          "q_addon_used_defect_return",
+          "q_addon_used_authenticity",
           "q_addon_goods_collection_goal",
-          "q_addon_goods_duplicate_tolerance"
+          "q_addon_goods_trade_intent"
         ],
         "used#gc=paper": [
           "q_storage_fit",
+          "q_storage_space",
           "q_desire",
-          "q_budget_pain",
+          "q_goal",
           "q_urgency",
           "q_rarity_restock",
-          "q_goal",
+          "q_budget_pain",
+          "q_price_feel",
           "q_motives_multi",
           "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short",
-          "q_price_feel",
-          "q_storage_space",
           "q_alternative_plan",
           "q_addon_common_info",
           "q_addon_common_priority",
           "q_addon_used_condition",
           "q_addon_used_price_gap",
+          "q_addon_used_defect_return",
+          "q_addon_used_authenticity",
           "q_addon_goods_paper_care",
           "q_addon_goods_paper_view_freq"
         ],
         "used#gc=wearable": [
           "q_storage_fit",
+          "q_storage_space",
           "q_desire",
-          "q_budget_pain",
+          "q_goal",
           "q_urgency",
           "q_rarity_restock",
-          "q_goal",
+          "q_budget_pain",
+          "q_price_feel",
           "q_motives_multi",
           "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short",
-          "q_price_feel",
-          "q_storage_space",
           "q_alternative_plan",
           "q_addon_common_info",
           "q_addon_common_priority",
           "q_addon_used_condition",
           "q_addon_used_price_gap",
+          "q_addon_used_defect_return",
+          "q_addon_used_authenticity",
           "q_addon_goods_wear_freq",
-          "q_addon_goods_wear_fit"
+          "q_addon_goods_wear_fit",
+          "q_addon_goods_wear_scene"
         ],
         "used#gc=display_large": [
-          "q_storage_fit",
+          "q_storage_space",
           "q_desire",
-          "q_budget_pain",
+          "q_goal",
           "q_urgency",
           "q_rarity_restock",
-          "q_goal",
+          "q_budget_pain",
+          "q_price_feel",
           "q_motives_multi",
           "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short",
-          "q_price_feel",
-          "q_storage_space",
           "q_alternative_plan",
           "q_addon_common_info",
           "q_addon_common_priority",
           "q_addon_used_condition",
           "q_addon_used_price_gap",
+          "q_addon_used_defect_return",
+          "q_addon_used_authenticity",
           "q_addon_goods_display_space_plan",
           "q_addon_goods_display_move_risk"
         ],
         "used#gc=tech": [
           "q_storage_fit",
+          "q_storage_space",
           "q_desire",
-          "q_budget_pain",
+          "q_goal",
           "q_urgency",
           "q_rarity_restock",
-          "q_goal",
+          "q_budget_pain",
+          "q_price_feel",
           "q_motives_multi",
           "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short",
-          "q_price_feel",
-          "q_storage_space",
           "q_alternative_plan",
           "q_addon_common_info",
           "q_addon_common_priority",
           "q_addon_used_condition",
           "q_addon_used_price_gap",
+          "q_addon_used_defect_return",
+          "q_addon_used_authenticity",
           "q_addon_goods_tech_compat",
           "q_addon_goods_tech_after_use"
         ],
         "used#gc=itabag_badge": [
+          "q_storage_space",
           "q_desire",
-          "q_budget_pain",
+          "q_goal",
           "q_urgency",
           "q_rarity_restock",
-          "q_goal",
+          "q_budget_pain",
+          "q_price_feel",
           "q_motives_multi",
           "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short",
-          "q_price_feel",
-          "q_storage_space",
           "q_alternative_plan",
           "q_addon_common_info",
           "q_addon_common_priority",
           "q_addon_used_condition",
           "q_addon_used_price_gap",
-          "q_storage_space",
-          "q_addon_goods_itabag_target"
+          "q_addon_used_defect_return",
+          "q_addon_used_authenticity",
+          "q_addon_goods_itabag_target",
+          "q_addon_goods_itabag_usage"
         ]
       }
     },
@@ -2240,18 +2245,18 @@
       "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
-        "standard": "くじ・ブラインドの回数上限は決めた？",
-        "kawaii": "回す回数の上限きめた？",
-        "oshi": "回数上限（天井管理）は決めた？"
+        "standard": "盲抽（ブラインド）にどれくらい慣れてる？",
+        "kawaii": "盲抽にどれくらい慣れてる？",
+        "oshi": "盲抽への慣れは？"
       },
       "scaleLabels": null,
       "options": [
         {
-          "optionId": "fixed",
+          "optionId": "neutral",
           "labels": {
-            "standard": "決めた",
-            "kawaii": "決めた",
-            "oshi": "決めた"
+            "standard": "普通（可もなく不可もなく）",
+            "kawaii": "普通（可もなく不可もなく）",
+            "oshi": "普通（可もなく不可もなく）"
           },
           "sameAsStandard": true,
           "mapTo": null,
@@ -2260,11 +2265,11 @@
           "buyStopDelta": null
         },
         {
-          "optionId": "none",
+          "optionId": "not_good",
           "labels": {
-            "standard": "まだ決めていない",
-            "kawaii": "まだ決めていない",
-            "oshi": "まだ決めていない"
+            "standard": "苦手（ストレスになりやすい）",
+            "kawaii": "苦手（ストレスになりやすい）",
+            "oshi": "苦手（ストレスになりやすい）"
           },
           "sameAsStandard": true,
           "mapTo": null,
@@ -2273,11 +2278,24 @@
           "buyStopDelta": null
         },
         {
-          "optionId": "rough",
+          "optionId": "unknown",
           "labels": {
-            "standard": "だいたい決めた",
-            "kawaii": "だいたい決めた",
-            "oshi": "だいたい決めた"
+            "standard": "まだわからない",
+            "kawaii": "まだわからない",
+            "oshi": "まだわからない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "used_to_it",
+          "labels": {
+            "standard": "慣れている（得意寄り）",
+            "kawaii": "慣れている（得意寄り）",
+            "oshi": "慣れている（得意寄り）"
           },
           "sameAsStandard": true,
           "mapTo": null,
@@ -2311,18 +2329,18 @@
       "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
-        "standard": "撤退ライン（やめどき）はある？",
+        "standard": "回収方針は？（揃えたい/本命だけ）",
         "kawaii": "やめどきライン、ある？",
-        "oshi": "撤退ラインは設定済み？"
+        "oshi": "コンプ目的か本命狙いか？"
       },
       "scaleLabels": null,
       "options": [
         {
-          "optionId": "clear",
+          "optionId": "complete",
           "labels": {
-            "standard": "明確にある",
-            "kawaii": "明確にある",
-            "oshi": "明確にある"
+            "standard": "できるだけ揃えたい",
+            "kawaii": "できるだけ揃えたい",
+            "oshi": "できるだけ揃えたい"
           },
           "sameAsStandard": true,
           "mapTo": null,
@@ -2331,11 +2349,11 @@
           "buyStopDelta": null
         },
         {
-          "optionId": "none",
+          "optionId": "mixed",
           "labels": {
-            "standard": "特にない",
-            "kawaii": "特にない",
-            "oshi": "特にない"
+            "standard": "状況次第で変える",
+            "kawaii": "状況次第で変える",
+            "oshi": "状況次第で変える"
           },
           "sameAsStandard": true,
           "mapTo": null,
@@ -2344,11 +2362,108 @@
           "buyStopDelta": null
         },
         {
-          "optionId": "some",
+          "optionId": "oshi_only",
           "labels": {
-            "standard": "なんとなくある",
-            "kawaii": "なんとなくある",
-            "oshi": "なんとなくある"
+            "standard": "本命だけで十分",
+            "kawaii": "本命だけで十分",
+            "oshi": "本命だけで十分"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "まだわからない",
+            "kawaii": "まだわからない",
+            "oshi": "まだわからない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_blind_draw_trade_intent",
+      "questionType": "single",
+      "scoringRelevance": "none",
+      "impactCategory": "survey_only",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/blind_draw#gc=N/A"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "余りや被りを交換する？",
+        "kawaii": "余りを交換する予定ある？",
+        "oshi": "余剰分の交換意向は？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "maybe",
+          "labels": {
+            "standard": "条件次第で交換する",
+            "kawaii": "条件次第で交換する",
+            "oshi": "条件次第で交換する"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "no",
+          "labels": {
+            "standard": "交換しない",
+            "kawaii": "交換しない",
+            "oshi": "交換しない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "まだわからない",
+            "kawaii": "まだわからない",
+            "oshi": "まだわからない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "yes",
+          "labels": {
+            "standard": "交換する予定",
+            "kawaii": "交換する予定",
+            "oshi": "交換する予定"
           },
           "sameAsStandard": true,
           "mapTo": null,
@@ -2377,7 +2492,6 @@
       "tags": [],
       "unknownTagHints": [],
       "appearsInBranches": [
-        "merch/long/blind_draw#gc=N/A",
         "merch/long/goods#gc=display_large",
         "merch/long/goods#gc=itabag_badge",
         "merch/long/goods#gc=paper",
@@ -2467,7 +2581,6 @@
       "tags": [],
       "unknownTagHints": [],
       "appearsInBranches": [
-        "merch/long/blind_draw#gc=N/A",
         "merch/long/goods#gc=display_large",
         "merch/long/goods#gc=itabag_badge",
         "merch/long/goods#gc=paper",
@@ -2564,18 +2677,18 @@
       "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
-        "standard": "収集の目的は？",
+        "standard": "回収方針は？（コンプ/本命と被り許容）",
         "kawaii": "集める目的、どれが近い？",
         "oshi": "回収目的はどれに近い？"
       },
       "scaleLabels": null,
       "options": [
         {
-          "optionId": "complete_set",
+          "optionId": "complete_strict",
           "labels": {
-            "standard": "揃えたい",
-            "kawaii": "揃えたい",
-            "oshi": "揃えたい"
+            "standard": "コンプ寄り・被りはつらい",
+            "kawaii": "コンプ寄り・被りはつらい",
+            "oshi": "コンプ寄り・被りはつらい"
           },
           "sameAsStandard": true,
           "mapTo": null,
@@ -2584,11 +2697,11 @@
           "buyStopDelta": null
         },
         {
-          "optionId": "oshi_expression",
+          "optionId": "complete_tolerant",
           "labels": {
-            "standard": "推し表現したい",
-            "kawaii": "推し表現したい",
-            "oshi": "推し表現したい"
+            "standard": "コンプ寄り・被りも許容できる",
+            "kawaii": "コンプ寄り・被りも許容できる",
+            "oshi": "コンプ寄り・被りも許容できる"
           },
           "sameAsStandard": true,
           "mapTo": null,
@@ -2597,11 +2710,24 @@
           "buyStopDelta": null
         },
         {
-          "optionId": "single_enough",
+          "optionId": "oshi_strict",
           "labels": {
-            "standard": "1個で満足",
-            "kawaii": "1個で満足",
-            "oshi": "1個で満足"
+            "standard": "本命中心・被りは避けたい",
+            "kawaii": "本命中心・被りは避けたい",
+            "oshi": "本命中心・被りは避けたい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "oshi_tolerant",
+          "labels": {
+            "standard": "本命中心・被りは許容できる",
+            "kawaii": "本命中心・被りは許容できる",
+            "oshi": "本命中心・被りは許容できる"
           },
           "sameAsStandard": true,
           "mapTo": null,
@@ -2612,9 +2738,9 @@
         {
           "optionId": "unknown",
           "labels": {
-            "standard": "未定",
-            "kawaii": "未定",
-            "oshi": "未定"
+            "standard": "まだわからない",
+            "kawaii": "まだわからない",
+            "oshi": "まだわからない"
           },
           "sameAsStandard": true,
           "mapTo": null,
@@ -2726,9 +2852,9 @@
       "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
-        "standard": "搬送・破損リスクは？",
-        "kawaii": "運ぶときの心配は？",
-        "oshi": "搬送・破損リスクは？"
+        "standard": "配送・搬送や掃除/手入れの負担は？",
+        "kawaii": "配送・搬送と掃除負担は？",
+        "oshi": "配送・搬送と掃除負担は？"
       },
       "scaleLabels": null,
       "options": [
@@ -2812,9 +2938,9 @@
       "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
-        "standard": "置き場計画はある？",
-        "kawaii": "置き場所プランある？",
-        "oshi": "展示スペース計画は？"
+        "standard": "保管場所と配送/搬入経路の見通しは？",
+        "kawaii": "保管と配送/搬入の見通しは？",
+        "oshi": "保管と配送/搬入の見通しは？"
       },
       "scaleLabels": null,
       "options": [
@@ -2874,92 +3000,6 @@
     },
     {
       "useCase": "merch",
-      "questionId": "q_addon_goods_duplicate_tolerance",
-      "questionType": "single",
-      "scoringRelevance": "none",
-      "impactCategory": "survey_only",
-      "behaviorRelevance": {
-        "affectsScore": false,
-        "affectsImpulseFlag": false,
-        "affectsFutureUseFlag": false,
-        "affectsTrendOrVagueFlag": false,
-        "affectsMerchMethod": false,
-        "affectsStorageGate": false
-      },
-      "relevanceSummary": "none",
-      "mapTo": null,
-      "tags": [],
-      "unknownTagHints": [],
-      "appearsInBranches": [
-        "merch/long/goods#gc=small_collection",
-        "merch/long/preorder#gc=small_collection",
-        "merch/long/used#gc=small_collection"
-      ],
-      "isOrphan": false,
-      "sameAsStandard": false,
-      "styles": {
-        "standard": "被り許容は？",
-        "kawaii": "同じのが出ても平気？",
-        "oshi": "被り耐性は？"
-      },
-      "scaleLabels": null,
-      "options": [
-        {
-          "optionId": "no",
-          "labels": {
-            "standard": "絶対嫌",
-            "kawaii": "絶対嫌",
-            "oshi": "絶対嫌"
-          },
-          "sameAsStandard": true,
-          "mapTo": null,
-          "delta": null,
-          "tags": [],
-          "buyStopDelta": null
-        },
-        {
-          "optionId": "ok",
-          "labels": {
-            "standard": "OK",
-            "kawaii": "OK",
-            "oshi": "OK"
-          },
-          "sameAsStandard": true,
-          "mapTo": null,
-          "delta": null,
-          "tags": [],
-          "buyStopDelta": null
-        },
-        {
-          "optionId": "slightly_dislike",
-          "labels": {
-            "standard": "少し嫌",
-            "kawaii": "少し嫌",
-            "oshi": "少し嫌"
-          },
-          "sameAsStandard": true,
-          "mapTo": null,
-          "delta": null,
-          "tags": [],
-          "buyStopDelta": null
-        },
-        {
-          "optionId": "unknown",
-          "labels": {
-            "standard": "未定",
-            "kawaii": "未定",
-            "oshi": "未定"
-          },
-          "sameAsStandard": true,
-          "mapTo": null,
-          "delta": null,
-          "tags": [],
-          "buyStopDelta": null
-        }
-      ]
-    },
-    {
-      "useCase": "merch",
       "questionId": "q_addon_goods_itabag_target",
       "questionType": "single",
       "scoringRelevance": "none",
@@ -2984,7 +3024,7 @@
       "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
-        "standard": "目標個数/完成イメージは？",
+        "standard": "理想の完成イメージは？（フルカバー/推しだけ）",
         "kawaii": "完成イメージはどのくらい決まってる？",
         "oshi": "完成イメージの具体度は？"
       },
@@ -3022,6 +3062,92 @@
             "standard": "未定",
             "kawaii": "未定",
             "oshi": "未定"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_goods_itabag_usage",
+      "questionType": "single",
+      "scoringRelevance": "none",
+      "impactCategory": "survey_only",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/goods#gc=itabag_badge",
+        "merch/long/preorder#gc=itabag_badge",
+        "merch/long/used#gc=itabag_badge"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "痛バの使い方は？",
+        "kawaii": "現場で使う？展示メイン？",
+        "oshi": "現場運用？展示運用？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "both",
+          "labels": {
+            "standard": "現場と展示の両方",
+            "kawaii": "現場と展示の両方",
+            "oshi": "現場と展示の両方"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "display",
+          "labels": {
+            "standard": "展示・鑑賞中心",
+            "kawaii": "展示・鑑賞中心",
+            "oshi": "展示・鑑賞中心"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "event",
+          "labels": {
+            "standard": "現場で使う予定",
+            "kawaii": "現場で使う予定",
+            "oshi": "現場で使う予定"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "まだわからない",
+            "kawaii": "まだわからない",
+            "oshi": "まだわからない"
           },
           "sameAsStandard": true,
           "mapTo": null,
@@ -3232,9 +3358,9 @@
       "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
-        "standard": "持ち歩き・使いどころの想定は？",
-        "kawaii": "使う場面、イメージできる？",
-        "oshi": "運用シーンを想定できてる？"
+        "standard": "持ち帰り時の折れ・濡れ対策は？",
+        "kawaii": "持ち帰り対策（折れ・濡れ）できそう？",
+        "oshi": "持ち帰り対策（折れ・濡れ）の見通しは？"
       },
       "scaleLabels": null,
       "options": [
@@ -3391,7 +3517,7 @@
       "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
-        "standard": "互換確認はした？",
+        "standard": "対応機種・電源要件は確認した？",
         "kawaii": "対応チェックできてる？",
         "oshi": "互換確認の進捗は？"
       },
@@ -3453,6 +3579,92 @@
     },
     {
       "useCase": "merch",
+      "questionId": "q_addon_goods_trade_intent",
+      "questionType": "single",
+      "scoringRelevance": "none",
+      "impactCategory": "survey_only",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/goods#gc=small_collection",
+        "merch/long/preorder#gc=small_collection",
+        "merch/long/used#gc=small_collection"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "交換・トレードする意欲は？（任意）",
+        "kawaii": "交換する気持ち、ある？",
+        "oshi": "交換・トレード意欲は？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "active",
+          "labels": {
+            "standard": "積極的に交換したい",
+            "kawaii": "積極的に交換したい",
+            "oshi": "積極的に交換したい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "maybe",
+          "labels": {
+            "standard": "条件が合えば交換したい",
+            "kawaii": "条件が合えば交換したい",
+            "oshi": "条件が合えば交換したい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "no",
+          "labels": {
+            "standard": "交換はしない予定",
+            "kawaii": "交換はしない予定",
+            "oshi": "交換はしない予定"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "まだわからない",
+            "kawaii": "まだわからない",
+            "oshi": "まだわからない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
       "questionId": "q_addon_goods_wear_fit",
       "questionType": "single",
       "scoringRelevance": "none",
@@ -3477,7 +3689,7 @@
       "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
-        "standard": "サイズ・雰囲気の相性は？",
+        "standard": "サイズ感・着用フィットは？",
         "kawaii": "サイズや雰囲気、合いそう？",
         "oshi": "サイズ・雰囲気の適合度は？"
       },
@@ -3625,7 +3837,7 @@
     },
     {
       "useCase": "merch",
-      "questionId": "q_addon_preorder_restock",
+      "questionId": "q_addon_goods_wear_scene",
       "questionType": "single",
       "scoringRelevance": "none",
       "impactCategory": "survey_only",
@@ -3642,17 +3854,96 @@
       "tags": [],
       "unknownTagHints": [],
       "appearsInBranches": [
-        "merch/long/preorder#gc=display_large",
-        "merch/long/preorder#gc=itabag_badge",
-        "merch/long/preorder#gc=paper",
-        "merch/long/preorder#gc=small_collection",
-        "merch/long/preorder#gc=tech",
-        "merch/long/preorder#gc=wearable"
+        "merch/long/goods#gc=wearable",
+        "merch/long/preorder#gc=wearable",
+        "merch/long/used#gc=wearable"
       ],
       "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
-        "standard": "受注再開・再販の可能性を確認した？",
+        "standard": "主な使用シーンは？",
+        "kawaii": "使う場面はライブ？普段？",
+        "oshi": "使用文脈はライブ/日常のどちら？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "both",
+          "labels": {
+            "standard": "両方で使いたい",
+            "kawaii": "両方で使いたい",
+            "oshi": "両方で使いたい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "daily",
+          "labels": {
+            "standard": "普段使い中心",
+            "kawaii": "普段使い中心",
+            "oshi": "普段使い中心"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "live_only",
+          "labels": {
+            "standard": "ライブ/現場中心",
+            "kawaii": "ライブ/現場中心",
+            "oshi": "ライブ/現場中心"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "まだわからない",
+            "kawaii": "まだわからない",
+            "oshi": "まだわからない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_preorder_restock",
+      "questionType": "single",
+      "scoringRelevance": "none",
+      "impactCategory": "survey_only",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "appearsInBranches": [],
+      "isOrphan": true,
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "（旧）受注再開・再販の可能性を確認した？",
         "kawaii": "再販の可能性しらべた？",
         "oshi": "再販導線の確認状況は？"
       },
@@ -3728,18 +4019,18 @@
       "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
-        "standard": "発売・到着タイミングを許容できる？",
+        "standard": "発送予定・再販予定は確認済み？",
         "kawaii": "到着まで待てそう？",
-        "oshi": "到着待機を許容できる？"
+        "oshi": "発送予定・再販予定は確認済み？"
       },
       "scaleLabels": null,
       "options": [
         {
-          "optionId": "hard",
+          "optionId": "no",
           "labels": {
-            "standard": "待つのが厳しい",
-            "kawaii": "待つのが厳しい",
-            "oshi": "待つのが厳しい"
+            "standard": "いいえ（未確認）",
+            "kawaii": "いいえ（未確認）",
+            "oshi": "いいえ（未確認）"
           },
           "sameAsStandard": true,
           "mapTo": null,
@@ -3748,11 +4039,11 @@
           "buyStopDelta": null
         },
         {
-          "optionId": "maybe",
+          "optionId": "unknown",
           "labels": {
-            "standard": "状況次第",
-            "kawaii": "状況次第",
-            "oshi": "状況次第"
+            "standard": "わからない",
+            "kawaii": "わからない",
+            "oshi": "わからない"
           },
           "sameAsStandard": true,
           "mapTo": null,
@@ -3761,11 +4052,11 @@
           "buyStopDelta": null
         },
         {
-          "optionId": "ok",
+          "optionId": "yes",
           "labels": {
-            "standard": "待てる",
-            "kawaii": "待てる",
-            "oshi": "待てる"
+            "standard": "はい（確認済み）",
+            "kawaii": "はい（確認済み）",
+            "oshi": "はい（確認済み）"
           },
           "sameAsStandard": true,
           "mapTo": null,
@@ -3919,6 +4210,95 @@
     },
     {
       "useCase": "merch",
+      "questionId": "q_addon_used_authenticity",
+      "questionType": "single",
+      "scoringRelevance": "none",
+      "impactCategory": "survey_only",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/used#gc=display_large",
+        "merch/long/used#gc=itabag_badge",
+        "merch/long/used#gc=paper",
+        "merch/long/used#gc=small_collection",
+        "merch/long/used#gc=tech",
+        "merch/long/used#gc=wearable"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "真贋証明（正規品の根拠）は重要？",
+        "kawaii": "正規品の証明ってどのくらい重要？",
+        "oshi": "真贋証明の重要度は？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "must",
+          "labels": {
+            "standard": "必須（証明がないと買わない）",
+            "kawaii": "必須（証明がないと買わない）",
+            "oshi": "必須（証明がないと買わない）"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "not_needed",
+          "labels": {
+            "standard": "あまり重視しない",
+            "kawaii": "あまり重視しない",
+            "oshi": "あまり重視しない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "prefer",
+          "labels": {
+            "standard": "できれば欲しい",
+            "kawaii": "できれば欲しい",
+            "oshi": "できれば欲しい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "まだわからない",
+            "kawaii": "まだわからない",
+            "oshi": "まだわからない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
       "questionId": "q_addon_used_condition",
       "questionType": "single",
       "scoringRelevance": "none",
@@ -3984,6 +4364,95 @@
             "standard": "許容できる",
             "kawaii": "許容できる",
             "oshi": "許容できる"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_used_defect_return",
+      "questionType": "single",
+      "scoringRelevance": "none",
+      "impactCategory": "survey_only",
+      "behaviorRelevance": {
+        "affectsScore": false,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "none",
+      "mapTo": null,
+      "tags": [],
+      "unknownTagHints": [],
+      "appearsInBranches": [
+        "merch/long/used#gc=display_large",
+        "merch/long/used#gc=itabag_badge",
+        "merch/long/used#gc=paper",
+        "merch/long/used#gc=small_collection",
+        "merch/long/used#gc=tech",
+        "merch/long/used#gc=wearable"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "キズ/欠品の許容と返品条件は確認した？",
+        "kawaii": "キズ許容と返品条件、確認できてる？",
+        "oshi": "瑕疵許容と返品規約の確認状況は？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "checked_ok",
+          "labels": {
+            "standard": "確認済みで許容できる",
+            "kawaii": "確認済みで許容できる",
+            "oshi": "確認済みで許容できる"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "not_ok",
+          "labels": {
+            "standard": "不安がある/未確認",
+            "kawaii": "不安がある/未確認",
+            "oshi": "不安がある/未確認"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "partial",
+          "labels": {
+            "standard": "一部だけ確認した",
+            "kawaii": "一部だけ確認した",
+            "oshi": "一部だけ確認した"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "わからない",
+            "kawaii": "わからない",
+            "oshi": "わからない"
           },
           "sameAsStandard": true,
           "mapTo": null,
@@ -5423,17 +5892,14 @@
       "unknownTagHints": [],
       "appearsInBranches": [
         "merch/long/blind_draw#gc=N/A",
-        "merch/long/goods#gc=display_large",
         "merch/long/goods#gc=paper",
         "merch/long/goods#gc=small_collection",
         "merch/long/goods#gc=tech",
         "merch/long/goods#gc=wearable",
-        "merch/long/preorder#gc=display_large",
         "merch/long/preorder#gc=paper",
         "merch/long/preorder#gc=small_collection",
         "merch/long/preorder#gc=tech",
         "merch/long/preorder#gc=wearable",
-        "merch/long/used#gc=display_large",
         "merch/long/used#gc=paper",
         "merch/long/used#gc=small_collection",
         "merch/long/used#gc=tech",
@@ -5450,9 +5916,9 @@
       "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
-        "standard": "置き場所、決まってる？",
-        "kawaii": "おうちに置くとこ、ある？",
-        "oshi": "置き場ある？（棚/ケース確保済み？）"
+        "standard": "保管プラン（ファイル/スキャン/置き場所）は決まってる？",
+        "kawaii": "保管プランある？（ファイル/スキャン/置き場所）",
+        "oshi": "保管プランある？（ファイル/スキャン/置き場所）"
       },
       "scaleLabels": null,
       "options": [

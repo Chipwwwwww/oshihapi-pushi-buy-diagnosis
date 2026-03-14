@@ -33,7 +33,7 @@ export const merch_v2_ja: QuestionSet = {
     {
       id: 'q_storage_fit',
       type: 'single',
-      title: '置き場所、決まってる？',
+      title: '保管プラン（ファイル/スキャン/置き場所）は決まってる？',
       required: true,
       options: [
         { id: 'CONFIRMED', label: 'ある（もう決まってる）' },
@@ -253,7 +253,7 @@ export const merch_v2_ja: QuestionSet = {
     {
       id: 'q_addon_goods_portability',
       type: 'single',
-      title: '持ち歩き・使いどころの想定は？',
+      title: '持ち帰り時の折れ・濡れ対策は？',
       required: true,
       options: [
         { id: 'often', label: 'よく使う想定' },
@@ -264,25 +264,26 @@ export const merch_v2_ja: QuestionSet = {
     {
       id: 'q_addon_goods_collection_goal',
       type: 'single',
-      title: '収集の目的は？',
+      title: '回収方針は？（コンプ/本命と被り許容）',
       required: true,
       options: [
-        { id: 'oshi_expression', label: '推し表現したい' },
-        { id: 'complete_set', label: '揃えたい' },
-        { id: 'single_enough', label: '1個で満足' },
-        { id: 'unknown', label: '未定' },
+        { id: 'complete_tolerant', label: 'コンプ寄り・被りも許容できる' },
+        { id: 'complete_strict', label: 'コンプ寄り・被りはつらい' },
+        { id: 'oshi_tolerant', label: '本命中心・被りは許容できる' },
+        { id: 'oshi_strict', label: '本命中心・被りは避けたい' },
+        { id: 'unknown', label: 'まだわからない' },
       ],
     },
     {
-      id: 'q_addon_goods_duplicate_tolerance',
+      id: 'q_addon_goods_trade_intent',
       type: 'single',
-      title: '被り許容は？',
+      title: '交換・トレードする意欲は？（任意）',
       required: true,
       options: [
-        { id: 'ok', label: 'OK' },
-        { id: 'slightly_dislike', label: '少し嫌' },
-        { id: 'no', label: '絶対嫌' },
-        { id: 'unknown', label: '未定' },
+        { id: 'active', label: '積極的に交換したい' },
+        { id: 'maybe', label: '条件が合えば交換したい' },
+        { id: 'no', label: '交換はしない予定' },
+        { id: 'unknown', label: 'まだわからない' },
       ],
     },
     {
@@ -324,7 +325,7 @@ export const merch_v2_ja: QuestionSet = {
     {
       id: 'q_addon_goods_wear_fit',
       type: 'single',
-      title: 'サイズ・雰囲気の相性は？',
+      title: 'サイズ感・着用フィットは？',
       required: true,
       options: [
         { id: 'confident', label: '自信ある' },
@@ -334,9 +335,21 @@ export const merch_v2_ja: QuestionSet = {
       ],
     },
     {
+      id: 'q_addon_goods_wear_scene',
+      type: 'single',
+      title: '主な使用シーンは？',
+      required: true,
+      options: [
+        { id: 'live_only', label: 'ライブ/現場中心' },
+        { id: 'daily', label: '普段使い中心' },
+        { id: 'both', label: '両方で使いたい' },
+        { id: 'unknown', label: 'まだわからない' },
+      ],
+    },
+    {
       id: 'q_addon_goods_display_space_plan',
       type: 'single',
-      title: '置き場計画はある？',
+      title: '保管場所と配送/搬入経路の見通しは？',
       required: true,
       options: [
         { id: 'yes', label: 'ある' },
@@ -348,7 +361,7 @@ export const merch_v2_ja: QuestionSet = {
     {
       id: 'q_addon_goods_display_move_risk',
       type: 'single',
-      title: '搬送・破損リスクは？',
+      title: '配送・搬送や掃除/手入れの負担は？',
       required: true,
       options: [
         { id: 'dont_mind', label: '気にしない' },
@@ -360,7 +373,7 @@ export const merch_v2_ja: QuestionSet = {
     {
       id: 'q_addon_goods_tech_compat',
       type: 'single',
-      title: '互換確認はした？',
+      title: '対応機種・電源要件は確認した？',
       required: true,
       options: [
         { id: 'checked', label: '確認済み' },
@@ -384,7 +397,7 @@ export const merch_v2_ja: QuestionSet = {
     {
       id: 'q_addon_goods_itabag_target',
       type: 'single',
-      title: '目標個数/完成イメージは？',
+      title: '理想の完成イメージは？（フルカバー/推しだけ）',
       required: true,
       options: [
         { id: 'concrete', label: '具体的にある' },
@@ -393,25 +406,51 @@ export const merch_v2_ja: QuestionSet = {
       ],
     },
     {
-      id: 'q_addon_blind_draw_cap',
+      id: 'q_addon_goods_itabag_usage',
       type: 'single',
-      title: 'くじ・ブラインドの回数上限は決めた？',
+      title: '痛バの使い方は？',
       required: true,
       options: [
-        { id: 'fixed', label: '決めた' },
-        { id: 'rough', label: 'だいたい決めた' },
-        { id: 'none', label: 'まだ決めていない' },
+        { id: 'event', label: '現場で使う予定' },
+        { id: 'display', label: '展示・鑑賞中心' },
+        { id: 'both', label: '現場と展示の両方' },
+        { id: 'unknown', label: 'まだわからない' },
+      ],
+    },
+    {
+      id: 'q_addon_blind_draw_cap',
+      type: 'single',
+      title: '盲抽（ブラインド）にどれくらい慣れてる？',
+      required: true,
+      options: [
+        { id: 'used_to_it', label: '慣れている（得意寄り）' },
+        { id: 'neutral', label: '普通（可もなく不可もなく）' },
+        { id: 'not_good', label: '苦手（ストレスになりやすい）' },
+        { id: 'unknown', label: 'まだわからない' },
       ],
     },
     {
       id: 'q_addon_blind_draw_exit',
       type: 'single',
-      title: '撤退ライン（やめどき）はある？',
+      title: '回収方針は？（揃えたい/本命だけ）',
       required: true,
       options: [
-        { id: 'clear', label: '明確にある' },
-        { id: 'some', label: 'なんとなくある' },
-        { id: 'none', label: '特にない' },
+        { id: 'complete', label: 'できるだけ揃えたい' },
+        { id: 'oshi_only', label: '本命だけで十分' },
+        { id: 'mixed', label: '状況次第で変える' },
+        { id: 'unknown', label: 'まだわからない' },
+      ],
+    },
+    {
+      id: 'q_addon_blind_draw_trade_intent',
+      type: 'single',
+      title: '余りや被りを交換する？',
+      required: true,
+      options: [
+        { id: 'yes', label: '交換する予定' },
+        { id: 'maybe', label: '条件次第で交換する' },
+        { id: 'no', label: '交換しない' },
+        { id: 'unknown', label: 'まだわからない' },
       ],
     },
     {
@@ -439,18 +478,18 @@ export const merch_v2_ja: QuestionSet = {
     {
       id: 'q_addon_preorder_timeline',
       type: 'single',
-      title: '発売・到着タイミングを許容できる？',
+      title: '発送予定・再販予定は確認済み？',
       required: true,
       options: [
-        { id: 'ok', label: '待てる' },
-        { id: 'maybe', label: '状況次第' },
-        { id: 'hard', label: '待つのが厳しい' },
+        { id: 'yes', label: 'はい（確認済み）' },
+        { id: 'no', label: 'いいえ（未確認）' },
+        { id: 'unknown', label: 'わからない' },
       ],
     },
     {
       id: 'q_addon_preorder_restock',
       type: 'single',
-      title: '受注再開・再販の可能性を確認した？',
+      title: '（旧）受注再開・再販の可能性を確認した？',
       required: true,
       options: [
         { id: 'checked', label: '確認した' },
@@ -478,6 +517,30 @@ export const merch_v2_ja: QuestionSet = {
         { id: 'worth', label: '納得できる' },
         { id: 'small', label: '差額が小さい' },
         { id: 'unknown', label: '比較できていない' },
+      ],
+    },
+    {
+      id: 'q_addon_used_defect_return',
+      type: 'single',
+      title: 'キズ/欠品の許容と返品条件は確認した？',
+      required: true,
+      options: [
+        { id: 'checked_ok', label: '確認済みで許容できる' },
+        { id: 'partial', label: '一部だけ確認した' },
+        { id: 'not_ok', label: '不安がある/未確認' },
+        { id: 'unknown', label: 'わからない' },
+      ],
+    },
+    {
+      id: 'q_addon_used_authenticity',
+      type: 'single',
+      title: '真贋証明（正規品の根拠）は重要？',
+      required: true,
+      options: [
+        { id: 'must', label: '必須（証明がないと買わない）' },
+        { id: 'prefer', label: 'できれば欲しい' },
+        { id: 'not_needed', label: 'あまり重視しない' },
+        { id: 'unknown', label: 'まだわからない' },
       ],
     },
   ],
