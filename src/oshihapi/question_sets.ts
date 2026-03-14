@@ -13,26 +13,33 @@ export const QUICK_QUESTION_IDS = [
 
 export const CORE_12_QUESTION_IDS = [
   "q_storage_fit",
+  "q_storage_space",
   "q_desire",
-  "q_budget_pain",
+  "q_goal",
   "q_urgency",
   "q_rarity_restock",
-  "q_goal",
+  "q_budget_pain",
+  "q_price_feel",
   "q_motives_multi",
   "q_hot_cold",
   "q_regret_impulse",
   "q_impulse_axis_short",
-  "q_price_feel",
-  "q_storage_space",
   "q_alternative_plan",
 ] as const;
 
 export const ADDON_BY_ITEM_KIND: Partial<Record<ItemKind, readonly string[]>> = {
   goods: ["q_addon_common_info", "q_addon_common_priority", "q_addon_goods_compare", "q_addon_goods_portability"],
-  blind_draw: ["q_addon_common_info", "q_addon_common_priority", "q_addon_blind_draw_cap", "q_addon_blind_draw_exit"],
+  blind_draw: ["q_addon_blind_draw_cap", "q_addon_blind_draw_exit", "q_addon_blind_draw_trade_intent"],
   ticket: ["q_addon_common_info", "q_addon_common_priority", "q_addon_ticket_schedule", "q_addon_ticket_resale_rule"],
-  preorder: ["q_addon_common_info", "q_addon_common_priority", "q_addon_preorder_timeline", "q_addon_preorder_restock"],
-  used: ["q_addon_common_info", "q_addon_common_priority", "q_addon_used_condition", "q_addon_used_price_gap"],
+  preorder: ["q_addon_common_info", "q_addon_common_priority", "q_addon_preorder_timeline"],
+  used: [
+    "q_addon_common_info",
+    "q_addon_common_priority",
+    "q_addon_used_condition",
+    "q_addon_used_price_gap",
+    "q_addon_used_defect_return",
+    "q_addon_used_authenticity",
+  ],
 };
 
 export function shouldAskStorage(itemKind?: ItemKind, goodsSubtype?: GoodsSubtype): boolean {
@@ -41,12 +48,12 @@ export function shouldAskStorage(itemKind?: ItemKind, goodsSubtype?: GoodsSubtyp
 
 
 export const ADDON_BY_GOODS_CLASS: Record<GoodsClass, readonly string[]> = {
-  small_collection: ["q_addon_goods_collection_goal", "q_addon_goods_duplicate_tolerance"],
+  small_collection: ["q_addon_goods_collection_goal", "q_addon_goods_trade_intent"],
   paper: ["q_addon_goods_paper_care", "q_addon_goods_paper_view_freq"],
-  wearable: ["q_addon_goods_wear_freq", "q_addon_goods_wear_fit"],
+  wearable: ["q_addon_goods_wear_freq", "q_addon_goods_wear_fit", "q_addon_goods_wear_scene"],
   display_large: ["q_addon_goods_display_space_plan", "q_addon_goods_display_move_risk"],
   tech: ["q_addon_goods_tech_compat", "q_addon_goods_tech_after_use"],
-  itabag_badge: ["q_storage_space", "q_addon_goods_itabag_target"],
+  itabag_badge: ["q_addon_goods_itabag_target", "q_addon_goods_itabag_usage"],
 };
 
 export const GAME_BILLING_SHORT_QUESTION_IDS = [
