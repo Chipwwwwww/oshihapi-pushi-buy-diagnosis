@@ -358,73 +358,24 @@ Code pointers：
 ### Example 1：merch / short / 高欲望且可負擔（BUY）
 
 - 前提：`mode=short`, `decisiveness=standard`, `itemKind=goods`
-- 答案：
-  - q_storage_fit=CONFIRMED
-  - q_desire=5
-  - q_budget_pain=ok
-  - q_urgency=last
-  - q_rarity_restock=unlikely
-  - q_regret_impulse=calm
-  - q_impulse_axis_short=2
-- 中間分數（重點維度）：
-  - desire 50->75
-  - affordability 50->68
-  - regretRisk 50->43 再->39
-  - urgency 50->68
-  - rarity 50->60->68
-  - restock 50->38->32
-  - impulse 50->38
-- unknownPenalty=0，impulseFlag=false
-- 加權後 `scoreSigned≈0.405`
-- holdBand=`0.2*1*0.85=0.17`
-- 判定：`0.405 >= 0.17 => BUY`
-- confidence：`round(50+0.405*70)=78`（範圍內）
-- storage gate：CONFIRMED，不覆寫
+- 重點答案：`q_desire=5`, `q_budget_pain=ok`, `q_price_feel=good`, `q_impulse_axis_short=1`
+- 由於 short 也會依 meta/回答狀態補問 `q_price_feel`、`q_storage_space`，未知資訊少時 unknownPenalty 幾乎為 0。
+- 新門檻 `holdBand≈0.25*0.85=0.2125`，分數可跨過門檻時直接 BUY。
+- confidence 公式改為 `50 + |scoreSigned|*60 - unknownPenalty - impulse補正`（30~95 clamp）。
 
-### Example 2：merch / medium / 資訊未知 + 衝動（THINK）
+### Example 2：merch / medium / unknown 多 + storage 未確認（THINK）
 
-- 前提：`mode=medium`, `decisiveness=standard`, `itemKind=goods`
-- 答案（重點）：
-  - q_desire=2
-  - q_budget_pain=hard
-  - q_urgency=unknown
-  - q_rarity_restock=unknown
-  - q_hot_cold=unknown
-  - q_motives_multi=[rush,trend]
-  - q_regret_impulse=fomo
-  - q_impulse_axis_short=4
-  - q_storage_fit=UNKNOWN
-- 中間：
-  - unknown tags 至少 3 個（urgency/restock/popularity）=> penalty=18
-  - impulseFlag=true（rush 或 axis>=4）
-  - 原始加權分約 `-0.105`
-  - unknown 抑制後約 `-0.086`
-  - impulse nudge 後約 `-0.166`
-- holdBand=`0.2*1*1=0.2`
-- 判定：介於 -0.2~0.2 => THINK
-- confidence base <50，但 clamp 到 50；storage UNKNOWN 再扣15 仍受下限約束 => 50
-- storage gate：原本非BUY，僅增加提醒 reason/action
+- 前提：`mode=medium`, `itemKind=goods`
+- 重點答案：`q_urgency=unknown`, `q_rarity_restock=unknown`, `q_hot_cold=unknown`, `q_price_feel=unknown`, `q_storage_fit=UNKNOWN`
+- `unknown_*` tag 達 4 個以上時，evaluate 直接強制 THINK。
+- unknownCount>=2 時 holdBand 再 +10%，confidence 也因 unknownPenalty 與 storage gate 進一步下降。
 
 ### Example 3：game_billing / long / 條件明顯不利（SKIP）
 
 - 前提：`itemKind=game_billing`, `mode=long`
-- 答案：
-  - gb_q1_need=unclear
-  - gb_q2_type=gacha
-  - gb_q3_budget=hard
-  - gb_q4_use=low
-  - gb_q5_now=rush
-  - gb_q6_repeat=rare
-  - gb_q7_alt=yes
-  - gb_q8_wait=drop
-  - gb_q9_info=none
-  - gb_q10_pity=far
-- buyScore 幾乎 0，stopScore=19 => `score=-19`
-- 判定：`-19 <= -4 => SKIP`
-- FlowClient 包裝：
-  - decision=SKIP
-  - confidence=70（固定）
-  - score=clamp(-1,1,-19/12)=-1
+- 重點答案：`gb_q1_need=unclear`, `gb_q3_budget=hard`, `gb_q5_now=rush`, `gb_q9_info=none`, `gb_q10_pity=far`
+- game billing 現在改走共用 `evaluate()`：各選項以 delta 進 8 維分數，再套用 unknownPenalty / impulseFlag / confidence 公式。
+- 因 regretRisk・opportunityCost 偏高且 unknown tags 疊加，結果會穩定落在 THINK/SKIP 區間（依整體分數而定）。
 
 ---
 

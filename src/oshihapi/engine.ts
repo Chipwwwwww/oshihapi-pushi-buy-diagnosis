@@ -6,13 +6,15 @@ import type {
   Decisiveness,
   EngineConfig,
   InputMeta,
+  ItemKind,
   Mode,
   QuestionSet,
   ReasonItem,
   ScoreDimension,
+  UseCase,
 } from './model';
 import { engineConfig as defaultConfig, normalize01ToSigned, clamp } from './engineConfig';
-import { pickReasons, pickActions, buildShareText } from './reasonRules';
+import { pickReasons, pickActions, buildShareText, getStorageGuidance } from './reasonRules';
 import { decideMerchMethod } from './merchMethod';
 import { buildPresentation } from './decisionPresentation';
 import { shouldAskStorage } from './storageGate';
@@ -21,12 +23,11 @@ type EvaluateInput = {
   config?: EngineConfig;
   questionSet: QuestionSet;
   meta: InputMeta;
-  // answers: questionId -> (optionId | number for scale)
   answers: Record<string, AnswerValue>;
   mode?: Mode;
   decisiveness?: Decisiveness;
+  useCase?: UseCase;
 };
-
 
 const decisivenessMultiplierMap: Record<Decisiveness, number> = {
   careful: 1.25,
@@ -55,45 +56,52 @@ function initScores(): Record<ScoreDimension, number> {
 
 function mergeScore(base: number, add?: number): number {
   if (add == null || Number.isNaN(add)) return base;
-  // Weighted blend: push toward add
-  // Here: simple average-like; can be tuned later
   return clamp(0, 100, Math.round((base + add) / 2));
+}
+
+function applyMotives(scores: Record<ScoreDimension, number>, motives: string[], tags: string[]) {
+  const motiveAdjustments: Partial<Record<string, Partial<Record<ScoreDimension, number>>>> = {
+    support: { impulse: 35, regretRisk: 45 },
+    use: { desire: 70, regretRisk: 40 },
+    trend: { restockChance: 35, impulse: 70 },
+    vague: { restockChance: 40, impulse: 75, regretRisk: 65 },
+    rush: { impulse: 80, regretRisk: 70 },
+    fomo: { urgency: 75, impulse: 70, regretRisk: 60 },
+  };
+
+  for (const motive of motives) {
+    if (motive === 'trend' || motive === 'vague') tags.push('trend_flag');
+    const delta = motiveAdjustments[motive];
+    if (!delta) continue;
+    for (const [dim, value] of Object.entries(delta)) {
+      const key = dim as ScoreDimension;
+      scores[key] = mergeScore(scores[key], value);
+    }
+  }
+}
+
+function selectWeights(config: EngineConfig, itemKind?: ItemKind) {
+  const base = { ...config.decisionWeights };
+  if (!itemKind || !config.decisionWeightProfiles?.[itemKind]) return base;
+  return { ...base, ...config.decisionWeightProfiles[itemKind] };
+}
+
+function stdDev(values: number[]) {
+  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+  const variance = values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / values.length;
+  return Math.sqrt(variance);
 }
 
 export function evaluate(input: EvaluateInput): DecisionOutput {
   const config = input.config ?? defaultConfig;
-
   const scores = initScores();
   const tags: string[] = [];
+
   const motivesAnswer = input.answers.q_motives_multi;
   const motives = Array.isArray(motivesAnswer)
     ? motivesAnswer.filter((entry): entry is string => typeof entry === 'string')
     : [];
-  const impulseShortRaw = input.answers.q_impulse_axis_short;
-  const impulseShortState =
-    typeof impulseShortRaw === 'string'
-      ? impulseShortRaw
-      : typeof impulseShortRaw === 'number' && Number.isFinite(impulseShortRaw)
-        ? (() => {
-            const normalized = impulseShortRaw > 1 ? impulseShortRaw / 5 : impulseShortRaw;
-            if (normalized <= 0.33) return 'plan';
-            if (normalized >= 0.66) return 'mood';
-            return 'both';
-          })()
-        : null;
-  const impulseShortAxisValue =
-    impulseShortState === 'plan'
-      ? 0.2
-      : impulseShortState === 'mood'
-        ? 0.8
-        : impulseShortState === 'both' || impulseShortState === 'unknown'
-          ? 0.5
-          : null;
-  const impulseFlag = motives.includes('rush') || (impulseShortAxisValue !== null && impulseShortAxisValue >= 0.8);
-  const futureUseFlag = motives.includes('use');
-  const trendOrVagueFlag = motives.includes('trend') || motives.includes('vague');
 
-  // Walk questions and apply deltas
   for (const q of input.questionSet.questions) {
     const ans = input.answers[q.id];
     if (ans == null) continue;
@@ -102,7 +110,6 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
       if (Array.isArray(ans)) continue;
       const v = Number(ans);
       if (Number.isFinite(v) && q.mapTo) {
-        // scale 0..5 => 0..100
         const pct = clamp(0, 100, Math.round((v / (q.max ?? 5)) * 100));
         scores[q.mapTo] = mergeScore(scores[q.mapTo], pct);
       }
@@ -125,40 +132,47 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     }
   }
 
-  // Unknown penalty
+  applyMotives(scores, motives, tags);
+
+  const impulseFlag = scores.impulse >= 70;
+  const futureUseFlag = motives.includes('support') || motives.includes('use');
+
   const unknownCount = tags.filter(t => t.startsWith('unknown_')).length;
   const unknownPenalty = unknownCount * config.unknownPenaltyPerTag;
 
-  // Compute decision score
+  const weights = selectWeights(config, input.meta.itemKind);
   let scoreSigned = 0;
-  for (const [dim, w] of Object.entries(config.decisionWeights)) {
+  for (const [dim, w] of Object.entries(weights)) {
     const d = dim as ScoreDimension;
-    const norm = normalize01ToSigned(scores[d]);
-    scoreSigned += norm * (w as number);
+    scoreSigned += normalize01ToSigned(scores[d]) * (w as number);
   }
 
-  // Unknowns push toward THINK (reduce magnitude)
-  scoreSigned = scoreSigned * (1 - Math.min(0.35, unknownPenalty / 100));
+  scoreSigned = scoreSigned * (1 - Math.min(0.5, unknownPenalty / 100));
+  if (unknownCount >= 3) {
+    scoreSigned *= 0.9;
+  }
+
   if (impulseFlag) {
-    const impulseNudge = 0.08;
-    if (scoreSigned < config.thresholds.buy + 0.2) {
-      scoreSigned -= impulseNudge;
-    }
+    let impulseNudge = Math.max(0, ((scores.impulse - 50) / 100) * 0.2);
+    if (futureUseFlag) impulseNudge *= 0.5;
+    if (scoreSigned < config.thresholds.buy + 0.2) scoreSigned -= impulseNudge;
   }
 
   const decisiveness = input.decisiveness ?? 'standard';
   const mode = input.mode ?? 'medium';
   const holdBandBase = Math.max(Math.abs(config.thresholds.buy), Math.abs(config.thresholds.skip));
+  const unknownBandBoost = unknownCount >= 2 ? 1.1 : 1;
   const holdBand =
     holdBandBase *
     (decisivenessMultiplierMap[decisiveness] ?? decisivenessMultiplierMap.standard) *
-    (modeMultiplierMap[mode] ?? modeMultiplierMap.medium);
+    (modeMultiplierMap[mode] ?? modeMultiplierMap.medium) *
+    unknownBandBoost;
 
   let decision: Decision = 'THINK';
   if (scoreSigned >= holdBand) decision = 'BUY';
   else if (scoreSigned <= -holdBand) decision = 'SKIP';
+  if (unknownCount >= 4) decision = 'THINK';
 
-  // Determine goal/popularity from tags
   const goal =
     tags.includes('goal_set') ? 'set' :
     tags.includes('goal_fun') ? 'fun' :
@@ -175,87 +189,35 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
   const actionsBase = pickActions({ meta: input.meta, tags, scores, decision, blindDrawCap });
   const extraReasons: ReasonItem[] = [];
   const extraActions: ActionItem[] = [];
+
   if (impulseFlag) {
-    extraReasons.push({
-      id: 'impulse_rush',
-      severity: 'info' as const,
-      text: '「買えた快感」が主役の時、満足がすぐ落ち着くこともあるかも。',
-    });
-    extraActions.push({
-      id: 'cooldown_10min',
-      text: '10分だけクールダウン（カート保持）→ その後もう一回だけ判断しよ。',
-    });
+    extraReasons.push({ id: 'impulse_rush', severity: 'info', text: '「買えた快感」が主役の時、満足がすぐ落ち着くこともあるかも。' });
+    extraActions.push({ id: 'cooldown_10min', text: '10分だけクールダウン（カート保持）→ その後もう一回だけ判断しよ。' });
   }
-  if (impulseFlag && !futureUseFlag) {
-    extraActions.push({
-      id: 'future_use_alt',
-      text: 'まず「置き場所」を1分で決めよ。無理なら写真で満足／小物だけもアリ。',
-    });
-  }
-  if (trendOrVagueFlag) {
-    extraActions.push({
-      id: 'trend_market',
-      text: 'まず相場を5分だけ見る（新品で焦らなくてOK）。',
-    });
-  }
+
   let reasons = [...extraReasons, ...reasonsBase].slice(0, 6);
   let actions = [...extraActions, ...actionsBase].slice(0, 3);
 
-  // Confidence
-  let confidence = clamp(
-    50,
-    95,
-    Math.round(50 + Math.abs(scoreSigned) * 70 - unknownPenalty)
-  );
+  const scoreSpread = stdDev(Object.values(scores));
+  let confidence = Math.round(50 + Math.abs(scoreSigned) * 60 - unknownPenalty - (impulseFlag ? 5 : 0));
+  if (scoreSpread >= 15) confidence -= 5;
+  confidence = clamp(30, 95, confidence);
 
   if (shouldAskStorage(input.meta.itemKind, input.meta.goodsSubtype)) {
     const storageFit = input.answers.q_storage_fit;
     if (storageFit === 'NONE' || storageFit === 'UNKNOWN') {
-      if (decision === 'BUY') {
-        decision = 'THINK';
-      }
-      confidence = clamp(50, 95, confidence - 15);
-      reasons = [
-        ...reasons,
-        {
-          id: 'storage_unconfirmed',
-          severity: 'warn' as const,
-          text: '置き場所が未確定（買った後の置き場が決まってない）',
-        },
-      ].slice(0, 6);
-      actions = [
-        ...actions,
-        {
-          id: 'storage_plan_first',
-          text: '先に置き場所を決める（棚/ケース/引き出し）',
-        },
-      ].slice(0, 3);
-    } else if (storageFit === 'PROBABLE') {
-      reasons = [
-        ...reasons,
-        {
-          id: 'storage_cleanup_needed',
-          severity: 'info' as const,
-          text: '片付けが必要（置き場所を作れたら後悔しにくい）',
-        },
-      ].slice(0, 6);
-      actions = [
-        ...actions,
-        {
-          id: 'storage_cleanup_10min',
-          text: '買う前に10分だけ片付けてスペース確保',
-        },
-      ].slice(0, 3);
+      if (decision === 'BUY') decision = 'THINK';
+      scores.opportunityCost = clamp(0, 100, scores.opportunityCost + 20);
+      confidence = clamp(30, 95, confidence - 10);
+      const storageGuidance = getStorageGuidance(input.meta.goodsSubtype);
+      reasons = [...reasons, { id: 'storage_unconfirmed', severity: 'warn' as const, text: storageGuidance.reason }].slice(0, 6);
+      actions = [...actions, { id: 'storage_plan_first', text: storageGuidance.action }].slice(0, 3);
     }
   }
 
   const decisionJa = decision === 'BUY' ? '買う' : decision === 'SKIP' ? 'やめる' : '保留';
   const shareText = buildShareText(decisionJa, reasons);
-  const presentation = buildPresentation({
-    decision,
-    actions,
-    reasons,
-  });
+  const presentation = buildPresentation({ decision, actions, reasons });
 
   return {
     decision,
@@ -267,7 +229,7 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     merchMethod: {
       method: method.method,
       blindDrawCap,
-      note: method.note,
+      note: input.useCase === 'game_billing' ? 'ゲーム課金（共通ロジック）' : method.note,
     },
     shareText,
     presentation,

@@ -5,7 +5,7 @@ export type Category = 'merch';
 export type UseCase = 'merch' | 'game_billing';
 
 export type ItemKind = 'goods' | 'blind_draw' | 'used' | 'preorder' | 'ticket' | 'game_billing';
-export type GoodsSubtype = 'general' | 'itaBag_badge';
+export type GoodsSubtype = 'general' | 'itaBag_badge' | 'digital_goods' | 'e_ticket';
 export type GoodsClass =
   | 'small_collection'
   | 'paper'
@@ -73,6 +73,7 @@ export type QuestionSet = {
 
 export type EngineConfig = {
   decisionWeights: Record<ScoreDimension, number>;
+  decisionWeightProfiles?: Partial<Record<ItemKind | GoodsSubtype, Partial<Record<ScoreDimension, number>>>>;
   thresholds: { buy: number; skip: number };
   unknownPenaltyPerTag: number; // penalty per "unknown" tag found
   blindDrawCap: { min: number; max: number };

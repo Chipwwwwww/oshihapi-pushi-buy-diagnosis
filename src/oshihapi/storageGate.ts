@@ -1,10 +1,11 @@
 import type { GoodsSubtype, ItemKind } from "@/src/oshihapi/model";
 
 const SKIP_STORAGE_KINDS = new Set<ItemKind>(["ticket", "game_billing"]);
+const SKIP_STORAGE_SUBTYPES = new Set<GoodsSubtype>(["itaBag_badge", "digital_goods", "e_ticket"]);
 
 export function shouldAskStorage(kindId?: ItemKind, goodsSubtype?: GoodsSubtype): boolean {
+  if (goodsSubtype && SKIP_STORAGE_SUBTYPES.has(goodsSubtype)) return false;
   if (!kindId) return true;
-  if (kindId === "goods" && goodsSubtype === "itaBag_badge") return false;
   return !SKIP_STORAGE_KINDS.has(kindId);
 }
 

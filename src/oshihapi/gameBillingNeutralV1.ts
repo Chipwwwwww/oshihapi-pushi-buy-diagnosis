@@ -1,4 +1,4 @@
-import type { AnswerValue, Decision, Question } from "./model";
+import type { AnswerValue, Question } from "./model";
 import {
   GAME_BILLING_FULL_BASE_QUESTION_IDS,
   GAME_BILLING_Q10_SPLIT_RULE,
@@ -6,70 +6,21 @@ import {
   resolveGameBillingQ10QuestionId,
 } from "./question_sets";
 
-export type GameBillingType = "gacha" | "pass" | "skin" | "pack" | "other";
 export type GameBillingAnswers = Record<string, AnswerValue>;
-
-export type GameBillingEvaluation = {
-  decision: Decision;
-  reasons: string[];
-  nextActions: string[];
-  searchSuggestions: string[];
-  score: number;
-};
 
 type BuyStopDelta = { buyDelta: number; stopDelta: number };
 
 export const GAME_BILLING_OPTION_DELTAS: Record<string, Record<string, BuyStopDelta>> = {
-  gb_q1_need: {
-    clear: { buyDelta: 2, stopDelta: 0 },
-    some: { buyDelta: 1, stopDelta: 1 },
-    unclear: { buyDelta: 0, stopDelta: 2 },
-  },
-  gb_q3_budget: {
-    easy: { buyDelta: 3, stopDelta: 0 },
-    ok: { buyDelta: 1, stopDelta: 1 },
-    hard: { buyDelta: 0, stopDelta: 3 },
-  },
-  gb_q4_use: {
-    high: { buyDelta: 2, stopDelta: 0 },
-    some: { buyDelta: 1, stopDelta: 1 },
-    low: { buyDelta: 0, stopDelta: 2 },
-  },
-  gb_q5_now: {
-    calm: { buyDelta: 2, stopDelta: 0 },
-    up: { buyDelta: 1, stopDelta: 1 },
-    rush: { buyDelta: 0, stopDelta: 2 },
-  },
-  gb_q6_repeat: {
-    often: { buyDelta: 2, stopDelta: 0 },
-    half: { buyDelta: 1, stopDelta: 1 },
-    rare: { buyDelta: 0, stopDelta: 2 },
-  },
-  gb_q7_alt: {
-    none: { buyDelta: 2, stopDelta: 0 },
-    some: { buyDelta: 1, stopDelta: 1 },
-    yes: { buyDelta: 0, stopDelta: 2 },
-  },
-  gb_q8_wait: {
-    same: { buyDelta: 2, stopDelta: 0 },
-    maybe: { buyDelta: 1, stopDelta: 1 },
-    drop: { buyDelta: 0, stopDelta: 2 },
-  },
-  gb_q9_info: {
-    done: { buyDelta: 2, stopDelta: 0 },
-    part: { buyDelta: 1, stopDelta: 1 },
-    none: { buyDelta: 0, stopDelta: 2 },
-  },
-  gb_q10_pity: {
-    near: { buyDelta: 2, stopDelta: 0 },
-    mid: { buyDelta: 1, stopDelta: 1 },
-    far: { buyDelta: 0, stopDelta: 2 },
-  },
-  gb_q10_value: {
-    good: { buyDelta: 2, stopDelta: 0 },
-    normal: { buyDelta: 1, stopDelta: 1 },
-    low: { buyDelta: 0, stopDelta: 2 },
-  },
+  gb_q1_need: { clear: { buyDelta: 2, stopDelta: 0 }, some: { buyDelta: 1, stopDelta: 1 }, unclear: { buyDelta: 0, stopDelta: 2 } },
+  gb_q3_budget: { easy: { buyDelta: 3, stopDelta: 0 }, ok: { buyDelta: 1, stopDelta: 1 }, hard: { buyDelta: 0, stopDelta: 3 } },
+  gb_q4_use: { high: { buyDelta: 2, stopDelta: 0 }, some: { buyDelta: 1, stopDelta: 1 }, low: { buyDelta: 0, stopDelta: 2 } },
+  gb_q5_now: { calm: { buyDelta: 2, stopDelta: 0 }, up: { buyDelta: 1, stopDelta: 1 }, rush: { buyDelta: 0, stopDelta: 2 } },
+  gb_q6_repeat: { often: { buyDelta: 2, stopDelta: 0 }, half: { buyDelta: 1, stopDelta: 1 }, rare: { buyDelta: 0, stopDelta: 2 } },
+  gb_q7_alt: { none: { buyDelta: 2, stopDelta: 0 }, some: { buyDelta: 1, stopDelta: 1 }, yes: { buyDelta: 0, stopDelta: 2 } },
+  gb_q8_wait: { same: { buyDelta: 2, stopDelta: 0 }, maybe: { buyDelta: 1, stopDelta: 1 }, drop: { buyDelta: 0, stopDelta: 2 } },
+  gb_q9_info: { done: { buyDelta: 2, stopDelta: 0 }, part: { buyDelta: 1, stopDelta: 1 }, none: { buyDelta: 0, stopDelta: 2 } },
+  gb_q10_pity: { near: { buyDelta: 2, stopDelta: 0 }, mid: { buyDelta: 1, stopDelta: 1 }, far: { buyDelta: 0, stopDelta: 2 } },
+  gb_q10_value: { good: { buyDelta: 2, stopDelta: 0 }, normal: { buyDelta: 1, stopDelta: 1 }, low: { buyDelta: 0, stopDelta: 2 } },
 };
 
 const q1: Question = {
@@ -80,9 +31,9 @@ const q1: Question = {
   urgentCore: true,
   standard: true,
   options: [
-    { id: "clear", label: "はっきりしている" },
-    { id: "some", label: "なんとなくある" },
-    { id: "unclear", label: "まだぼんやり" },
+    { id: "clear", label: "はっきりしている", delta: { desire: 75, regretRisk: 35 } },
+    { id: "some", label: "なんとなくある", delta: { desire: 55, regretRisk: 50 } },
+    { id: "unclear", label: "まだぼんやり", tags: ["unknown_goal"], delta: { desire: 45, regretRisk: 70, impulse: 65 } },
   ],
 };
 
@@ -94,11 +45,11 @@ const q2: Question = {
   urgentCore: true,
   standard: true,
   options: [
-    { id: "gacha", label: "ガチャ" },
-    { id: "pass", label: "月パス/継続系" },
-    { id: "skin", label: "スキン/見た目" },
-    { id: "pack", label: "お得パック" },
-    { id: "other", label: "その他" },
+    { id: "gacha", label: "ガチャ", delta: { rarity: 70, impulse: 65, restockChance: 40 } },
+    { id: "pass", label: "月パス/継続系", delta: { desire: 65, affordability: 65, regretRisk: 40 } },
+    { id: "skin", label: "スキン/見た目", delta: { desire: 60, opportunityCost: 55 } },
+    { id: "pack", label: "お得パック", delta: { affordability: 60, opportunityCost: 50 } },
+    { id: "other", label: "その他", tags: ["unknown_type"], delta: { regretRisk: 55 } },
   ],
 };
 
@@ -110,9 +61,9 @@ const q3: Question = {
   urgentCore: true,
   standard: true,
   options: [
-    { id: "easy", label: "無理なく払える" },
-    { id: "ok", label: "調整すれば払える" },
-    { id: "hard", label: "ちょっと重い" },
+    { id: "easy", label: "無理なく払える", delta: { affordability: 85, regretRisk: 30 } },
+    { id: "ok", label: "調整すれば払える", delta: { affordability: 60, regretRisk: 45 } },
+    { id: "hard", label: "ちょっと重い", delta: { affordability: 30, regretRisk: 75, opportunityCost: 70 } },
   ],
 };
 
@@ -124,9 +75,9 @@ const q4: Question = {
   urgentCore: true,
   standard: true,
   options: [
-    { id: "high", label: "かなりある" },
-    { id: "some", label: "少しある" },
-    { id: "low", label: "あまりない" },
+    { id: "high", label: "かなりある", delta: { desire: 75, regretRisk: 35 } },
+    { id: "some", label: "少しある", delta: { desire: 55, regretRisk: 50 } },
+    { id: "low", label: "あまりない", delta: { desire: 40, regretRisk: 70, opportunityCost: 65 } },
   ],
 };
 
@@ -138,9 +89,9 @@ const q5: Question = {
   urgentCore: true,
   standard: true,
   options: [
-    { id: "calm", label: "落ち着いている" },
-    { id: "up", label: "少し高まっている" },
-    { id: "rush", label: "急いで決めたい" },
+    { id: "calm", label: "落ち着いている", delta: { impulse: 30, regretRisk: 35 } },
+    { id: "up", label: "少し高まっている", delta: { impulse: 55, regretRisk: 50 } },
+    { id: "rush", label: "急いで決めたい", delta: { impulse: 80, regretRisk: 70, urgency: 65 } },
   ],
 };
 
@@ -151,9 +102,9 @@ const q6: Question = {
   required: true,
   standard: true,
   options: [
-    { id: "often", label: "満足したことが多い" },
-    { id: "half", label: "半々" },
-    { id: "rare", label: "満足しないことも多い" },
+    { id: "often", label: "満足したことが多い", delta: { regretRisk: 30, desire: 65 } },
+    { id: "half", label: "半々", delta: { regretRisk: 50 } },
+    { id: "rare", label: "満足しないことも多い", delta: { regretRisk: 75, opportunityCost: 70 } },
   ],
 };
 
@@ -164,9 +115,9 @@ const q7: Question = {
   required: true,
   standard: true,
   options: [
-    { id: "none", label: "特にない" },
-    { id: "some", label: "少しある" },
-    { id: "yes", label: "ある" },
+    { id: "none", label: "特にない", delta: { opportunityCost: 30 } },
+    { id: "some", label: "少しある", delta: { opportunityCost: 55 } },
+    { id: "yes", label: "ある", delta: { opportunityCost: 80, regretRisk: 65 } },
   ],
 };
 
@@ -177,9 +128,9 @@ const q8: Question = {
   required: true,
   standard: true,
   options: [
-    { id: "same", label: "変わらなさそう" },
-    { id: "maybe", label: "少し変わるかも" },
-    { id: "drop", label: "下がりそう" },
+    { id: "same", label: "変わらなさそう", delta: { desire: 70, impulse: 40 } },
+    { id: "maybe", label: "少し変わるかも", delta: { desire: 55, impulse: 55 } },
+    { id: "drop", label: "下がりそう", delta: { desire: 35, impulse: 75, regretRisk: 70 } },
   ],
 };
 
@@ -190,9 +141,9 @@ const q9: Question = {
   required: true,
   standard: true,
   options: [
-    { id: "done", label: "確認できた" },
-    { id: "part", label: "一部だけ" },
-    { id: "none", label: "まだ" },
+    { id: "done", label: "確認できた", delta: { regretRisk: 35, opportunityCost: 40 } },
+    { id: "part", label: "一部だけ", tags: ["unknown_info"], delta: { regretRisk: 55, opportunityCost: 55 } },
+    { id: "none", label: "まだ", tags: ["unknown_info", "unknown_compare"], delta: { regretRisk: 75, opportunityCost: 75 } },
   ],
 };
 
@@ -203,9 +154,9 @@ const q10Gacha: Question = {
   required: true,
   standard: true,
   options: [
-    { id: "near", label: "近い" },
-    { id: "mid", label: "中間くらい" },
-    { id: "far", label: "遠い/不明" },
+    { id: "near", label: "近い", delta: { rarity: 75, urgency: 65, regretRisk: 40 } },
+    { id: "mid", label: "中間くらい", delta: { rarity: 55, urgency: 50, regretRisk: 50 } },
+    { id: "far", label: "遠い/不明", tags: ["unknown_progress"], delta: { rarity: 40, urgency: 40, regretRisk: 65 } },
   ],
 };
 
@@ -216,9 +167,9 @@ const q10Generic: Question = {
   required: true,
   standard: true,
   options: [
-    { id: "good", label: "納得感がある" },
-    { id: "normal", label: "普通" },
-    { id: "low", label: "やや低い" },
+    { id: "good", label: "納得感がある", delta: { affordability: 75, regretRisk: 35 } },
+    { id: "normal", label: "普通", delta: { affordability: 55, regretRisk: 50 } },
+    { id: "low", label: "やや低い", delta: { affordability: 35, regretRisk: 70, opportunityCost: 70 } },
   ],
 };
 
@@ -242,88 +193,4 @@ export function getGameBillingQuestions(mode: "short" | "medium" | "long", answe
   }
   const q10QuestionId = resolveGameBillingQ10QuestionId(answers[GAME_BILLING_Q10_SPLIT_RULE.conditionQuestionId]);
   return [...GAME_BILLING_FULL_BASE_QUESTION_IDS, q10QuestionId].map((id) => GAME_BILLING_QUESTION_MAP[id]);
-}
-
-
-function sumDelta(answer: AnswerValue, questionId: keyof typeof GAME_BILLING_OPTION_DELTAS, key: keyof BuyStopDelta): number {
-  if (typeof answer !== "string") return 0;
-  return GAME_BILLING_OPTION_DELTAS[questionId]?.[answer]?.[key] ?? 0;
-}
-
-export function evaluateGameBillingV1(answers: GameBillingAnswers): GameBillingEvaluation {
-  let buyScore = 0;
-  let stopScore = 0;
-
-  buyScore += sumDelta(answers.gb_q1_need, "gb_q1_need", "buyDelta");
-  stopScore += sumDelta(answers.gb_q1_need, "gb_q1_need", "stopDelta");
-
-  buyScore += sumDelta(answers.gb_q3_budget, "gb_q3_budget", "buyDelta");
-  stopScore += sumDelta(answers.gb_q3_budget, "gb_q3_budget", "stopDelta");
-
-  buyScore += sumDelta(answers.gb_q4_use, "gb_q4_use", "buyDelta");
-  stopScore += sumDelta(answers.gb_q4_use, "gb_q4_use", "stopDelta");
-
-  buyScore += sumDelta(answers.gb_q5_now, "gb_q5_now", "buyDelta");
-  stopScore += sumDelta(answers.gb_q5_now, "gb_q5_now", "stopDelta");
-
-  buyScore += sumDelta(answers.gb_q6_repeat, "gb_q6_repeat", "buyDelta");
-  stopScore += sumDelta(answers.gb_q6_repeat, "gb_q6_repeat", "stopDelta");
-
-  buyScore += sumDelta(answers.gb_q7_alt, "gb_q7_alt", "buyDelta");
-  stopScore += sumDelta(answers.gb_q7_alt, "gb_q7_alt", "stopDelta");
-
-  buyScore += sumDelta(answers.gb_q8_wait, "gb_q8_wait", "buyDelta");
-  stopScore += sumDelta(answers.gb_q8_wait, "gb_q8_wait", "stopDelta");
-
-  buyScore += sumDelta(answers.gb_q9_info, "gb_q9_info", "buyDelta");
-  stopScore += sumDelta(answers.gb_q9_info, "gb_q9_info", "stopDelta");
-
-  if (answers.gb_q2_type === "gacha") {
-    buyScore += sumDelta(answers.gb_q10_pity, "gb_q10_pity", "buyDelta");
-    stopScore += sumDelta(answers.gb_q10_pity, "gb_q10_pity", "stopDelta");
-  } else {
-    buyScore += sumDelta(answers.gb_q10_value, "gb_q10_value", "buyDelta");
-    stopScore += sumDelta(answers.gb_q10_value, "gb_q10_value", "stopDelta");
-  }
-
-  const score = buyScore - stopScore;
-  const decision: Decision = score >= 5 ? "BUY" : score <= -4 ? "SKIP" : "THINK";
-
-  const motivationLine =
-    answers.gb_q1_need === "clear"
-      ? "目的がはっきりしていて、判断軸が作れている。"
-      : answers.gb_q1_need === "some"
-        ? "目的はあるので、条件をそろえると判断しやすい。"
-        : "目的がぼんやりしているので、いったん整理が安心。";
-
-  const strongestStateLine =
-    decision === "BUY"
-      ? "予算と使い道の見通しが立っている。"
-      : decision === "SKIP"
-        ? "今は情報か条件が不足していて、見送りが安全。"
-        : "今は様子見にすると、納得感を保ちやすい。";
-
-  const closingLine =
-    decision === "BUY"
-      ? "上限だけ決めて、計画的に進めよう。"
-      : decision === "SKIP"
-        ? "今回は見送りでOK。次の機会に回そう。"
-        : "情報をひとつ足してから、もう一度判断しよう。";
-
-  const nextActions =
-    decision === "BUY"
-      ? ["課金上限を先に決める", "必要情報を1分だけ再確認"]
-      : decision === "SKIP"
-        ? ["今回は見送ってメモだけ残す", "次回条件（予算/用途）を先に決める"]
-        : ["24時間待って再確認", "評価・天井・内容の情報を確認"];
-
-  const searchSuggestions = ["ゲーム名 評価", "ゲーム名 天井", "アイテム名 性能"].filter(Boolean);
-
-  return {
-    decision,
-    reasons: [motivationLine, strongestStateLine, closingLine],
-    nextActions,
-    searchSuggestions,
-    score,
-  };
 }

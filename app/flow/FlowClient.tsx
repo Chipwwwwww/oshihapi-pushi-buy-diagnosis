@@ -16,7 +16,7 @@ import type {
 } from "@/src/oshihapi/model";
 import { merch_v2_ja } from "@/src/oshihapi/merch_v2_ja";
 import { evaluate } from "@/src/oshihapi/engine";
-import { evaluateGameBillingV1, getGameBillingQuestions } from "@/src/oshihapi/gameBillingNeutralV1";
+import { getGameBillingQuestions } from "@/src/oshihapi/gameBillingNeutralV1";
 import { saveRun } from "@/src/oshihapi/runStorage";
 import { COPY_BY_MODE } from "@/src/oshihapi/modes/copy_dictionary";
 import {
@@ -62,7 +62,7 @@ const ITEM_KIND_VALUES: ItemKind[] = [
   "ticket",
   "game_billing",
 ];
-const GOODS_SUBTYPE_VALUES: GoodsSubtype[] = ["general", "itaBag_badge"];
+const GOODS_SUBTYPE_VALUES: GoodsSubtype[] = ["general", "itaBag_badge", "digital_goods", "e_ticket"];
 const GOODS_CLASS_VALUES: GoodsClass[] = ["small_collection", "paper", "wearable", "display_large", "tech", "itabag_badge"];
 const LEGACY_ITABAG_GOODS_DETAIL_VALUES = ["itabag", "pain_badge", "painBadge", "itabag_badge", "itaBag_badge"] as const;
 const LEGACY_GENERAL_GOODS_DETAIL_VALUES = ["general", "default"] as const;
@@ -146,12 +146,6 @@ const parseGoodsClassFromQuery = (searchParams: SearchParamsLike): GoodsClass =>
   return parseLegacyGoodsDetailToGoodsClass(searchParams.get("goodsDetail")) ?? "small_collection";
 };
 
-const decisionLabels: Record<string, string> = {
-  BUY: "買う",
-  THINK: "保留",
-  SKIP: "やめる",
-};
-
 export default function FlowPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -189,15 +183,25 @@ export default function FlowPage() {
     const itemKindAddonIds = mode === "long" && itemKind ? (ADDON_BY_ITEM_KIND[itemKind] ?? []) : [];
     const enableGoodsClass = mode === "long" && (itemKind === "goods" || itemKind === "preorder" || itemKind === "used");
     const goodsClassAddonIds = enableGoodsClass ? ADDON_BY_GOODS_CLASS[goodsClass] ?? [] : [];
-    const ids = [...baseIds, ...itemKindAddonIds, ...goodsClassAddonIds].filter((id) => {
-      if (id !== "q_storage_fit") return true;
+    const ids = [...baseIds, ...itemKindAddonIds, ...goodsClassAddonIds];
+
+    const hasUnknownStorage = answers.q_storage_fit === "UNKNOWN" || answers.q_storage_space === "tight";
+    const hasUnknownBudget = answers.q_budget_pain == null || answers.q_budget_pain === "some";
+    const lacksMeta = !itemName || !priceYen;
+    if (!ids.includes("q_storage_space") && (hasUnknownStorage || mode === "short")) ids.push("q_storage_space");
+    if (!ids.includes("q_price_feel") && (hasUnknownBudget || mode === "short" || lacksMeta)) ids.push("q_price_feel");
+    if (!ids.includes("q_addon_common_info") && (mode !== "long" || lacksMeta)) ids.push("q_addon_common_info");
+
+    const deduped = Array.from(new Set(ids)).filter((id) => {
+      if (id !== "q_storage_fit" && id !== "q_storage_space") return true;
       if (goodsClass === "itabag_badge" || goodsClass === "display_large") return false;
       return shouldAskStorage(itemKind, goodsSubtype);
     });
-    return ids
+
+    return deduped
       .map((id) => merch_v2_ja.questions.find((question) => question.id === id))
       .filter((question): question is Question => Boolean(question));
-  }, [answers, goodsClass, goodsSubtype, itemKind, mode, useCase]);
+  }, [answers, goodsClass, goodsSubtype, itemKind, itemName, mode, priceYen, useCase]);
 
   const [submitting, setSubmitting] = useState(false);
   const startTimeRef = useRef<number>(0);
@@ -322,62 +326,14 @@ export default function FlowPage() {
 
     recordQuestionTime(currentIndex);
     const runId = crypto.randomUUID();
-    const output =
-      useCase === "game_billing"
-        ? (() => {
-            const gameOutput = evaluateGameBillingV1(normalizedAnswers);
-            const decisionLabel: "買う" | "保留" | "やめる" =
-              gameOutput.decision === "BUY"
-                ? "買う"
-                : gameOutput.decision === "SKIP"
-                  ? "やめる"
-                  : "保留";
-
-            return {
-              decision: gameOutput.decision,
-              confidence: 70,
-              score: Math.max(-1, Math.min(1, gameOutput.score / 12)),
-              scoreSummary: {
-                desire: 50,
-                affordability: 50,
-                urgency: 50,
-                rarity: 50,
-                restockChance: 50,
-                regretRisk: 50,
-                impulse: 50,
-                opportunityCost: 50,
-              },
-              reasons: gameOutput.reasons.map((text, index) => ({ id: `gb_reason_${index + 1}`, text })),
-              actions: gameOutput.nextActions.map((text, index) => ({ id: `gb_action_${index + 1}`, text })),
-              merchMethod: {
-                method: "PASS" as const,
-                note: "ゲーム課金（中立）v1",
-              },
-              shareText: [
-                `判定: ${decisionLabels[gameOutput.decision]}`,
-                ...gameOutput.reasons,
-              ].join("\n"),
-              presentation: {
-                decisionLabel,
-                headline:
-                  gameOutput.decision === "BUY"
-                    ? "条件がそろっているので進められそう"
-                    : gameOutput.decision === "SKIP"
-                      ? "今回は見送っても大丈夫"
-                      : "いったん保留で様子を見るのが安心",
-                badge: `判定：${decisionLabels[gameOutput.decision]}`,
-                note: "※判定は変わりません",
-                tags: ["GAME_BILLING"],
-              },
-            };
-          })()
-        : evaluate({
-            questionSet: { ...merch_v2_ja, questions },
-            meta: { itemName, priceYen, deadline, itemKind, goodsSubtype, goodsClass, basketId, basketItemId },
-            answers: normalizedAnswers,
-            mode,
-            decisiveness,
-          });
+    const output = evaluate({
+      questionSet: { ...merch_v2_ja, questions },
+      meta: { itemName, priceYen, deadline, itemKind, goodsSubtype, goodsClass, basketId, basketItemId },
+      answers: normalizedAnswers,
+      mode,
+      decisiveness,
+      useCase,
+    });
 
     const behavior: BehaviorLog = {
       time_total_ms: Date.now() - startTimeRef.current,

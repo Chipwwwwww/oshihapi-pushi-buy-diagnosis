@@ -149,7 +149,7 @@ export default function Home() {
     if (normalizedItemKind) params.set("itemKind", normalizedItemKind);
     params.set("decisiveness", decisiveness);
     if (hasTemplateSelection) params.set("templateUsed", "1");
-    router.push(`/${mode === "short" ? "flow" : "confirm"}?${params.toString()}`);
+    router.push(`/flow?${params.toString()}`);
   };
 
   const handleDecisivenessChange = (value: Decisiveness) => {
@@ -268,9 +268,55 @@ export default function Home() {
         </div>
       </Card>
 
-      <p className="text-sm text-slate-600 dark:text-zinc-300">
-        必要なら次の画面で詳細設定を調整できます（任意）。
-      </p>
+
+      <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
+        <h2 className={sectionTitleClass}>診断メモ（任意）</h2>
+        <div className="grid gap-3">
+          <label className="space-y-1 text-sm">
+            <span className="text-slate-600 dark:text-zinc-300">アイテム名</span>
+            <input
+              value={itemName}
+              onChange={(event) => setItemName(event.target.value)}
+              placeholder="例：推しアクスタ 2025"
+              className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/15 dark:bg-[#111827] dark:text-zinc-50"
+            />
+          </label>
+          <label className="space-y-1 text-sm">
+            <span className="text-slate-600 dark:text-zinc-300">価格（円）</span>
+            <input
+              value={priceYen}
+              onChange={(event) => setPriceYen(event.target.value)}
+              inputMode="numeric"
+              placeholder="例：3500"
+              className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/15 dark:bg-[#111827] dark:text-zinc-50"
+            />
+          </label>
+          <label className="space-y-1 text-sm">
+            <span className="text-slate-600 dark:text-zinc-300">期限</span>
+            <select
+              value={deadline}
+              onChange={(event) => setDeadline(parseDeadlineValue(event.target.value))}
+              className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/15 dark:bg-[#111827] dark:text-zinc-50"
+            >
+              {deadlineOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-1 text-sm">
+            <span className="text-slate-600 dark:text-zinc-300">カテゴリ</span>
+            <select
+              value={itemKind}
+              onChange={(event) => setItemKind(parseItemKindValue(event.target.value))}
+              className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/15 dark:bg-[#111827] dark:text-zinc-50"
+            >
+              {itemKindOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </Card>
 
       <StickyStartBar onStart={handleStart} />
 
