@@ -17,6 +17,12 @@ export type GoodsClass =
 export type QuestionType = 'single' | 'multi' | 'scale' | 'number' | 'text';
 
 export type Decision = 'BUY' | 'THINK' | 'SKIP';
+export type HoldSubtype =
+  | 'info_missing'
+  | 'budget_pain'
+  | 'impulse_cooldown'
+  | 'condition_not_ready'
+  | 'risk_uncertain';
 export type MerchMethod = 'USED_SINGLE' | 'BOX' | 'BLIND_DRAW' | 'PASS';
 
 export type ScoreDimension =
@@ -150,6 +156,7 @@ export type DecisionOutput = {
     resultInputsSummary: ResultInputsSummaryTrace;
   };
   decision: Decision;
+  holdSubtype?: HoldSubtype;
   confidence: number; // 0-100
   score: number; // -1..+1
   scoreSummary: Record<ScoreDimension, number>; // 0-100
@@ -163,6 +170,20 @@ export type DecisionOutput = {
   shareText: string;
   positiveFactors?: string[];
   negativeFactors?: string[];
+  blockingFactors?: string[];
+  recommendationReasons?: string[];
+  subtypeReason?: string;
+  whyNotBuyYet?: string;
+  whyNotSkipYet?: string;
+  factorBuckets?: {
+    desireAttachment: number;
+    urgencyOpportunity: number;
+    budgetPressure: number;
+    readinessLogistics: number;
+    uncertaintyUnknowns: number;
+    impulseVolatility: number;
+    itemKindRisk: number;
+  };
   presentation?: DecisionPresentation;
 };
 
