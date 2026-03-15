@@ -7,6 +7,7 @@ export const QUICK_QUESTION_IDS = [
   "q_budget_pain",
   "q_urgency",
   "q_rarity_restock",
+  "q_hot_cold",
   "q_regret_impulse",
   "q_impulse_axis_short",
 ] as const;

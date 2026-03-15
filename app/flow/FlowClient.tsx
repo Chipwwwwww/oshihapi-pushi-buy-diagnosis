@@ -49,6 +49,7 @@ import {
   pageTitleClass,
   sectionTitleClass,
 } from "@/components/ui/tokens";
+import { buildMercariKeyword, isMercariRelevantScenario } from "@/src/oshihapi/mercariKeyword";
 
 const DEADLINE_VALUES = [
   "today",
@@ -221,6 +222,7 @@ export default function FlowPage() {
   const timePerQuestionRef = useRef<number[]>([]);
   const numChangesRef = useRef(0);
   const numBacktracksRef = useRef(0);
+  const preResultActionClicksRef = useRef<string[]>([]);
 
   const safeCurrentIndex = Math.min(currentIndex, Math.max(questions.length - 1, 0));
   const currentQuestion = questions[safeCurrentIndex];
@@ -229,6 +231,49 @@ export default function FlowPage() {
     : undefined;
   const currentTitle = currentQuestionCopy?.title ?? currentQuestion?.title ?? "";
   const currentHelper = currentQuestionCopy?.helper ?? currentQuestion?.description;
+  const mercariKeywordResult = useMemo(
+    () =>
+      buildMercariKeyword({
+        rawSearchWord: itemName,
+        itemName,
+        itemKind,
+        goodsClass,
+        answers,
+        meta: {
+          itemName,
+          itemKind,
+          goodsClass,
+          deadline,
+          priceYen,
+          goodsSubtype,
+          basketId,
+          basketItemId,
+        },
+      }),
+    [answers, basketId, basketItemId, deadline, goodsClass, goodsSubtype, itemKind, itemName, priceYen],
+  );
+  const showQuestionMercariCta =
+    currentQuestion?.id === "q_hot_cold" &&
+    isMercariRelevantScenario(itemKind, goodsClass) &&
+    Boolean(mercariKeywordResult.keyword);
+  const hotColdTitle = currentQuestion?.id === "q_hot_cold" ? "このアイテム、プレ値になりそう？" : currentTitle;
+  const hotColdHelper =
+    currentQuestion?.id === "q_hot_cold"
+      ? "迷うなら、今のメルカリ相場を見ておく"
+      : currentHelper;
+  const flowMercariOutHref = useMemo(() => {
+    if (!mercariKeywordResult.keyword || !showQuestionMercariCta || !currentQuestion) return "";
+    const params = new URLSearchParams({
+      dest: "mercari-search",
+      keyword: mercariKeywordResult.keyword,
+      source: "flow_question",
+      questionId: currentQuestion.id,
+      runId: draftId,
+    });
+    if (itemKind) params.set("itemKind", itemKind);
+    if (goodsClass) params.set("gc", goodsClass);
+    return `/out?${params.toString()}`;
+  }, [currentQuestion, draftId, goodsClass, itemKind, mercariKeywordResult.keyword, showQuestionMercariCta]);
   const itemNamePlaceholder =
     draftItemKind === "game_billing"
       ? "例：限定ガチャ10連 / 月パス / コラボスキン"
@@ -416,7 +461,7 @@ export default function FlowPage() {
       time_per_q_ms: timePerQuestionRef.current,
       num_changes: numChangesRef.current,
       num_backtracks: numBacktracksRef.current,
-      actions_clicked: [],
+      actions_clicked: preResultActionClicksRef.current,
     };
 
     const run: DecisionRun = {
@@ -518,9 +563,29 @@ export default function FlowPage() {
 
       <Card className="space-y-4">
         <div className="space-y-2">
-          <h2 className={sectionTitleClass}>{currentTitle}</h2>
-          {currentHelper ? (
-            <p className={helperTextClass}>{currentHelper}</p>
+          <h2 className={sectionTitleClass}>{hotColdTitle}</h2>
+          {hotColdHelper ? (
+            <p className={helperTextClass}>{hotColdHelper}</p>
+          ) : null}
+          {showQuestionMercariCta && flowMercariOutHref ? (
+            <div className="space-y-2 rounded-xl border border-border bg-card px-3 py-3">
+              <a
+                href={flowMercariOutHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => {
+                  preResultActionClicksRef.current = [
+                    ...preResultActionClicksRef.current,
+                    "mercari_question_click:q_hot_cold",
+                  ];
+                }}
+                className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+              >
+                メルカリで相場を見る
+              </a>
+              <p className={helperTextClass}>検索語: {mercariKeywordResult.keyword}</p>
+              <p className={helperTextClass}>※外部サイト（メルカリ）に移動します</p>
+            </div>
           ) : null}
         </div>
 

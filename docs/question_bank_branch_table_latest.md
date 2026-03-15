@@ -4,11 +4,11 @@
 
 ### Merch
 #### mode=short
-- itemKind=blind_draw#gc=N/A: q_storage_fit -> q_desire -> q_budget_pain -> q_urgency -> q_rarity_restock -> q_regret_impulse -> q_impulse_axis_short
-- itemKind=goods#gc=N/A: q_storage_fit -> q_desire -> q_budget_pain -> q_urgency -> q_rarity_restock -> q_regret_impulse -> q_impulse_axis_short
-- itemKind=preorder#gc=N/A: q_storage_fit -> q_desire -> q_budget_pain -> q_urgency -> q_rarity_restock -> q_regret_impulse -> q_impulse_axis_short
-- itemKind=ticket#gc=N/A: q_desire -> q_budget_pain -> q_urgency -> q_rarity_restock -> q_regret_impulse -> q_impulse_axis_short
-- itemKind=used#gc=N/A: q_storage_fit -> q_desire -> q_budget_pain -> q_urgency -> q_rarity_restock -> q_regret_impulse -> q_impulse_axis_short
+- itemKind=blind_draw#gc=N/A: q_storage_fit -> q_desire -> q_budget_pain -> q_urgency -> q_rarity_restock -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short
+- itemKind=goods#gc=N/A: q_storage_fit -> q_desire -> q_budget_pain -> q_urgency -> q_rarity_restock -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short
+- itemKind=preorder#gc=N/A: q_storage_fit -> q_desire -> q_budget_pain -> q_urgency -> q_rarity_restock -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short
+- itemKind=ticket#gc=N/A: q_desire -> q_budget_pain -> q_urgency -> q_rarity_restock -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short
+- itemKind=used#gc=N/A: q_storage_fit -> q_desire -> q_budget_pain -> q_urgency -> q_rarity_restock -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short
 
 #### mode=medium
 - itemKind=blind_draw#gc=N/A: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan
@@ -1704,7 +1704,7 @@
 - impactCategory: survey_only
 - relevanceSummary: none
 - behaviorRelevance: {"affectsScore":false,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
-- appears in: merch/long/blind_draw#gc=N/A | merch/long/goods#gc=display_large | merch/long/goods#gc=itabag_badge | merch/long/goods#gc=paper | merch/long/goods#gc=small_collection | merch/long/goods#gc=tech | merch/long/goods#gc=wearable | merch/long/preorder#gc=display_large | merch/long/preorder#gc=itabag_badge | merch/long/preorder#gc=paper | merch/long/preorder#gc=small_collection | merch/long/preorder#gc=tech | merch/long/preorder#gc=wearable | merch/long/ticket#gc=N/A | merch/long/used#gc=display_large | merch/long/used#gc=itabag_badge | merch/long/used#gc=paper | merch/long/used#gc=small_collection | merch/long/used#gc=tech | merch/long/used#gc=wearable | merch/medium/blind_draw#gc=N/A | merch/medium/goods#gc=N/A | merch/medium/preorder#gc=N/A | merch/medium/ticket#gc=N/A | merch/medium/used#gc=N/A
+- appears in: merch/long/blind_draw#gc=N/A | merch/long/goods#gc=display_large | merch/long/goods#gc=itabag_badge | merch/long/goods#gc=paper | merch/long/goods#gc=small_collection | merch/long/goods#gc=tech | merch/long/goods#gc=wearable | merch/long/preorder#gc=display_large | merch/long/preorder#gc=itabag_badge | merch/long/preorder#gc=paper | merch/long/preorder#gc=small_collection | merch/long/preorder#gc=tech | merch/long/preorder#gc=wearable | merch/long/ticket#gc=N/A | merch/long/used#gc=display_large | merch/long/used#gc=itabag_badge | merch/long/used#gc=paper | merch/long/used#gc=small_collection | merch/long/used#gc=tech | merch/long/used#gc=wearable | merch/medium/blind_draw#gc=N/A | merch/medium/goods#gc=N/A | merch/medium/preorder#gc=N/A | merch/medium/ticket#gc=N/A | merch/medium/used#gc=N/A | merch/short/blind_draw#gc=N/A | merch/short/goods#gc=N/A | merch/short/preorder#gc=N/A | merch/short/ticket#gc=N/A | merch/short/used#gc=N/A
 - isOrphan: false
 - mapTo: 
 - tags: cold, hot, normal_popularity, unknown_popularity

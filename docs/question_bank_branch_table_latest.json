@@ -12,6 +12,7 @@
           "q_budget_pain",
           "q_urgency",
           "q_rarity_restock",
+          "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short"
         ],
@@ -21,6 +22,7 @@
           "q_budget_pain",
           "q_urgency",
           "q_rarity_restock",
+          "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short"
         ],
@@ -29,6 +31,7 @@
           "q_budget_pain",
           "q_urgency",
           "q_rarity_restock",
+          "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short"
         ],
@@ -38,6 +41,7 @@
           "q_budget_pain",
           "q_urgency",
           "q_rarity_restock",
+          "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short"
         ],
@@ -47,6 +51,7 @@
           "q_budget_pain",
           "q_urgency",
           "q_rarity_restock",
+          "q_hot_cold",
           "q_regret_impulse",
           "q_impulse_axis_short"
         ]
@@ -6032,7 +6037,12 @@
         "merch/medium/goods#gc=N/A",
         "merch/medium/preorder#gc=N/A",
         "merch/medium/ticket#gc=N/A",
-        "merch/medium/used#gc=N/A"
+        "merch/medium/used#gc=N/A",
+        "merch/short/blind_draw#gc=N/A",
+        "merch/short/goods#gc=N/A",
+        "merch/short/preorder#gc=N/A",
+        "merch/short/ticket#gc=N/A",
+        "merch/short/used#gc=N/A"
       ],
       "isOrphan": false,
       "sameAsStandard": false,

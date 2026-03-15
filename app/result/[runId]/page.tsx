@@ -41,6 +41,7 @@ import {
   type StyleMode,
 } from "@/src/oshihapi/modes/useStyleMode";
 import { buildMercariKeyword, isMercariRelevantScenario } from "@/src/oshihapi/mercariKeyword";
+import { resolveAmazonAffiliateDestination } from "@/src/oshihapi/amazonAffiliateConfig";
 
 const BASKET_STORAGE_KEY = "oshihapi_basket_last";
 
@@ -199,6 +200,23 @@ export default function ResultPage() {
     if (run.output.decision) params.set("verdict", run.output.decision);
     return `/out?${params.toString()}`;
   }, [mercariKeywordResult.keyword, run]);
+  const amazonDestination = useMemo(
+    () => resolveAmazonAffiliateDestination({ itemKind: run?.meta.itemKind, goodsClass: run?.meta.goodsClass }),
+    [run?.meta.goodsClass, run?.meta.itemKind],
+  );
+  const amazonOutHref = useMemo(() => {
+    if (!run) return "";
+    const params = new URLSearchParams({
+      dest: "amazon-static",
+      id: amazonDestination.id,
+      runId: run.runId,
+      source: "result_page",
+    });
+    if (run.meta.itemKind) params.set("itemKind", run.meta.itemKind);
+    if (run.meta.goodsClass) params.set("gc", run.meta.goodsClass);
+    if (run.output.decision) params.set("verdict", run.output.decision);
+    return `/out?${params.toString()}`;
+  }, [amazonDestination.id, run]);
   const showBecausePricecheck = presentation?.tags?.includes("PRICECHECK") === true;
   const hasPlatformMarketAction = useMemo(
     () => run?.output.actions.some((action) => isPlatformMarketAction(action)) ?? false,
@@ -681,6 +699,24 @@ export default function ResultPage() {
           </a>
           <p className={helperTextClass}>※外部サイト（メルカリ）に移動します</p>
           <p className={helperTextClass}>※一部リンクにはアフィリエイトを含む場合があります</p>
+        </Card>
+      ) : null}
+
+      {run ? (
+        <Card className="space-y-3">
+          <h2 className={sectionTitleClass}>Amazonで比較する</h2>
+          <p className={bodyTextClass}>新品や関連商品をAmazonで確認できます。</p>
+          <a
+            href={amazonOutHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => logActionClick(`amazon_result_click:${amazonDestination.id}`)}
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground shadow-sm transition hover:bg-accent"
+          >
+            {amazonDestination.label}
+          </a>
+          <p className={helperTextClass}>※Amazonへ移動します</p>
+          <p className={helperTextClass}>{amazonDestination.note ?? "※一部リンクにはアフィリエイトを含みます"}</p>
         </Card>
       ) : null}
 
