@@ -124,6 +124,8 @@ export type DecisionOutput = {
     note: string;
   };
   shareText: string;
+  positiveFactors?: string[];
+  negativeFactors?: string[];
   presentation?: DecisionPresentation;
 };
 

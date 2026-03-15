@@ -1,5 +1,12 @@
 # Question Bank Branching Table
 
+
+## 2026-03 Branch Update Notes
+- 中古分岐: `q_used_authenticity`, `q_used_defect`（実装ID: `q_addon_used_authenticity`, `q_addon_used_defect_return`）を medium/long で最低2問入れる。
+- 予約分岐: `q_preorder_wait_time`, `q_preorder_restock_uncertainty`（実装ID: `q_addon_preorder_timeline`, `q_addon_common_info`）を medium/long で使う。
+- チケット分岐: `q_ticket_schedule`, `q_ticket_conflict`（実装ID: `q_addon_ticket_schedule`, `q_addon_ticket_resale_rule`）を medium/long で使う。
+- goodsClass add-on: `q_tech_spec`（`q_addon_goods_tech_compat`）、`q_wearable_size`（`q_addon_goods_wear_fit`）などを維持。
+
 ## A. Branching Matrix
 
 ### Merch

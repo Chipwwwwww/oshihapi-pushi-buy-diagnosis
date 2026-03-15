@@ -66,6 +66,9 @@ export default function HistoryPage() {
     return "standard";
   });
 
+  const [keyword, setKeyword] = useState("");
+  const [decisionFilter, setDecisionFilter] = useState<"ALL" | "BUY" | "THINK" | "SKIP">("ALL");
+
   const updateResultMode = (nextMode: ResultMode) => {
     setResultMode(nextMode);
     if (typeof window !== "undefined") {
@@ -73,7 +76,20 @@ export default function HistoryPage() {
     }
   };
 
-  const hasRuns = useMemo(() => runs.length > 0, [runs]);
+  const filteredRuns = useMemo(() => {
+    const term = keyword.trim().toLowerCase();
+    return runs.filter((run) => {
+      if (decisionFilter !== "ALL" && run.output.decision !== decisionFilter) return false;
+      if (!term) return true;
+      const haystack = [
+        run.meta.itemName ?? "",
+        run.output.reasons.map((reason) => reason.text).join(" "),
+      ].join(" ").toLowerCase();
+      return haystack.includes(term);
+    });
+  }, [decisionFilter, keyword, runs]);
+
+  const hasRuns = useMemo(() => filteredRuns.length > 0, [filteredRuns]);
   const summary = useMemo(() => {
     const counts = { BUY: 0, THINK: 0, SKIP: 0 } as const;
     const mutable = { ...counts };
@@ -134,6 +150,27 @@ export default function HistoryPage() {
         </Card>
       ) : null}
 
+      <Card className="space-y-3">
+        <h2 className={sectionTitleClass}>検索・フィルター</h2>
+        <input
+          type="text"
+          value={keyword}
+          onChange={(event) => setKeyword(event.target.value)}
+          placeholder="商品名・理由で検索"
+          className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm"
+        />
+        <select
+          value={decisionFilter}
+          onChange={(event) => setDecisionFilter(event.target.value as "ALL" | "BUY" | "THINK" | "SKIP")}
+          className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm"
+        >
+          <option value="ALL">すべて</option>
+          <option value="BUY">買う</option>
+          <option value="THINK">保留</option>
+          <option value="SKIP">やめる</option>
+        </select>
+      </Card>
+
       {!hasRuns ? (
         <Card className="border-dashed text-center">
           <p className={bodyTextClass}>まだ履歴がありません。</p>
@@ -143,7 +180,7 @@ export default function HistoryPage() {
         <section className="space-y-4">
           <h2 className={sectionTitleClass}>最近の診断</h2>
           <div className="grid gap-4">
-            {runs.map((run) => {
+            {filteredRuns.map((run) => {
               const outputExt = run.output as typeof run.output & {
                 waitType?: string;
                 reasonTags?: string[];
@@ -175,6 +212,9 @@ export default function HistoryPage() {
                     ) : null}
                     <p className={helperTextClass}>
                       {run.meta.itemName ?? "（商品名なし）"}
+                    </p>
+                    <p className="text-xs text-muted-foreground line-clamp-2">
+                      要約: {run.output.reasons.slice(0, 2).map((reason) => reason.text).join(" / ") || "理由データなし"}
                     </p>
                     <div className="flex flex-wrap gap-2">
                       <p className="inline-flex rounded-full border border-border bg-muted px-3 py-1 text-xs font-semibold text-foreground">

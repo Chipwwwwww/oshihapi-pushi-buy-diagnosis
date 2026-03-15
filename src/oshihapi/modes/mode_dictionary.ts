@@ -148,8 +148,8 @@ export const MODE_DICTIONARY: Record<ResultMode, ModeDefinition> = {
     },
     text: {
       templates: {
-        x_280: "{sticker}{emoji} けっか→{verdict}\nまってもOK:{waitType}\nりゆう: {reasons}\nつぎ: {actions} {kaomoji}",
-        dm_short: "{sticker}{emoji} {verdict} / {waitType} りゆう:{reasons} つぎ:{actions} {kaomoji}",
+        x_280: "{sticker}{emoji} けっか→{verdict}\nまってもOK:{waitType}\n理由: {reasons}\nつぎ: {actions} {kaomoji}",
+        dm_short: "{sticker}{emoji} {verdict} / {waitType} 理由:{reasons} つぎ:{actions} {kaomoji}",
       },
       emoji: ["✨", "💗", "🫶", "🎀", "🌷"],
       kaomoji: ["(ू•ᴗ•ू❁)", "(๑˃ᴗ˂)ﻭ", "(｡•ㅅ•｡)♡"],
@@ -158,7 +158,7 @@ export const MODE_DICTIONARY: Record<ResultMode, ModeDefinition> = {
       forbiddenSubstrings: ["爆買い", "課金圧"],
       verdictLabel: {
         BUY: "かう",
-        THINK: "ほりゅう",
+        THINK: "保留",
         SKIP: "おやすみ",
       },
       waitTypeLabel: {

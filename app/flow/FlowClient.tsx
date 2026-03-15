@@ -35,6 +35,12 @@ import {
   QUICK_QUESTION_IDS,
   shouldAskStorage,
 } from "@/src/oshihapi/question_sets";
+import {
+  loadDiagnosisState,
+  loadPriceByItemKind,
+  saveDiagnosisState,
+  savePriceByItemKind,
+} from "@/src/store/diagnosisStore";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Progress from "@/components/ui/Progress";
@@ -171,8 +177,15 @@ export default function FlowPage() {
   const [draftDecisiveness, setDraftDecisiveness] = useState<Decisiveness>(decisiveness);
 
   const useCase = itemKind === "game_billing" ? "game_billing" : "merch";
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
+  const initialSavedState =
+    typeof window !== "undefined" ? loadDiagnosisState() : null;
+  const canRestoreSavedState =
+    initialSavedState &&
+    initialSavedState.mode === mode &&
+    initialSavedState.itemKind === (itemKind ?? "goods") &&
+    initialSavedState.goodsClass === goodsClass;
+  const [currentIndex, setCurrentIndex] = useState(canRestoreSavedState ? (initialSavedState?.currentQuestionIndex ?? 0) : 0);
+  const [answers, setAnswers] = useState<Record<string, AnswerValue>>(canRestoreSavedState ? (initialSavedState?.answers ?? {}) : {});
 
   const questions = useMemo(() => {
     if (useCase === "game_billing") {
@@ -180,7 +193,7 @@ export default function FlowPage() {
     }
 
     const baseIds = mode === "short" ? QUICK_QUESTION_IDS : CORE_12_QUESTION_IDS;
-    const itemKindAddonIds = mode === "long" && itemKind ? (ADDON_BY_ITEM_KIND[itemKind] ?? []) : [];
+    const itemKindAddonIds = mode !== "short" && itemKind ? (ADDON_BY_ITEM_KIND[itemKind] ?? []).slice(0, mode === "medium" ? 2 : undefined) : [];
     const enableGoodsClass = mode === "long" && (itemKind === "goods" || itemKind === "preorder" || itemKind === "used");
     const goodsClassAddonIds = enableGoodsClass ? ADDON_BY_GOODS_CLASS[goodsClass] ?? [] : [];
     const ids = [...baseIds, ...itemKindAddonIds, ...goodsClassAddonIds];
@@ -190,7 +203,7 @@ export default function FlowPage() {
     const lacksMeta = !itemName || !priceYen;
     if (!ids.includes("q_storage_space") && (hasUnknownStorage || mode === "short")) ids.push("q_storage_space");
     if (!ids.includes("q_price_feel") && (hasUnknownBudget || mode === "short" || lacksMeta)) ids.push("q_price_feel");
-    if (!ids.includes("q_addon_common_info") && (mode !== "long" || lacksMeta)) ids.push("q_addon_common_info");
+    if (!ids.includes("q_addon_common_info") && (mode !== "long" || lacksMeta || itemKind === "preorder" || itemKind === "ticket" || itemKind === "used")) ids.push("q_addon_common_info");
 
     const deduped = Array.from(new Set(ids)).filter((id) => {
       if (id !== "q_storage_fit" && id !== "q_storage_space") return true;
@@ -210,7 +223,8 @@ export default function FlowPage() {
   const numChangesRef = useRef(0);
   const numBacktracksRef = useRef(0);
 
-  const currentQuestion = questions[currentIndex];
+  const safeCurrentIndex = Math.min(currentIndex, Math.max(questions.length - 1, 0));
+  const currentQuestion = questions[safeCurrentIndex];
   const currentQuestionCopy = currentQuestion
     ? COPY_BY_MODE[styleMode].questions[currentQuestion.id]
     : undefined;
@@ -243,6 +257,7 @@ export default function FlowPage() {
     const parsedDraftPriceYen = parsePriceYen(draftPriceYen);
     if (parsedDraftPriceYen !== undefined) params.set("priceYen", String(parsedDraftPriceYen));
     else params.delete("priceYen");
+    if (parsedDraftPriceYen !== undefined) savePriceByItemKind(draftItemKind, parsedDraftPriceYen);
     params.set("deadline", draftDeadline);
     params.set("itemKind", draftItemKind);
     if (draftItemKind === "goods" || draftItemKind === "preorder" || draftItemKind === "used") params.set("gc", draftGoodsClass);
@@ -259,8 +274,44 @@ export default function FlowPage() {
     numBacktracksRef.current = 0;
   }, [questions.length]);
 
+
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    saveDiagnosisState({
+      answers,
+      currentQuestionIndex: currentIndex,
+      mode,
+      itemKind: itemKind ?? "goods",
+      goodsClass,
+      decisiveness,
+      meta: { itemName, priceYen, deadline, itemKind, goodsClass },
+    });
+  }, [answers, currentIndex, deadline, decisiveness, goodsClass, itemKind, itemName, mode, priceYen]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !Number.isFinite(priceYen ?? Number.NaN) || !itemKind) return;
+    savePriceByItemKind(itemKind, priceYen);
+  }, [itemKind, priceYen]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !itemKind) return;
+    const rememberedPrice = loadPriceByItemKind(itemKind);
+    if (rememberedPrice == null || Number(priceYenParam) === rememberedPrice) return;
+    if (priceYenParam) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("priceYen", String(rememberedPrice));
+    router.replace(`/flow?${params.toString()}`);
+  }, [itemKind, priceYenParam, router, searchParams]);
+
+
+  const effectiveAnswers = useMemo(() => {
+    const validIds = new Set(questions.map((question) => question.id));
+    return Object.fromEntries(Object.entries(answers).filter(([id]) => validIds.has(id)));
+  }, [answers, questions]);
+
   const normalizedAnswers = useMemo(() => {
-    const next = { ...answers };
+    const next = { ...effectiveAnswers };
     for (const question of questions) {
       if (question.type !== "scale") continue;
       const value = next[question.id];
@@ -271,12 +322,12 @@ export default function FlowPage() {
       }
     }
     return next;
-  }, [answers, questions]);
+  }, [effectiveAnswers, questions]);
 
   const isAnswered = (question: Question | undefined) => {
     if (!question) return false;
     if (!question.required) return true;
-    const value = answers[question.id];
+    const value = effectiveAnswers[question.id];
     if (question.type === "scale" || question.type === "number") {
       if (question.type === "scale" && typeof value !== "number") {
         const fallback = question.defaultValue ?? question.min;
@@ -312,19 +363,26 @@ export default function FlowPage() {
       if (prevValue !== undefined && !isSame) {
         numChangesRef.current += 1;
       }
-      return { ...prev, [questionId]: value };
+      const next = { ...prev, [questionId]: value };
+      const answeredQuestionIndex = questions.findIndex((question) => question.id === questionId);
+      if (answeredQuestionIndex >= 0) {
+        for (let index = answeredQuestionIndex + 1; index < questions.length; index += 1) {
+          delete next[questions[index].id];
+        }
+      }
+      return next;
     });
   };
 
   const handleNext = () => {
     if (!currentQuestion) return;
-    if (currentIndex < questions.length - 1) {
-      recordQuestionTime(currentIndex);
+    if (safeCurrentIndex < questions.length - 1) {
+      recordQuestionTime(safeCurrentIndex);
       setCurrentIndex((prev) => prev + 1);
       return;
     }
 
-    recordQuestionTime(currentIndex);
+    recordQuestionTime(safeCurrentIndex);
     const runId = crypto.randomUUID();
     const output = evaluate({
       questionSet: { ...merch_v2_ja, questions },
@@ -367,10 +425,10 @@ export default function FlowPage() {
   };
 
   const handleBack = () => {
-    if (currentIndex === 0) {
+    if (safeCurrentIndex === 0) {
       router.push("/");
     } else {
-      recordQuestionTime(currentIndex);
+      recordQuestionTime(safeCurrentIndex);
       numBacktracksRef.current += 1;
       setCurrentIndex((prev) => prev - 1);
     }
@@ -395,7 +453,7 @@ export default function FlowPage() {
             戻る
           </Button>
           <p className={helperTextClass}>
-            {currentIndex + 1}/{questions.length}
+            {safeCurrentIndex + 1}/{questions.length}
           </p>
         </div>
         <div className="space-y-2">
@@ -455,7 +513,7 @@ export default function FlowPage() {
                 className="w-full accent-primary"
               />
               <p className={helperTextClass}>
-                選択値: {answers[currentQuestion.id]}
+                選択値: {effectiveAnswers[currentQuestion.id]}
               </p>
             </div>
           ) : null}
@@ -466,7 +524,7 @@ export default function FlowPage() {
                 <RadioCard
                   key={option.id}
                   title={getOptionLabel(currentQuestion.id, option.id, option.label)}
-                  isSelected={answers[currentQuestion.id] === option.id}
+                  isSelected={effectiveAnswers[currentQuestion.id] === option.id}
                   type="button"
                   onClick={() => updateAnswer(currentQuestion.id, option.id)}
                 />
@@ -476,7 +534,7 @@ export default function FlowPage() {
           {currentQuestion.type === "multi" && currentQuestion.options ? (
             <div className="grid gap-3">
               {(() => {
-                const raw = answers[currentQuestion.id];
+                const raw = effectiveAnswers[currentQuestion.id];
                 const selectedValues: string[] = Array.isArray(raw)
                   ? raw.filter((value): value is string => typeof value === "string")
                   : [];
@@ -533,6 +591,11 @@ export default function FlowPage() {
                         </button>
                       );
                     })}
+                    {typeof currentQuestion.maxSelect === "number" ? (
+                      <p className={helperTextClass}>
+                        あと {Math.max(currentQuestion.maxSelect - selectedValues.length, 0)} 項目選べます
+                      </p>
+                    ) : null}
                     {typeof currentQuestion.maxSelect === "number" && isMaxed ? (
                       <p className={helperTextClass}>
                         {styleMode === "kawaii"
@@ -549,7 +612,7 @@ export default function FlowPage() {
           ) : null}
           {currentQuestion.type === "text" ? (
             <textarea
-              value={String(answers[currentQuestion.id] ?? "")}
+              value={String(effectiveAnswers[currentQuestion.id] ?? "")}
               onChange={(event) => updateAnswer(currentQuestion.id, event.target.value)}
               placeholder="例：予算とのバランスが不安、再販情報が知りたい"
               className={`${inputBaseClass} min-h-[140px]`}

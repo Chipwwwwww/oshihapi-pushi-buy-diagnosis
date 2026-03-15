@@ -74,7 +74,7 @@ export const RESULT_COPY: Record<
       resultSummaryTitle: "けっかサマリー",
       adviceTitle: "ひとことアドバイス",
       actionsTitle: "つぎにやること",
-      reasonsTitle: "りゆうメモ",
+      reasonsTitle: "理由メモ",
     },
     verdictSubcopy: {
       BUY: "いまの条件ならだいじょうぶ。予算ラインだけ決めて進もう。",

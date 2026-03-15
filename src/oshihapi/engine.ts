@@ -86,6 +86,36 @@ function selectWeights(config: EngineConfig, itemKind?: ItemKind) {
   return { ...base, ...config.decisionWeightProfiles[itemKind] };
 }
 
+
+const holdBandByItemKind: Partial<Record<ItemKind, number>> = {
+  goods: 1,
+  blind_draw: 0.9,
+  used: 0.95,
+  preorder: 1,
+  ticket: 0.9,
+  game_billing: 0.85,
+};
+
+function getTopFactors(scores: Record<ScoreDimension, number>, kind: "positive" | "negative", count = 3): string[] {
+  const labels: Record<ScoreDimension, string> = {
+    desire: "欲しい気持ち",
+    affordability: "予算の余裕",
+    urgency: "今必要か",
+    rarity: "希少性",
+    restockChance: "再販の見込み",
+    regretRisk: "後悔リスク",
+    impulse: "衝動性",
+    opportunityCost: "機会コスト",
+  };
+  const entries = Object.entries(scores) as [ScoreDimension, number][];
+  const sorted = entries
+    .map(([dim, score]) => ({ dim, score, signed: normalize01ToSigned(score) }))
+    .filter((entry) => (kind === "positive" ? entry.signed > 0 : entry.signed < 0))
+    .sort((a, b) => Math.abs(b.signed) - Math.abs(a.signed))
+    .slice(0, count);
+  return sorted.map((entry) => `${labels[entry.dim]} (${Math.round(entry.score)})`);
+}
+
 function stdDev(values: number[]) {
   const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
   const variance = values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / values.length;
@@ -162,11 +192,13 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
   const mode = input.mode ?? 'medium';
   const holdBandBase = Math.max(Math.abs(config.thresholds.buy), Math.abs(config.thresholds.skip));
   const unknownBandBoost = unknownCount >= 2 ? 1.1 : 1;
+  const itemKindBand = holdBandByItemKind[input.meta.itemKind ?? "goods"] ?? 1;
   const holdBand =
     holdBandBase *
     (decisivenessMultiplierMap[decisiveness] ?? decisivenessMultiplierMap.standard) *
     (modeMultiplierMap[mode] ?? modeMultiplierMap.medium) *
-    unknownBandBoost;
+    unknownBandBoost *
+    itemKindBand;
 
   let decision: Decision = 'THINK';
   if (scoreSigned >= holdBand) decision = 'BUY';
@@ -216,6 +248,8 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
   }
 
   const decisionJa = decision === 'BUY' ? '買う' : decision === 'SKIP' ? 'やめる' : '保留';
+  const positiveFactors = getTopFactors(scores, "positive");
+  const negativeFactors = getTopFactors(scores, "negative");
   const shareText = buildShareText(decisionJa, reasons);
   const presentation = buildPresentation({ decision, actions, reasons });
 
@@ -232,6 +266,8 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
       note: input.useCase === 'game_billing' ? 'ゲーム課金（共通ロジック）' : method.note,
     },
     shareText,
+    positiveFactors,
+    negativeFactors,
     presentation,
   };
 }
