@@ -4,7 +4,14 @@ import { evaluate } from "@/src/oshihapi/engine";
 import { getOptionalMetaHint, isGoodsClassApplicable } from "@/src/oshihapi/homeFunnel";
 import { resolveFlowQuestions } from "@/src/oshihapi/flowResolver";
 import { pruneAnswersAfterQuestion } from "@/src/oshihapi/flowState";
-import { saveDiagnosisState, loadDiagnosisState, type DiagnosisState } from "@/src/store/diagnosisStore";
+import {
+  saveDiagnosisState,
+  loadDiagnosisState,
+  type DiagnosisState,
+  findLatestCompatibleDraft,
+  clearCompatibleDrafts,
+  createReplayDraft,
+} from "@/src/store/diagnosisStore";
 import type { AnswerValue, DecisionOutput, GoodsClass, ItemKind, Mode } from "@/src/oshihapi/model";
 
 type Scenario = {
@@ -176,6 +183,72 @@ function runBackChangeCheck() {
   if (recomputed.questions.length === 0) throw new Error("back_change: recompute failed");
 }
 
+
+
+function runDraftInvalidationCheck() {
+  const store = new Map<string, string>();
+  (globalThis as any).window = {
+    localStorage: {
+      getItem: (k: string) => (store.has(k) ? store.get(k)! : null),
+      setItem: (k: string, v: string) => store.set(k, v),
+      removeItem: (k: string) => store.delete(k),
+    },
+  };
+
+  (globalThis as any).window.localStorage.setItem(
+    "oshihapi:diagnosis:drafts:v1",
+    JSON.stringify([
+      {
+        draftId: "stale-1",
+        createdAt: Date.now() - 20,
+        updatedAt: Date.now() - 20,
+        schemaVersion: 0,
+        questionBankVersion: 0,
+        flowConfigHash: "old",
+        runContext: { mode: "short", itemKind: "goods", goodsClass: "small_collection", styleMode: "standard" },
+        decisiveness: "standard",
+        answers: { q_desire: 3 },
+        shownQuestionIds: ["q_desire"],
+        skippedQuestionIds: [],
+        currentQuestionIndex: 0,
+        currentQuestionId: "q_desire",
+        persistenceState: "fresh",
+      },
+    ]),
+  );
+
+  const restored = findLatestCompatibleDraft({ mode: "short", itemKind: "goods", goodsClass: "small_collection", styleMode: "standard" });
+  if (restored.status !== "invalidated") throw new Error("draft_invalidation: stale draft should be invalidated");
+}
+
+function runReplaySeedCheck() {
+  const run = {
+    runId: "run-old",
+    createdAt: Date.now(),
+    locale: "ja",
+    category: "merch",
+    mode: "medium",
+    meta: { itemKind: "goods", goodsClass: "paper", itemName: "A", deadline: "tomorrow" },
+    answers: { q_desire: 4 },
+    output: {
+      decision: "THINK", confidence: 50, score: 0, scoreSummary: {
+        desire: 50, affordability: 50, urgency: 50, rarity: 50, restockChance: 50, regretRisk: 50, impulse: 50, opportunityCost: 50,
+      },
+      reasons: [{ id: "r", text: "r" }],
+      actions: [{ id: "a", text: "a" }],
+      merchMethod: { method: "PASS", note: "n" },
+      shareText: "s",
+    },
+    diagnosticTrace: { runContext: { mode: "medium", itemKind: "goods", goodsClass: "paper", hasPrice: false, hasItemName: true }, shownQuestionIds: ["q_desire"], skippedQuestionIds: [], branchHits: [], branchMisses: [] },
+  } as any;
+  const replay = createReplayDraft(run, "oshi");
+  if (replay.persistenceState !== "replaySeeded" || replay.replaySeedRunId !== "run-old") {
+    throw new Error("replay_seed: replay draft metadata missing");
+  }
+  clearCompatibleDrafts({ mode: "medium", itemKind: "goods", goodsClass: "paper", styleMode: "oshi" });
+  const afterClear = findLatestCompatibleDraft({ mode: "medium", itemKind: "goods", goodsClass: "paper", styleMode: "oshi" });
+  if (afterClear.status === "restored") throw new Error("start_new: compatible draft should clear deterministically");
+}
 
 function runScoringSeparationChecks() {
   const build = (itemKind: ItemKind, overrides: Record<string, AnswerValue>) => {
@@ -376,6 +449,8 @@ runBackChangeCheck();
 runStyleInvariantCheck();
 runScoringSeparationChecks();
 runHomepageFunnelChecks();
+runDraftInvalidationCheck();
+runReplaySeedCheck();
 
 assertUniqueQuestion(results, "long_used_small_collection", "q_addon_used_authenticity");
 assertUniqueQuestion(results, "long_goods_small_collection", "q_addon_goods_collection_goal");
@@ -412,6 +487,8 @@ const report = {
     styleInvariant: "pass",
     scoringSeparation: "pass",
     homepageFunnel: "pass",
+    draftInvalidation: "pass",
+    replaySeed: "pass",
   },
   uniquePathGaps,
 };

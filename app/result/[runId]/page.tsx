@@ -29,6 +29,7 @@ import {
   neutralizeMarketAction,
 } from "@/src/oshihapi/neutralizePlatformActions";
 import { findRun, updateRun } from "@/src/oshihapi/runStorage";
+import { createReplayDraft } from "@/src/store/diagnosisStore";
 import { sendTelemetry, TELEMETRY_OPT_IN_KEY } from "@/src/oshihapi/telemetryClient";
 import { formatResultByMode } from "@/src/oshihapi/modes/formatResultByMode";
 import { MODE_DICTIONARY, Verdict } from "@/src/oshihapi/modes/mode_dictionary";
@@ -333,6 +334,26 @@ export default function ResultPage() {
     } finally {
       setTelemetrySubmitting(false);
     }
+  };
+
+  const handleReplay = (seedAnswers: boolean) => {
+    if (!run) return;
+    const params = new URLSearchParams();
+    params.set("mode", run.mode);
+    params.set("styleMode", styleMode);
+    params.set("itemKind", run.meta.itemKind ?? "goods");
+    params.set("gc", run.meta.goodsClass ?? "small_collection");
+    params.set("deadline", run.meta.deadline ?? "unknown");
+    if (run.meta.itemName) params.set("itemName", run.meta.itemName);
+    if (Number.isFinite(run.meta.priceYen ?? Number.NaN)) params.set("priceYen", String(run.meta.priceYen));
+    params.set("decisiveness", run.decisiveness ?? "standard");
+    if (seedAnswers) {
+      const draft = createReplayDraft(run, styleMode);
+      params.set("draftId", draft.draftId);
+    } else {
+      params.set("startNew", "1");
+    }
+    router.push(`/flow?${params.toString()}`);
   };
 
   const handleWriteBackToBasket = () => {
@@ -681,13 +702,8 @@ export default function ResultPage() {
             バスケットに反映して戻る
           </Button>
         ) : null}
-        <Button
-          variant="outline"
-          onClick={() => router.push("/")}
-          className="w-full rounded-xl"
-        >
-          もう一度診断
-        </Button>
+        <Button variant="outline" onClick={() => handleReplay(false)} className="w-full rounded-xl">もう一度診断（新規）</Button>
+        <Button onClick={() => handleReplay(true)} className="w-full rounded-xl">前回の回答で再診断</Button>
         <Button onClick={() => router.push("/history")} className="w-full rounded-xl">
           履歴を見る
         </Button>

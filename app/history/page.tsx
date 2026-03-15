@@ -7,6 +7,7 @@ import type { DecisionRun } from "@/src/oshihapi/model";
 import { decisivenessLabels } from "@/src/oshihapi/decisiveness";
 import { loadMarketMemos } from "@/src/oshihapi/marketMemoStorage";
 import { loadRuns } from "@/src/oshihapi/runStorage";
+import { createReplayDraft } from "@/src/store/diagnosisStore";
 import { formatResultByMode } from "@/src/oshihapi/modes/formatResultByMode";
 import { MODE_DICTIONARY, ResultMode, Verdict } from "@/src/oshihapi/modes/mode_dictionary";
 import Badge from "@/components/ui/Badge";
@@ -204,9 +205,23 @@ export default function HistoryPage() {
                 mode: resultMode,
               });
 
+              const replayFromHistory = () => {
+                const draft = createReplayDraft(run, resultMode);
+                const params = new URLSearchParams();
+                params.set("mode", run.mode);
+                params.set("styleMode", resultMode);
+                params.set("itemKind", run.meta.itemKind ?? "goods");
+                params.set("gc", run.meta.goodsClass ?? "small_collection");
+                params.set("decisiveness", run.decisiveness ?? "standard");
+                if (run.meta.itemName) params.set("itemName", run.meta.itemName);
+                if (Number.isFinite(run.meta.priceYen ?? Number.NaN)) params.set("priceYen", String(run.meta.priceYen));
+                params.set("deadline", run.meta.deadline ?? "unknown");
+                params.set("draftId", draft.draftId);
+                router.push(`/flow?${params.toString()}`);
+              };
+
               return (
-                <Link key={run.runId} href={`/result/${run.runId}`} className="block">
-                <Card className="space-y-4 transition hover:border-primary/40">
+                <Card key={run.runId} className="space-y-4 transition hover:border-primary/40">
                   <div className="flex items-center justify-between text-sm text-muted-foreground">
                     <span>{formatDate(run.createdAt)}</span>
                     <Badge variant="outline">衝動度: {impulseLabel(run)}</Badge>
@@ -242,8 +257,11 @@ export default function HistoryPage() {
                       ) : null}
                     </div>
                   </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <Link href={`/result/${run.runId}`} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border px-3 py-2 text-sm font-semibold">結果を見る</Link>
+                    <button type="button" onClick={replayFromHistory} className="min-h-11 rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold">この結果で再診断</button>
+                  </div>
                 </Card>
-                </Link>
               );
             })}
           </div>

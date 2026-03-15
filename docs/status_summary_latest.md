@@ -1,3 +1,10 @@
+
+## P4 狀態摘要（refresh/restore/replay）
+- ✅ 引入 DraftRun（schemaVersion/questionBankVersion/flowConfigHash/runContext/path snapshot）。
+- ✅ /flow 支援 deterministic restore，並在不相容時標記 invalidated。
+- ✅ result/history 支援 replaySeeded（從 completed run 建立新 draft）。
+- ✅ 診斷 trace 補 persistence 區塊（state/restore source/invalidation reason/replay seed/path mode）。
+- ✅ qa:diagnostics 與 build 皆通過。
 ## 本次 P3（首頁兩步漏斗 + 題庫分岐強化）完成項
 - ✅ 首頁改為 2-step 漏斗：Step1 先選決策對象（itemKind，goods-like 追加 goodsClass），Step2 再選診斷深度（short/medium/long）。
 - ✅ recommendation 文案改為「為何推薦此模式」的平易日文，與兩步漏斗不競爭。

@@ -129,6 +129,14 @@ export type DiagnosticTrace = {
   branchHits: BranchTrace[];
   branchMisses: BranchTrace[];
   resultInputsSummary?: ResultInputsSummaryTrace;
+  persistence?: {
+    state: "fresh" | "restored" | "invalidated" | "replaySeeded";
+    restoreSourceDraftId?: string;
+    invalidationReason?: string;
+    replaySeedRunId?: string;
+    pathRestoreMode?: "restored" | "recomputed";
+    lifecycle: string[];
+  };
 };
 
 export type DecisionRun = {
