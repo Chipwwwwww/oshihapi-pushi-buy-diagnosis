@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { evaluate } from "@/src/oshihapi/engine";
+import { getOptionalMetaHint, isGoodsClassApplicable } from "@/src/oshihapi/homeFunnel";
 import { resolveFlowQuestions } from "@/src/oshihapi/flowResolver";
 import { pruneAnswersAfterQuestion } from "@/src/oshihapi/flowState";
 import { saveDiagnosisState, loadDiagnosisState, type DiagnosisState } from "@/src/store/diagnosisStore";
@@ -27,23 +28,28 @@ function buildMeta(metaVariant: Scenario["metaVariant"], itemKind: ItemKind, goo
 
 function defaultAnswer(questionId: string): AnswerValue {
   if (questionId.startsWith("gb_")) {
-    if (questionId.endsWith("type")) return "gacha";
+    if (questionId === "gb_q2_type") return "gacha";
+    if (questionId === "gb_q10_pity") return "near";
     return "some";
   }
-  if (questionId.includes("storage_fit")) return "OK";
-  if (questionId.includes("storage_space")) return "ok";
-  if (questionId.includes("budget_pain")) return "low";
-  if (questionId.includes("motives_multi")) return ["use"];
-  if (questionId.includes("goal")) return "single";
-  if (questionId.includes("hot_cold")) return "normal";
-  if (questionId.includes("price_feel")) return "fair";
-  if (questionId.includes("alternative_plan")) return "none";
-  if (questionId.includes("rarity_restock")) return "restock";
-  if (questionId.includes("urgency")) return "normal";
-  if (questionId.includes("regret_impulse")) return "stable";
-  if (questionId.includes("impulse_axis_short")) return 3;
-  if (questionId.includes("desire")) return 3;
-  if (questionId.includes("addon")) return "yes";
+  if (questionId === "q_storage_fit") return "PROBABLE";
+  if (questionId === "q_storage_space") return "adjust";
+  if (questionId === "q_budget_pain") return "some";
+  if (questionId === "q_motives_multi") return ["use"];
+  if (questionId === "q_goal") return "single";
+  if (questionId === "q_hot_cold") return "normal";
+  if (questionId === "q_price_feel") return "normal";
+  if (questionId === "q_alternative_plan") return "maybe";
+  if (questionId === "q_rarity_restock") return "maybe";
+  if (questionId === "q_urgency") return "low_stock";
+  if (questionId === "q_regret_impulse") return "calm";
+  if (questionId === "q_impulse_axis_short") return 3;
+  if (questionId === "q_desire") return 3;
+  if (questionId.includes("blind_draw")) return "maybe";
+  if (questionId.includes("ticket")) return "partly";
+  if (questionId.includes("preorder")) return "unknown";
+  if (questionId.includes("used")) return "careful";
+  if (questionId.includes("addon")) return "partial";
   return "some";
 }
 
@@ -270,6 +276,28 @@ function runScoringSeparationChecks() {
   }
 }
 
+
+function runHomepageFunnelChecks() {
+  if (!isGoodsClassApplicable("goods") || !isGoodsClassApplicable("used") || !isGoodsClassApplicable("preorder")) {
+    throw new Error("homepage_funnel: goods-like item kinds should allow goodsClass step");
+  }
+  if (isGoodsClassApplicable("ticket") || isGoodsClassApplicable("blind_draw") || isGoodsClassApplicable("game_billing")) {
+    throw new Error("homepage_funnel: non-goods item kinds should not require goodsClass step");
+  }
+  const ticketHint = getOptionalMetaHint("ticket");
+  const blindHint = getOptionalMetaHint("blind_draw");
+  if (!ticketHint.includes("日程") || !blindHint.includes("被り")) {
+    throw new Error("homepage_funnel: optional meta hint should reflect item kind");
+  }
+}
+
+function assertUniqueQuestion(results: ReturnType<typeof runScenario>[], scenarioId: string, questionId: string) {
+  const scenario = results.find((r) => r.id === scenarioId);
+  if (!scenario || !scenario.shownQuestionIds.includes(questionId)) {
+    throw new Error(`${scenarioId}: expected unique question ${questionId}`);
+  }
+}
+
 function runStyleInvariantCheck() {
   const base = resolveFlowQuestions({
     mode: "medium",
@@ -331,7 +359,7 @@ for (const mode of modes) {
       itemKind,
       styleMode: styleModes[i % styleModes.length],
       metaVariant: metaVariants[i % metaVariants.length],
-      minBranchHitIds: itemKind === "game_billing" ? ["usecase_game_billing"] : [`mode_${mode}`],
+      minBranchHitIds: itemKind === "game_billing" ? ["usecase_game_billing"] : itemKind === "goods" ? [`mode_${mode}`] : [`mode_${mode}`, `kind_${itemKind}`],
     });
   }
 }
@@ -347,6 +375,18 @@ runRefreshRestoreCheck();
 runBackChangeCheck();
 runStyleInvariantCheck();
 runScoringSeparationChecks();
+runHomepageFunnelChecks();
+
+assertUniqueQuestion(results, "long_used_small_collection", "q_addon_used_authenticity");
+assertUniqueQuestion(results, "long_goods_small_collection", "q_addon_goods_collection_goal");
+assertUniqueQuestion(results, "long_goods_paper", "q_addon_goods_paper_care");
+assertUniqueQuestion(results, "long_goods_wearable", "q_addon_goods_wear_fit");
+assertUniqueQuestion(results, "long_goods_display_large", "q_addon_goods_display_space_plan");
+assertUniqueQuestion(results, "long_goods_tech", "q_addon_goods_tech_compat");
+assertUniqueQuestion(results, "long_goods_itabag_badge", "q_addon_goods_itabag_target");
+assertUniqueQuestion(results, "long_blind_draw", "q_addon_blind_draw_miss_pain");
+assertUniqueQuestion(results, "long_preorder", "q_addon_preorder_decay");
+assertUniqueQuestion(results, "long_ticket", "q_addon_ticket_trip_load");
 
 const itemKindCoverage = Object.fromEntries(itemKinds.map((kind) => [kind, results.some((r) => r.id.includes(`_${kind}`) || r.id.includes(`-${kind}`))]));
 
@@ -371,6 +411,7 @@ const report = {
     backThenChangeAnswer: "pass",
     styleInvariant: "pass",
     scoringSeparation: "pass",
+    homepageFunnel: "pass",
   },
   uniquePathGaps,
 };

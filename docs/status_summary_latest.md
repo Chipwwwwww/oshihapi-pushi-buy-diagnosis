@@ -1,3 +1,18 @@
+## 本次 P3（首頁兩步漏斗 + 題庫分岐強化）完成項
+- ✅ 首頁改為 2-step 漏斗：Step1 先選決策對象（itemKind，goods-like 追加 goodsClass），Step2 再選診斷深度（short/medium/long）。
+- ✅ recommendation 文案改為「為何推薦此模式」的平易日文，與兩步漏斗不競爭。
+- ✅ 任意欄位（itemName/price/deadline）補充「填了會更準」說明，並保持可跳過。
+- ✅ `まとめ買い（β）` 從主流程降權，標示為檢證中連結。
+- ✅ 題庫新增/強化 itemKind 專屬分岐：used/blind_draw/preorder/ticket；並擴充 goodsClass 題目差異。
+- ✅ diagnostics 新增首頁漏斗轉換檢查與 itemKind/goodsClass 專屬題命中斷言。
+
+## P3 新增分岐要點
+- used: 真贋、狀態容忍、新品價差、賣家可信度/退貨條件。
+- blind_draw: 上限停損、目標範圍、被り交換、抽不到本命時挫折。
+- preorder: 等待容忍、熱度衰減、先預購造成比較機會損失。
+- ticket: 日程衝突、取消/讓渡規則、交通住宿總負擔、錯過後補機會。
+- goodsClass: paper/wearable/display_large/tech/itabag_badge/small_collection 各自保持專屬題。
+
 # status_summary_latest（2026-02-20）
 
 ## 現在狀態（要點）
