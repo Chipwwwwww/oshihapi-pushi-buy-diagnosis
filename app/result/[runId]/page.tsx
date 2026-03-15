@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import DecisionScale from "@/components/DecisionScale";
 import ModeToggle from "@/components/ModeToggle";
@@ -40,7 +40,7 @@ import {
   setStyleModeToLocalStorage,
   type StyleMode,
 } from "@/src/oshihapi/modes/useStyleMode";
-import { buildMercariKeyword, isMercariRelevantScenario } from "@/src/oshihapi/mercariKeyword";
+import { buildMercariKeywordPlan, isMercariRelevantScenario } from "@/src/oshihapi/mercariKeyword";
 
 const BASKET_STORAGE_KEY = "oshihapi_basket_last";
 
@@ -172,10 +172,10 @@ export default function ResultPage() {
     () => isMercariRelevantScenario(run?.meta.itemKind, run?.meta.goodsClass),
     [run?.meta.goodsClass, run?.meta.itemKind],
   );
-  const mercariKeywordResult = useMemo(
+  const mercariKeywordPlan = useMemo(
     () =>
       run
-        ? buildMercariKeyword({
+        ? buildMercariKeywordPlan({
             rawSearchWord: defaultSearchWord,
             itemName: run.meta.itemName,
             itemKind: run.meta.itemKind,
@@ -183,14 +183,15 @@ export default function ResultPage() {
             answers: run.answers,
             meta: run.meta,
           })
-        : { keyword: null, source: "none" as const },
+        : { primaryKeyword: null, secondaryKeywords: [], source: "none" as const },
     [defaultSearchWord, run],
   );
-  const mercariOutHref = useMemo(() => {
-    if (!run || !mercariKeywordResult.keyword) return "";
+
+  const buildMercariOutHref = useCallback((keyword: string): string => {
+    if (!run) return "";
     const params = new URLSearchParams({
       dest: "mercari-search",
-      keyword: mercariKeywordResult.keyword,
+      keyword,
       runId: run.runId,
       source: "result_page",
     });
@@ -198,7 +199,12 @@ export default function ResultPage() {
     if (run.meta.goodsClass) params.set("gc", run.meta.goodsClass);
     if (run.output.decision) params.set("verdict", run.output.decision);
     return `/out?${params.toString()}`;
-  }, [mercariKeywordResult.keyword, run]);
+  }, [run]);
+
+  const mercariOutHref = useMemo(() => {
+    if (!run || !mercariKeywordPlan.primaryKeyword) return "";
+    return buildMercariOutHref(mercariKeywordPlan.primaryKeyword);
+  }, [buildMercariOutHref, mercariKeywordPlan.primaryKeyword, run]);
   const showBecausePricecheck = presentation?.tags?.includes("PRICECHECK") === true;
   const hasPlatformMarketAction = useMemo(
     () => run?.output.actions.some((action) => isPlatformMarketAction(action)) ?? false,
@@ -651,6 +657,7 @@ export default function ResultPage() {
           goodsClass={run.meta.goodsClass}
           verdict={run.output.decision}
           mercariEnabled={mercariRelevant}
+          itemName={run.meta.itemName}
           onMercariClick={() => logActionClick("mercari_search_click")}
           showBecausePricecheck={showBecausePricecheck || hasPlatformMarketAction || run.useCase === "game_billing"}
           title={run.useCase === "game_billing" ? "情報チェック（評価・天井など）" : undefined}
@@ -663,12 +670,12 @@ export default function ResultPage() {
         />
       </div>
 
-      {mercariRelevant && mercariKeywordResult.keyword ? (
+      {mercariRelevant && mercariKeywordPlan.primaryKeyword ? (
         <Card className="space-y-3">
           <h2 className={sectionTitleClass}>メルカリで相場を見る</h2>
           <p className={bodyTextClass}>中古相場や近い出品を確認できます。</p>
           <p className="rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground">
-            検索キーワード: {mercariKeywordResult.keyword}
+            検索語: {mercariKeywordPlan.primaryKeyword}
           </p>
           <a
             href={mercariOutHref}
@@ -679,6 +686,22 @@ export default function ResultPage() {
           >
             メルカリで探す
           </a>
+          {mercariKeywordPlan.secondaryKeywords.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {mercariKeywordPlan.secondaryKeywords.map((keyword) => (
+                <a
+                  key={keyword}
+                  href={buildMercariOutHref(keyword)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => logActionClick("mercari_search_secondary_click")}
+                  className="inline-flex min-h-9 items-center justify-center rounded-lg border border-border bg-card px-3 py-2 text-xs font-medium text-foreground transition hover:border-primary/40"
+                >
+                  {keyword}
+                </a>
+              ))}
+            </div>
+          ) : null}
           <p className={helperTextClass}>※外部サイト（メルカリ）に移動します</p>
           <p className={helperTextClass}>※一部リンクにはアフィリエイトを含む場合があります</p>
         </Card>
