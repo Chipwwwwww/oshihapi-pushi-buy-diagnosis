@@ -11,7 +11,7 @@ import {
   upsertMarketMemo,
   type MarketLevel,
 } from "@/src/oshihapi/marketMemoStorage";
-import { buildMercariKeyword } from "@/src/oshihapi/mercariKeyword";
+import { buildMercariKeywordPlan } from "@/src/oshihapi/mercariKeyword";
 import type { Decision, GoodsClass, ItemKind } from "@/src/oshihapi/model";
 
 type SearchEngine = "google" | "ddg";
@@ -22,6 +22,7 @@ type MarketCheckCardProps = {
   showBecausePricecheck?: boolean;
   itemKind?: ItemKind;
   goodsClass?: GoodsClass;
+  itemName?: string;
   verdict?: Decision;
   mercariEnabled?: boolean;
   onMercariClick?: () => void;
@@ -55,6 +56,7 @@ export default function MarketCheckCard({
   showBecausePricecheck = false,
   itemKind,
   goodsClass,
+  itemName,
   verdict,
   mercariEnabled = false,
   onMercariClick,
@@ -72,7 +74,6 @@ export default function MarketCheckCard({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const shouldShow = Boolean(defaultSearchWord.trim()) || showBecausePricecheck;
-  if (!shouldShow) return null;
 
   const handleCopy = async () => {
     const text = searchWord.trim();
@@ -130,24 +131,36 @@ export default function MarketCheckCard({
   };
 
   const searchUrl = buildSearchUrl(searchEngine, searchWord.trim());
-  const mercariKeyword = useMemo(
-    () => buildMercariKeyword({ rawSearchWord: searchWord }).keyword,
-    [searchWord],
+  const mercariPlan = useMemo(
+    () =>
+      buildMercariKeywordPlan({
+        rawSearchWord: searchWord,
+        itemName,
+        itemKind,
+        goodsClass,
+      }),
+    [goodsClass, itemKind, itemName, searchWord],
   );
-  const hasMercariKeyword = Boolean(mercariKeyword && mercariKeyword.trim().length > 0);
-  const mercariParams = useMemo(() => {
-    if (!hasMercariKeyword || !mercariKeyword) return "";
+  const hasMercariKeyword = Boolean(mercariPlan.primaryKeyword && mercariPlan.primaryKeyword.trim().length > 0);
+
+  const buildMercariOutHref = (keyword: string): string => {
     const params = new URLSearchParams({
       dest: "mercari-search",
-      keyword: mercariKeyword,
+      keyword,
       runId,
+      source: "market_check",
     });
     if (itemKind) params.set("itemKind", itemKind);
     if (goodsClass) params.set("gc", goodsClass);
     if (verdict) params.set("verdict", verdict);
-    params.set("source", "market_check");
     return `/out?${params.toString()}`;
-  }, [goodsClass, hasMercariKeyword, itemKind, mercariKeyword, runId, verdict]);
+  };
+
+  const mercariParams = hasMercariKeyword && mercariPlan.primaryKeyword
+    ? buildMercariOutHref(mercariPlan.primaryKeyword)
+    : "";
+
+  if (!shouldShow) return null;
 
   return (
     <Card className="space-y-4">
@@ -210,6 +223,22 @@ export default function MarketCheckCard({
           >
             メルカリで探す
           </a>
+          {mercariPlan.secondaryKeywords.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {mercariPlan.secondaryKeywords.slice(0, 2).map((keyword) => (
+                <a
+                  key={keyword}
+                  href={buildMercariOutHref(keyword)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => onMercariClick?.()}
+                  className="inline-flex min-h-9 items-center justify-center rounded-lg border border-border bg-card px-3 py-2 text-xs font-medium text-foreground transition hover:border-primary/40"
+                >
+                  {keyword}
+                </a>
+              ))}
+            </div>
+          ) : null}
           <p className={helperTextClass}>※外部サイトへ移動します（メルカリ）</p>
           <p className={helperTextClass}>※一部リンクにはアフィリエイトを含む場合があります</p>
         </div>
