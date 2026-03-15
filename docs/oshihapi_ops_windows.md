@@ -76,3 +76,18 @@
 2) `ops/pmr_log_*.txt`（最新）
 3) `git status -sb`
 4) `git log -n 10 --oneline --decorate`（必要時）
+
+---
+
+## Deterministic 診斷驗證（P1 gate）
+- 執行：`npm run qa:diagnostics`
+- 輸出報告：`docs/diagnostics/diagnosis_validation_report_latest.json`
+- 這個 gate 會驗證：
+  - mode（short/medium/long）× itemKind（goods/blind_draw/used/preorder/ticket/game_billing）
+  - goods/used × all goodsClass
+  - styleMode 不改變邏輯路徑
+  - refresh restore（mode/itemKind/styleMode/answers/index）
+  - back 後改答案是否重算分岐與清理 downstream answers
+- 判定規則：
+  - report 產出 + script exit code 0 = pass
+  - 若 itemKind 缺少專屬路徑，會在 report 的 `uniquePathGaps` 顯示並讓 script fail

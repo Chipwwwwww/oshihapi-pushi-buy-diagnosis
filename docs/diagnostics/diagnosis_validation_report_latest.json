@@ -1,0 +1,1009 @@
+{
+  "generatedAt": "2026-03-15T07:29:41.824Z",
+  "scenarioCount": 30,
+  "scenarios": [
+    {
+      "id": "short_goods",
+      "questionCount": 10,
+      "shownQuestionIds": [
+        "q_storage_fit",
+        "q_desire",
+        "q_budget_pain",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_storage_space",
+        "q_price_feel",
+        "q_addon_common_info"
+      ],
+      "branchHits": [
+        "mode_short",
+        "unknown_storage_or_short",
+        "unknown_budget_or_short_or_lacks_meta",
+        "force_common_info"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 52,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "short_blind_draw",
+      "questionCount": 10,
+      "shownQuestionIds": [
+        "q_storage_fit",
+        "q_desire",
+        "q_budget_pain",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_storage_space",
+        "q_price_feel",
+        "q_addon_common_info"
+      ],
+      "branchHits": [
+        "mode_short",
+        "unknown_storage_or_short",
+        "unknown_budget_or_short_or_lacks_meta",
+        "force_common_info"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 52,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "short_used",
+      "questionCount": 10,
+      "shownQuestionIds": [
+        "q_storage_fit",
+        "q_desire",
+        "q_budget_pain",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_storage_space",
+        "q_price_feel",
+        "q_addon_common_info"
+      ],
+      "branchHits": [
+        "mode_short",
+        "unknown_storage_or_short",
+        "unknown_budget_or_short_or_lacks_meta",
+        "force_common_info"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 52,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "short_preorder",
+      "questionCount": 10,
+      "shownQuestionIds": [
+        "q_storage_fit",
+        "q_desire",
+        "q_budget_pain",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_storage_space",
+        "q_price_feel",
+        "q_addon_common_info"
+      ],
+      "branchHits": [
+        "mode_short",
+        "unknown_storage_or_short",
+        "unknown_budget_or_short_or_lacks_meta",
+        "force_common_info"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 52,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "short_ticket",
+      "questionCount": 8,
+      "shownQuestionIds": [
+        "q_desire",
+        "q_budget_pain",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_price_feel",
+        "q_addon_common_info"
+      ],
+      "branchHits": [
+        "mode_short",
+        "unknown_storage_or_short",
+        "unknown_budget_or_short_or_lacks_meta",
+        "force_common_info"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 52,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "short_game_billing",
+      "questionCount": 5,
+      "shownQuestionIds": [
+        "gb_q1_need",
+        "gb_q2_type",
+        "gb_q3_budget",
+        "gb_q4_use",
+        "gb_q5_now"
+      ],
+      "branchHits": [
+        "usecase_game_billing"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 54,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "medium_goods",
+      "questionCount": 15,
+      "shownQuestionIds": [
+        "q_storage_fit",
+        "q_storage_space",
+        "q_desire",
+        "q_goal",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_budget_pain",
+        "q_price_feel",
+        "q_motives_multi",
+        "q_hot_cold",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_alternative_plan",
+        "q_addon_common_info",
+        "q_addon_common_priority"
+      ],
+      "branchHits": [
+        "mode_medium",
+        "unknown_budget_or_short_or_lacks_meta",
+        "force_common_info"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 57,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "medium_blind_draw",
+      "questionCount": 16,
+      "shownQuestionIds": [
+        "q_storage_fit",
+        "q_storage_space",
+        "q_desire",
+        "q_goal",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_budget_pain",
+        "q_price_feel",
+        "q_motives_multi",
+        "q_hot_cold",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_alternative_plan",
+        "q_addon_blind_draw_cap",
+        "q_addon_blind_draw_exit",
+        "q_addon_common_info"
+      ],
+      "branchHits": [
+        "mode_medium",
+        "unknown_budget_or_short_or_lacks_meta",
+        "force_common_info"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 57,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "medium_used",
+      "questionCount": 15,
+      "shownQuestionIds": [
+        "q_storage_fit",
+        "q_storage_space",
+        "q_desire",
+        "q_goal",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_budget_pain",
+        "q_price_feel",
+        "q_motives_multi",
+        "q_hot_cold",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_alternative_plan",
+        "q_addon_common_info",
+        "q_addon_common_priority"
+      ],
+      "branchHits": [
+        "mode_medium",
+        "unknown_budget_or_short_or_lacks_meta",
+        "force_common_info"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 58,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "medium_preorder",
+      "questionCount": 15,
+      "shownQuestionIds": [
+        "q_storage_fit",
+        "q_storage_space",
+        "q_desire",
+        "q_goal",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_budget_pain",
+        "q_price_feel",
+        "q_motives_multi",
+        "q_hot_cold",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_alternative_plan",
+        "q_addon_common_info",
+        "q_addon_common_priority"
+      ],
+      "branchHits": [
+        "mode_medium",
+        "unknown_budget_or_short_or_lacks_meta",
+        "force_common_info"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 57,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "medium_ticket",
+      "questionCount": 13,
+      "shownQuestionIds": [
+        "q_desire",
+        "q_goal",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_budget_pain",
+        "q_price_feel",
+        "q_motives_multi",
+        "q_hot_cold",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_alternative_plan",
+        "q_addon_common_info",
+        "q_addon_common_priority"
+      ],
+      "branchHits": [
+        "mode_medium",
+        "unknown_budget_or_short_or_lacks_meta",
+        "force_common_info"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 57,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "medium_game_billing",
+      "questionCount": 10,
+      "shownQuestionIds": [
+        "gb_q1_need",
+        "gb_q2_type",
+        "gb_q3_budget",
+        "gb_q4_use",
+        "gb_q5_now",
+        "gb_q6_repeat",
+        "gb_q7_alt",
+        "gb_q8_wait",
+        "gb_q9_info",
+        "gb_q10_value"
+      ],
+      "branchHits": [
+        "usecase_game_billing"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 53,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "long_goods",
+      "questionCount": 19,
+      "shownQuestionIds": [
+        "q_storage_fit",
+        "q_storage_space",
+        "q_desire",
+        "q_goal",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_budget_pain",
+        "q_price_feel",
+        "q_motives_multi",
+        "q_hot_cold",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_alternative_plan",
+        "q_addon_common_info",
+        "q_addon_common_priority",
+        "q_addon_goods_compare",
+        "q_addon_goods_portability",
+        "q_addon_goods_collection_goal",
+        "q_addon_goods_trade_intent"
+      ],
+      "branchHits": [
+        "mode_long",
+        "long_goods_class_addon",
+        "unknown_budget_or_short_or_lacks_meta",
+        "force_common_info"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 57,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "long_blind_draw",
+      "questionCount": 17,
+      "shownQuestionIds": [
+        "q_storage_fit",
+        "q_storage_space",
+        "q_desire",
+        "q_goal",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_budget_pain",
+        "q_price_feel",
+        "q_motives_multi",
+        "q_hot_cold",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_alternative_plan",
+        "q_addon_blind_draw_cap",
+        "q_addon_blind_draw_exit",
+        "q_addon_blind_draw_trade_intent",
+        "q_addon_common_info"
+      ],
+      "branchHits": [
+        "mode_long",
+        "unknown_budget_or_short_or_lacks_meta",
+        "force_common_info"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 57,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "long_used",
+      "questionCount": 21,
+      "shownQuestionIds": [
+        "q_storage_fit",
+        "q_storage_space",
+        "q_desire",
+        "q_goal",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_budget_pain",
+        "q_price_feel",
+        "q_motives_multi",
+        "q_hot_cold",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_alternative_plan",
+        "q_addon_common_info",
+        "q_addon_common_priority",
+        "q_addon_used_condition",
+        "q_addon_used_price_gap",
+        "q_addon_used_defect_return",
+        "q_addon_used_authenticity",
+        "q_addon_goods_collection_goal",
+        "q_addon_goods_trade_intent"
+      ],
+      "branchHits": [
+        "mode_long",
+        "long_goods_class_addon",
+        "unknown_budget_or_short_or_lacks_meta",
+        "force_common_info"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 58,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "long_preorder",
+      "questionCount": 18,
+      "shownQuestionIds": [
+        "q_storage_fit",
+        "q_storage_space",
+        "q_desire",
+        "q_goal",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_budget_pain",
+        "q_price_feel",
+        "q_motives_multi",
+        "q_hot_cold",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_alternative_plan",
+        "q_addon_common_info",
+        "q_addon_common_priority",
+        "q_addon_preorder_timeline",
+        "q_addon_goods_collection_goal",
+        "q_addon_goods_trade_intent"
+      ],
+      "branchHits": [
+        "mode_long",
+        "long_goods_class_addon",
+        "unknown_budget_or_short_or_lacks_meta",
+        "force_common_info"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 57,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "long_ticket",
+      "questionCount": 15,
+      "shownQuestionIds": [
+        "q_desire",
+        "q_goal",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_budget_pain",
+        "q_price_feel",
+        "q_motives_multi",
+        "q_hot_cold",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_alternative_plan",
+        "q_addon_common_info",
+        "q_addon_common_priority",
+        "q_addon_ticket_schedule",
+        "q_addon_ticket_resale_rule"
+      ],
+      "branchHits": [
+        "mode_long",
+        "unknown_budget_or_short_or_lacks_meta",
+        "force_common_info"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 57,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "long_game_billing",
+      "questionCount": 10,
+      "shownQuestionIds": [
+        "gb_q1_need",
+        "gb_q2_type",
+        "gb_q3_budget",
+        "gb_q4_use",
+        "gb_q5_now",
+        "gb_q6_repeat",
+        "gb_q7_alt",
+        "gb_q8_wait",
+        "gb_q9_info",
+        "gb_q10_value"
+      ],
+      "branchHits": [
+        "usecase_game_billing"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 53,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "long_goods_small_collection",
+      "questionCount": 19,
+      "shownQuestionIds": [
+        "q_storage_fit",
+        "q_storage_space",
+        "q_desire",
+        "q_goal",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_budget_pain",
+        "q_price_feel",
+        "q_motives_multi",
+        "q_hot_cold",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_alternative_plan",
+        "q_addon_common_info",
+        "q_addon_common_priority",
+        "q_addon_goods_compare",
+        "q_addon_goods_portability",
+        "q_addon_goods_collection_goal",
+        "q_addon_goods_trade_intent"
+      ],
+      "branchHits": [
+        "mode_long",
+        "long_goods_class_addon",
+        "unknown_budget_or_short_or_lacks_meta"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 57,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "long_used_small_collection",
+      "questionCount": 21,
+      "shownQuestionIds": [
+        "q_storage_fit",
+        "q_storage_space",
+        "q_desire",
+        "q_goal",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_budget_pain",
+        "q_price_feel",
+        "q_motives_multi",
+        "q_hot_cold",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_alternative_plan",
+        "q_addon_common_info",
+        "q_addon_common_priority",
+        "q_addon_used_condition",
+        "q_addon_used_price_gap",
+        "q_addon_used_defect_return",
+        "q_addon_used_authenticity",
+        "q_addon_goods_collection_goal",
+        "q_addon_goods_trade_intent"
+      ],
+      "branchHits": [
+        "mode_long",
+        "long_goods_class_addon",
+        "unknown_budget_or_short_or_lacks_meta",
+        "force_common_info"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 58,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "long_goods_paper",
+      "questionCount": 19,
+      "shownQuestionIds": [
+        "q_storage_fit",
+        "q_storage_space",
+        "q_desire",
+        "q_goal",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_budget_pain",
+        "q_price_feel",
+        "q_motives_multi",
+        "q_hot_cold",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_alternative_plan",
+        "q_addon_common_info",
+        "q_addon_common_priority",
+        "q_addon_goods_compare",
+        "q_addon_goods_portability",
+        "q_addon_goods_paper_care",
+        "q_addon_goods_paper_view_freq"
+      ],
+      "branchHits": [
+        "mode_long",
+        "long_goods_class_addon",
+        "unknown_budget_or_short_or_lacks_meta"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 57,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "long_used_paper",
+      "questionCount": 21,
+      "shownQuestionIds": [
+        "q_storage_fit",
+        "q_storage_space",
+        "q_desire",
+        "q_goal",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_budget_pain",
+        "q_price_feel",
+        "q_motives_multi",
+        "q_hot_cold",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_alternative_plan",
+        "q_addon_common_info",
+        "q_addon_common_priority",
+        "q_addon_used_condition",
+        "q_addon_used_price_gap",
+        "q_addon_used_defect_return",
+        "q_addon_used_authenticity",
+        "q_addon_goods_paper_care",
+        "q_addon_goods_paper_view_freq"
+      ],
+      "branchHits": [
+        "mode_long",
+        "long_goods_class_addon",
+        "unknown_budget_or_short_or_lacks_meta",
+        "force_common_info"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 58,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "long_goods_wearable",
+      "questionCount": 20,
+      "shownQuestionIds": [
+        "q_storage_fit",
+        "q_storage_space",
+        "q_desire",
+        "q_goal",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_budget_pain",
+        "q_price_feel",
+        "q_motives_multi",
+        "q_hot_cold",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_alternative_plan",
+        "q_addon_common_info",
+        "q_addon_common_priority",
+        "q_addon_goods_compare",
+        "q_addon_goods_portability",
+        "q_addon_goods_wear_freq",
+        "q_addon_goods_wear_fit",
+        "q_addon_goods_wear_scene"
+      ],
+      "branchHits": [
+        "mode_long",
+        "long_goods_class_addon",
+        "unknown_budget_or_short_or_lacks_meta"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 57,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "long_used_wearable",
+      "questionCount": 22,
+      "shownQuestionIds": [
+        "q_storage_fit",
+        "q_storage_space",
+        "q_desire",
+        "q_goal",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_budget_pain",
+        "q_price_feel",
+        "q_motives_multi",
+        "q_hot_cold",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_alternative_plan",
+        "q_addon_common_info",
+        "q_addon_common_priority",
+        "q_addon_used_condition",
+        "q_addon_used_price_gap",
+        "q_addon_used_defect_return",
+        "q_addon_used_authenticity",
+        "q_addon_goods_wear_freq",
+        "q_addon_goods_wear_fit",
+        "q_addon_goods_wear_scene"
+      ],
+      "branchHits": [
+        "mode_long",
+        "long_goods_class_addon",
+        "unknown_budget_or_short_or_lacks_meta",
+        "force_common_info"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 58,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "long_goods_display_large",
+      "questionCount": 17,
+      "shownQuestionIds": [
+        "q_desire",
+        "q_goal",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_budget_pain",
+        "q_price_feel",
+        "q_motives_multi",
+        "q_hot_cold",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_alternative_plan",
+        "q_addon_common_info",
+        "q_addon_common_priority",
+        "q_addon_goods_compare",
+        "q_addon_goods_portability",
+        "q_addon_goods_display_space_plan",
+        "q_addon_goods_display_move_risk"
+      ],
+      "branchHits": [
+        "mode_long",
+        "long_goods_class_addon",
+        "unknown_budget_or_short_or_lacks_meta"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 57,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "long_used_display_large",
+      "questionCount": 19,
+      "shownQuestionIds": [
+        "q_desire",
+        "q_goal",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_budget_pain",
+        "q_price_feel",
+        "q_motives_multi",
+        "q_hot_cold",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_alternative_plan",
+        "q_addon_common_info",
+        "q_addon_common_priority",
+        "q_addon_used_condition",
+        "q_addon_used_price_gap",
+        "q_addon_used_defect_return",
+        "q_addon_used_authenticity",
+        "q_addon_goods_display_space_plan",
+        "q_addon_goods_display_move_risk"
+      ],
+      "branchHits": [
+        "mode_long",
+        "long_goods_class_addon",
+        "unknown_budget_or_short_or_lacks_meta",
+        "force_common_info"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 58,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "long_goods_tech",
+      "questionCount": 19,
+      "shownQuestionIds": [
+        "q_storage_fit",
+        "q_storage_space",
+        "q_desire",
+        "q_goal",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_budget_pain",
+        "q_price_feel",
+        "q_motives_multi",
+        "q_hot_cold",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_alternative_plan",
+        "q_addon_common_info",
+        "q_addon_common_priority",
+        "q_addon_goods_compare",
+        "q_addon_goods_portability",
+        "q_addon_goods_tech_compat",
+        "q_addon_goods_tech_after_use"
+      ],
+      "branchHits": [
+        "mode_long",
+        "long_goods_class_addon",
+        "unknown_budget_or_short_or_lacks_meta"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 57,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "long_used_tech",
+      "questionCount": 21,
+      "shownQuestionIds": [
+        "q_storage_fit",
+        "q_storage_space",
+        "q_desire",
+        "q_goal",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_budget_pain",
+        "q_price_feel",
+        "q_motives_multi",
+        "q_hot_cold",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_alternative_plan",
+        "q_addon_common_info",
+        "q_addon_common_priority",
+        "q_addon_used_condition",
+        "q_addon_used_price_gap",
+        "q_addon_used_defect_return",
+        "q_addon_used_authenticity",
+        "q_addon_goods_tech_compat",
+        "q_addon_goods_tech_after_use"
+      ],
+      "branchHits": [
+        "mode_long",
+        "long_goods_class_addon",
+        "unknown_budget_or_short_or_lacks_meta",
+        "force_common_info"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 58,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "long_goods_itabag_badge",
+      "questionCount": 17,
+      "shownQuestionIds": [
+        "q_desire",
+        "q_goal",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_budget_pain",
+        "q_price_feel",
+        "q_motives_multi",
+        "q_hot_cold",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_alternative_plan",
+        "q_addon_common_info",
+        "q_addon_common_priority",
+        "q_addon_goods_compare",
+        "q_addon_goods_portability",
+        "q_addon_goods_itabag_target",
+        "q_addon_goods_itabag_usage"
+      ],
+      "branchHits": [
+        "mode_long",
+        "long_goods_class_addon",
+        "unknown_budget_or_short_or_lacks_meta"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 57,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    },
+    {
+      "id": "long_used_itabag_badge",
+      "questionCount": 19,
+      "shownQuestionIds": [
+        "q_desire",
+        "q_goal",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_budget_pain",
+        "q_price_feel",
+        "q_motives_multi",
+        "q_hot_cold",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_alternative_plan",
+        "q_addon_common_info",
+        "q_addon_common_priority",
+        "q_addon_used_condition",
+        "q_addon_used_price_gap",
+        "q_addon_used_defect_return",
+        "q_addon_used_authenticity",
+        "q_addon_goods_itabag_target",
+        "q_addon_goods_itabag_usage"
+      ],
+      "branchHits": [
+        "mode_long",
+        "long_goods_class_addon",
+        "unknown_budget_or_short_or_lacks_meta",
+        "force_common_info"
+      ],
+      "result": {
+        "decision": "THINK",
+        "confidence": 58,
+        "reasonCount": 2,
+        "actionCount": 2
+      }
+    }
+  ],
+  "itemKindCoverage": {
+    "goods": true,
+    "blind_draw": true,
+    "used": true,
+    "preorder": true,
+    "ticket": true,
+    "game_billing": true
+  },
+  "checks": {
+    "refreshRestore": "pass",
+    "backThenChangeAnswer": "pass",
+    "styleInvariant": "pass"
+  },
+  "uniquePathGaps": []
+}

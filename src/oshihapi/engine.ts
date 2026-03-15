@@ -247,6 +247,18 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     }
   }
 
+
+  const downgradeFlags: string[] = [];
+  if (unknownCount >= 3) downgradeFlags.push('unknown_count_ge_3');
+  if (unknownCount >= 4) downgradeFlags.push('forced_think_unknown_count_ge_4');
+  if (impulseFlag) downgradeFlags.push('impulse_nudge_applied');
+  if (shouldAskStorage(input.meta.itemKind, input.meta.goodsSubtype)) {
+    const storageFit = input.answers.q_storage_fit;
+    if (storageFit === 'NONE' || storageFit === 'UNKNOWN') {
+      downgradeFlags.push('storage_gate');
+    }
+  }
+
   const decisionJa = decision === 'BUY' ? '買う' : decision === 'SKIP' ? 'やめる' : '保留';
   const positiveFactors = getTopFactors(scores, "positive");
   const negativeFactors = getTopFactors(scores, "negative");
@@ -269,5 +281,14 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     positiveFactors,
     negativeFactors,
     presentation,
+    diagnosticTrace: {
+      resultInputsSummary: {
+        tags: [...tags],
+        unknownCount,
+        impulseFlag,
+        futureUseFlag,
+        downgradeFlags,
+      },
+    },
   };
 }

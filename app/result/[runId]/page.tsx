@@ -136,6 +136,8 @@ export default function ResultPage() {
   const canWriteBackToBasket = Boolean(basketId && basketItemId);
 
 
+  const canShowDiagnostics = process.env.NODE_ENV !== "production" && searchParams.get("debug") === "1";
+
   useEffect(() => {
     setStyleMode(getStyleModeFromSearchParams(searchParams) ?? "standard");
   }, [searchParams]);
@@ -650,6 +652,18 @@ export default function ResultPage() {
           履歴を見る
         </Button>
       </div>
+
+      {canShowDiagnostics && run?.diagnosticTrace ? (
+        <Card className="space-y-3 border-dashed">
+          <h2 className={sectionTitleClass}>Debug Trace (dev only)</h2>
+          <details>
+            <summary className="cursor-pointer text-sm">診断トレースJSONを表示</summary>
+            <pre className="mt-3 overflow-x-auto rounded-xl bg-slate-950/95 p-3 text-xs text-slate-100">
+              {JSON.stringify(run.diagnosticTrace, null, 2)}
+            </pre>
+          </details>
+        </Card>
+      ) : null}
 
       {toast ? <Toast message={toast} /> : null}
     </div>

@@ -92,6 +92,39 @@ export type InputMeta = {
 
 export type AnswerValue = string | number | boolean | null | string[];
 
+export type BranchTrace = {
+  id: string;
+  matched: boolean;
+  detail?: string;
+};
+
+export type RunContextTrace = {
+  mode: Mode;
+  itemKind: ItemKind;
+  goodsClass?: GoodsClass;
+  styleMode?: string;
+  deadline?: InputMeta["deadline"];
+  hasPrice: boolean;
+  hasItemName: boolean;
+};
+
+export type ResultInputsSummaryTrace = {
+  tags: string[];
+  unknownCount: number;
+  impulseFlag: boolean;
+  futureUseFlag: boolean;
+  downgradeFlags: string[];
+};
+
+export type DiagnosticTrace = {
+  runContext: RunContextTrace;
+  shownQuestionIds: string[];
+  skippedQuestionIds: string[];
+  branchHits: BranchTrace[];
+  branchMisses: BranchTrace[];
+  resultInputsSummary?: ResultInputsSummaryTrace;
+};
+
 export type DecisionRun = {
   runId: string;
   createdAt: number;
@@ -106,12 +139,16 @@ export type DecisionRun = {
   output: DecisionOutput;
   feedback_immediate?: FeedbackImmediate;
   behavior?: BehaviorLog;
+  diagnosticTrace?: DiagnosticTrace;
 };
 
 export type ReasonItem = { id: string; text: string; severity?: 'info'|'warn'|'strong' };
 export type ActionItem = { id: string; text: string; linkOut?: { label: string; url: string } };
 
 export type DecisionOutput = {
+  diagnosticTrace?: {
+    resultInputsSummary: ResultInputsSummaryTrace;
+  };
   decision: Decision;
   confidence: number; // 0-100
   score: number; // -1..+1

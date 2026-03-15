@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint app src components",
-    "gen:question-bank": "node scripts/run_ts.cjs scripts/gen_question_bank_branch_table.ts"
+    "gen:question-bank": "node scripts/run_ts.cjs scripts/gen_question_bank_branch_table.ts",
+    "qa:diagnostics": "node scripts/run_ts.cjs scripts/validate_diagnosis_matrix.ts"
   },
   "dependencies": {
     "eslint": "^9.39.2",
