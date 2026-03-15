@@ -40,6 +40,7 @@ import {
   setStyleModeToLocalStorage,
   type StyleMode,
 } from "@/src/oshihapi/modes/useStyleMode";
+import { buildMercariKeyword, isMercariRelevantScenario } from "@/src/oshihapi/mercariKeyword";
 
 const BASKET_STORAGE_KEY = "oshihapi_basket_last";
 
@@ -167,6 +168,37 @@ export default function ResultPage() {
 
   const defaultSearchWord = useMemo(() => (run ? getDefaultSearchWord(run) : ""), [run]);
   const hasSearchWord = defaultSearchWord.trim().length > 0;
+  const mercariRelevant = useMemo(
+    () => isMercariRelevantScenario(run?.meta.itemKind, run?.meta.goodsClass),
+    [run?.meta.goodsClass, run?.meta.itemKind],
+  );
+  const mercariKeywordResult = useMemo(
+    () =>
+      run
+        ? buildMercariKeyword({
+            rawSearchWord: defaultSearchWord,
+            itemName: run.meta.itemName,
+            itemKind: run.meta.itemKind,
+            goodsClass: run.meta.goodsClass,
+            answers: run.answers,
+            meta: run.meta,
+          })
+        : { keyword: null, source: "none" as const },
+    [defaultSearchWord, run],
+  );
+  const mercariOutHref = useMemo(() => {
+    if (!run || !mercariKeywordResult.keyword) return "";
+    const params = new URLSearchParams({
+      dest: "mercari-search",
+      keyword: mercariKeywordResult.keyword,
+      runId: run.runId,
+      source: "result_page",
+    });
+    if (run.meta.itemKind) params.set("itemKind", run.meta.itemKind);
+    if (run.meta.goodsClass) params.set("gc", run.meta.goodsClass);
+    if (run.output.decision) params.set("verdict", run.output.decision);
+    return `/out?${params.toString()}`;
+  }, [mercariKeywordResult.keyword, run]);
   const showBecausePricecheck = presentation?.tags?.includes("PRICECHECK") === true;
   const hasPlatformMarketAction = useMemo(
     () => run?.output.actions.some((action) => isPlatformMarketAction(action)) ?? false,
@@ -615,6 +647,11 @@ export default function ResultPage() {
         <MarketCheckCard
           runId={run.runId}
           defaultSearchWord={defaultSearchWord}
+          itemKind={run.meta.itemKind}
+          goodsClass={run.meta.goodsClass}
+          verdict={run.output.decision}
+          mercariEnabled={mercariRelevant}
+          onMercariClick={() => logActionClick("mercari_search_click")}
           showBecausePricecheck={showBecausePricecheck || hasPlatformMarketAction || run.useCase === "game_billing"}
           title={run.useCase === "game_billing" ? "情報チェック（評価・天井など）" : undefined}
           description={run.useCase === "game_billing" ? "※判定は変わりません。外部で情報を確認してから決めましょう。" : undefined}
@@ -625,6 +662,27 @@ export default function ResultPage() {
           }
         />
       </div>
+
+      {mercariRelevant && mercariKeywordResult.keyword ? (
+        <Card className="space-y-3">
+          <h2 className={sectionTitleClass}>メルカリで相場を見る</h2>
+          <p className={bodyTextClass}>中古相場や近い出品を確認できます。</p>
+          <p className="rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground">
+            検索キーワード: {mercariKeywordResult.keyword}
+          </p>
+          <a
+            href={mercariOutHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => logActionClick("mercari_search_click")}
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+          >
+            メルカリで探す
+          </a>
+          <p className={helperTextClass}>※外部サイト（メルカリ）に移動します</p>
+          <p className={helperTextClass}>※一部リンクにはアフィリエイトを含む場合があります</p>
+        </Card>
+      ) : null}
 
       <Card className="space-y-4">
         <h2 className={sectionTitleClass}>このあとどうした？</h2>
