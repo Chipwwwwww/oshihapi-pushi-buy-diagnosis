@@ -3,14 +3,14 @@ import type { EngineConfig } from './model';
 export const engineConfig: EngineConfig = {
   // Positive means pushes toward BUY; negative pushes toward SKIP/THINK
   decisionWeights: {
-    desire: +0.35,
-    affordability: +0.20,
-    urgency: +0.10,
-    rarity: +0.10,
+    desire: +0.45,
+    affordability: +0.18,
+    urgency: +0.20,
+    rarity: +0.12,
     restockChance: -0.08,
-    regretRisk: -0.15,
-    impulse: -0.10,
-    opportunityCost: -0.12,
+    regretRisk: -0.12,
+    impulse: -0.06,
+    opportunityCost: -0.10,
   },
   decisionWeightProfiles: {
     used: {
@@ -21,8 +21,8 @@ export const engineConfig: EngineConfig = {
     },
   },
   thresholds: {
-    buy: +0.25,
-    skip: -0.25,
+    buy: +0.2,
+    skip: -0.2,
   },
   // Each important "unknown" increases THINK tendency
   unknownPenaltyPerTag: 10,

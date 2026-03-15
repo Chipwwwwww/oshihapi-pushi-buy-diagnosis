@@ -44,15 +44,16 @@ const BASKET_STORAGE_KEY = "oshihapi_basket_last";
 
 
 function getDefaultSearchWord(run: DecisionRun): string {
-  const itemName = run.meta.itemName?.trim();
-  if (itemName) return itemName;
-
+  const itemName = run.meta.itemName?.trim() ?? "";
+  const kind = run.meta.itemKind ?? "goods";
   if (run.useCase === "game_billing") {
     const billingType = typeof run.gameBillingAnswers?.gb_q2_type === "string"
       ? run.gameBillingAnswers.gb_q2_type
-      : "";
-    return [itemName, billingType].filter(Boolean).join(" ").trim();
+      : "課金";
+    return itemName ? `${itemName} ${billingType}`.trim() : "";
   }
+  if (itemName) return `${itemName} ${kind}`.trim();
+
 
   const item = (run.answers.item ?? {}) as Record<string, string | undefined>;
   const candidates = [
@@ -162,6 +163,7 @@ export default function ResultPage() {
   }, [run]);
 
   const defaultSearchWord = useMemo(() => (run ? getDefaultSearchWord(run) : ""), [run]);
+  const hasSearchWord = defaultSearchWord.trim().length > 0;
   const showBecausePricecheck = presentation?.tags?.includes("PRICECHECK") === true;
   const hasPlatformMarketAction = useMemo(
     () => run?.output.actions.some((action) => isPlatformMarketAction(action)) ?? false,
@@ -485,6 +487,28 @@ export default function ResultPage() {
       </Card>
 
       <Card className="space-y-4">
+        <h2 className={sectionTitleClass}>判定に効いた要因</h2>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+            <p className="text-sm font-semibold text-emerald-900">プラス要因</p>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-emerald-900">
+              {(run.output.positiveFactors ?? []).length > 0
+                ? (run.output.positiveFactors ?? []).map((factor) => <li key={factor}>{factor}</li>)
+                : <li>大きなプラス要因は見つかりませんでした</li>}
+            </ul>
+          </div>
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4">
+            <p className="text-sm font-semibold text-rose-900">マイナス要因</p>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-rose-900">
+              {(run.output.negativeFactors ?? []).length > 0
+                ? (run.output.negativeFactors ?? []).map((factor) => <li key={factor}>{factor}</li>)
+                : <li>大きなマイナス要因は見つかりませんでした</li>}
+            </ul>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="space-y-4">
         <h2 className={sectionTitleClass}>{modeCopy.ui.reasonsTitle}</h2>
         <div className="grid gap-4">
           {(showAllReasons ? run.output.reasons : run.output.reasons.slice(0, 6)).map((reason) => (
@@ -516,6 +540,13 @@ export default function ResultPage() {
           共有テキストをコピー
         </Button>
       </Card>
+
+      {!hasSearchWord ? (
+        <Card className="space-y-2 border-dashed">
+          <h2 className={sectionTitleClass}>相場チェック</h2>
+          <p className={helperTextClass}>商品名を入力すると、検索ワードを自動で作れます。</p>
+        </Card>
+      ) : null}
 
       <div id="market-check" style={{ scrollMarginTop: "96px" }}>
         <MarketCheckCard
