@@ -11,6 +11,8 @@ import {
   upsertMarketMemo,
   type MarketLevel,
 } from "@/src/oshihapi/marketMemoStorage";
+import { buildMercariKeyword } from "@/src/oshihapi/mercariKeyword";
+import type { Decision, GoodsClass, ItemKind } from "@/src/oshihapi/model";
 
 type SearchEngine = "google" | "ddg";
 
@@ -18,6 +20,11 @@ type MarketCheckCardProps = {
   runId: string;
   defaultSearchWord: string;
   showBecausePricecheck?: boolean;
+  itemKind?: ItemKind;
+  goodsClass?: GoodsClass;
+  verdict?: Decision;
+  mercariEnabled?: boolean;
+  onMercariClick?: () => void;
   title?: string;
   description?: string;
   placeholder?: string;
@@ -46,6 +53,11 @@ export default function MarketCheckCard({
   runId,
   defaultSearchWord,
   showBecausePricecheck = false,
+  itemKind,
+  goodsClass,
+  verdict,
+  mercariEnabled = false,
+  onMercariClick,
   title = "相場チェック（外で確認）",
   description = "※判定は変わりません",
   placeholder = "作品名 + キャラ名 + 種別（例：ブルアカ ミカ 1/7 フィギュア）",
@@ -118,6 +130,24 @@ export default function MarketCheckCard({
   };
 
   const searchUrl = buildSearchUrl(searchEngine, searchWord.trim());
+  const mercariKeyword = useMemo(
+    () => buildMercariKeyword({ rawSearchWord: searchWord }).keyword,
+    [searchWord],
+  );
+  const hasMercariKeyword = Boolean(mercariKeyword && mercariKeyword.trim().length > 0);
+  const mercariParams = useMemo(() => {
+    if (!hasMercariKeyword || !mercariKeyword) return "";
+    const params = new URLSearchParams({
+      dest: "mercari-search",
+      keyword: mercariKeyword,
+      runId,
+    });
+    if (itemKind) params.set("itemKind", itemKind);
+    if (goodsClass) params.set("gc", goodsClass);
+    if (verdict) params.set("verdict", verdict);
+    params.set("source", "market_check");
+    return `/out?${params.toString()}`;
+  }, [goodsClass, hasMercariKeyword, itemKind, mercariKeyword, runId, verdict]);
 
   return (
     <Card className="space-y-4">
@@ -157,6 +187,33 @@ export default function MarketCheckCard({
           ブラウザで検索
         </a>
       </div>
+      {mercariEnabled ? (
+        <div className="space-y-2">
+          <a
+            href={mercariParams || "#"}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(event) => {
+              if (!hasMercariKeyword) {
+                event.preventDefault();
+                setCopyStatus("検索ワードを入力してください");
+                return;
+              }
+              onMercariClick?.();
+            }}
+            aria-disabled={!hasMercariKeyword}
+            className={`inline-flex min-h-11 w-full items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold transition ${
+              hasMercariKeyword
+                ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+                : "cursor-not-allowed border border-border bg-muted text-muted-foreground"
+            }`}
+          >
+            メルカリで探す
+          </a>
+          <p className={helperTextClass}>※外部サイトへ移動します（メルカリ）</p>
+          <p className={helperTextClass}>※一部リンクにはアフィリエイトを含む場合があります</p>
+        </div>
+      ) : null}
       {copyStatus ? <p className={helperTextClass}>{copyStatus}</p> : null}
 
       <div className="space-y-2">
