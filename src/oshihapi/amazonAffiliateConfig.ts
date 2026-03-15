@@ -42,7 +42,8 @@ const AMAZON_DESTINATIONS: AmazonAffiliateDestination[] = [
 export function resolveAmazonAffiliateDestination(input: {
   itemKind?: ItemKind;
   goodsClass?: GoodsClass;
-}): AmazonAffiliateDestination {
+}): AmazonAffiliateDestination | null {
+  if (input.itemKind === "ticket") return null;
   const matched = AMAZON_DESTINATIONS.find((entry) => {
     if (entry.itemKind && entry.itemKind !== input.itemKind) return false;
     if (entry.goodsClass && entry.goodsClass !== input.goodsClass) return false;

@@ -153,7 +153,8 @@ const parseGoodsClassFromQuery = (searchParams: SearchParamsLike): GoodsClass =>
 export default function FlowPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const mode: Mode = normalizeMode(searchParams.get("mode"));
+  const rawMode = searchParams.get("mode");
+  const mode: Mode = normalizeMode(rawMode ?? "short");
   const itemNameParam = searchParams.get("itemName") ?? "";
   const priceYenParam = searchParams.get("priceYen") ?? "";
   const itemName = itemNameParam || undefined;
@@ -282,6 +283,13 @@ export default function FlowPage() {
 
   const startNew = searchParams.get("startNew") === "1";
   const invalidationReason = initialDraft?.status === "invalidated" ? initialDraft.reason : undefined;
+
+  useEffect(() => {
+    if (rawMode) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("mode", mode);
+    router.replace(`/flow?${params.toString()}`);
+  }, [mode, rawMode, router, searchParams]);
 
   useEffect(() => {
     if (!startNew) return;
@@ -573,7 +581,11 @@ export default function FlowPage() {
                 href={flowMercariOutHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => {
+                onClick={(event) => {
+                  event.preventDefault();
+                  if (typeof window !== "undefined") {
+                    window.open(flowMercariOutHref, "_blank", "noopener,noreferrer");
+                  }
                   preResultActionClicksRef.current = [
                     ...preResultActionClicksRef.current,
                     "mercari_question_click:q_hot_cold",

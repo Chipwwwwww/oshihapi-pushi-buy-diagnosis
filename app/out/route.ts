@@ -23,7 +23,11 @@ export function GET(request: NextRequest): NextResponse {
     const target =
       (id ? findAmazonAffiliateDestinationById(id) : null) ??
       resolveAmazonAffiliateDestination({ itemKind, goodsClass });
-    return NextResponse.redirect(target.href);
+    if (target) {
+      return NextResponse.redirect(target.href);
+    }
+    const fallbackUrl = new URL("/", request.url);
+    return NextResponse.redirect(fallbackUrl);
   }
 
   const fallbackUrl = new URL("/", request.url);
