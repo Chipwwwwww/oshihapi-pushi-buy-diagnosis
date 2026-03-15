@@ -205,7 +205,7 @@ export default function ResultPage() {
     [run?.meta.goodsClass, run?.meta.itemKind],
   );
   const amazonOutHref = useMemo(() => {
-    if (!run) return "";
+    if (!run || !amazonDestination) return "";
     const params = new URLSearchParams({
       dest: "amazon-static",
       id: amazonDestination.id,
@@ -216,7 +216,7 @@ export default function ResultPage() {
     if (run.meta.goodsClass) params.set("gc", run.meta.goodsClass);
     if (run.output.decision) params.set("verdict", run.output.decision);
     return `/out?${params.toString()}`;
-  }, [amazonDestination.id, run]);
+  }, [amazonDestination, run]);
   const showBecausePricecheck = presentation?.tags?.includes("PRICECHECK") === true;
   const hasPlatformMarketAction = useMemo(
     () => run?.output.actions.some((action) => isPlatformMarketAction(action)) ?? false,
@@ -389,10 +389,13 @@ export default function ResultPage() {
   const handleReplay = (seedAnswers: boolean) => {
     if (!run) return;
     const params = new URLSearchParams();
+    const replayItemKind = run.meta.itemKind ?? "goods";
     params.set("mode", run.mode);
     params.set("styleMode", styleMode);
-    params.set("itemKind", run.meta.itemKind ?? "goods");
-    params.set("gc", run.meta.goodsClass ?? "small_collection");
+    params.set("itemKind", replayItemKind);
+    if (replayItemKind === "goods" || replayItemKind === "preorder" || replayItemKind === "used") {
+      params.set("gc", run.meta.goodsClass ?? "small_collection");
+    }
     params.set("deadline", run.meta.deadline ?? "unknown");
     if (run.meta.itemName) params.set("itemName", run.meta.itemName);
     if (Number.isFinite(run.meta.priceYen ?? Number.NaN)) params.set("priceYen", String(run.meta.priceYen));
@@ -702,7 +705,7 @@ export default function ResultPage() {
         </Card>
       ) : null}
 
-      {run ? (
+      {run && amazonDestination ? (
         <Card className="space-y-3">
           <h2 className={sectionTitleClass}>Amazonで比較する</h2>
           <p className={bodyTextClass}>新品や関連商品をAmazonで確認できます。</p>

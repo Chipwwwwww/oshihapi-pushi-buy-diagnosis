@@ -18,8 +18,9 @@ export type MercariKeywordResult = {
 };
 
 const DROP_TOKENS = new Set(["goods", "used", "blind_draw", "preorder", "ticket", "game_billing"]);
-
-const PAPER_HINTS = ["ブロマイド", "クリアカード", "紙類"];
+const GENERIC_TOKENS = new Set(["グッズ", "goods", "中古", "used", "小物", "コレクション"]);
+const PAPER_HINTS = ["紙もの", "ブロマイド", "クリアカード", "色紙"];
+const SMALL_COLLECTION_HINTS = ["アクリルスタンド", "キーホルダー", "ラバーストラップ"];
 const ITABAG_HINT = "缶バッジ";
 
 function normalizeKeyword(text: string): string {
@@ -47,6 +48,34 @@ function pickAnswerValue(answers: DecisionRun["answers"] | undefined, key: strin
   return typeof value === "string" ? value.trim() : "";
 }
 
+function hasConcreteObjectHint(input: MercariKeywordInput): boolean {
+  const tokens = [
+    pickAnswerValue(input.answers, "type"),
+    pickAnswerValue(input.answers, "series"),
+    pickAnswerValue(input.answers, "character"),
+    input.meta?.itemName,
+    input.itemName,
+  ]
+    .map((value) => sanitizeTokens(typeof value === "string" ? value : ""))
+    .filter(Boolean);
+
+  return tokens.some((token) => !GENERIC_TOKENS.has(token.toLowerCase()));
+}
+
+function toClassAwareFallback(input: MercariKeywordInput): string {
+  if (input.goodsClass === "paper") {
+    const base = sanitizeTokens(input.meta?.itemName ?? input.itemName ?? "");
+    return base ? `${base} ${PAPER_HINTS[0]}` : PAPER_HINTS[1];
+  }
+  if (input.goodsClass === "itabag_badge") return ITABAG_HINT;
+  if (input.goodsClass === "small_collection") {
+    if (input.itemKind === "used") return SMALL_COLLECTION_HINTS[0];
+    return SMALL_COLLECTION_HINTS[1];
+  }
+  if (input.itemKind === "used") return "推し活 中古";
+  return "";
+}
+
 function deriveFromContext(input: MercariKeywordInput): string {
   const fromItem = input.answers?.item;
   const itemName =
@@ -65,12 +94,21 @@ function deriveFromContext(input: MercariKeywordInput): string {
     .join(" ");
 
   const cleaned = sanitizeTokens(base);
-  if (cleaned) return cleaned;
+  if (cleaned && cleaned !== "グッズ") {
+    if (input.goodsClass === "paper" && !cleaned.includes("紙") && !cleaned.includes("ブロマイド") && !cleaned.includes("カード")) {
+      return `${cleaned} ${PAPER_HINTS[0]}`;
+    }
+    if (input.goodsClass === "itabag_badge" && !cleaned.includes("缶バッジ")) {
+      return `${cleaned} ${ITABAG_HINT}`;
+    }
+    return cleaned;
+  }
 
-  if (input.goodsClass === "paper") return PAPER_HINTS[0];
-  if (input.goodsClass === "itabag_badge") return ITABAG_HINT;
-  if (input.goodsClass === "small_collection") return "グッズ";
-  return "";
+  if (cleaned === "グッズ" && hasConcreteObjectHint(input)) {
+    return toClassAwareFallback(input);
+  }
+
+  return toClassAwareFallback(input);
 }
 
 export function buildMercariKeyword(input: MercariKeywordInput): MercariKeywordResult {
