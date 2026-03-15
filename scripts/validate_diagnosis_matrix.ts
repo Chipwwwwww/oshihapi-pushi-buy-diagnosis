@@ -90,7 +90,9 @@ function runScenario(s: Scenario) {
     branchHits: flow.diagnosticTrace.branchHits.map((b) => b.id),
     result: {
       decision: output.decision,
+      holdSubtype: output.holdSubtype,
       confidence: output.confidence,
+      score: output.score,
       reasonCount: output.reasons.length,
       actionCount: output.actions.length,
     },
@@ -168,6 +170,106 @@ function runBackChangeCheck() {
   if (recomputed.questions.length === 0) throw new Error("back_change: recompute failed");
 }
 
+
+function runScoringSeparationChecks() {
+  const build = (itemKind: ItemKind, overrides: Record<string, AnswerValue>) => {
+    const flow = resolveFlowQuestions({
+      mode: 'long',
+      itemKind,
+      goodsClass: 'small_collection',
+      goodsSubtype: 'general',
+      useCase: itemKind === 'game_billing' ? 'game_billing' : 'merch',
+      answers: overrides,
+      meta: { itemKind, goodsClass: 'small_collection', itemName: '検証', priceYen: 4000 },
+      styleMode: 'standard',
+    });
+    const answers: Record<string, AnswerValue> = {};
+    for (const q of flow.questions) {
+      answers[q.id] = overrides[q.id] ?? defaultAnswer(q.id);
+    }
+    return evaluate({
+      questionSet: { id: 'check', locale: 'ja', category: 'merch', version: 1, questions: flow.questions },
+      meta: { itemKind, goodsClass: 'small_collection', itemName: '検証', priceYen: 4000 },
+      answers,
+      mode: 'long',
+      useCase: itemKind === 'game_billing' ? 'game_billing' : 'merch',
+    });
+  };
+
+  const highBuy = build('goods', {
+    q_motives_multi: ['use'],
+    q_budget_pain: 'ok',
+    q_desire: 5,
+    q_price_feel: 'good',
+    q_regret_impulse: 'calm',
+    q_impulse_axis_short: 1,
+    q_addon_common_info: 'enough',
+  });
+  if (highBuy.decision !== 'BUY') throw new Error('separation: high desire low risk should allow BUY');
+
+  const highRiskHold = build('goods', {
+    q_motives_multi: ['fomo', 'rush'],
+    q_budget_pain: 'force',
+    q_desire: 3,
+    q_price_feel: 'unknown',
+    q_regret_impulse: 'tired',
+    q_impulse_axis_short: 5,
+    q_addon_common_info: 'lack',
+  });
+  if (highRiskHold.decision === 'BUY') throw new Error('separation: high impulse+uncertainty+budget pain should not BUY');
+
+  const lowDesireSkip = build('goods', {
+    q_motives_multi: ['vague'],
+    q_budget_pain: 'hard',
+    q_desire: 1,
+    q_price_feel: 'high',
+    q_regret_impulse: 'fomo',
+    q_impulse_axis_short: 4,
+    q_addon_common_info: 'lack',
+  });
+  if (lowDesireSkip.decision !== 'SKIP') throw new Error('separation: low desire + high cost should bias SKIP');
+
+  const plainGoods = build('goods', { q_addon_common_info: 'enough', q_regret_impulse: 'calm' });
+  const usedRisk = build('used', {
+    q_addon_used_condition: 'hard',
+    q_addon_used_price_gap: 'small',
+    q_addon_used_defect_return: 'not_ok',
+    q_addon_used_authenticity: 'unknown',
+    q_addon_common_info: 'partial',
+  });
+  if (usedRisk.decision === plainGoods.decision && usedRisk.holdSubtype === plainGoods.holdSubtype) {
+    throw new Error('separation: used-specific risk should differ from plain goods');
+  }
+
+  const blindHighRisk = build('blind_draw', {
+    q_addon_blind_draw_cap: 'not_good',
+    q_addon_blind_draw_exit: 'complete',
+    q_addon_blind_draw_trade_intent: 'no',
+    q_regret_impulse: 'excited',
+  });
+  if (
+    blindHighRisk.decision === plainGoods.decision &&
+    blindHighRisk.holdSubtype === plainGoods.holdSubtype &&
+    Math.abs(blindHighRisk.score - plainGoods.score) < 0.12
+  ) {
+    throw new Error('separation: blind_draw high risk should differ from normal goods');
+  }
+
+  const billingNeedClear = build('game_billing', {
+    gb_q1_need: 'clear', gb_q2_type: 'pass', gb_q3_budget: 'easy', gb_q4_future_use: 'high', gb_q6_mood: 'calm', gb_q8_wait: 'same', gb_q9_info: 'done',
+  });
+  const billingImpulsive = build('game_billing', {
+    gb_q1_need: 'unclear', gb_q2_type: 'gacha', gb_q3_budget: 'hard', gb_q4_future_use: 'low', gb_q6_mood: 'rush', gb_q8_wait: 'drop', gb_q9_info: 'none', gb_q10_pity: 'far',
+  });
+  if (billingNeedClear.decision === billingImpulsive.decision && billingNeedClear.holdSubtype === billingImpulsive.holdSubtype) {
+    throw new Error('separation: game_billing clear-need should differ from impulsive uncertain gacha');
+  }
+
+  if ([highBuy, highRiskHold, lowDesireSkip, plainGoods, usedRisk, blindHighRisk, billingNeedClear, billingImpulsive].some((o) => o.confidence < 0 || o.confidence > 100)) {
+    throw new Error('bounds: confidence must stay within 0..100');
+  }
+}
+
 function runStyleInvariantCheck() {
   const base = resolveFlowQuestions({
     mode: "medium",
@@ -191,6 +293,26 @@ function runStyleInvariantCheck() {
   });
   if (JSON.stringify(base.questions.map((q) => q.id)) !== JSON.stringify(other.questions.map((q) => q.id))) {
     throw new Error("style_invariant: style mode changed logic path");
+  }
+  const makeAnswers = (questions: typeof base.questions) => {
+    const ans: Record<string, AnswerValue> = {};
+    for (const q of questions) ans[q.id] = defaultAnswer(q.id);
+    return ans;
+  };
+  const outBase = evaluate({
+    questionSet: { id: 'style_base', locale: 'ja', category: 'merch', version: 1, questions: base.questions },
+    meta: { itemKind: 'goods', goodsClass: 'paper', itemName: 'X', priceYen: 3000 },
+    answers: makeAnswers(base.questions),
+    mode: 'medium',
+  });
+  const outOther = evaluate({
+    questionSet: { id: 'style_other', locale: 'ja', category: 'merch', version: 1, questions: other.questions },
+    meta: { itemKind: 'goods', goodsClass: 'paper', itemName: 'X', priceYen: 3000 },
+    answers: makeAnswers(other.questions),
+    mode: 'medium',
+  });
+  if (outBase.decision !== outOther.decision || outBase.holdSubtype !== outOther.holdSubtype || Math.round(outBase.score * 1000) !== Math.round(outOther.score * 1000)) {
+    throw new Error('style_invariant: style mode changed scoring outcome');
   }
 }
 
@@ -224,6 +346,7 @@ const results = scenarios.map(runScenario);
 runRefreshRestoreCheck();
 runBackChangeCheck();
 runStyleInvariantCheck();
+runScoringSeparationChecks();
 
 const itemKindCoverage = Object.fromEntries(itemKinds.map((kind) => [kind, results.some((r) => r.id.includes(`_${kind}`) || r.id.includes(`-${kind}`))]));
 
@@ -247,6 +370,7 @@ const report = {
     refreshRestore: "pass",
     backThenChangeAnswer: "pass",
     styleInvariant: "pass",
+    scoringSeparation: "pass",
   },
   uniquePathGaps,
 };

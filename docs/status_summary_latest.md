@@ -30,3 +30,13 @@
 
 ## 已知剩餘缺口（本次報告方式）
 - itemKind 專屬路徑缺口會由 `qa:diagnostics` 的 `uniquePathGaps` 明確列出並 fail；不做靜默通過。
+
+## 本次 P2（scoring calibration / explainability）完成項
+- ✅ 新增 HOLD 子類型（`info_missing` / `budget_pain` / `impulse_cooldown` / `condition_not_ready` / `risk_uncertain`），維持 top-level 決策契約不變。
+- ✅ 重新整理分數因子桶（desire/urgency/budget/readiness/uncertainty/impulse/itemKind risk），並把 itemKind-specific 風險納入可追蹤計算。
+- ✅ 結果頁新增「為何不是 BUY / 為何不是 SKIP / 阻塞因子 / 推薦理由」解釋層，提升可解釋性。
+- ✅ telemetry payload（opt-in）新增非敏感 calibration metadata（subtype/confidence bucket/dominant buckets/unknownCount）。
+- ✅ diagnostics 新增分離案例檢查（BUY/HOLD/SKIP、used/blind_draw/game_billing 差異、styleMode 邏輯不變、confidence 0..100 邊界）。
+
+## P2 殘留校準缺口（已記錄）
+- ⚠️ 30-case baseline matrix 的 default answer 分布仍偏向 HOLD（屬於題庫預設回答保守性），後續可在 P3 透過題庫擴充與 scenario 錨點再校準。

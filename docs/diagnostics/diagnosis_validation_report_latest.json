@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-15T07:29:41.824Z",
+  "generatedAt": "2026-03-15T07:45:07.808Z",
   "scenarioCount": 30,
   "scenarios": [
     {
@@ -25,9 +25,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 52,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 45,
+        "score": -0.005209999999999982,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -53,9 +55,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 52,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 46,
+        "score": -0.01990999999999997,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -81,9 +85,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 52,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 46,
+        "score": -0.022209999999999976,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -109,9 +115,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 52,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 46,
+        "score": -0.013709999999999983,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -135,9 +143,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 52,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 46,
+        "score": -0.010309999999999993,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -155,9 +165,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 54,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 46,
+        "score": -0.021470000000000013,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -187,9 +199,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 57,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 49,
+        "score": 0.06643000000000004,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -220,9 +234,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 57,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 48,
+        "score": 0.05313000000000001,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -252,9 +268,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 58,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 48,
+        "score": 0.052230000000000054,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -284,9 +302,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 57,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 48,
+        "score": 0.05863000000000005,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -314,9 +334,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 57,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 48,
+        "score": 0.060630000000000045,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -339,9 +361,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 53,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 47,
+        "score": -0.03331000000000005,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -376,9 +400,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 57,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 49,
+        "score": 0.06643000000000004,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -410,9 +436,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 57,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 48,
+        "score": 0.05313000000000001,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -449,9 +477,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 58,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 48,
+        "score": 0.052230000000000054,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -485,9 +515,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 57,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 48,
+        "score": 0.05863000000000005,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -517,9 +549,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 57,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 48,
+        "score": 0.060630000000000045,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -542,9 +576,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 53,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 47,
+        "score": -0.03331000000000005,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -578,9 +614,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 57,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 49,
+        "score": 0.06643000000000004,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -617,9 +655,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 58,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 48,
+        "score": 0.052230000000000054,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -653,9 +693,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 57,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 49,
+        "score": 0.06643000000000004,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -692,9 +734,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 58,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 48,
+        "score": 0.052230000000000054,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -729,9 +773,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 57,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 49,
+        "score": 0.06643000000000004,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -769,9 +815,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 58,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 48,
+        "score": 0.052230000000000054,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -803,9 +851,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 57,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 49,
+        "score": 0.06643000000000004,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -840,9 +890,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 58,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 48,
+        "score": 0.052230000000000054,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -876,9 +928,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 57,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 49,
+        "score": 0.06643000000000004,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -915,9 +969,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 58,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 48,
+        "score": 0.052230000000000054,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -949,9 +1005,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 57,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 49,
+        "score": 0.06643000000000004,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     },
     {
@@ -986,9 +1044,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "confidence": 58,
-        "reasonCount": 2,
-        "actionCount": 2
+        "holdSubtype": "risk_uncertain",
+        "confidence": 48,
+        "score": 0.052230000000000054,
+        "reasonCount": 3,
+        "actionCount": 3
       }
     }
   ],
@@ -1003,7 +1063,8 @@
   "checks": {
     "refreshRestore": "pass",
     "backThenChangeAnswer": "pass",
-    "styleInvariant": "pass"
+    "styleInvariant": "pass",
+    "scoringSeparation": "pass"
   },
   "uniquePathGaps": []
 }

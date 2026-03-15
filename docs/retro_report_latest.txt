@@ -56,3 +56,19 @@ D) 本輪 P1：Deterministic QA/Diagnostic layer（不改 scoring）
 3) 風險控制
 - trace/debug UI 僅 dev-only + query gate，不在 production 預設曝光。
 - scoring 權重/閾值未做 redesign，避免超出本 PR 範圍。
+
+E) 本輪 P2：Scoring calibration + HOLD subtype + explainability（保持路由/styleMode 契約）
+1) 目標
+- 讓 materially different scenarios 不再過度塌縮到同一個 HOLD。
+- 提升結果可解釋性（正向/負向/阻塞/為何不是 BUY、SKIP）。
+- 強化 itemKind-specific risk 對最終判斷的影響。
+
+2) 這輪落地
+- 引入 HOLD subtype（info_missing / budget_pain / impulse_cooldown / condition_not_ready / risk_uncertain）。
+- scoring 由可追蹤 factor buckets 驅動，並加入 itemKind risk（used/blind_draw/preorder/ticket/game_billing）。
+- 結果頁新增 explainability 區塊；history 卡片增加 subtype 與 itemKind-aware 摘要。
+- telemetry（opt-in）加入 calibration metadata（subtype/confidence bucket/dominant factors/unknownCount）。
+- diagnostics 新增分離測試：BUY/HOLD/SKIP plausible path、itemKind 差異、style invariant、confidence 0..100。
+
+3) 仍待後續
+- baseline 30-scenario matrix 的預設答案仍偏保守（多為 HOLD），P3 可透過 question-bank 擴充與 scenario 錨點持續校準。

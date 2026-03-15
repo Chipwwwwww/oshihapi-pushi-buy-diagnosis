@@ -42,6 +42,15 @@ const decisionLabels: Record<string, string> = {
   SKIP: "やめる",
 };
 
+const itemKindLabels: Record<string, string> = {
+  goods: "グッズ",
+  blind_draw: "盲抽",
+  used: "中古",
+  preorder: "予約",
+  ticket: "チケット",
+  game_billing: "ゲーム課金",
+};
+
 const marketLevelLabels: Record<string, string> = {
   high: "高騰",
   normal: "ふつう",
@@ -204,6 +213,9 @@ export default function HistoryPage() {
                   </div>
                   <div className="space-y-2">
                     <p className="text-lg font-semibold text-foreground">{formatted.sticker} {decisionLabels[run.output.decision]}</p>
+                    {run.output.holdSubtype ? (
+                      <p className="text-xs text-muted-foreground">保留タイプ: {run.output.holdSubtype}</p>
+                    ) : null}
                     <p className="line-clamp-1 text-sm text-muted-foreground">{formatted.shareTextDmShort}</p>
                     {marketMemos[run.runId] ? (
                       <p className="inline-flex rounded-full border border-border bg-muted px-3 py-1 text-xs font-semibold text-foreground">
@@ -215,6 +227,9 @@ export default function HistoryPage() {
                     </p>
                     <p className="text-xs text-muted-foreground line-clamp-2">
                       要約: {run.output.reasons.slice(0, 2).map((reason) => reason.text).join(" / ") || "理由データなし"}
+                    </p>
+                    <p className="text-xs text-muted-foreground line-clamp-1">
+                      種別サマリー: {itemKindLabels[run.meta.itemKind ?? "goods"] ?? (run.meta.itemKind ?? "goods")} / {run.output.blockingFactors?.slice(0, 1).join("") || "主要阻害なし"}
                     </p>
                     <div className="flex flex-wrap gap-2">
                       <p className="inline-flex rounded-full border border-border bg-muted px-3 py-1 text-xs font-semibold text-foreground">

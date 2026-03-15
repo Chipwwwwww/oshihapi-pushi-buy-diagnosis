@@ -1,6 +1,16 @@
-import type { ActionItem, GoodsSubtype, ReasonItem, ScoreDimension } from './model';
+import type { ActionItem, GoodsSubtype, HoldSubtype, ReasonItem, ScoreDimension } from './model';
 import { buildDefaultLinkOuts, buildSearchQuery } from './supportData';
 import type { InputMeta } from './model';
+
+type FactorBuckets = {
+  desireAttachment: number;
+  urgencyOpportunity: number;
+  budgetPressure: number;
+  readinessLogistics: number;
+  uncertaintyUnknowns: number;
+  impulseVolatility: number;
+  itemKindRisk: number;
+};
 
 type RuleContext = {
   meta: InputMeta;
@@ -8,6 +18,8 @@ type RuleContext = {
   scores: Record<ScoreDimension, number>; // 0-100
   decision: 'BUY' | 'THINK' | 'SKIP';
   blindDrawCap?: number;
+  holdSubtype?: HoldSubtype;
+  factorBuckets?: FactorBuckets;
 };
 
 function has(tag: string, tags: string[]) {
@@ -16,6 +28,7 @@ function has(tag: string, tags: string[]) {
 
 export function pickReasons(ctx: RuleContext): ReasonItem[] {
   const r: ReasonItem[] = [];
+  const buckets = ctx.factorBuckets;
 
   if (ctx.scores.affordability <= 30 || has('budget_force', ctx.tags) || has('budget_hard', ctx.tags)) {
     r.push({ id: 'budget', severity: 'strong', text: '今月の負担が大きめ。ここで無理すると後悔に繋がりやすい。' });
@@ -45,24 +58,35 @@ export function pickReasons(ctx: RuleContext): ReasonItem[] {
     r.push({ id: 'impulse_high', severity: 'warn', text: '今は勢いが強い状態。保留→冷却で精度が上がる。' });
   }
 
-  if (r.length < 3) {
-    r.push({ id: 'neutral_1', severity: 'info', text: 'いまの条件を整理できれば、後悔の確率は下げられる。' });
+  if (ctx.decision === 'THINK' && ctx.holdSubtype) {
+    const subtypeReason: Record<HoldSubtype, string> = {
+      info_missing: '判断に必要な確認情報が不足。',
+      budget_pain: '予算の痛みが強く、無理買いの可能性あり。',
+      impulse_cooldown: '勢い判断の可能性が高く、冷却が有効。',
+      condition_not_ready: '使う前提条件（置き場/運用）が未整備。',
+      risk_uncertain: '種別特有のリスク評価が不十分。',
+    };
+    r.push({ id: `hold_${ctx.holdSubtype}`, severity: 'warn', text: subtypeReason[ctx.holdSubtype] });
   }
-  if (r.length < 3) {
-    r.push({ id: 'neutral_2', severity: 'info', text: '「買う/買わない」より「どう買うか」が大事なケース。' });
+
+  if (buckets && buckets.itemKindRisk >= 70) {
+    r.push({ id: 'itemkind_risk_high', severity: 'warn', text: 'この種別は固有リスクが高め。一般グッズより慎重判断が有効。' });
   }
+
+  if (r.length < 3) r.push({ id: 'neutral_1', severity: 'info', text: 'いまの条件を整理できれば、後悔の確率は下げられる。' });
+  if (r.length < 3) r.push({ id: 'neutral_2', severity: 'info', text: '「買う/買わない」より「どう買うか」が大事なケース。' });
 
   return r.slice(0, 6);
 }
 
 export function pickActions(ctx: RuleContext): ActionItem[] {
   const a: ActionItem[] = [];
+  const unknowns = ctx.tags.filter(t => t.startsWith('unknown_')).length;
 
   if (ctx.decision === 'THINK' || ctx.scores.impulse >= 65 || ctx.scores.regretRisk >= 70) {
     a.push({ id: 'cooldown', text: '24時間だけ寝かせる（クールダウン）' });
   }
 
-  const unknowns = ctx.tags.filter(t => t.startsWith('unknown_')).length;
   if (unknowns > 0 || ctx.decision === 'THINK') {
     const query = buildSearchQuery(ctx.meta);
     const links = buildDefaultLinkOuts(query);
@@ -71,6 +95,22 @@ export function pickActions(ctx: RuleContext): ActionItem[] {
 
   if (ctx.scores.affordability <= 40 || has('budget_some', ctx.tags) || has('budget_hard', ctx.tags) || has('budget_force', ctx.tags)) {
     a.push({ id: 'budget_cap', text: '上限予算を決めて、超えたら見送る' });
+  }
+
+  if (ctx.holdSubtype === 'info_missing') {
+    a.push({ id: 'info_gap_close', text: '未確認情報を2点だけ埋めて再診断（相場/状態/条件）' });
+  }
+  if (ctx.holdSubtype === 'budget_pain') {
+    a.push({ id: 'budget_defer', text: '予算上限を先に固定し、24h後に再評価' });
+  }
+  if (ctx.holdSubtype === 'impulse_cooldown') {
+    a.push({ id: 'cooldown_tomorrow', text: '明日同じ条件で再判断（気分ノイズを除去）' });
+  }
+  if (ctx.holdSubtype === 'condition_not_ready') {
+    a.push({ id: 'condition_prep', text: '用途・置き場・運用条件を先に確定する' });
+  }
+  if (ctx.holdSubtype === 'risk_uncertain') {
+    a.push({ id: 'risk_verify', text: '真贋/日程/再販/天井のリスク根拠を確認する' });
   }
 
   if (ctx.blindDrawCap != null) {

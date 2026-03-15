@@ -134,6 +134,7 @@ export function buildLongPrompt({
 - 価格: ${price}
 - 締切: ${deadline}
 - 診断結果: ${run.output.decision} / 信頼度 ${run.output.confidence}%
+- 保留タイプ: ${run.output.holdSubtype ?? "なし"}
 
 ## 回答サマリー
 ${answerSummary || "（回答サマリーなし）"}
@@ -145,6 +146,13 @@ ${scoreSummary}
 
 ## 発火した交差項 / 非線形
 ${interactions}
+
+## 判定説明（要約）
+- ポジティブ要因: ${(run.output.positiveFactors ?? []).join(" / ") || "なし"}
+- ネガティブ要因: ${(run.output.negativeFactors ?? []).join(" / ") || "なし"}
+- ブロッカー: ${(run.output.blockingFactors ?? []).join(" / ") || "なし"}
+- なぜBUYではない？ ${run.output.whyNotBuyYet ?? "-"}
+- なぜSKIPではない？ ${run.output.whyNotSkipYet ?? "-"}
 
 ## 次に確認すべきチェックリスト
 ${checklist}

@@ -71,9 +71,22 @@ export function buildTelemetryPayloadFromRun(
     behavior: run.behavior,
     result: {
       decision: run.output.decision,
+      subtype: run.output.holdSubtype,
       confidence: run.output.confidence,
+      confidenceBucket:
+        run.output.confidence >= 75 ? 'high' : run.output.confidence >= 50 ? 'mid' : 'low',
       score: run.output.score,
       scoreSummary: run.output.scoreSummary,
+      dominantFactorBuckets: run.output.factorBuckets
+        ? Object.entries(run.output.factorBuckets)
+            .sort((a, b) => Number(b[1]) - Number(a[1]))
+            .slice(0, 3)
+            .map(([key]) => key)
+        : [],
+      unknownCount: run.diagnosticTrace?.resultInputsSummary?.unknownCount ?? 0,
+      itemKind: run.meta.itemKind,
+      goodsClass: run.meta.goodsClass,
+      styleMode: run.diagnosticTrace?.runContext?.styleMode,
       merchMethod: {
         method: run.output.merchMethod.method,
         ...(run.output.merchMethod.blindDrawCap

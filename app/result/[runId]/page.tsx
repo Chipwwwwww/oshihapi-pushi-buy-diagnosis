@@ -225,6 +225,8 @@ export default function ResultPage() {
           MODE_DICTIONARY[styleMode].explanation.wait.none
         : MODE_DICTIONARY[styleMode].explanation.skip;
 
+  const safeConfidence = clamp(0, 100, Number.isFinite(run?.output.confidence) ? (run?.output.confidence ?? 0) : 0);
+
   const decisionScale = useMemo(() => {
     if (!run) return "wait";
     if (run.output.decision === "BUY") return "buy";
@@ -404,9 +406,12 @@ export default function ResultPage() {
           <p className={`${bodyTextClass} text-foreground/90`}>{modeCopy.result.verdictLead[run.output.decision]}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="primary">信頼度 {run.output.confidence}%</Badge>
+          <Badge variant="primary">信頼度 {safeConfidence}%</Badge>
           {presentation?.badge && !presentation.badge.includes("判定") ? (
             <Badge variant="outline">{presentation.badge}</Badge>
+          ) : null}
+          {run.output.decision === "THINK" && run.output.holdSubtype ? (
+            <Badge variant="outline">保留タイプ: {run.output.holdSubtype}</Badge>
           ) : null}
         </div>
         <p className={helperTextClass}>
@@ -505,6 +510,41 @@ export default function ResultPage() {
               {(run.output.negativeFactors ?? []).length > 0
                 ? (run.output.negativeFactors ?? []).map((factor) => <li key={factor}>{factor}</li>)
                 : <li>大きなマイナス要因は見つかりませんでした</li>}
+            </ul>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="space-y-4">
+        <h2 className={sectionTitleClass}>なぜこの結論か</h2>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-2xl border border-border p-4">
+            <p className="text-sm font-semibold">なぜBUYではない？</p>
+            <p className="mt-2 text-sm text-muted-foreground">{run.output.whyNotBuyYet ?? "十分な買う根拠が未確定"}</p>
+          </div>
+          <div className="rounded-2xl border border-border p-4">
+            <p className="text-sm font-semibold">なぜSKIPではない？</p>
+            <p className="mt-2 text-sm text-muted-foreground">{run.output.whyNotSkipYet ?? "見送り確定には至っていない"}</p>
+          </div>
+        </div>
+        {run.output.subtypeReason ? (
+          <p className="text-sm text-muted-foreground">保留理由: {run.output.subtypeReason}</p>
+        ) : null}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-2xl border border-border p-4">
+            <p className="text-sm font-semibold">ブロッカー</p>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+              {(run.output.blockingFactors ?? []).length > 0
+                ? (run.output.blockingFactors ?? []).map((factor) => <li key={factor}>{factor}</li>)
+                : <li>主要ブロッカーは検出されませんでした</li>}
+            </ul>
+          </div>
+          <div className="rounded-2xl border border-border p-4">
+            <p className="text-sm font-semibold">推奨理由</p>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+              {(run.output.recommendationReasons ?? []).length > 0
+                ? (run.output.recommendationReasons ?? []).map((reason) => <li key={reason}>{reason}</li>)
+                : <li>理由データなし</li>}
             </ul>
           </div>
         </div>
