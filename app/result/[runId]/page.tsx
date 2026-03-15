@@ -42,8 +42,20 @@ import {
 } from "@/src/oshihapi/modes/useStyleMode";
 import { buildMercariKeyword, isMercariRelevantScenario } from "@/src/oshihapi/mercariKeyword";
 import { resolveAmazonAffiliateDestination } from "@/src/oshihapi/amazonAffiliateConfig";
+import { buildRakutenKeyword } from "@/src/oshihapi/rakutenKeyword";
 
 const BASKET_STORAGE_KEY = "oshihapi_basket_last";
+
+type RakutenSearchItem = {
+  name: string;
+  price: number | null;
+  affiliateUrl: string;
+  image: string | null;
+  shopName: string | null;
+  reviewAverage: number | null;
+  reviewCount: number | null;
+  availability: number | null;
+};
 
 
 function getDefaultSearchWord(run: DecisionRun): string {
@@ -125,6 +137,8 @@ export default function ResultPage() {
   const [showAlternatives, setShowAlternatives] = useState(false);
   const [showAllReasons, setShowAllReasons] = useState(false);
   const [showAllActions, setShowAllActions] = useState(false);
+  const [rakutenItems, setRakutenItems] = useState<RakutenSearchItem[]>([]);
+  const [rakutenReady, setRakutenReady] = useState(false);
   const [styleMode, setStyleMode] = useState<StyleMode>(() => getStyleModeFromSearchParams(searchParams) ?? "standard");
 
   const runId = params?.runId;
@@ -217,6 +231,31 @@ export default function ResultPage() {
     if (run.output.decision) params.set("verdict", run.output.decision);
     return `/out?${params.toString()}`;
   }, [amazonDestination, run]);
+  const rakutenKeyword = useMemo(
+    () =>
+      buildRakutenKeyword({
+        rawSearchWord: defaultSearchWord,
+        itemKind: run?.meta.itemKind,
+        goodsClass: run?.meta.goodsClass,
+        useCase: run?.useCase,
+      }),
+    [defaultSearchWord, run?.meta.goodsClass, run?.meta.itemKind, run?.useCase],
+  );
+  const rakutenItem = rakutenItems[0] ?? null;
+  const rakutenOutHref = useMemo(() => {
+    if (!run || !rakutenItem?.affiliateUrl) return "";
+    const params = new URLSearchParams({
+      dest: "rakuten-item",
+      href: rakutenItem.affiliateUrl,
+      runId: run.runId,
+      source: "result_page",
+    });
+    if (run.meta.itemKind) params.set("itemKind", run.meta.itemKind);
+    if (run.meta.goodsClass) params.set("gc", run.meta.goodsClass);
+    if (run.output.decision) params.set("verdict", run.output.decision);
+    return `/out?${params.toString()}`;
+  }, [rakutenItem?.affiliateUrl, run]);
+
   const showBecausePricecheck = presentation?.tags?.includes("PRICECHECK") === true;
   const hasPlatformMarketAction = useMemo(
     () => run?.output.actions.some((action) => isPlatformMarketAction(action)) ?? false,
@@ -229,6 +268,50 @@ export default function ResultPage() {
       ) ?? [],
     [run],
   );
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchRakuten = async () => {
+      if (!run || !rakutenKeyword) {
+        setRakutenItems([]);
+        setRakutenReady(true);
+        return;
+      }
+
+      try {
+        const params = new URLSearchParams({ keyword: rakutenKeyword });
+        const response = await fetch(`/api/rakuten/search?${params.toString()}`, { cache: "no-store" });
+        if (!response.ok) {
+          if (!cancelled) {
+            setRakutenItems([]);
+            setRakutenReady(true);
+          }
+          return;
+        }
+        const payload = (await response.json()) as { items?: RakutenSearchItem[] };
+        if (!cancelled) {
+          const nextItems = Array.isArray(payload.items)
+            ? payload.items.filter((item) => typeof item?.affiliateUrl === "string" && item.affiliateUrl.length > 0)
+            : [];
+          setRakutenItems(nextItems);
+          setRakutenReady(true);
+        }
+      } catch {
+        if (!cancelled) {
+          setRakutenItems([]);
+          setRakutenReady(true);
+        }
+      }
+    };
+
+    setRakutenReady(false);
+    void fetchRakuten();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [rakutenKeyword, run]);
+
   useEffect(() => {
     setShowAlternatives(false);
     setShowAllReasons(false);
@@ -720,6 +803,28 @@ export default function ResultPage() {
           </a>
           <p className={helperTextClass}>※Amazonへ移動します</p>
           <p className={helperTextClass}>{amazonDestination.note ?? "※一部リンクにはアフィリエイトを含みます"}</p>
+        </Card>
+      ) : null}
+
+      {run && rakutenReady && rakutenItem && rakutenOutHref ? (
+        <Card className="space-y-3">
+          <h2 className={sectionTitleClass}>楽天で比較する</h2>
+          <p className={bodyTextClass}>収納・関連アクセサリを楽天市場で確認できます。</p>
+          <p className="rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground">
+            {rakutenItem.name || "楽天市場の候補商品"}
+            {typeof rakutenItem.price === "number" ? ` / ${rakutenItem.price.toLocaleString("ja-JP")}円` : ""}
+          </p>
+          <a
+            href={rakutenOutHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => logActionClick("rakuten_result_click")}
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground shadow-sm transition hover:bg-accent"
+          >
+            楽天で見る
+          </a>
+          <p className={helperTextClass}>※楽天市場へ移動します</p>
+          <p className={helperTextClass}>※一部リンクにはアフィリエイトを含みます</p>
         </Card>
       ) : null}
 

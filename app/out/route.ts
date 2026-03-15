@@ -30,6 +30,22 @@ export function GET(request: NextRequest): NextResponse {
     return NextResponse.redirect(fallbackUrl);
   }
 
+  if (dest === "rakuten-item") {
+    const href = params.get("href")?.trim() ?? "";
+    if (href) {
+      try {
+        const parsed = new URL(href);
+        if (parsed.hostname.endsWith("rakuten.co.jp") || parsed.hostname.endsWith("rakuten.ne.jp")) {
+          return NextResponse.redirect(parsed);
+        }
+      } catch {
+        // noop: fallback to home below
+      }
+    }
+    const fallbackUrl = new URL("/", request.url);
+    return NextResponse.redirect(fallbackUrl);
+  }
+
   const fallbackUrl = new URL("/", request.url);
   return NextResponse.redirect(fallbackUrl);
 }
