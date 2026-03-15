@@ -20,3 +20,13 @@
 - compact 過頭導致可讀性下降 → 以「CTA 可見、種別可見」為底線，不追求 0 scroll 到犧牲理解。
 - sticky footer 可能遮住內容 → 需要 safe-area/padding-bottom 保護。
 
+
+## 本次 P1（diagnostics/verification）完成項
+- ✅ 新增 run-level trace：runContext / shownQuestionIds / skippedQuestionIds / branchHits / branchMisses / resultInputsSummary。
+- ✅ 新增 deterministic matrix：30 scenarios（3 modes × 6 itemKinds + goodsClass 展開 + edge checks）。
+- ✅ 新增 edge assertions：refresh restore、back-then-change-answer、style switch invariant。
+- ✅ 新增可重現報告：`docs/diagnostics/diagnosis_validation_report_latest.json`。
+- ℹ️ trace 顯示採 dev-only（`NODE_ENV!==production` 且 result query `debug=1`）。
+
+## 已知剩餘缺口（本次報告方式）
+- itemKind 專屬路徑缺口會由 `qa:diagnostics` 的 `uniquePathGaps` 明確列出並 fail；不做靜默通過。

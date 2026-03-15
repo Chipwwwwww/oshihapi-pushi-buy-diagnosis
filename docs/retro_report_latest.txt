@@ -41,3 +41,18 @@ C) 這次的最小驗收流程（deterministic）
 3) `./ops/verify_pr39_80plus_parity.ps1`（build 後才做）
 4) iPhone：/confirm 與 /confirm/settings 首屏 CTA/關鍵選項可見
 
+
+D) 本輪 P1：Deterministic QA/Diagnostic layer（不改 scoring）
+1) 為何先做這件事
+- 目前主要風險不是「功能不夠」，而是 merge 後無法 deterministic 證明分岐正確。
+- 先補 trace + matrix + report，才能穩定追查 refresh/back/path rebuild 問題。
+
+2) 這輪落地
+- flow 分岐解算集中化，並輸出 branch hits/misses + shown/skipped question ids。
+- result 評估輸出 resultInputsSummary（tags/unknown/impulse/futureUse/downgradeFlags）。
+- 新增 matrix 驗證腳本與報告輸出，固定寫入 docs/diagnostics。
+- 新增 refresh restore、back 改答案、style invariant 的自動檢查。
+
+3) 風險控制
+- trace/debug UI 僅 dev-only + query gate，不在 production 預設曝光。
+- scoring 權重/閾值未做 redesign，避免超出本 PR 範圍。

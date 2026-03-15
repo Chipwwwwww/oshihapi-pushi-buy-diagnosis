@@ -1,4 +1,5 @@
 import type { AnswerValue, Decisiveness, GoodsClass, InputMeta, ItemKind, Mode } from "@/src/oshihapi/model";
+import type { StyleMode } from "@/src/oshihapi/modes/useStyleMode";
 
 const STORAGE_KEY = "oshihapi:diagnosis:flow";
 
@@ -11,6 +12,7 @@ export type DiagnosisState = {
   itemKind: ItemKind;
   goodsClass: GoodsClass;
   decisiveness: Decisiveness;
+  styleMode: StyleMode;
   meta: DiagnosisMeta;
 };
 

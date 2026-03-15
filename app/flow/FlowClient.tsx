@@ -16,7 +16,6 @@ import type {
 } from "@/src/oshihapi/model";
 import { merch_v2_ja } from "@/src/oshihapi/merch_v2_ja";
 import { evaluate } from "@/src/oshihapi/engine";
-import { getGameBillingQuestions } from "@/src/oshihapi/gameBillingNeutralV1";
 import { saveRun } from "@/src/oshihapi/runStorage";
 import { COPY_BY_MODE } from "@/src/oshihapi/modes/copy_dictionary";
 import {
@@ -28,13 +27,8 @@ import AdvancedSettingsPanel from "@/components/AdvancedSettingsPanel";
 import { MODE_DICTIONARY } from "@/src/oshihapi/modes/mode_dictionary";
 import { DECISIVENESS_STORAGE_KEY, parseDecisiveness } from "@/src/oshihapi/decisiveness";
 import { MODE_META, normalizeMode } from "@/src/oshihapi/modeConfig";
-import {
-  ADDON_BY_GOODS_CLASS,
-  ADDON_BY_ITEM_KIND,
-  CORE_12_QUESTION_IDS,
-  QUICK_QUESTION_IDS,
-  shouldAskStorage,
-} from "@/src/oshihapi/question_sets";
+import { resolveFlowQuestions } from "@/src/oshihapi/flowResolver";
+import { pruneAnswersAfterQuestion } from "@/src/oshihapi/flowState";
 import {
   loadDiagnosisState,
   loadPriceByItemKind,
@@ -183,38 +177,26 @@ export default function FlowPage() {
     initialSavedState &&
     initialSavedState.mode === mode &&
     initialSavedState.itemKind === (itemKind ?? "goods") &&
-    initialSavedState.goodsClass === goodsClass;
+    initialSavedState.goodsClass === goodsClass &&
+    initialSavedState.styleMode === styleMode;
   const [currentIndex, setCurrentIndex] = useState(canRestoreSavedState ? (initialSavedState?.currentQuestionIndex ?? 0) : 0);
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>(canRestoreSavedState ? (initialSavedState?.answers ?? {}) : {});
 
-  const questions = useMemo(() => {
-    if (useCase === "game_billing") {
-      return getGameBillingQuestions(mode, answers);
-    }
-
-    const baseIds = mode === "short" ? QUICK_QUESTION_IDS : CORE_12_QUESTION_IDS;
-    const itemKindAddonIds = mode !== "short" && itemKind ? (ADDON_BY_ITEM_KIND[itemKind] ?? []).slice(0, mode === "medium" ? 2 : undefined) : [];
-    const enableGoodsClass = mode === "long" && (itemKind === "goods" || itemKind === "preorder" || itemKind === "used");
-    const goodsClassAddonIds = enableGoodsClass ? ADDON_BY_GOODS_CLASS[goodsClass] ?? [] : [];
-    const ids = [...baseIds, ...itemKindAddonIds, ...goodsClassAddonIds];
-
-    const hasUnknownStorage = answers.q_storage_fit === "UNKNOWN" || answers.q_storage_space === "tight";
-    const hasUnknownBudget = answers.q_budget_pain == null || answers.q_budget_pain === "some";
-    const lacksMeta = !itemName || !priceYen;
-    if (!ids.includes("q_storage_space") && (hasUnknownStorage || mode === "short")) ids.push("q_storage_space");
-    if (!ids.includes("q_price_feel") && (hasUnknownBudget || mode === "short" || lacksMeta)) ids.push("q_price_feel");
-    if (!ids.includes("q_addon_common_info") && (mode !== "long" || lacksMeta || itemKind === "preorder" || itemKind === "ticket" || itemKind === "used")) ids.push("q_addon_common_info");
-
-    const deduped = Array.from(new Set(ids)).filter((id) => {
-      if (id !== "q_storage_fit" && id !== "q_storage_space") return true;
-      if (goodsClass === "itabag_badge" || goodsClass === "display_large") return false;
-      return shouldAskStorage(itemKind, goodsSubtype);
-    });
-
-    return deduped
-      .map((id) => merch_v2_ja.questions.find((question) => question.id === id))
-      .filter((question): question is Question => Boolean(question));
-  }, [answers, goodsClass, goodsSubtype, itemKind, itemName, mode, priceYen, useCase]);
+  const flowResolution = useMemo(
+    () =>
+      resolveFlowQuestions({
+        mode,
+        itemKind,
+        goodsClass,
+        goodsSubtype,
+        useCase,
+        answers,
+        meta: { itemName, priceYen, deadline, itemKind, goodsSubtype, goodsClass, basketId, basketItemId },
+        styleMode,
+      }),
+    [answers, basketId, basketItemId, deadline, goodsClass, goodsSubtype, itemKind, itemName, mode, priceYen, styleMode, useCase],
+  );
+  const questions = flowResolution.questions;
 
   const [submitting, setSubmitting] = useState(false);
   const startTimeRef = useRef<number>(0);
@@ -285,9 +267,10 @@ export default function FlowPage() {
       itemKind: itemKind ?? "goods",
       goodsClass,
       decisiveness,
+      styleMode,
       meta: { itemName, priceYen, deadline, itemKind, goodsClass },
     });
-  }, [answers, currentIndex, deadline, decisiveness, goodsClass, itemKind, itemName, mode, priceYen]);
+  }, [answers, currentIndex, deadline, decisiveness, goodsClass, itemKind, itemName, mode, priceYen, styleMode]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !Number.isFinite(priceYen ?? Number.NaN) || !itemKind) return;
@@ -364,13 +347,7 @@ export default function FlowPage() {
         numChangesRef.current += 1;
       }
       const next = { ...prev, [questionId]: value };
-      const answeredQuestionIndex = questions.findIndex((question) => question.id === questionId);
-      if (answeredQuestionIndex >= 0) {
-        for (let index = answeredQuestionIndex + 1; index < questions.length; index += 1) {
-          delete next[questions[index].id];
-        }
-      }
-      return next;
+      return pruneAnswersAfterQuestion(next, questions, questionId);
     });
   };
 
@@ -414,6 +391,10 @@ export default function FlowPage() {
       gameBillingAnswers: useCase === "game_billing" ? normalizedAnswers : undefined,
       output,
       behavior,
+      diagnosticTrace: {
+        ...flowResolution.diagnosticTrace,
+        resultInputsSummary: output.diagnosticTrace?.resultInputsSummary,
+      },
     };
 
     setSubmitting(true);

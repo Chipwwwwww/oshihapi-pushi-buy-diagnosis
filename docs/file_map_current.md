@@ -25,3 +25,9 @@
 - `post_merge_routine.ps1`：merge 後唯一驗收腳本（PMR）
 - `ops/verify_pr39_80plus_parity.ps1`：prod parity gate（commitSha / telemetry / must-have paths）
 - `ops/vercel_prod_branch.txt` / `ops/vercel_prod_host.txt` / `ops/vercel_preview_host.txt`：parity 設定
+
+## Deterministic QA / Diagnostics（本次新增）
+- `src/oshihapi/flowResolver.ts`：集中化 flow 分岐解算 + run-level branch trace（shown/skipped/hits/misses）
+- `src/oshihapi/flowState.ts`：back/change-answer 後的 downstream answer 清理
+- `scripts/validate_diagnosis_matrix.ts`：可重現 scenario matrix 驗證入口
+- `docs/diagnostics/diagnosis_validation_report_latest.json`：最新驗證產物（機器可讀）
