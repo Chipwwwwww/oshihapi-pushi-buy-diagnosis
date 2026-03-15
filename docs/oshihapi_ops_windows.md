@@ -1,3 +1,19 @@
+## P3 追加驗收（題庫分岐 + 首頁漏斗）
+除了既有 build/PMR 外，PR 驗收請固定加跑：
+1) `npm run gen:question-bank`
+2) `npm run qa:diagnostics`
+3) `npm run build`
+
+### P3 重點人工確認
+- 首頁流程順序是否為：Step1 itemKind（goods-like 可選 goodsClass）→ Step2 mode。
+- optional meta（itemName/price/deadline）未填時仍可直接進 flow。
+- recommendation 文案是否解釋「為何推薦」。
+- `まとめ買い（β）` 是否為降權/檢證中標示（非主流程 CTA）。
+
+### 未來分岐覆蓋回歸
+- 每次調整 question bank 後都要跑 `npm run gen:question-bank` 並提交 docs/question_bank_branch_table_latest.*。
+- `qa:diagnostics` 若報 itemKind 或 goodsClass unique path 缺口，視為 fail 不可合併。
+
 # 🧭 oshihapi ops（Windows / PowerShell 5.1）
 
 ## Repo root（所有操作從這裡開始）

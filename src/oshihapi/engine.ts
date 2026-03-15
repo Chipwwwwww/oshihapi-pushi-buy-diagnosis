@@ -136,11 +136,15 @@ function computeItemKindRisk(itemKind: ItemKind, answers: Record<string, AnswerV
     const defect = getSingleAnswer(answers, 'q_addon_used_defect_return');
     const auth = getSingleAnswer(answers, 'q_addon_used_authenticity');
     const priceGap = getSingleAnswer(answers, 'q_addon_used_price_gap');
+    const sellerTrust = getSingleAnswer(answers, 'q_addon_used_seller_trust');
     if (condition === 'hard') risk += 28;
     if (defect === 'not_ok' || defect === 'unknown') risk += 25;
     if (auth === 'must') risk += 10;
     if (auth === 'unknown') risk += 22;
     if (priceGap === 'small' || priceGap === 'unknown') risk += 12;
+    if (sellerTrust === 'low') risk += 22;
+    if (sellerTrust === 'medium') risk += 8;
+    if (sellerTrust === 'unknown') risk += 14;
     return clamp(0, 100, risk + unknownInfoCount * 5);
   }
 
@@ -149,17 +153,26 @@ function computeItemKindRisk(itemKind: ItemKind, answers: Record<string, AnswerV
     const cap = getSingleAnswer(answers, 'q_addon_blind_draw_cap');
     const exit = getSingleAnswer(answers, 'q_addon_blind_draw_exit');
     const trade = getSingleAnswer(answers, 'q_addon_blind_draw_trade_intent');
+    const missPain = getSingleAnswer(answers, 'q_addon_blind_draw_miss_pain');
     if (cap === 'not_good') risk += 24;
-    if (exit === 'complete') risk += 18;
-    if (trade === 'no') risk += 12;
-    if (cap === 'unknown' || exit === 'unknown' || trade === 'unknown') risk += 10;
+    if (exit === 'complete') risk += 16;
+    if (trade === 'no') risk += 14;
+    if (missPain === 'high') risk += 22;
+    if (missPain === 'mid') risk += 10;
+    if (cap === 'unknown' || exit === 'unknown' || trade === 'unknown' || missPain === 'unknown') risk += 10;
     return clamp(0, 100, risk + unknownInfoCount * 4);
   }
 
   if (itemKind === 'preorder') {
     let risk = 40;
     const timeline = getSingleAnswer(answers, 'q_addon_preorder_timeline');
-    if (timeline === 'no' || timeline === 'unknown') risk += 25;
+    const decay = getSingleAnswer(answers, 'q_addon_preorder_decay');
+    const compareLoss = getSingleAnswer(answers, 'q_addon_preorder_compare_loss');
+    if (timeline === 'no' || timeline === 'unknown') risk += 20;
+    if (decay === 'drop') risk += 24;
+    if (decay === 'uncertain') risk += 10;
+    if (compareLoss === 'large') risk += 18;
+    if (compareLoss === 'mid') risk += 8;
     return clamp(0, 100, risk + unknownInfoCount * 6);
   }
 
@@ -167,10 +180,15 @@ function computeItemKindRisk(itemKind: ItemKind, answers: Record<string, AnswerV
     let risk = 38;
     const schedule = getSingleAnswer(answers, 'q_addon_ticket_schedule');
     const resale = getSingleAnswer(answers, 'q_addon_ticket_resale_rule');
-    if (schedule === 'risk') risk += 28;
+    const tripLoad = getSingleAnswer(answers, 'q_addon_ticket_trip_load');
+    const nextChance = getSingleAnswer(answers, 'q_addon_ticket_next_chance');
+    if (schedule === 'risk') risk += 24;
     if (schedule === 'some_risk') risk += 12;
     if (resale === 'not_yet') risk += 18;
     if (resale === 'partly') risk += 9;
+    if (tripLoad === 'heavy') risk += 20;
+    if (tripLoad === 'medium') risk += 8;
+    if (nextChance === 'unknown') risk += 10;
     return clamp(0, 100, risk + unknownInfoCount * 5);
   }
 

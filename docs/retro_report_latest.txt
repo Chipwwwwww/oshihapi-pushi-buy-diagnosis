@@ -1,3 +1,24 @@
+
+F) 本輪 P3：首頁 IA 兩步漏斗 + itemKind/goodsClass 分岐強化
+1) 問題
+- 題庫雖有分支，但使用者感受仍是「大同小異」。
+- 首頁一開始同時要求選模式+看推薦+填meta，初見負擔偏高。
+
+2) 解法
+- 首頁改成兩步：先「我在決定什麼」再「我要多快/多深」。
+- 把 recommendation 角色改為輔助說明，不跟主流程搶決策。
+- optional meta 明確標示「不填也能開始，填了更準」。
+
+3) 題庫強化
+- used：新增 seller trust/returnability；既有 condition/authenticity/price-gap 文案與 delta 強化。
+- blind_draw：新增 miss pain，並把 cap/exit/trade 改成可實際影響 regret/impulse/opportunity 的題。
+- preorder：新增熱度衰減與比較機會損失。
+- ticket：新增 trip load 與 next chance；schedule/resale 題改為更產品化語意。
+- goodsClass：paper/wearable/display_large/tech/itabag_badge/small_collection 均維持可命中的專屬題。
+
+4) deterministic 保護
+- flowResolver branch hit/miss 增補 kind_* 與 goods_class_*。
+- diagnostics 增加首頁漏斗轉換檢查與各 itemKind/goodsClass unique 題命中斷言。
 retro_report_latest.txt
 ======================
 

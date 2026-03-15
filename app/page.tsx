@@ -3,33 +3,17 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { Decisiveness, InputMeta, ItemKind, Mode } from "@/src/oshihapi/model";
+import type { Decisiveness, InputMeta, ItemKind, Mode, GoodsClass } from "@/src/oshihapi/model";
 import { MODE_META } from "@/src/oshihapi/modeConfig";
-import {
-  MODE_LABELS,
-  SCENARIO_CARDS_JA,
-  SITUATION_CHIPS_JA,
-  recommendMode,
-  type ScenarioCard,
-  type SituationChip,
-} from "@/src/oshihapi/modeGuide";
-import {
-  DECISIVENESS_STORAGE_KEY,
-  parseDecisiveness,
-} from "@/src/oshihapi/decisiveness";
+import { MODE_LABELS, recommendMode } from "@/src/oshihapi/modeGuide";
+import { DECISIVENESS_STORAGE_KEY, parseDecisiveness } from "@/src/oshihapi/decisiveness";
+import { getStyleModeFromLocalStorage, type StyleMode } from "@/src/oshihapi/modes/useStyleMode";
+import { getModeTradeoff, getOptionalMetaHint, isGoodsClassApplicable } from "@/src/oshihapi/homeFunnel";
 import Badge from "@/components/ui/Badge";
-import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import RadioCard from "@/components/ui/RadioCard";
-import {
-  bodyTextClass,
-  containerClass,
-  pageTitleClass,
-  sectionTitleClass,
-} from "@/components/ui/tokens";
-import { getStyleModeFromLocalStorage, type StyleMode } from "@/src/oshihapi/modes/useStyleMode";
-import StartTemplateDrawer from "@/components/StartTemplateDrawer";
 import StickyStartBar from "@/components/StickyStartBar";
+import { bodyTextClass, containerClass, pageTitleClass, sectionTitleClass } from "@/components/ui/tokens";
 
 const deadlineOptions = [
   { value: "today", label: "今日" },
@@ -38,299 +22,122 @@ const deadlineOptions = [
   { value: "in1week", label: "1週間以内" },
   { value: "unknown", label: "未定" },
 ] as const;
+const itemKindOptions: { value: ItemKind; label: string; lead: string }[] = [
+  { value: "goods", label: "グッズ", lead: "通常グッズの購入" },
+  { value: "blind_draw", label: "ブラインド/くじ", lead: "被り・上限を考える" },
+  { value: "used", label: "中古", lead: "状態・真贋・返品条件を確認" },
+  { value: "preorder", label: "予約", lead: "待ち期間と不確実性を確認" },
+  { value: "ticket", label: "チケット", lead: "日程・移動コスト・代替機会を確認" },
+  { value: "game_billing", label: "ゲーム課金", lead: "課金特有の勢いリスクを確認" },
+];
+const goodsClassOptions: { value: GoodsClass; label: string }[] = [
+  { value: "small_collection", label: "小物コレクション" },
+  { value: "paper", label: "紙もの" },
+  { value: "wearable", label: "身につける" },
+  { value: "display_large", label: "飾る・大きめ" },
+  { value: "tech", label: "機能系" },
+  { value: "itabag_badge", label: "痛バ・缶バ大量回収" },
+];
 
 type DeadlineValue = NonNullable<InputMeta["deadline"]>;
 
-const DEADLINE_VALUES = deadlineOptions.map((option) => option.value);
-const ITEM_KIND_VALUES: ItemKind[] = [
-  "goods",
-  "blind_draw",
-  "used",
-  "preorder",
-  "ticket",
-  "game_billing",
-];
-
-const isDeadlineValue = (value: string): value is DeadlineValue =>
-  DEADLINE_VALUES.includes(value as DeadlineValue);
-
-const isItemKindValue = (value: string): value is ItemKind =>
-  ITEM_KIND_VALUES.includes(value as ItemKind);
-
-const parseDeadlineValue = (value: string): DeadlineValue =>
-  isDeadlineValue(value) ? value : "unknown";
-
-const parseItemKindValue = (value: string): ItemKind =>
-  isItemKindValue(value) ? value : "goods";
-
-const parsePriceYen = (value: string): number | undefined => {
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-  const parsed = Number(trimmed);
-  return Number.isFinite(parsed) ? parsed : undefined;
-};
-
-const itemKindOptions: { value: ItemKind; label: string }[] = [
-  { value: "goods", label: "グッズ" },
-  { value: "blind_draw", label: "くじ" },
-  { value: "used", label: "中古" },
-  { value: "preorder", label: "予約" },
-  { value: "ticket", label: "チケット" },
-  { value: "game_billing", label: "ゲーム課金" },
-];
-
-const deadlineLabelMap = new Map(
-  deadlineOptions.map((option) => [option.value, option.label] as const),
-);
-const itemKindLabelMap = new Map(
-  itemKindOptions.map((option) => [option.value, option.label] as const),
-);
-
-const chipTemplatePreset: Record<
-  string,
-  Partial<{
-    itemName: string;
-    priceYen: number;
-    deadline: DeadlineValue;
-    itemKind: ItemKind;
-    decisiveness: Decisiveness;
-    mode: Mode;
-  }>
-> = {
-  "deadline-close": { deadline: "today", itemKind: "goods", decisiveness: "quick", mode: "short" },
-  "event-soon": { deadline: "tomorrow", itemKind: "ticket", decisiveness: "quick", mode: "short" },
-  "compare-prices": { deadline: "in1week", itemKind: "goods", decisiveness: "standard", mode: "medium" },
-  "used-market": { deadline: "unknown", itemKind: "used", decisiveness: "standard", mode: "medium" },
-  "big-purchase": { priceYen: 18000, deadline: "in1week", itemKind: "preorder", decisiveness: "careful", mode: "long" },
-  "travel-cost": { priceYen: 22000, deadline: "in3days", itemKind: "ticket", decisiveness: "careful", mode: "long" },
-};
-
 export default function Home() {
   const router = useRouter();
+  const [itemKind, setItemKind] = useState<ItemKind>("goods");
+  const [goodsClass, setGoodsClass] = useState<GoodsClass>("small_collection");
   const [mode, setMode] = useState<Mode>("short");
   const [itemName, setItemName] = useState("");
   const [priceYen, setPriceYen] = useState("");
   const [deadline, setDeadline] = useState<DeadlineValue>("unknown");
-  const [itemKind, setItemKind] = useState<ItemKind>("goods");
   const [styleMode] = useState<StyleMode>(() => getStyleModeFromLocalStorage());
-  const [isTemplateDrawerOpen, setIsTemplateDrawerOpen] = useState(false);
-  const [hasTemplateSelection, setHasTemplateSelection] = useState(false);
-  const [decisiveness, setDecisiveness] = useState<Decisiveness>(() => {
+  const [decisiveness] = useState<Decisiveness>(() => {
     if (typeof window === "undefined") return "standard";
     return parseDecisiveness(window.localStorage.getItem(DECISIVENESS_STORAGE_KEY));
   });
 
-  const parsedPriceYen = useMemo(() => parsePriceYen(priceYen), [priceYen]);
+  const parsedPriceYen = useMemo(() => {
+    const parsed = Number(priceYen.trim());
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }, [priceYen]);
   const recommendation = useMemo(
-    () =>
-      recommendMode({
-        itemName: itemName.trim() || undefined,
-        priceYen: parsedPriceYen,
-        deadline,
-        itemKind,
-      }),
+    () => recommendMode({ itemName: itemName.trim() || undefined, priceYen: parsedPriceYen, deadline, itemKind }),
     [itemName, parsedPriceYen, deadline, itemKind],
   );
-
-  const getModeDescription = (targetMode: Mode) => MODE_META[targetMode].homeDescription;
-  const modeDescription = useMemo(() => getModeDescription(mode), [mode]);
 
   const handleStart = () => {
     const params = new URLSearchParams();
     params.set("mode", mode);
     params.set("styleMode", styleMode);
+    params.set("itemKind", itemKind);
+    if (isGoodsClassApplicable(itemKind)) params.set("gc", goodsClass);
     if (itemName.trim()) params.set("itemName", itemName.trim());
-    if (parsedPriceYen !== undefined) {
-      params.set("priceYen", String(parsedPriceYen));
-    }
-    const normalizedDeadline = parseDeadlineValue(deadline);
-    if (normalizedDeadline) params.set("deadline", normalizedDeadline);
-    const normalizedItemKind = parseItemKindValue(itemKind);
-    if (normalizedItemKind) params.set("itemKind", normalizedItemKind);
+    if (parsedPriceYen !== undefined) params.set("priceYen", String(parsedPriceYen));
+    params.set("deadline", deadline);
     params.set("decisiveness", decisiveness);
-    if (hasTemplateSelection) params.set("templateUsed", "1");
     router.push(`/flow?${params.toString()}`);
   };
 
-  const handleDecisivenessChange = (value: Decisiveness) => {
-    setDecisiveness(value);
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(DECISIVENESS_STORAGE_KEY, value);
-    }
-  };
-
-  const applyTemplate = ({
-    mode: templateMode,
-    itemName: templateItemName,
-    priceYen: templatePriceYen,
-    deadline: templateDeadline,
-    itemKind: templateItemKind,
-    decisiveness: templateDecisiveness,
-  }: {
-    mode?: Mode;
-    itemName?: string;
-    priceYen?: number;
-    deadline?: DeadlineValue;
-    itemKind?: ItemKind;
-    decisiveness?: Decisiveness;
-  }) => {
-    if (templateMode) setMode(templateMode);
-    if (templateItemName !== undefined) setItemName(templateItemName);
-    if (templatePriceYen !== undefined) setPriceYen(String(templatePriceYen));
-    if (templateDeadline !== undefined) setDeadline(templateDeadline);
-    if (templateItemKind !== undefined) setItemKind(templateItemKind);
-    if (templateDecisiveness !== undefined) handleDecisivenessChange(templateDecisiveness);
-    setHasTemplateSelection(true);
-    setIsTemplateDrawerOpen(false);
-  };
-
-  const handleApplyScenario = (scenario: ScenarioCard) => {
-    applyTemplate({
-      mode: scenario.mode,
-      itemName: scenario.preset?.itemName ?? "",
-      priceYen: scenario.preset?.priceYen,
-      deadline: scenario.preset?.deadline as DeadlineValue | undefined,
-      itemKind: scenario.preset?.itemKind,
-    });
-  };
-
-  const handleApplyChip = (chip: SituationChip) => {
-    applyTemplate({
-      mode: chip.mode,
-      ...chipTemplatePreset[chip.id],
-    });
-  };
-
   return (
-    <div
-      className={`${containerClass} safe-bottom flex min-h-screen flex-col gap-6 py-8 bg-transparent dark:bg-[#0b0f1a]`}
-    >
+    <div className={`${containerClass} safe-bottom flex min-h-screen flex-col gap-6 py-8 bg-transparent dark:bg-[#0b0f1a]`}>
       <header className="flex flex-col gap-2">
         <p className="text-sm font-semibold uppercase tracking-widest text-accent">オシハピ</p>
         <h1 className={pageTitleClass}>推し買い診断</h1>
-        <p className={bodyTextClass}>推しグッズの「買う/保留/やめる」を60秒で。くじ・中古・予約もOK。</p>
-        <Link href="/basket" className="text-sm text-primary underline underline-offset-4">まとめ買い（β）</Link>
+        <p className={bodyTextClass}>先に「何を決めるか」、次に「どれだけ深く考えるか」を選ぶ2ステップ診断。</p>
+        <p className="text-xs text-slate-500 dark:text-zinc-400">※ まとめ買い（β）は検証中です <Link href="/basket" className="underline underline-offset-2">βページを見る</Link></p>
       </header>
 
       <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
-        <h2 className={sectionTitleClass}>診断コース</h2>
-        <div className="grid gap-4">
-          <RadioCard
-            title="即決（30秒）"
-            description="いま買う？やめる？迷いを最短で整理"
-            isSelected={mode === "short"}
-            onClick={() => setMode("short")}
-          />
-          <RadioCard
-            title="標準（60秒〜2分）"
-            description="理由と不安をバランスよく整理"
-            isSelected={mode === "medium"}
-            onClick={() => setMode("medium")}
-          />
-          <RadioCard
-            title="深掘り（長診断）"
-            description="比較・優先度・後悔ポイントまでじっくり（最後にAIで深掘りも可）"
-            isSelected={mode === "long"}
-            onClick={() => setMode("long")}
-          />
+        <h2 className={sectionTitleClass}>Step 1: 何について判断する？</h2>
+        <div className="grid gap-3">
+          {itemKindOptions.map((option) => (
+            <RadioCard key={option.value} title={option.label} description={option.lead} isSelected={itemKind === option.value} onClick={() => setItemKind(option.value)} />
+          ))}
         </div>
-        <p className="text-sm text-slate-600 dark:text-zinc-300">{modeDescription}</p>
-        <Button variant="outline" onClick={() => setIsTemplateDrawerOpen(true)} className="w-full">
-          テンプレで始める（任意）
-        </Button>
+        {isGoodsClassApplicable(itemKind) ? (
+          <label className="space-y-1 text-sm">
+            <span className="text-slate-600 dark:text-zinc-300">グッズ種別（精度アップ）</span>
+            <select value={goodsClass} onChange={(e) => setGoodsClass(e.target.value as GoodsClass)} className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/15 dark:bg-[#111827] dark:text-zinc-50">
+              {goodsClassOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </label>
+        ) : null}
       </Card>
 
       <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
+        <h2 className={sectionTitleClass}>Step 2: どの深さで診断する？</h2>
+        <div className="grid gap-3">
+          <RadioCard title="短（short）" description="速く答えを出す" isSelected={mode === "short"} onClick={() => setMode("short")} />
+          <RadioCard title="中（medium）" description="理由と不安をバランス確認" isSelected={mode === "medium"} onClick={() => setMode("medium")} />
+          <RadioCard title="長（long）" description="比較・優先度・後悔まで整理" isSelected={mode === "long"} onClick={() => setMode("long")} />
+        </div>
+        <p className="text-sm text-slate-600 dark:text-zinc-300">{getModeTradeoff(mode)} / {MODE_META[mode].homeDescription}</p>
+      </Card>
+
+      <Card className="space-y-3 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
         <div className="flex items-center justify-between">
-          <h2 className={sectionTitleClass}>迷ったらおすすめ</h2>
+          <h2 className={sectionTitleClass}>おすすめ（補助）</h2>
           <Badge variant="accent">信頼度 {recommendation.confidence}%</Badge>
         </div>
-        <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-100 p-4 text-slate-900 dark:border-white/10 dark:bg-white/7 dark:text-zinc-50">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-slate-600 dark:text-zinc-300">おすすめモード</span>
-            <Badge variant="primary">{MODE_LABELS[recommendation.mode]}</Badge>
-            <span className="text-sm text-slate-600 dark:text-zinc-300">{getModeDescription(recommendation.mode)}</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {recommendation.reasonChips.map((reason) => (
-              <Badge
-                key={reason}
-                variant="outline"
-                className="border-slate-200 bg-slate-100 text-slate-700 dark:border-white/10 dark:bg-white/6 dark:text-zinc-200"
-              >
-                {reason}
-              </Badge>
-            ))}
-          </div>
-          {recommendation.followUp ? (
-            <p className="text-sm text-amber-700 dark:text-amber-300">{recommendation.followUp}</p>
-          ) : null}
-        </div>
+        <p className="text-sm text-slate-700 dark:text-zinc-200">
+          あなたの入力だと <strong>{MODE_LABELS[recommendation.mode]}</strong> が向いています。
+          {recommendation.reasonChips.length > 0 ? ` 理由: ${recommendation.reasonChips.join(" / ")}` : ""}
+        </p>
+        {recommendation.followUp ? <p className="text-sm text-amber-700 dark:text-amber-300">{recommendation.followUp}</p> : null}
       </Card>
 
-
       <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
-        <h2 className={sectionTitleClass}>診断メモ（任意）</h2>
+        <h2 className={sectionTitleClass}>任意メモ（未入力でも開始できます）</h2>
+        <p className="text-sm text-slate-600 dark:text-zinc-300">{getOptionalMetaHint(itemKind)}</p>
         <div className="grid gap-3">
-          <label className="space-y-1 text-sm">
-            <span className="text-slate-600 dark:text-zinc-300">アイテム名</span>
-            <input
-              value={itemName}
-              onChange={(event) => setItemName(event.target.value)}
-              placeholder="例：推しアクスタ 2025"
-              className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/15 dark:bg-[#111827] dark:text-zinc-50"
-            />
-          </label>
-          <label className="space-y-1 text-sm">
-            <span className="text-slate-600 dark:text-zinc-300">価格（円）</span>
-            <input
-              value={priceYen}
-              onChange={(event) => setPriceYen(event.target.value)}
-              inputMode="numeric"
-              placeholder="例：3500"
-              className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/15 dark:bg-[#111827] dark:text-zinc-50"
-            />
-          </label>
-          <label className="space-y-1 text-sm">
-            <span className="text-slate-600 dark:text-zinc-300">期限</span>
-            <select
-              value={deadline}
-              onChange={(event) => setDeadline(parseDeadlineValue(event.target.value))}
-              className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/15 dark:bg-[#111827] dark:text-zinc-50"
-            >
-              {deadlineOptions.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-          </label>
-          <label className="space-y-1 text-sm">
-            <span className="text-slate-600 dark:text-zinc-300">カテゴリ</span>
-            <select
-              value={itemKind}
-              onChange={(event) => setItemKind(parseItemKindValue(event.target.value))}
-              className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/15 dark:bg-[#111827] dark:text-zinc-50"
-            >
-              {itemKindOptions.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-          </label>
+          <input value={itemName} onChange={(e) => setItemName(e.target.value)} placeholder="アイテム名（任意）" className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/15 dark:bg-[#111827] dark:text-zinc-50" />
+          <input value={priceYen} onChange={(e) => setPriceYen(e.target.value)} inputMode="numeric" placeholder="価格（任意）" className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/15 dark:bg-[#111827] dark:text-zinc-50" />
+          <select value={deadline} onChange={(e) => setDeadline(e.target.value as DeadlineValue)} className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/15 dark:bg-[#111827] dark:text-zinc-50">
+            {deadlineOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+          </select>
         </div>
       </Card>
 
       <StickyStartBar onStart={handleStart} />
-
-      <StartTemplateDrawer
-        isOpen={isTemplateDrawerOpen}
-        selectedMode={mode}
-        chips={SITUATION_CHIPS_JA}
-        scenarios={SCENARIO_CARDS_JA}
-        onClose={() => setIsTemplateDrawerOpen(false)}
-        onSelectChip={handleApplyChip}
-        onSelectScenario={handleApplyScenario}
-        deadlineLabelMap={deadlineLabelMap}
-        itemKindLabelMap={itemKindLabelMap}
-      />
     </div>
   );
 }

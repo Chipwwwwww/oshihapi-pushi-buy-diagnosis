@@ -82,7 +82,12 @@ export function resolveFlowQuestions(input: FlowResolverInput): FlowResolution {
   pushBranch("mode_short", input.mode === "short");
   pushBranch("mode_medium", input.mode === "medium");
   pushBranch("mode_long", input.mode === "long");
+  pushBranch("kind_used", input.itemKind === "used");
+  pushBranch("kind_blind_draw", input.itemKind === "blind_draw");
+  pushBranch("kind_preorder", input.itemKind === "preorder");
+  pushBranch("kind_ticket", input.itemKind === "ticket");
   pushBranch("long_goods_class_addon", enableGoodsClass, `goodsClass=${input.goodsClass}`);
+  pushBranch(`goods_class_${input.goodsClass}`, enableGoodsClass, `mode=${input.mode}`);
   pushBranch("unknown_storage_or_short", hasUnknownStorage || input.mode === "short", `unknownStorage=${String(hasUnknownStorage)}`);
   pushBranch("unknown_budget_or_short_or_lacks_meta", hasUnknownBudget || input.mode === "short" || lacksMeta, `unknownBudget=${String(hasUnknownBudget)},lacksMeta=${String(lacksMeta)}`);
   pushBranch(

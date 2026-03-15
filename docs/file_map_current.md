@@ -1,3 +1,11 @@
+## P3 追加（首頁漏斗 + 分岐覆蓋）
+- `src/oshihapi/homeFunnel.ts`：首頁 2-step 漏斗輔助規則（goodsClass 適用、模式 tradeoff、任意欄位提示）。
+- `app/page.tsx`：首頁 IA 改為「先 itemKind，再 mode」，並明確化 optional meta 說明。
+- `src/oshihapi/question_sets.ts`：itemKind addon 映射擴充（used/blind_draw/preorder/ticket 新增專屬題）。
+- `src/oshihapi/merch_v2_ja.ts`：新增/強化 itemKind 與 goodsClass 題庫條目。
+- `src/oshihapi/flowResolver.ts`：branch hit/miss 增補（kind_* / goods_class_*）。
+- `scripts/validate_diagnosis_matrix.ts`：新增 itemKind/goodsClass 專屬題命中與首頁漏斗檢查。
+
 # file_map_current（粗略地圖，請以 repo 實際內容為準）
 
 > 目的：讓「討論→Codex→驗收」時，大家講同一份路徑與責任範圍。
