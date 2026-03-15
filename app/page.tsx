@@ -9,6 +9,7 @@ import { MODE_LABELS, recommendMode } from "@/src/oshihapi/modeGuide";
 import { DECISIVENESS_STORAGE_KEY, parseDecisiveness } from "@/src/oshihapi/decisiveness";
 import { getStyleModeFromLocalStorage, type StyleMode } from "@/src/oshihapi/modes/useStyleMode";
 import { getModeTradeoff, getOptionalMetaHint, isGoodsClassApplicable } from "@/src/oshihapi/homeFunnel";
+import { loadDrafts } from "@/src/store/diagnosisStore";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import RadioCard from "@/components/ui/RadioCard";
@@ -55,6 +56,11 @@ export default function Home() {
     return parseDecisiveness(window.localStorage.getItem(DECISIVENESS_STORAGE_KEY));
   });
 
+  const [latestDraft] = useState(() => {
+    if (typeof window === "undefined") return null;
+    return loadDrafts()[0] ?? null;
+  });
+
   const parsedPriceYen = useMemo(() => {
     const parsed = Number(priceYen.trim());
     return Number.isFinite(parsed) ? parsed : undefined;
@@ -63,6 +69,35 @@ export default function Home() {
     () => recommendMode({ itemName: itemName.trim() || undefined, priceYen: parsedPriceYen, deadline, itemKind }),
     [itemName, parsedPriceYen, deadline, itemKind],
   );
+
+  const handleResumeDraft = () => {
+    if (!latestDraft) return;
+    const params = new URLSearchParams();
+    params.set("mode", latestDraft.runContext.mode);
+    params.set("styleMode", latestDraft.runContext.styleMode);
+    params.set("itemKind", latestDraft.runContext.itemKind);
+    params.set("gc", latestDraft.runContext.goodsClass);
+    params.set("decisiveness", latestDraft.decisiveness);
+    if (latestDraft.runContext.itemName) params.set("itemName", latestDraft.runContext.itemName);
+    if (Number.isFinite(latestDraft.runContext.priceYen ?? Number.NaN)) params.set("priceYen", String(latestDraft.runContext.priceYen));
+    if (latestDraft.runContext.deadline) params.set("deadline", latestDraft.runContext.deadline);
+    params.set("draftId", latestDraft.draftId);
+    router.push(`/flow?${params.toString()}`);
+  };
+
+  const handleStartNew = () => {
+    const params = new URLSearchParams();
+    params.set("mode", mode);
+    params.set("styleMode", styleMode);
+    params.set("itemKind", itemKind);
+    if (isGoodsClassApplicable(itemKind)) params.set("gc", goodsClass);
+    if (itemName.trim()) params.set("itemName", itemName.trim());
+    if (parsedPriceYen !== undefined) params.set("priceYen", String(parsedPriceYen));
+    params.set("deadline", deadline);
+    params.set("decisiveness", decisiveness);
+    params.set("startNew", "1");
+    router.push(`/flow?${params.toString()}`);
+  };
 
   const handleStart = () => {
     const params = new URLSearchParams();
@@ -136,6 +171,18 @@ export default function Home() {
           </select>
         </div>
       </Card>
+
+
+      {latestDraft ? (
+        <Card className="space-y-3 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
+          <h2 className={sectionTitleClass}>前回の下書き</h2>
+          <p className="text-sm text-slate-600 dark:text-zinc-300">{latestDraft.runContext.itemName ?? "（商品名なし）"} / {latestDraft.runContext.mode}</p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <button onClick={handleResumeDraft} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50 dark:border-white/15 dark:bg-[#111827] dark:text-zinc-50">下書きを再開</button>
+            <button onClick={handleStartNew} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50 dark:border-white/15 dark:bg-[#111827] dark:text-zinc-50">新規診断を開始</button>
+          </div>
+        </Card>
+      ) : null}
 
       <StickyStartBar onStart={handleStart} />
     </div>

@@ -30,9 +30,12 @@ import { MODE_META, normalizeMode } from "@/src/oshihapi/modeConfig";
 import { resolveFlowQuestions } from "@/src/oshihapi/flowResolver";
 import { pruneAnswersAfterQuestion } from "@/src/oshihapi/flowState";
 import {
-  loadDiagnosisState,
+  clearCompatibleDrafts,
+  clearDraft,
+  findLatestCompatibleDraft,
+  loadDraftById,
   loadPriceByItemKind,
-  saveDiagnosisState,
+  saveDraft,
   savePriceByItemKind,
 } from "@/src/store/diagnosisStore";
 import Button from "@/components/ui/Button";
@@ -171,16 +174,30 @@ export default function FlowPage() {
   const [draftDecisiveness, setDraftDecisiveness] = useState<Decisiveness>(decisiveness);
 
   const useCase = itemKind === "game_billing" ? "game_billing" : "merch";
-  const initialSavedState =
-    typeof window !== "undefined" ? loadDiagnosisState() : null;
-  const canRestoreSavedState =
-    initialSavedState &&
-    initialSavedState.mode === mode &&
-    initialSavedState.itemKind === (itemKind ?? "goods") &&
-    initialSavedState.goodsClass === goodsClass &&
-    initialSavedState.styleMode === styleMode;
-  const [currentIndex, setCurrentIndex] = useState(canRestoreSavedState ? (initialSavedState?.currentQuestionIndex ?? 0) : 0);
-  const [answers, setAnswers] = useState<Record<string, AnswerValue>>(canRestoreSavedState ? (initialSavedState?.answers ?? {}) : {});
+  const initialDraft = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    const compatibilityContext = {
+      mode,
+      itemKind: itemKind ?? "goods",
+      goodsClass,
+      styleMode,
+    } as const;
+    const explicitDraftId = searchParams.get("draftId");
+    if (explicitDraftId) {
+      const found = loadDraftById(explicitDraftId);
+      if (found) return { status: "restored", draft: found } as const;
+    }
+    return findLatestCompatibleDraft(compatibilityContext);
+  }, [goodsClass, itemKind, mode, searchParams, styleMode]);
+  const [draftId] = useState<string>(() => initialDraft?.status === "restored" ? initialDraft.draft.draftId : crypto.randomUUID());
+  const persistenceState =
+    initialDraft?.status === "restored"
+      ? initialDraft.draft.persistenceState
+      : initialDraft?.status === "invalidated"
+        ? "invalidated"
+        : "fresh";
+  const [currentIndex, setCurrentIndex] = useState(initialDraft?.status === "restored" ? initialDraft.draft.currentQuestionIndex : 0);
+  const [answers, setAnswers] = useState<Record<string, AnswerValue>>(initialDraft?.status === "restored" ? (initialDraft.draft.answers ?? {}) : {});
 
   const flowResolution = useMemo(
     () =>
@@ -217,6 +234,14 @@ export default function FlowPage() {
       ? "例：限定ガチャ10連 / 月パス / コラボスキン"
       : "例：推しアクスタ 2025";
 
+
+  const startNew = searchParams.get("startNew") === "1";
+  const invalidationReason = initialDraft?.status === "invalidated" ? initialDraft.reason : undefined;
+
+  useEffect(() => {
+    if (!startNew) return;
+    clearCompatibleDrafts({ mode, itemKind: itemKind ?? "goods", goodsClass, styleMode });
+  }, [goodsClass, itemKind, mode, startNew, styleMode]);
 
   const getOptionLabel = (questionId: string, optionId: string, fallback: string) =>
     COPY_BY_MODE[styleMode].questions[questionId]?.options?.[optionId] ?? fallback;
@@ -260,17 +285,33 @@ export default function FlowPage() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    saveDiagnosisState({
-      answers,
-      currentQuestionIndex: currentIndex,
-      mode,
-      itemKind: itemKind ?? "goods",
-      goodsClass,
+    const currentQuestionId = questions[Math.min(currentIndex, Math.max(questions.length - 1, 0))]?.id;
+    saveDraft({
+      draftId,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      schemaVersion: 1,
+      questionBankVersion: 1,
+      flowConfigHash: "flow-resolver-v4",
+      runContext: {
+        mode,
+        itemKind: itemKind ?? "goods",
+        goodsClass,
+        styleMode,
+        itemName,
+        priceYen,
+        deadline,
+      },
       decisiveness,
-      styleMode,
-      meta: { itemName, priceYen, deadline, itemKind, goodsClass },
+      answers,
+      shownQuestionIds: flowResolution.diagnosticTrace.shownQuestionIds,
+      skippedQuestionIds: flowResolution.diagnosticTrace.skippedQuestionIds,
+      currentQuestionIndex: currentIndex,
+      currentQuestionId,
+      diagnosticTrace: flowResolution.diagnosticTrace,
+      persistenceState,
     });
-  }, [answers, currentIndex, deadline, decisiveness, goodsClass, itemKind, itemName, mode, priceYen, styleMode]);
+  }, [answers, currentIndex, deadline, decisiveness, draftId, flowResolution.diagnosticTrace, goodsClass, itemKind, itemName, mode, persistenceState, priceYen, questions, styleMode]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !Number.isFinite(priceYen ?? Number.NaN) || !itemKind) return;
@@ -394,11 +435,20 @@ export default function FlowPage() {
       diagnosticTrace: {
         ...flowResolution.diagnosticTrace,
         resultInputsSummary: output.diagnosticTrace?.resultInputsSummary,
+        persistence: {
+          state: persistenceState,
+          restoreSourceDraftId: persistenceState === "restored" ? draftId : undefined,
+          invalidationReason,
+          replaySeedRunId: initialDraft?.status === "restored" ? initialDraft.draft.replaySeedRunId : undefined,
+          pathRestoreMode: persistenceState === "restored" ? "restored" : "recomputed",
+          lifecycle: [persistenceState, "submitted"],
+        },
       },
     };
 
     setSubmitting(true);
     saveRun(run);
+    clearDraft(draftId);
     const params = new URLSearchParams({ styleMode });
     if (basketId) params.set("basketId", basketId);
     if (basketItemId) params.set("basketItemId", basketItemId);
@@ -442,6 +492,9 @@ export default function FlowPage() {
           <h1 className={pageTitleClass}>
             {MODE_META[mode].flowTitle}
           </h1>
+          {invalidationReason ? (
+            <p className="text-xs text-amber-700 dark:text-amber-300">以前の下書きは互換性がなく無効化されました: {invalidationReason}</p>
+          ) : null}
           {mode === "short" ? (
             <button
               type="button"

@@ -1,3 +1,10 @@
+
+## P4 persistence/replay 主要檔案
+- `src/store/diagnosisStore.ts`：DraftRun 模型、草稿存取、相容性驗證、失效紀錄、replay seed 建立。
+- `app/flow/FlowClient.tsx`：flow 載入時 restore/invalidate、每步驟持久化、提交後清草稿。
+- `app/page.tsx`：首頁增加「下書きを再開 / 新規診断を開始」入口。
+- `app/result/[runId]/page.tsx`：結果頁支援「新規重跑」與「帶舊答案 replay」。
+- `app/history/page.tsx`：每筆歷史支援 replay（建立新 draft，不修改舊 run）。
 ## P3 追加（首頁漏斗 + 分岐覆蓋）
 - `src/oshihapi/homeFunnel.ts`：首頁 2-step 漏斗輔助規則（goodsClass 適用、模式 tradeoff、任意欄位提示）。
 - `app/page.tsx`：首頁 IA 改為「先 itemKind，再 mode」，並明確化 optional meta 說明。

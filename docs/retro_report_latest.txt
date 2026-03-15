@@ -1,4 +1,20 @@
 
+
+G) 本輪 P4：草稿持久化 + replay/re-run（不改 scoring）
+1) 問題
+- 重新整理/重開分頁會讓流程狀態與分岐路徑不穩定。
+- 履歷只能看結果，無法把既有回答直接回放成新的一次 run。
+
+2) 解法
+- 將 in-progress flow 升級為 DraftRun（含版本/路徑/context/診斷快照）。
+- /flow 載入先做相容性檢查；不相容則 invalidated，避免污染新流程。
+- 首頁提供「續跑草稿」與「新開診斷」。
+- result/history 提供 replay，建立新 draftId（不覆蓋舊 run）。
+
+3) 驗收
+- qa:diagnostics 通過（含 refresh/back/style invariant）。
+- build 通過，路由結構維持不變。
+
 F) 本輪 P3：首頁 IA 兩步漏斗 + itemKind/goodsClass 分岐強化
 1) 問題
 - 題庫雖有分支，但使用者感受仍是「大同小異」。

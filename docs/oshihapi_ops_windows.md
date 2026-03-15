@@ -1,3 +1,8 @@
+
+## P4 追加驗收（草稿持久化 / 重新播放）
+- 進 /flow 時需確認：有相容草稿可「續跑」，不相容草稿會顯示失效原因並重新開始。
+- 結果頁與歷史頁的「再診斷」必須建立新 draftId，不可覆寫既有 completed run。
+- QA 固定執行：`npm run qa:diagnostics`（含 refresh/back/persistence 檢查）+ `npm run build`。
 ## P3 追加驗收（題庫分岐 + 首頁漏斗）
 除了既有 build/PMR 外，PR 驗收請固定加跑：
 1) `npm run gen:question-bank`
