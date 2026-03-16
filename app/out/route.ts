@@ -6,6 +6,7 @@ import {
 } from "@/src/oshihapi/amazonAffiliateConfig";
 import { getProviderConfig, type ProviderId } from "@/src/oshihapi/providerRegistry";
 import { resolveSurugayaAffiliateDestination } from "@/src/oshihapi/surugayaConfig";
+import { resolveAmiamiAffiliateDestination } from "@/src/oshihapi/amiamiConfig";
 import type { GoodsClass, ItemKind } from "@/src/oshihapi/model";
 
 function isAllowlistedDomain(providerId: ProviderId, hostname: string): boolean {
@@ -39,6 +40,24 @@ export function GET(request: NextRequest): NextResponse {
       const targetUrl = new URL(target);
       if (isAllowlistedDomain("surugaya", targetUrl.hostname)) {
         return NextResponse.redirect(targetUrl);
+      }
+    }
+    return fallbackToHome(request);
+  }
+
+
+  if (dest === "amiami-affiliate") {
+    const itemKind = (params.get("itemKind")?.trim() ?? undefined) as ItemKind | undefined;
+    const goodsClass = (params.get("gc")?.trim() ?? undefined) as GoodsClass | undefined;
+    const target = resolveAmiamiAffiliateDestination({ itemKind, goodsClass });
+    if (target) {
+      try {
+        const parsed = new URL(target);
+        if (isAllowlistedDomain("amiami", parsed.hostname)) {
+          return NextResponse.redirect(parsed);
+        }
+      } catch {
+        // noop: fallback to home below
       }
     }
     return fallbackToHome(request);
