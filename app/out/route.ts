@@ -5,7 +5,7 @@ import {
   resolveAmazonAffiliateDestination,
 } from "@/src/oshihapi/amazonAffiliateConfig";
 import { getProviderConfig, type ProviderId } from "@/src/oshihapi/providerRegistry";
-import { buildSurugayaSearchUrl } from "@/src/oshihapi/surugayaConfig";
+import { resolveSurugayaAffiliateDestination } from "@/src/oshihapi/surugayaConfig";
 import type { GoodsClass, ItemKind } from "@/src/oshihapi/model";
 
 function isAllowlistedDomain(providerId: ProviderId, hostname: string): boolean {
@@ -31,10 +31,15 @@ export function GET(request: NextRequest): NextResponse {
     return fallbackToHome(request);
   }
 
-  if (dest === "surugaya-search" && keyword) {
-    const targetUrl = new URL(buildSurugayaSearchUrl(keyword));
-    if (isAllowlistedDomain("surugaya", targetUrl.hostname)) {
-      return NextResponse.redirect(targetUrl);
+  if (dest === "surugaya-affiliate") {
+    const itemKind = (params.get("itemKind")?.trim() ?? undefined) as ItemKind | undefined;
+    const goodsClass = (params.get("gc")?.trim() ?? undefined) as GoodsClass | undefined;
+    const target = resolveSurugayaAffiliateDestination({ itemKind, goodsClass });
+    if (target) {
+      const targetUrl = new URL(target);
+      if (isAllowlistedDomain("surugaya", targetUrl.hostname)) {
+        return NextResponse.redirect(targetUrl);
+      }
     }
     return fallbackToHome(request);
   }

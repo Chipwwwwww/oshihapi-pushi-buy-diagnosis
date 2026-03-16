@@ -44,3 +44,14 @@ export function buildSurugayaSearchUrl(keyword: string): string {
   const params = new URLSearchParams({ search_word: keyword.trim() });
   return `https://www.suruga-ya.jp/search?${params.toString()}`;
 }
+
+const SURUGAYA_AFFILIATE_HOMEPAGE_URL =
+  "https://affiliate.suruga-ya.jp/modules/af/af_jump.php?user_id=5262&goods_url=https%3A%2F%2Fwww.suruga-ya.jp%2F";
+
+export function resolveSurugayaAffiliateDestination(input: {
+  itemKind?: ItemKind;
+  goodsClass?: GoodsClass;
+}): string | null {
+  if (!isSurugayaRelevantScenario(input.itemKind, input.goodsClass)) return null;
+  return SURUGAYA_AFFILIATE_HOMEPAGE_URL;
+}

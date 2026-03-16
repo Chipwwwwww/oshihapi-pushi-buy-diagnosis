@@ -34,7 +34,7 @@ type PlannerInput = {
   mercariKeyword: string | null;
   amazonDestination: AmazonAffiliateDestination | null;
   rakutenAffiliateUrl: string | null;
-  surugayaKeyword: string | null;
+  surugayaDestination: string | null;
 };
 
 const PLANNED_PROVIDER_IDS: ProviderId[] = [
@@ -102,7 +102,7 @@ export function planProviderCards(input: PlannerInput): {
     }
 
     if (providerId === "surugaya") {
-      const destinationReady = Boolean(input.surugayaKeyword);
+      const destinationReady = Boolean(input.surugayaDestination);
       return {
         providerId,
         rank: baseRank,
@@ -111,8 +111,7 @@ export function planProviderCards(input: PlannerInput): {
         outHref: destinationReady
           ? buildOutHref({
               provider: providerId,
-              dest: "surugaya-search",
-              keyword: input.surugayaKeyword ?? undefined,
+              dest: "surugaya-affiliate",
               runId: input.runId,
               source: "result_page",
               itemKind: input.itemKind,

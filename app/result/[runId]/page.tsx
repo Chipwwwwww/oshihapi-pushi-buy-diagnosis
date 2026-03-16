@@ -43,7 +43,7 @@ import {
 import { buildMercariKeyword, isMercariRelevantScenario } from "@/src/oshihapi/mercariKeyword";
 import { resolveAmazonAffiliateDestination } from "@/src/oshihapi/amazonAffiliateConfig";
 import { buildRakutenKeyword } from "@/src/oshihapi/rakutenKeyword";
-import { buildSurugayaKeyword } from "@/src/oshihapi/surugayaConfig";
+import { resolveSurugayaAffiliateDestination } from "@/src/oshihapi/surugayaConfig";
 import { planProviderCards } from "@/src/oshihapi/providerPlanner";
 import ProviderComparisonModule from "@/components/ProviderComparisonModule";
 
@@ -219,14 +219,13 @@ export default function ResultPage() {
     [defaultSearchWord, run?.meta.goodsClass, run?.meta.itemKind, run?.useCase],
   );
   const rakutenItem = rakutenItems[0] ?? null;
-  const surugayaKeyword = useMemo(
+  const surugayaDestination = useMemo(
     () =>
-      buildSurugayaKeyword({
-        rawSearchWord: defaultSearchWord,
+      resolveSurugayaAffiliateDestination({
         itemKind: run?.meta.itemKind,
         goodsClass: run?.meta.goodsClass,
       }),
-    [defaultSearchWord, run?.meta.goodsClass, run?.meta.itemKind],
+    [run?.meta.goodsClass, run?.meta.itemKind],
   );
   const providerPlan = useMemo(() => {
     if (!run || !rakutenReady) return { cards: [], diagnostics: null };
@@ -239,7 +238,7 @@ export default function ResultPage() {
       mercariKeyword: mercariKeywordResult.keyword,
       amazonDestination,
       rakutenAffiliateUrl: rakutenItem?.affiliateUrl ?? null,
-      surugayaKeyword,
+      surugayaDestination,
     });
     return { cards: planned.cards, diagnostics: planned.diagnostics };
   }, [
@@ -249,7 +248,7 @@ export default function ResultPage() {
     rakutenItem?.affiliateUrl,
     rakutenReady,
     run,
-    surugayaKeyword,
+    surugayaDestination,
   ]);
 
   const showBecausePricecheck = presentation?.tags?.includes("PRICECHECK") === true;
