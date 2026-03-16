@@ -51,6 +51,23 @@ export function pickReasons(ctx: RuleContext): ReasonItem[] {
     r.push({ id: 'restock', severity: 'info', text: '再販しそう。今すぐ決めなくても後悔しにくいタイプ。' });
   }
 
+
+  if (has('bonus_pressure_high', ctx.tags) || has('bonus_pressure_mid', ctx.tags)) {
+    r.push({ id: 'bonus_anxiety', severity: 'warn', text: '特典や限定仕様への不安が強く、判断が急ぎ寄りになっています。' });
+  }
+
+  if (has('collection_pressure', ctx.tags)) {
+    r.push({ id: 'collection_completion_pressure', severity: 'warn', text: '揃えたい気持ちが強い一方で、交換・中古・再販で補える可能性もあります。' });
+  }
+
+  if (has('actor_fan_primary', ctx.tags)) {
+    r.push({ id: 'actor_fan_filter', severity: 'info', text: '推し声優の参加が主な購入理由なら、作品そのものを後で見直しても遅くないかもしれません。' });
+  }
+
+  if (has('media_usage_unready', ctx.tags)) {
+    r.push({ id: 'media_usage_concern', severity: 'warn', text: '再生環境や見返す頻度を考えると、今すぐでなくてもよい可能性があります。' });
+  }
+
   if (ctx.scores.regretRisk >= 70) {
     r.push({ id: 'regret_high', severity: 'strong', text: '後悔リスクが高め。買う場合は「条件」を決めて自分を守ろう。' });
   }

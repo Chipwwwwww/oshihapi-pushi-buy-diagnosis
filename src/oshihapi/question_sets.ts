@@ -55,6 +55,7 @@ export const ADDON_BY_GOODS_CLASS: Record<GoodsClass, readonly string[]> = {
   wearable: ["q_addon_goods_wear_freq", "q_addon_goods_wear_fit", "q_addon_goods_wear_scene"],
   display_large: ["q_addon_goods_display_space_plan", "q_addon_goods_display_move_risk"],
   tech: ["q_addon_goods_tech_compat", "q_addon_goods_tech_after_use"],
+  media: ["q_addon_media_motive", "q_addon_media_playback_space", "q_addon_media_limited_pressure"],
   itabag_badge: ["q_addon_goods_itabag_target", "q_addon_goods_itabag_usage"],
 };
 

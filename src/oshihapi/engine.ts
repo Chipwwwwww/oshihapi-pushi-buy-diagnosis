@@ -78,10 +78,16 @@ function applyMotives(scores: Record<ScoreDimension, number>, motives: string[],
     vague: { restockChance: 40, impulse: 75, regretRisk: 65 },
     rush: { impulse: 80, regretRisk: 70 },
     fomo: { urgency: 75, impulse: 70, regretRisk: 60 },
+    bonus: { urgency: 72, impulse: 68, regretRisk: 64 },
+    complete: { desire: 68, impulse: 66, regretRisk: 62, opportunityCost: 64 },
+    seiyuu_cast: { desire: 64, impulse: 70, regretRisk: 72 },
   };
 
   for (const motive of motives) {
     if (motive === 'trend' || motive === 'vague') tags.push('trend_flag');
+    if (motive === 'seiyuu_cast') tags.push('actor_fan_primary');
+    if (motive === 'bonus') tags.push('bonus_pressure_high');
+    if (motive === 'complete') tags.push('collection_pressure');
     const delta = motiveAdjustments[motive];
     if (!delta) continue;
     for (const [dim, value] of Object.entries(delta)) {

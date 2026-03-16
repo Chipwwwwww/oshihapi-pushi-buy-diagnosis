@@ -1,16 +1,17 @@
 {
-  "generatedAt": "2026-03-15T08:21:58.265Z",
+  "generatedAt": "2026-03-16T10:11:54.610Z",
   "scenarioCount": 30,
   "scenarios": [
     {
       "id": "short_goods",
-      "questionCount": 10,
+      "questionCount": 11,
       "shownQuestionIds": [
         "q_storage_fit",
         "q_desire",
         "q_budget_pain",
         "q_urgency",
         "q_rarity_restock",
+        "q_hot_cold",
         "q_regret_impulse",
         "q_impulse_axis_short",
         "q_storage_space",
@@ -34,13 +35,14 @@
     },
     {
       "id": "short_blind_draw",
-      "questionCount": 10,
+      "questionCount": 11,
       "shownQuestionIds": [
         "q_storage_fit",
         "q_desire",
         "q_budget_pain",
         "q_urgency",
         "q_rarity_restock",
+        "q_hot_cold",
         "q_regret_impulse",
         "q_impulse_axis_short",
         "q_storage_space",
@@ -65,13 +67,14 @@
     },
     {
       "id": "short_used",
-      "questionCount": 10,
+      "questionCount": 11,
       "shownQuestionIds": [
         "q_storage_fit",
         "q_desire",
         "q_budget_pain",
         "q_urgency",
         "q_rarity_restock",
+        "q_hot_cold",
         "q_regret_impulse",
         "q_impulse_axis_short",
         "q_storage_space",
@@ -96,13 +99,14 @@
     },
     {
       "id": "short_preorder",
-      "questionCount": 10,
+      "questionCount": 11,
       "shownQuestionIds": [
         "q_storage_fit",
         "q_desire",
         "q_budget_pain",
         "q_urgency",
         "q_rarity_restock",
+        "q_hot_cold",
         "q_regret_impulse",
         "q_impulse_axis_short",
         "q_storage_space",
@@ -127,12 +131,13 @@
     },
     {
       "id": "short_ticket",
-      "questionCount": 8,
+      "questionCount": 9,
       "shownQuestionIds": [
         "q_desire",
         "q_budget_pain",
         "q_urgency",
         "q_rarity_restock",
+        "q_hot_cold",
         "q_regret_impulse",
         "q_impulse_axis_short",
         "q_price_feel",

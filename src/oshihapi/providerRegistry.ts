@@ -8,15 +8,19 @@ export type ProviderId =
   | "amazon"
   | "rakuten"
   | "animate"
+  | "hmv"
+  | "towerRecords"
   | "yahooShopping"
   | "a8Generic";
 
 export type ProviderState = "live" | "pending" | "off";
 export type ProviderDestinationType = "keyword_search" | "static" | "item_link";
+export type ProviderRole = "used_market" | "used_shop" | "specialty_hobby" | "specialty_anime" | "all_anime" | "media" | "general_new" | "promo_slot";
 
 export type ProviderRegistryEntry = {
   id: ProviderId;
   displayName: string;
+  role: ProviderRole;
   roleLabel: string;
   badge?: string;
   defaultCtaLabel: string;
@@ -37,6 +41,7 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
   mercari: {
     id: "mercari",
     displayName: "メルカリ",
+    role: "used_market",
     roleLabel: "C2C中古相場の確認",
     badge: "中古相場",
     defaultCtaLabel: "メルカリで探す",
@@ -55,6 +60,7 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
   surugaya: {
     id: "surugaya",
     displayName: "駿河屋",
+    role: "used_shop",
     roleLabel: "中古ショップ在庫",
     badge: "中古ショップ",
     defaultCtaLabel: "駿河屋で中古ショップ在庫を確認",
@@ -73,6 +79,7 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
   amiami: {
     id: "amiami",
     displayName: "あみあみ",
+    role: "specialty_hobby",
     roleLabel: "新品・予約・ホビー",
     badge: "新品・予約",
     defaultCtaLabel: "あみあみで新品・予約を確認",
@@ -91,6 +98,7 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
   gamers: {
     id: "gamers",
     displayName: "ゲーマーズ",
+    role: "specialty_anime",
     roleLabel: "専門店・特典・新品",
     badge: "専門店",
     defaultCtaLabel: "ゲーマーズでアニメ・グッズ専門店を確認",
@@ -109,6 +117,7 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
   amazon: {
     id: "amazon",
     displayName: "Amazon",
+    role: "general_new",
     roleLabel: "新品・関連商品の比較",
     badge: "新品・関連",
     defaultCtaLabel: "Amazonで比較する",
@@ -125,6 +134,7 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
   rakuten: {
     id: "rakuten",
     displayName: "楽天市場",
+    role: "general_new",
     roleLabel: "新品・収納/関連アクセの比較",
     badge: "新品・付随品",
     defaultCtaLabel: "楽天で見る",
@@ -141,7 +151,8 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
   animate: {
     id: "animate",
     displayName: "アニメイト",
-    roleLabel: "公式寄りショップ（準備中）",
+    role: "all_anime",
+    roleLabel: "オールアニメ総合（準備中）",
     badge: "公式・予約",
     defaultCtaLabel: "アニメイトで見る",
     destinationType: "static",
@@ -152,9 +163,41 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
     allowlistedDomains: ["www.animate-onlineshop.jp"],
     defaultRank: 60,
   },
+
+  hmv: {
+    id: "hmv",
+    displayName: "HMV",
+    role: "media",
+    roleLabel: "Media（CD/DVD/書籍・準備中）",
+    badge: "Media",
+    defaultCtaLabel: "HMVで見る",
+    destinationType: "static",
+    state: "pending",
+    publicFacing: false,
+    requiresAffiliateApproval: true,
+    disclosureRequired: true,
+    allowlistedDomains: ["www.hmv.co.jp"],
+    defaultRank: 62,
+  },
+  towerRecords: {
+    id: "towerRecords",
+    displayName: "タワーレコード",
+    role: "media",
+    roleLabel: "Media（CD/DVD/書籍・準備中）",
+    badge: "Media",
+    defaultCtaLabel: "タワレコで見る",
+    destinationType: "static",
+    state: "pending",
+    publicFacing: false,
+    requiresAffiliateApproval: true,
+    disclosureRequired: true,
+    allowlistedDomains: ["tower.jp"],
+    defaultRank: 63,
+  },
   yahooShopping: {
     id: "yahooShopping",
     displayName: "Yahoo!ショッピング",
+    role: "general_new",
     roleLabel: "新品比較（準備中）",
     badge: "新品比較",
     defaultCtaLabel: "Yahoo!ショッピングで見る",
@@ -169,6 +212,7 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
   a8Generic: {
     id: "a8Generic",
     displayName: "提携ショップ",
+    role: "promo_slot",
     roleLabel: "A8連携枠（準備中）",
     badge: "PR枠",
     defaultCtaLabel: "提携先で確認する",

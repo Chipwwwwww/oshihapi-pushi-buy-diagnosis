@@ -49,6 +49,8 @@ const PLANNED_PROVIDER_IDS: ProviderId[] = [
   "amazon",
   "rakuten",
   "animate",
+  "hmv",
+  "towerRecords",
   "yahooShopping",
   "a8Generic",
 ];
@@ -261,7 +263,7 @@ export function planProviderCards(input: PlannerInput): {
       badge: config.badge,
       visibility: "internal",
       destinationReady: false,
-      suppressReason: "pending_provider_slot",
+      suppressReason: `pending_provider_slot:${config.role}`,
     };
   });
 

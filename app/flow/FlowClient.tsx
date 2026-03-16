@@ -67,7 +67,7 @@ const ITEM_KIND_VALUES: ItemKind[] = [
   "game_billing",
 ];
 const GOODS_SUBTYPE_VALUES: GoodsSubtype[] = ["general", "itaBag_badge", "digital_goods", "e_ticket"];
-const GOODS_CLASS_VALUES: GoodsClass[] = ["small_collection", "paper", "wearable", "display_large", "tech", "itabag_badge"];
+const GOODS_CLASS_VALUES: GoodsClass[] = ["small_collection", "paper", "wearable", "display_large", "tech", "media", "itabag_badge"];
 const LEGACY_ITABAG_GOODS_DETAIL_VALUES = ["itabag", "pain_badge", "painBadge", "itabag_badge", "itaBag_badge"] as const;
 const LEGACY_GENERAL_GOODS_DETAIL_VALUES = ["general", "default"] as const;
 
@@ -95,6 +95,7 @@ const goodsClassOptions: { value: GoodsClass; label: string }[] = [
   { value: "wearable", label: "身につける" },
   { value: "display_large", label: "飾る・大きめ" },
   { value: "tech", label: "機能系" },
+  { value: "media", label: "CD・DVD・Blu-ray" },
   { value: "itabag_badge", label: "例外：痛バ・缶バ大量回収" },
 ];
 
