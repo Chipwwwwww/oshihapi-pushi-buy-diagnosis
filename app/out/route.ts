@@ -4,7 +4,19 @@ import {
   findAmazonAffiliateDestinationById,
   resolveAmazonAffiliateDestination,
 } from "@/src/oshihapi/amazonAffiliateConfig";
+import { getProviderConfig, type ProviderId } from "@/src/oshihapi/providerRegistry";
+import { buildSurugayaSearchUrl } from "@/src/oshihapi/surugayaConfig";
 import type { GoodsClass, ItemKind } from "@/src/oshihapi/model";
+
+function isAllowlistedDomain(providerId: ProviderId, hostname: string): boolean {
+  const allowlist = getProviderConfig(providerId).allowlistedDomains;
+  return allowlist.some((allowed) => hostname === allowed || hostname.endsWith(`.${allowed}`));
+}
+
+function fallbackToHome(request: NextRequest): NextResponse {
+  const fallbackUrl = new URL("/", request.url);
+  return NextResponse.redirect(fallbackUrl);
+}
 
 export function GET(request: NextRequest): NextResponse {
   const params = request.nextUrl.searchParams;
@@ -12,8 +24,19 @@ export function GET(request: NextRequest): NextResponse {
   const keyword = params.get("keyword")?.trim() ?? "";
 
   if (dest === "mercari-search" && keyword) {
-    const targetUrl = buildMercariSearchAffiliateUrl(keyword);
-    return NextResponse.redirect(targetUrl);
+    const targetUrl = new URL(buildMercariSearchAffiliateUrl(keyword));
+    if (isAllowlistedDomain("mercari", targetUrl.hostname)) {
+      return NextResponse.redirect(targetUrl);
+    }
+    return fallbackToHome(request);
+  }
+
+  if (dest === "surugaya-search" && keyword) {
+    const targetUrl = new URL(buildSurugayaSearchUrl(keyword));
+    if (isAllowlistedDomain("surugaya", targetUrl.hostname)) {
+      return NextResponse.redirect(targetUrl);
+    }
+    return fallbackToHome(request);
   }
 
   if (dest === "amazon-static") {
@@ -24,10 +47,16 @@ export function GET(request: NextRequest): NextResponse {
       (id ? findAmazonAffiliateDestinationById(id) : null) ??
       resolveAmazonAffiliateDestination({ itemKind, goodsClass });
     if (target) {
-      return NextResponse.redirect(target.href);
+      try {
+        const parsed = new URL(target.href);
+        if (isAllowlistedDomain("amazon", parsed.hostname)) {
+          return NextResponse.redirect(parsed);
+        }
+      } catch {
+        // noop: fallback to home below
+      }
     }
-    const fallbackUrl = new URL("/", request.url);
-    return NextResponse.redirect(fallbackUrl);
+    return fallbackToHome(request);
   }
 
   if (dest === "rakuten-item") {
@@ -35,17 +64,15 @@ export function GET(request: NextRequest): NextResponse {
     if (href) {
       try {
         const parsed = new URL(href);
-        if (parsed.hostname.endsWith("rakuten.co.jp") || parsed.hostname.endsWith("rakuten.ne.jp")) {
+        if (isAllowlistedDomain("rakuten", parsed.hostname)) {
           return NextResponse.redirect(parsed);
         }
       } catch {
         // noop: fallback to home below
       }
     }
-    const fallbackUrl = new URL("/", request.url);
-    return NextResponse.redirect(fallbackUrl);
+    return fallbackToHome(request);
   }
 
-  const fallbackUrl = new URL("/", request.url);
-  return NextResponse.redirect(fallbackUrl);
+  return fallbackToHome(request);
 }

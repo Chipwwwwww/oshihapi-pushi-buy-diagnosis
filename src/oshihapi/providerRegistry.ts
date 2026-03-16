@@ -1,0 +1,157 @@
+import type { GoodsClass, ItemKind } from "@/src/oshihapi/model";
+
+export type ProviderId =
+  | "mercari"
+  | "surugaya"
+  | "amazon"
+  | "rakuten"
+  | "animate"
+  | "yahooShopping"
+  | "a8Generic";
+
+export type ProviderState = "live" | "pending" | "off";
+export type ProviderDestinationType = "keyword_search" | "static" | "item_link";
+
+export type ProviderRegistryEntry = {
+  id: ProviderId;
+  displayName: string;
+  roleLabel: string;
+  badge?: string;
+  defaultCtaLabel: string;
+  destinationType: ProviderDestinationType;
+  state: ProviderState;
+  publicFacing: boolean;
+  requiresAffiliateApproval: boolean;
+  disclosureRequired: boolean;
+  disclosureNote?: string;
+  externalSiteNote?: string;
+  allowlistedDomains: string[];
+  defaultRank: number;
+  supportedItemKinds?: ItemKind[];
+  supportedGoodsClasses?: GoodsClass[];
+};
+
+const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
+  mercari: {
+    id: "mercari",
+    displayName: "メルカリ",
+    roleLabel: "C2C中古相場の確認",
+    badge: "中古相場",
+    defaultCtaLabel: "メルカリで探す",
+    destinationType: "keyword_search",
+    state: "live",
+    publicFacing: true,
+    requiresAffiliateApproval: false,
+    disclosureRequired: true,
+    disclosureNote: "※一部リンクにはアフィリエイトを含む場合があります",
+    externalSiteNote: "※外部サイト（メルカリ）に移動します",
+    allowlistedDomains: ["jp.mercari.com"],
+    defaultRank: 20,
+    supportedItemKinds: ["goods", "used", "blind_draw"],
+    supportedGoodsClasses: ["paper", "itabag_badge", "small_collection"],
+  },
+  surugaya: {
+    id: "surugaya",
+    displayName: "駿河屋",
+    roleLabel: "中古ショップの在庫確認",
+    badge: "中古ショップ",
+    defaultCtaLabel: "駿河屋で確認する",
+    destinationType: "keyword_search",
+    state: "live",
+    publicFacing: true,
+    requiresAffiliateApproval: false,
+    disclosureRequired: true,
+    disclosureNote: "※外部サイトで最新在庫・価格をご確認ください",
+    externalSiteNote: "※外部サイト（駿河屋）に移動します",
+    allowlistedDomains: ["www.suruga-ya.jp", "suruga-ya.jp"],
+    defaultRank: 30,
+    supportedItemKinds: ["goods", "used", "blind_draw"],
+    supportedGoodsClasses: ["paper", "itabag_badge", "small_collection"],
+  },
+  amazon: {
+    id: "amazon",
+    displayName: "Amazon",
+    roleLabel: "新品・関連商品の比較",
+    badge: "新品・関連",
+    defaultCtaLabel: "Amazonで比較する",
+    destinationType: "static",
+    state: "live",
+    publicFacing: true,
+    requiresAffiliateApproval: false,
+    disclosureRequired: true,
+    disclosureNote: "※一部リンクにはアフィリエイトを含みます",
+    externalSiteNote: "※Amazonへ移動します",
+    allowlistedDomains: ["www.amazon.co.jp", "amazon.co.jp"],
+    defaultRank: 40,
+  },
+  rakuten: {
+    id: "rakuten",
+    displayName: "楽天市場",
+    roleLabel: "新品・収納/関連アクセの比較",
+    badge: "新品・付随品",
+    defaultCtaLabel: "楽天で見る",
+    destinationType: "item_link",
+    state: "live",
+    publicFacing: true,
+    requiresAffiliateApproval: false,
+    disclosureRequired: true,
+    disclosureNote: "※一部リンクにはアフィリエイトを含みます",
+    externalSiteNote: "※楽天市場へ移動します",
+    allowlistedDomains: ["rakuten.co.jp", "rakuten.ne.jp"],
+    defaultRank: 50,
+  },
+  animate: {
+    id: "animate",
+    displayName: "アニメイト",
+    roleLabel: "公式寄りショップ（準備中）",
+    badge: "公式・予約",
+    defaultCtaLabel: "アニメイトで見る",
+    destinationType: "static",
+    state: "pending",
+    publicFacing: true,
+    requiresAffiliateApproval: true,
+    disclosureRequired: true,
+    allowlistedDomains: ["www.animate-onlineshop.jp"],
+    defaultRank: 60,
+  },
+  yahooShopping: {
+    id: "yahooShopping",
+    displayName: "Yahoo!ショッピング",
+    roleLabel: "新品比較（準備中）",
+    badge: "新品比較",
+    defaultCtaLabel: "Yahoo!ショッピングで見る",
+    destinationType: "static",
+    state: "pending",
+    publicFacing: true,
+    requiresAffiliateApproval: true,
+    disclosureRequired: true,
+    allowlistedDomains: ["shopping.yahoo.co.jp"],
+    defaultRank: 70,
+  },
+  a8Generic: {
+    id: "a8Generic",
+    displayName: "提携ショップ",
+    roleLabel: "A8連携枠（準備中）",
+    badge: "PR枠",
+    defaultCtaLabel: "提携先で確認する",
+    destinationType: "static",
+    state: "pending",
+    publicFacing: true,
+    requiresAffiliateApproval: true,
+    disclosureRequired: true,
+    allowlistedDomains: [],
+    defaultRank: 80,
+  },
+};
+
+export function getProviderRegistry(): Record<ProviderId, ProviderRegistryEntry> {
+  return PROVIDER_REGISTRY;
+}
+
+export function getProviderConfig(providerId: ProviderId): ProviderRegistryEntry {
+  return PROVIDER_REGISTRY[providerId];
+}
+
+export function getProviderRankBase(providerId: ProviderId): number {
+  return PROVIDER_REGISTRY[providerId].defaultRank;
+}
