@@ -45,6 +45,7 @@ import { resolveAmazonAffiliateDestination } from "@/src/oshihapi/amazonAffiliat
 import { buildRakutenKeyword } from "@/src/oshihapi/rakutenKeyword";
 import { resolveSurugayaAffiliateDestination } from "@/src/oshihapi/surugayaConfig";
 import { resolveAmiamiAffiliateDestination } from "@/src/oshihapi/amiamiConfig";
+import { resolveGamersAffiliateDestination } from "@/src/oshihapi/gamersConfig";
 import { planProviderCards } from "@/src/oshihapi/providerPlanner";
 import ProviderComparisonModule from "@/components/ProviderComparisonModule";
 
@@ -236,6 +237,14 @@ export default function ResultPage() {
       }),
     [run?.meta.goodsClass, run?.meta.itemKind],
   );
+  const gamersDestination = useMemo(
+    () =>
+      resolveGamersAffiliateDestination({
+        itemKind: run?.meta.itemKind,
+        goodsClass: run?.meta.goodsClass,
+      }),
+    [run?.meta.goodsClass, run?.meta.itemKind],
+  );
   const providerPlan = useMemo(() => {
     if (!run || !rakutenReady) return { cards: [], diagnostics: null };
     const planned = planProviderCards({
@@ -249,6 +258,7 @@ export default function ResultPage() {
       rakutenAffiliateUrl: rakutenItem?.affiliateUrl ?? null,
       surugayaDestination,
       amiamiDestination,
+      gamersDestination,
     });
     return { cards: planned.cards, diagnostics: planned.diagnostics };
   }, [
@@ -260,6 +270,7 @@ export default function ResultPage() {
     run,
     surugayaDestination,
     amiamiDestination,
+    gamersDestination,
   ]);
 
   const showBecausePricecheck = presentation?.tags?.includes("PRICECHECK") === true;
