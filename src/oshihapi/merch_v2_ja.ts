@@ -126,6 +126,7 @@ export const merch_v2_ja: QuestionSet = {
         { id: 'scarce', label: '今逃すと後悔しそう（再入手が難しそう）' },
         { id: 'price_up', label: 'あとで高くなりそう（相場/プレ値）' },
         { id: 'habit', label: '習慣でつい買ってしまう（ルーティン）' },
+        { id: 'seiyuu_cast', label: '推し声優・演者の参加が決め手' },
       ],
     },
     {
@@ -265,7 +266,7 @@ export const merch_v2_ja: QuestionSet = {
     {
       id: 'q_addon_goods_collection_goal',
       type: 'single',
-      title: '回収方針は？（コンプ/本命と被り許容）',
+      title: '揃わないと落ち着かない気持ちはありますか？',
       required: true,
       options: [
         { id: 'complete_tolerant', label: 'コンプ寄り・被りも許容できる' },
@@ -418,6 +419,43 @@ export const merch_v2_ja: QuestionSet = {
         { id: 'unknown', label: 'まだわからない', tags: ['unknown_info'], delta: { regretRisk: 65, opportunityCost: 60 } },
       ],
     },
+
+    {
+      id: 'q_addon_media_motive',
+      type: 'single',
+      title: 'このCDを買いたい主な理由は、内容ですか？ それとも推し声優の参加ですか？',
+      required: true,
+      options: [
+        { id: 'content_main', label: '内容（楽曲・ドラマ・映像）が主な理由', delta: { desire: 66, regretRisk: 45 } },
+        { id: 'both', label: '両方同じくらい大事', delta: { desire: 62, regretRisk: 56 } },
+        { id: 'cast_main', label: '推し声優・演者の参加が主な理由', tags: ['actor_fan_primary'], delta: { impulse: 68, regretRisk: 70 } },
+        { id: 'unknown', label: 'まだ言語化できていない', tags: ['unknown_info'], delta: { regretRisk: 65, opportunityCost: 60 } },
+      ],
+    },
+    {
+      id: 'q_addon_media_playback_space',
+      type: 'single',
+      title: '再生環境や保管場所に問題はありませんか？',
+      required: true,
+      options: [
+        { id: 'ready', label: '再生環境・保管ともに問題ない', delta: { regretRisk: 38, opportunityCost: 40 } },
+        { id: 'partial', label: 'どちらかは整っている', delta: { regretRisk: 54, opportunityCost: 56 } },
+        { id: 'not_ready', label: '未整備で不安がある', tags: ['media_usage_unready'], delta: { regretRisk: 76, opportunityCost: 72 } },
+        { id: 'unknown', label: 'まだ確認できていない', tags: ['unknown_info'], delta: { regretRisk: 68, opportunityCost: 62 } },
+      ],
+    },
+    {
+      id: 'q_addon_media_limited_pressure',
+      type: 'single',
+      title: '特典や初回限定がなくても本当に欲しいですか？',
+      required: true,
+      options: [
+        { id: 'yes', label: '特典なしでも欲しい', delta: { impulse: 44, regretRisk: 42 } },
+        { id: 'maybe', label: '特典が弱いと迷う', tags: ['bonus_pressure_mid'], delta: { impulse: 58, regretRisk: 60 } },
+        { id: 'no', label: '特典・限定が主目的になっている', tags: ['bonus_pressure_high'], delta: { impulse: 72, regretRisk: 75 } },
+        { id: 'unknown', label: 'まだ整理できていない', tags: ['unknown_info'], delta: { regretRisk: 65, opportunityCost: 60 } },
+      ],
+    },
     {
       id: 'q_addon_blind_draw_cap',
       type: 'single',
@@ -433,7 +471,7 @@ export const merch_v2_ja: QuestionSet = {
     {
       id: 'q_addon_blind_draw_exit',
       type: 'single',
-      title: '狙い方は？（本命一点 / 幅広く楽しむ）',
+      title: 'どこまで開封したら止まれそうですか？',
       required: true,
       options: [
         { id: 'complete', label: '広く揃えて楽しみたい', delta: { desire: 66, opportunityCost: 58 } },
@@ -445,7 +483,7 @@ export const merch_v2_ja: QuestionSet = {
     {
       id: 'q_addon_blind_draw_trade_intent',
       type: 'single',
-      title: '被りが出たら交換に回せる？',
+      title: '最推しが出なかった場合、交換や中古で補う前提ですか？',
       required: true,
       options: [
         { id: 'yes', label: '交換先があり回せる', delta: { regretRisk: 42, opportunityCost: 45 } },

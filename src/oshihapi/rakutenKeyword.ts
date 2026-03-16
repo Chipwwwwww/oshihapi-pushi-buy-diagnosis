@@ -13,6 +13,7 @@ const RAKUTEN_KEYWORD_BY_CLASS: Partial<Record<GoodsClass, string>> = {
   small_collection: "アクスタ 収納 ケース",
   wearable: "推し活 ポーチ ケース",
   tech: "ケーブル 収納 ポーチ",
+  media: "CD 収納 ケース",
 };
 
 function normalizeKeyword(text: string): string {

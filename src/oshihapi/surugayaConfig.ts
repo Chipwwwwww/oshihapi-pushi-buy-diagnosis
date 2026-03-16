@@ -4,6 +4,7 @@ const SURUGAYA_CLASS_HINT: Partial<Record<GoodsClass, string>> = {
   paper: "ブロマイド",
   itabag_badge: "缶バッジ",
   small_collection: "アクリルスタンド",
+  media: "CD",
 };
 
 function normalizeKeyword(text: string): string {
@@ -18,7 +19,7 @@ function normalizeKeyword(text: string): string {
 export function isSurugayaRelevantScenario(itemKind?: ItemKind, goodsClass?: GoodsClass): boolean {
   if (itemKind === "used" || itemKind === "blind_draw") return true;
   if (itemKind !== "goods") return false;
-  return goodsClass === "paper" || goodsClass === "itabag_badge" || goodsClass === "small_collection";
+  return goodsClass === "paper" || goodsClass === "itabag_badge" || goodsClass === "small_collection" || goodsClass === "media";
 }
 
 export function buildSurugayaKeyword(input: {

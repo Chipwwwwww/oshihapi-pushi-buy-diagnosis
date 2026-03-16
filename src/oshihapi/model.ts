@@ -12,6 +12,7 @@ export type GoodsClass =
   | 'wearable'
   | 'display_large'
   | 'tech'
+  | 'media'
   | 'itabag_badge';
 
 export type QuestionType = 'single' | 'multi' | 'scale' | 'number' | 'text';

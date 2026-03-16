@@ -32,6 +32,13 @@ const AMAZON_DESTINATIONS: AmazonAffiliateDestination[] = [
     goodsClass: "small_collection",
   },
   {
+    id: "goods-media",
+    label: "AmazonでCD・Blu-rayを比較する",
+    href: "https://www.amazon.co.jp/s?k=%E3%82%A2%E3%83%8B%E3%83%A1+CD+Blu-ray&tag=oshihapi-22",
+    itemKind: "goods",
+    goodsClass: "media",
+  },
+  {
     id: "fallback",
     label: "Amazonで新品・関連商品を比較する",
     href: "https://www.amazon.co.jp/?tag=oshihapi-22",
