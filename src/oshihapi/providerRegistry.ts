@@ -4,6 +4,7 @@ export type ProviderId =
   | "mercari"
   | "surugaya"
   | "amiami"
+  | "gamers"
   | "amazon"
   | "rakuten"
   | "animate"
@@ -86,6 +87,24 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
     defaultRank: 35,
     supportedItemKinds: ["goods", "blind_draw", "preorder"],
     supportedGoodsClasses: ["display_large", "small_collection", "itabag_badge"],
+  },
+  gamers: {
+    id: "gamers",
+    displayName: "ゲーマーズ",
+    roleLabel: "専門店・特典・新品",
+    badge: "専門店",
+    defaultCtaLabel: "ゲーマーズでアニメ・グッズ専門店を確認",
+    destinationType: "static",
+    state: "live",
+    publicFacing: true,
+    requiresAffiliateApproval: false,
+    disclosureRequired: true,
+    disclosureNote: "※一部リンクにはアフィリエイトを含みます",
+    externalSiteNote: "※外部サイト（ゲーマーズ）に移動します",
+    allowlistedDomains: ["px.a8.net"],
+    defaultRank: 37,
+    supportedItemKinds: ["goods", "blind_draw"],
+    supportedGoodsClasses: ["paper", "small_collection", "itabag_badge", "wearable"],
   },
   amazon: {
     id: "amazon",

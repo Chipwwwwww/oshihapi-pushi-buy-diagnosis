@@ -7,6 +7,7 @@ import {
 import { getProviderConfig, type ProviderId } from "@/src/oshihapi/providerRegistry";
 import { resolveSurugayaAffiliateDestination } from "@/src/oshihapi/surugayaConfig";
 import { resolveAmiamiAffiliateDestination } from "@/src/oshihapi/amiamiConfig";
+import { resolveGamersAffiliateDestination } from "@/src/oshihapi/gamersConfig";
 import type { GoodsClass, ItemKind } from "@/src/oshihapi/model";
 
 function isAllowlistedDomain(providerId: ProviderId, hostname: string): boolean {
@@ -54,6 +55,24 @@ export function GET(request: NextRequest): NextResponse {
       try {
         const parsed = new URL(target);
         if (isAllowlistedDomain("amiami", parsed.hostname)) {
+          return NextResponse.redirect(parsed);
+        }
+      } catch {
+        // noop: fallback to home below
+      }
+    }
+    return fallbackToHome(request);
+  }
+
+
+  if (dest === "gamers-affiliate") {
+    const itemKind = (params.get("itemKind")?.trim() ?? undefined) as ItemKind | undefined;
+    const goodsClass = (params.get("gc")?.trim() ?? undefined) as GoodsClass | undefined;
+    const target = resolveGamersAffiliateDestination({ itemKind, goodsClass });
+    if (target) {
+      try {
+        const parsed = new URL(target);
+        if (isAllowlistedDomain("gamers", parsed.hostname)) {
           return NextResponse.redirect(parsed);
         }
       } catch {

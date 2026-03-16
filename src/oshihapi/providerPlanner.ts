@@ -1,6 +1,7 @@
 import type { Decision, GoodsClass, ItemKind } from "@/src/oshihapi/model";
 import type { AmazonAffiliateDestination } from "@/src/oshihapi/amazonAffiliateConfig";
 import { isAmiamiRelevantScenario } from "@/src/oshihapi/amiamiConfig";
+import { isGamersRelevantScenario } from "@/src/oshihapi/gamersConfig";
 import type { ProviderId } from "@/src/oshihapi/providerRegistry";
 import { getProviderConfig, getProviderRankBase } from "@/src/oshihapi/providerRegistry";
 
@@ -37,12 +38,14 @@ type PlannerInput = {
   rakutenAffiliateUrl: string | null;
   surugayaDestination: string | null;
   amiamiDestination: string | null;
+  gamersDestination: string | null;
 };
 
 const PLANNED_PROVIDER_IDS: ProviderId[] = [
   "mercari",
   "surugaya",
   "amiami",
+  "gamers",
   "amazon",
   "rakuten",
   "animate",
@@ -145,6 +148,40 @@ export function planProviderCards(input: PlannerInput): {
           ? buildOutHref({
               provider: providerId,
               dest: "amiami-affiliate",
+              runId: input.runId,
+              source: "result_page",
+              itemKind: input.itemKind,
+              gc: input.goodsClass,
+              verdict: input.verdict,
+            })
+          : "",
+        badge: config.badge,
+        visibility: "public",
+        destinationReady,
+        suppressReason: destinationReady
+          ? undefined
+          : scenarioEligible
+            ? "destination_missing_or_not_relevant"
+            : "scenario_not_eligible",
+      };
+    }
+
+
+    if (providerId === "gamers") {
+      const scenarioEligible = isGamersRelevantScenario({
+        itemKind: input.itemKind,
+        goodsClass: input.goodsClass,
+      });
+      const destinationReady = Boolean(scenarioEligible && input.gamersDestination);
+      return {
+        providerId,
+        rank: baseRank,
+        roleReason: config.roleLabel,
+        ctaLabel: config.defaultCtaLabel,
+        outHref: destinationReady
+          ? buildOutHref({
+              provider: providerId,
+              dest: "gamers-affiliate",
               runId: input.runId,
               source: "result_page",
               itemKind: input.itemKind,
