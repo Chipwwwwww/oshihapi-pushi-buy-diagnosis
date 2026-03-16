@@ -1,7 +1,10 @@
 import type { Decision, GoodsClass, ItemKind } from "@/src/oshihapi/model";
 import type { AmazonAffiliateDestination } from "@/src/oshihapi/amazonAffiliateConfig";
 import { isAmiamiRelevantScenario } from "@/src/oshihapi/amiamiConfig";
+import { isAnimateRelevantScenario, resolveAnimateAffiliateDestination } from "@/src/oshihapi/animateConfig";
 import { isGamersRelevantScenario } from "@/src/oshihapi/gamersConfig";
+import { isTowerRecordsRelevantScenario, resolveTowerRecordsAffiliateDestination } from "@/src/oshihapi/towerRecordsConfig";
+import { isYahooShoppingRelevantScenario, resolveYahooShoppingAffiliateDestination } from "@/src/oshihapi/yahooShoppingConfig";
 import type { ProviderId } from "@/src/oshihapi/providerRegistry";
 import { getProviderConfig, getProviderRankBase } from "@/src/oshihapi/providerRegistry";
 
@@ -17,6 +20,7 @@ export type ProviderCandidate = {
   visibility: ProviderVisibility;
   suppressReason?: string;
   destinationReady: boolean;
+  scenarioEligible?: boolean;
 };
 
 export type ProviderDiagnostics = {
@@ -25,6 +29,15 @@ export type ProviderDiagnostics = {
   renderedProviders: ProviderId[];
   providerRanks: Array<{ providerId: ProviderId; rank: number }>;
   destinationAvailability: Array<{ providerId: ProviderId; ready: boolean }>;
+  candidateEvaluations: Array<{
+    providerId: ProviderId;
+    role: string;
+    scenarioEligible: boolean;
+    rank: number;
+    destinationReady: boolean;
+    visibility: ProviderVisibility;
+    suppressReason?: string;
+  }>;
 };
 
 type PlannerInput = {
@@ -254,6 +267,75 @@ export function planProviderCards(input: PlannerInput): {
       };
     }
 
+    if (providerId === "towerRecords") {
+      const scenarioEligible = isTowerRecordsRelevantScenario({
+        itemKind: input.itemKind,
+        goodsClass: input.goodsClass,
+      });
+      const destinationReady = Boolean(scenarioEligible && resolveTowerRecordsAffiliateDestination());
+      return {
+        providerId,
+        rank: scenarioEligible ? baseRank - 4 : baseRank + 5,
+        roleReason: config.roleLabel,
+        ctaLabel: config.defaultCtaLabel,
+        outHref: "",
+        badge: config.badge,
+        visibility: "internal",
+        destinationReady,
+        scenarioEligible,
+        suppressReason: destinationReady
+          ? "pending_provider_not_public"
+          : scenarioEligible
+            ? "awaiting_vc_affiliate_url"
+            : "scenario_not_eligible",
+      };
+    }
+
+    if (providerId === "animate") {
+      const scenarioEligible = isAnimateRelevantScenario({
+        itemKind: input.itemKind,
+        goodsClass: input.goodsClass,
+      });
+      const destinationReady = Boolean(scenarioEligible && resolveAnimateAffiliateDestination());
+      return {
+        providerId,
+        rank: scenarioEligible ? baseRank - 12 : baseRank + 6,
+        roleReason: config.roleLabel,
+        ctaLabel: config.defaultCtaLabel,
+        outHref: "",
+        badge: config.badge,
+        visibility: "internal",
+        destinationReady,
+        scenarioEligible,
+        suppressReason: destinationReady
+          ? "pending_provider_not_public"
+          : scenarioEligible
+            ? "destination_unresolved"
+            : "scenario_not_eligible",
+      };
+    }
+
+    if (providerId === "yahooShopping") {
+      const scenarioEligible = isYahooShoppingRelevantScenario({ itemKind: input.itemKind });
+      const destinationReady = Boolean(scenarioEligible && resolveYahooShoppingAffiliateDestination());
+      return {
+        providerId,
+        rank: scenarioEligible ? baseRank + 5 : baseRank + 9,
+        roleReason: config.roleLabel,
+        ctaLabel: config.defaultCtaLabel,
+        outHref: "",
+        badge: config.badge,
+        visibility: "internal",
+        destinationReady,
+        scenarioEligible,
+        suppressReason: destinationReady
+          ? "pending_provider_not_public"
+          : scenarioEligible
+            ? "awaiting_vc_affiliate_url"
+            : "scenario_not_eligible",
+      };
+    }
+
     return {
       providerId,
       rank: baseRank,
@@ -263,6 +345,7 @@ export function planProviderCards(input: PlannerInput): {
       badge: config.badge,
       visibility: "internal",
       destinationReady: false,
+      scenarioEligible: false,
       suppressReason: `pending_provider_slot:${config.role}`,
     };
   });
@@ -286,6 +369,15 @@ export function planProviderCards(input: PlannerInput): {
     destinationAvailability: allCandidates.map((candidate) => ({
       providerId: candidate.providerId,
       ready: candidate.destinationReady,
+    })),
+    candidateEvaluations: allCandidates.map((candidate) => ({
+      providerId: candidate.providerId,
+      role: getProviderConfig(candidate.providerId).role,
+      scenarioEligible: candidate.scenarioEligible ?? candidate.destinationReady,
+      rank: candidate.rank,
+      destinationReady: candidate.destinationReady,
+      visibility: candidate.visibility,
+      suppressReason: candidate.suppressReason,
     })),
   };
 
