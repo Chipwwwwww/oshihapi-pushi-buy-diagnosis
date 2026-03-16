@@ -3,6 +3,7 @@ import type { GoodsClass, ItemKind } from "@/src/oshihapi/model";
 export type ProviderId =
   | "mercari"
   | "surugaya"
+  | "amiami"
   | "amazon"
   | "rakuten"
   | "animate"
@@ -67,6 +68,24 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
     defaultRank: 30,
     supportedItemKinds: ["goods", "used", "blind_draw"],
     supportedGoodsClasses: ["paper", "itabag_badge", "small_collection"],
+  },
+  amiami: {
+    id: "amiami",
+    displayName: "あみあみ",
+    roleLabel: "新品・予約・ホビー",
+    badge: "新品・予約",
+    defaultCtaLabel: "あみあみで新品・予約を確認",
+    destinationType: "static",
+    state: "live",
+    publicFacing: true,
+    requiresAffiliateApproval: false,
+    disclosureRequired: true,
+    disclosureNote: "※一部リンクにはアフィリエイトを含みます",
+    externalSiteNote: "※外部サイト（あみあみ）に移動します",
+    allowlistedDomains: ["px.a8.net"],
+    defaultRank: 35,
+    supportedItemKinds: ["goods", "blind_draw", "preorder"],
+    supportedGoodsClasses: ["display_large", "small_collection", "itabag_badge"],
   },
   amazon: {
     id: "amazon",

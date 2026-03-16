@@ -44,6 +44,7 @@ import { buildMercariKeyword, isMercariRelevantScenario } from "@/src/oshihapi/m
 import { resolveAmazonAffiliateDestination } from "@/src/oshihapi/amazonAffiliateConfig";
 import { buildRakutenKeyword } from "@/src/oshihapi/rakutenKeyword";
 import { resolveSurugayaAffiliateDestination } from "@/src/oshihapi/surugayaConfig";
+import { resolveAmiamiAffiliateDestination } from "@/src/oshihapi/amiamiConfig";
 import { planProviderCards } from "@/src/oshihapi/providerPlanner";
 import ProviderComparisonModule from "@/components/ProviderComparisonModule";
 
@@ -227,6 +228,14 @@ export default function ResultPage() {
       }),
     [run?.meta.goodsClass, run?.meta.itemKind],
   );
+  const amiamiDestination = useMemo(
+    () =>
+      resolveAmiamiAffiliateDestination({
+        itemKind: run?.meta.itemKind,
+        goodsClass: run?.meta.goodsClass,
+      }),
+    [run?.meta.goodsClass, run?.meta.itemKind],
+  );
   const providerPlan = useMemo(() => {
     if (!run || !rakutenReady) return { cards: [], diagnostics: null };
     const planned = planProviderCards({
@@ -239,6 +248,7 @@ export default function ResultPage() {
       amazonDestination,
       rakutenAffiliateUrl: rakutenItem?.affiliateUrl ?? null,
       surugayaDestination,
+      amiamiDestination,
     });
     return { cards: planned.cards, diagnostics: planned.diagnostics };
   }, [
@@ -249,6 +259,7 @@ export default function ResultPage() {
     rakutenReady,
     run,
     surugayaDestination,
+    amiamiDestination,
   ]);
 
   const showBecausePricecheck = presentation?.tags?.includes("PRICECHECK") === true;
@@ -779,6 +790,10 @@ export default function ResultPage() {
           }
           if (providerId === "surugaya") {
             logActionClick("surugaya_result_click");
+            return;
+          }
+          if (providerId === "amiami") {
+            logActionClick("amiami_result_click");
             return;
           }
           logActionClick(`provider_click:${providerId}`);
