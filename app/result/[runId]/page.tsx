@@ -43,6 +43,9 @@ import {
 import { buildMercariKeyword, isMercariRelevantScenario } from "@/src/oshihapi/mercariKeyword";
 import { resolveAmazonAffiliateDestination } from "@/src/oshihapi/amazonAffiliateConfig";
 import { buildRakutenKeyword } from "@/src/oshihapi/rakutenKeyword";
+import { buildSurugayaKeyword } from "@/src/oshihapi/surugayaConfig";
+import { planProviderCards } from "@/src/oshihapi/providerPlanner";
+import ProviderComparisonModule from "@/components/ProviderComparisonModule";
 
 const BASKET_STORAGE_KEY = "oshihapi_basket_last";
 
@@ -201,36 +204,10 @@ export default function ResultPage() {
         : { keyword: null, source: "none" as const },
     [defaultSearchWord, run],
   );
-  const mercariOutHref = useMemo(() => {
-    if (!run || !mercariKeywordResult.keyword) return "";
-    const params = new URLSearchParams({
-      dest: "mercari-search",
-      keyword: mercariKeywordResult.keyword,
-      runId: run.runId,
-      source: "result_page",
-    });
-    if (run.meta.itemKind) params.set("itemKind", run.meta.itemKind);
-    if (run.meta.goodsClass) params.set("gc", run.meta.goodsClass);
-    if (run.output.decision) params.set("verdict", run.output.decision);
-    return `/out?${params.toString()}`;
-  }, [mercariKeywordResult.keyword, run]);
   const amazonDestination = useMemo(
     () => resolveAmazonAffiliateDestination({ itemKind: run?.meta.itemKind, goodsClass: run?.meta.goodsClass }),
     [run?.meta.goodsClass, run?.meta.itemKind],
   );
-  const amazonOutHref = useMemo(() => {
-    if (!run || !amazonDestination) return "";
-    const params = new URLSearchParams({
-      dest: "amazon-static",
-      id: amazonDestination.id,
-      runId: run.runId,
-      source: "result_page",
-    });
-    if (run.meta.itemKind) params.set("itemKind", run.meta.itemKind);
-    if (run.meta.goodsClass) params.set("gc", run.meta.goodsClass);
-    if (run.output.decision) params.set("verdict", run.output.decision);
-    return `/out?${params.toString()}`;
-  }, [amazonDestination, run]);
   const rakutenKeyword = useMemo(
     () =>
       buildRakutenKeyword({
@@ -242,19 +219,38 @@ export default function ResultPage() {
     [defaultSearchWord, run?.meta.goodsClass, run?.meta.itemKind, run?.useCase],
   );
   const rakutenItem = rakutenItems[0] ?? null;
-  const rakutenOutHref = useMemo(() => {
-    if (!run || !rakutenItem?.affiliateUrl) return "";
-    const params = new URLSearchParams({
-      dest: "rakuten-item",
-      href: rakutenItem.affiliateUrl,
+  const surugayaKeyword = useMemo(
+    () =>
+      buildSurugayaKeyword({
+        rawSearchWord: defaultSearchWord,
+        itemKind: run?.meta.itemKind,
+        goodsClass: run?.meta.goodsClass,
+      }),
+    [defaultSearchWord, run?.meta.goodsClass, run?.meta.itemKind],
+  );
+  const providerPlan = useMemo(() => {
+    if (!run || !rakutenReady) return { cards: [], diagnostics: null };
+    const planned = planProviderCards({
       runId: run.runId,
-      source: "result_page",
+      itemKind: run.meta.itemKind,
+      goodsClass: run.meta.goodsClass,
+      verdict: run.output.decision,
+      mercariRelevant,
+      mercariKeyword: mercariKeywordResult.keyword,
+      amazonDestination,
+      rakutenAffiliateUrl: rakutenItem?.affiliateUrl ?? null,
+      surugayaKeyword,
     });
-    if (run.meta.itemKind) params.set("itemKind", run.meta.itemKind);
-    if (run.meta.goodsClass) params.set("gc", run.meta.goodsClass);
-    if (run.output.decision) params.set("verdict", run.output.decision);
-    return `/out?${params.toString()}`;
-  }, [rakutenItem?.affiliateUrl, run]);
+    return { cards: planned.cards, diagnostics: planned.diagnostics };
+  }, [
+    amazonDestination,
+    mercariKeywordResult.keyword,
+    mercariRelevant,
+    rakutenItem?.affiliateUrl,
+    rakutenReady,
+    run,
+    surugayaKeyword,
+  ]);
 
   const showBecausePricecheck = presentation?.tags?.includes("PRICECHECK") === true;
   const hasPlatformMarketAction = useMemo(
@@ -767,66 +763,28 @@ export default function ResultPage() {
         />
       </div>
 
-      {mercariRelevant && mercariKeywordResult.keyword ? (
-        <Card className="space-y-3">
-          <h2 className={sectionTitleClass}>メルカリで相場を見る</h2>
-          <p className={bodyTextClass}>中古相場や近い出品を確認できます。</p>
-          <p className="rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground">
-            検索キーワード: {mercariKeywordResult.keyword}
-          </p>
-          <a
-            href={mercariOutHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => logActionClick("mercari_search_click")}
-            className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
-          >
-            メルカリで探す
-          </a>
-          <p className={helperTextClass}>※外部サイト（メルカリ）に移動します</p>
-          <p className={helperTextClass}>※一部リンクにはアフィリエイトを含む場合があります</p>
-        </Card>
-      ) : null}
-
-      {run && amazonDestination ? (
-        <Card className="space-y-3">
-          <h2 className={sectionTitleClass}>Amazonで比較する</h2>
-          <p className={bodyTextClass}>新品や関連商品をAmazonで確認できます。</p>
-          <a
-            href={amazonOutHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => logActionClick(`amazon_result_click:${amazonDestination.id}`)}
-            className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground shadow-sm transition hover:bg-accent"
-          >
-            {amazonDestination.label}
-          </a>
-          <p className={helperTextClass}>※Amazonへ移動します</p>
-          <p className={helperTextClass}>{amazonDestination.note ?? "※一部リンクにはアフィリエイトを含みます"}</p>
-        </Card>
-      ) : null}
-
-      {run && rakutenReady && rakutenItem && rakutenOutHref ? (
-        <Card className="space-y-3">
-          <h2 className={sectionTitleClass}>楽天で比較する</h2>
-          <p className={bodyTextClass}>収納・関連アクセサリを楽天市場で確認できます。</p>
-          <p className="rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground">
-            {rakutenItem.name || "楽天市場の候補商品"}
-            {typeof rakutenItem.price === "number" ? ` / ${rakutenItem.price.toLocaleString("ja-JP")}円` : ""}
-          </p>
-          <a
-            href={rakutenOutHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => logActionClick("rakuten_result_click")}
-            className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground shadow-sm transition hover:bg-accent"
-          >
-            楽天で見る
-          </a>
-          <p className={helperTextClass}>※楽天市場へ移動します</p>
-          <p className={helperTextClass}>※一部リンクにはアフィリエイトを含みます</p>
-        </Card>
-      ) : null}
+      <ProviderComparisonModule
+        cards={providerPlan.cards}
+        onProviderClick={(providerId) => {
+          if (providerId === "mercari") {
+            logActionClick("mercari_search_click");
+            return;
+          }
+          if (providerId === "amazon") {
+            logActionClick(`amazon_result_click:${amazonDestination?.id ?? "unknown"}`);
+            return;
+          }
+          if (providerId === "rakuten") {
+            logActionClick("rakuten_result_click");
+            return;
+          }
+          if (providerId === "surugaya") {
+            logActionClick("surugaya_result_click");
+            return;
+          }
+          logActionClick(`provider_click:${providerId}`);
+        }}
+      />
 
       <Card className="space-y-4">
         <h2 className={sectionTitleClass}>このあとどうした？</h2>
@@ -917,7 +875,7 @@ export default function ResultPage() {
           <details>
             <summary className="cursor-pointer text-sm">診断トレースJSONを表示</summary>
             <pre className="mt-3 overflow-x-auto rounded-xl bg-slate-950/95 p-3 text-xs text-slate-100">
-              {JSON.stringify(run.diagnosticTrace, null, 2)}
+              {JSON.stringify({ ...run.diagnosticTrace, providerTrace: providerPlan.diagnostics }, null, 2)}
             </pre>
           </details>
         </Card>
