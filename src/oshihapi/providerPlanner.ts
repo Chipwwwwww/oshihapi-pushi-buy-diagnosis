@@ -39,6 +39,7 @@ type PlannerInput = {
   surugayaDestination: string | null;
   amiamiDestination: string | null;
   gamersDestination: string | null;
+  hmvDestination: string | null;
 };
 
 const PLANNED_PROVIDER_IDS: ProviderId[] = [
@@ -199,6 +200,32 @@ export function planProviderCards(input: PlannerInput): {
           : scenarioEligible
             ? "destination_missing_or_not_relevant"
             : "scenario_not_eligible",
+      };
+    }
+
+
+    if (providerId === "hmv") {
+      const destinationReady = Boolean(input.hmvDestination);
+      return {
+        providerId,
+        rank: baseRank,
+        roleReason: config.roleLabel,
+        ctaLabel: config.defaultCtaLabel,
+        outHref: destinationReady
+          ? buildOutHref({
+              provider: providerId,
+              dest: "hmv-affiliate",
+              runId: input.runId,
+              source: "result_page",
+              itemKind: input.itemKind,
+              gc: input.goodsClass,
+              verdict: input.verdict,
+            })
+          : "",
+        badge: config.badge,
+        visibility: "public",
+        destinationReady,
+        suppressReason: destinationReady ? undefined : "destination_missing_or_not_relevant",
       };
     }
 
