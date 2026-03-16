@@ -8,6 +8,7 @@ import { getProviderConfig, type ProviderId } from "@/src/oshihapi/providerRegis
 import { resolveSurugayaAffiliateDestination } from "@/src/oshihapi/surugayaConfig";
 import { resolveAmiamiAffiliateDestination } from "@/src/oshihapi/amiamiConfig";
 import { resolveGamersAffiliateDestination } from "@/src/oshihapi/gamersConfig";
+import { resolveHmvAffiliateDestination } from "@/src/oshihapi/hmvConfig";
 import type { GoodsClass, ItemKind } from "@/src/oshihapi/model";
 
 function isAllowlistedDomain(providerId: ProviderId, hostname: string): boolean {
@@ -73,6 +74,23 @@ export function GET(request: NextRequest): NextResponse {
       try {
         const parsed = new URL(target);
         if (isAllowlistedDomain("gamers", parsed.hostname)) {
+          return NextResponse.redirect(parsed);
+        }
+      } catch {
+        // noop: fallback to home below
+      }
+    }
+    return fallbackToHome(request);
+  }
+
+  if (dest === "hmv-affiliate") {
+    const itemKind = (params.get("itemKind")?.trim() ?? undefined) as ItemKind | undefined;
+    const goodsClass = (params.get("gc")?.trim() ?? undefined) as GoodsClass | undefined;
+    const target = resolveHmvAffiliateDestination({ itemKind, goodsClass });
+    if (target) {
+      try {
+        const parsed = new URL(target);
+        if (isAllowlistedDomain("hmv", parsed.hostname)) {
           return NextResponse.redirect(parsed);
         }
       } catch {

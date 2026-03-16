@@ -46,6 +46,7 @@ import { buildRakutenKeyword } from "@/src/oshihapi/rakutenKeyword";
 import { resolveSurugayaAffiliateDestination } from "@/src/oshihapi/surugayaConfig";
 import { resolveAmiamiAffiliateDestination } from "@/src/oshihapi/amiamiConfig";
 import { resolveGamersAffiliateDestination } from "@/src/oshihapi/gamersConfig";
+import { resolveHmvAffiliateDestination } from "@/src/oshihapi/hmvConfig";
 import { planProviderCards } from "@/src/oshihapi/providerPlanner";
 import ProviderComparisonModule from "@/components/ProviderComparisonModule";
 
@@ -245,6 +246,14 @@ export default function ResultPage() {
       }),
     [run?.meta.goodsClass, run?.meta.itemKind],
   );
+  const hmvDestination = useMemo(
+    () =>
+      resolveHmvAffiliateDestination({
+        itemKind: run?.meta.itemKind,
+        goodsClass: run?.meta.goodsClass,
+      }),
+    [run?.meta.goodsClass, run?.meta.itemKind],
+  );
   const providerPlan = useMemo(() => {
     if (!run || !rakutenReady) return { cards: [], diagnostics: null };
     const planned = planProviderCards({
@@ -259,6 +268,7 @@ export default function ResultPage() {
       surugayaDestination,
       amiamiDestination,
       gamersDestination,
+      hmvDestination,
     });
     return { cards: planned.cards, diagnostics: planned.diagnostics };
   }, [
@@ -271,6 +281,7 @@ export default function ResultPage() {
     surugayaDestination,
     amiamiDestination,
     gamersDestination,
+    hmvDestination,
   ]);
 
   const showBecausePricecheck = presentation?.tags?.includes("PRICECHECK") === true;
