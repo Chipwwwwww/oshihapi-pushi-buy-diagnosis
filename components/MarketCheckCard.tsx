@@ -71,9 +71,6 @@ export default function MarketCheckCard({
   const [savedAt, setSavedAt] = useState<number | null>(existingMemo?.updatedAt ?? null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const shouldShow = Boolean(defaultSearchWord.trim()) || showBecausePricecheck;
-  if (!shouldShow) return null;
-
   const handleCopy = async () => {
     const text = searchWord.trim();
     if (!text) {
@@ -148,6 +145,9 @@ export default function MarketCheckCard({
     params.set("source", "market_check");
     return `/out?${params.toString()}`;
   }, [goodsClass, hasMercariKeyword, itemKind, mercariKeyword, runId, verdict]);
+
+  const shouldShow = Boolean(defaultSearchWord.trim()) || showBecausePricecheck;
+  if (!shouldShow) return null;
 
   return (
     <Card className="space-y-4">
