@@ -52,7 +52,6 @@ export default function Home() {
   const [itemName, setItemName] = useState("");
   const [priceYen, setPriceYen] = useState("");
   const [deadline, setDeadline] = useState<DeadlineValue>("unknown");
-  const [showClueHelp, setShowClueHelp] = useState(false);
   const [styleMode] = useState<StyleMode>(() => getStyleModeFromLocalStorage());
   const [decisiveness] = useState<Decisiveness>(() => {
     if (typeof window === "undefined") return "standard";
@@ -131,13 +130,17 @@ export default function Home() {
       <header className="flex flex-col gap-2">
         <p className="text-sm font-semibold uppercase tracking-widest text-accent">オシハピ</p>
         <h1 className={pageTitleClass}>推し買い診断</h1>
-        <p className={bodyTextClass}>先に「何を決めるか」、次に「どれだけ深く考えるか」を選ぶ2ステップ診断。</p>
+        <p className={bodyTextClass}>推し活の買い物で後悔を減らすための、購入判断サポート診断。</p>
+        <p className="text-sm text-slate-600 dark:text-zinc-300">手がかり入力は任意です。空欄でも診断を始められ、入力があると候補の絞り込み精度を少し上げられます。</p>
         <p className="text-xs text-slate-500 dark:text-zinc-400">※ まとめ買い（β）は検証中です <Link href="/basket" className="underline underline-offset-2">βページを見る</Link></p>
       </header>
 
-      <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
-        <div className="space-y-2">
-          <h2 className={sectionTitleClass}>商品名・作品名・キャラ名・手がかり（任意）</h2>
+      <Card className="space-y-4 border border-accent/25 bg-white text-slate-900 shadow-sm shadow-accent/5 dark:border-accent/30 dark:bg-white/6 dark:text-zinc-50">
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className={sectionTitleClass}>商品名・作品名・キャラ名・手がかり（任意）</h2>
+            <Badge variant="accent">空欄でも開始できます</Badge>
+          </div>
           <p className="text-sm text-slate-600 dark:text-zinc-300">商品名が正確でなくても使えます。入力があると、特典・在庫・予約状況の確認精度を少し上げられます。</p>
         </div>
         <div className="grid gap-3">
@@ -145,27 +148,15 @@ export default function Home() {
             value={searchClue}
             onChange={(event) => setSearchClue(event.target.value)}
             placeholder={"例：作品名＋缶バッジ / 初回限定 Blu-ray / 特典付きCD"}
-            className="min-h-28 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm dark:border-white/15 dark:bg-[#111827] dark:text-zinc-50"
+            className="min-h-24 w-full rounded-2xl border border-accent/30 bg-slate-50 px-4 py-3 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-accent focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent/20 dark:border-accent/30 dark:bg-[#111827] dark:text-zinc-50 dark:placeholder:text-zinc-400"
             aria-label="商品名・作品名・キャラ名・手がかり（任意）"
           />
-          <button
-            type="button"
-            onClick={() => setShowClueHelp((prev) => !prev)}
-            className="w-fit text-sm font-semibold text-slate-600 underline underline-offset-4 hover:text-slate-900 dark:text-zinc-300 dark:hover:text-zinc-100"
-          >
-            商品名がわからないときはこちら
-          </button>
-          {showClueHelp ? (
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-white/10 dark:bg-white/8 dark:text-zinc-200">
-              <p>商品名がわからなくても、作品名・キャラ名・価格・特典の手がかりで使えます。</p>
-              <p className="mt-2 text-xs text-slate-500 dark:text-zinc-400">例: 作品名＋缶バッジ / 初回限定 Blu-ray / 特典付きCD</p>
-            </div>
-          ) : null}
+          <p className="text-sm text-slate-600 dark:text-zinc-300">商品名がわからなくても、作品名・キャラ名・価格・特典の手がかりで使えます。</p>
         </div>
       </Card>
 
       <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
-        <h2 className={sectionTitleClass}>Step 1: 何について判断する？</h2>
+        <h2 className={sectionTitleClass}>Step 1: 何を診断する？</h2>
         <div className="grid gap-3">
           {itemKindOptions.map((option) => (
             <RadioCard key={option.value} title={option.label} description={option.lead} isSelected={itemKind === option.value} onClick={() => setItemKind(option.value)} />
@@ -182,7 +173,7 @@ export default function Home() {
       </Card>
 
       <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
-        <h2 className={sectionTitleClass}>Step 2: どの深さで診断する？</h2>
+        <h2 className={sectionTitleClass}>Step 2: 診断の深さを選ぶ</h2>
         <div className="grid gap-3">
           <RadioCard title="短（short）" description="速く答えを出す" isSelected={mode === "short"} onClick={() => setMode("short")} />
           <RadioCard title="中（medium）" description="理由と不安をバランス確認" isSelected={mode === "medium"} onClick={() => setMode("medium")} />
@@ -193,7 +184,7 @@ export default function Home() {
 
       <Card className="space-y-3 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
         <div className="flex items-center justify-between">
-          <h2 className={sectionTitleClass}>おすすめ（補助）</h2>
+          <h2 className={sectionTitleClass}>おすすめモード（補助）</h2>
           <Badge variant="accent">信頼度 {recommendation.confidence}%</Badge>
         </div>
         <p className="text-sm text-slate-700 dark:text-zinc-200">
