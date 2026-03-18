@@ -23,7 +23,7 @@ import {
 } from "@/src/oshihapi/question_sets";
 
 const ITEM_KINDS: ItemKind[] = ["goods", "blind_draw", "ticket", "preorder", "used"];
-const GOODS_CLASSES: GoodsClass[] = ["small_collection", "paper", "wearable", "display_large", "tech", "itabag_badge"];
+const GOODS_CLASSES: GoodsClass[] = ["small_collection", "paper", "wearable", "display_large", "tech", "media", "itabag_badge"];
 const STYLES = ["standard", "kawaii", "oshi"] as const;
 type Style = (typeof STYLES)[number];
 

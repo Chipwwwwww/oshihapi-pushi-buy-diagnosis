@@ -238,6 +238,28 @@
           "q_addon_goods_tech_compat",
           "q_addon_goods_tech_after_use"
         ],
+        "goods#gc=media": [
+          "q_storage_fit",
+          "q_storage_space",
+          "q_desire",
+          "q_goal",
+          "q_urgency",
+          "q_rarity_restock",
+          "q_budget_pain",
+          "q_price_feel",
+          "q_motives_multi",
+          "q_hot_cold",
+          "q_regret_impulse",
+          "q_impulse_axis_short",
+          "q_alternative_plan",
+          "q_addon_common_info",
+          "q_addon_common_priority",
+          "q_addon_goods_compare",
+          "q_addon_goods_portability",
+          "q_addon_media_motive",
+          "q_addon_media_playback_space",
+          "q_addon_media_limited_pressure"
+        ],
         "goods#gc=itabag_badge": [
           "q_storage_space",
           "q_desire",
@@ -407,6 +429,29 @@
           "q_addon_goods_tech_compat",
           "q_addon_goods_tech_after_use"
         ],
+        "preorder#gc=media": [
+          "q_storage_fit",
+          "q_storage_space",
+          "q_desire",
+          "q_goal",
+          "q_urgency",
+          "q_rarity_restock",
+          "q_budget_pain",
+          "q_price_feel",
+          "q_motives_multi",
+          "q_hot_cold",
+          "q_regret_impulse",
+          "q_impulse_axis_short",
+          "q_alternative_plan",
+          "q_addon_common_info",
+          "q_addon_common_priority",
+          "q_addon_preorder_timeline",
+          "q_addon_preorder_decay",
+          "q_addon_preorder_compare_loss",
+          "q_addon_media_motive",
+          "q_addon_media_playback_space",
+          "q_addon_media_limited_pressure"
+        ],
         "preorder#gc=itabag_badge": [
           "q_storage_space",
           "q_desire",
@@ -547,6 +592,31 @@
           "q_addon_used_seller_trust",
           "q_addon_goods_tech_compat",
           "q_addon_goods_tech_after_use"
+        ],
+        "used#gc=media": [
+          "q_storage_fit",
+          "q_storage_space",
+          "q_desire",
+          "q_goal",
+          "q_urgency",
+          "q_rarity_restock",
+          "q_budget_pain",
+          "q_price_feel",
+          "q_motives_multi",
+          "q_hot_cold",
+          "q_regret_impulse",
+          "q_impulse_axis_short",
+          "q_alternative_plan",
+          "q_addon_common_info",
+          "q_addon_common_priority",
+          "q_addon_used_condition",
+          "q_addon_used_price_gap",
+          "q_addon_used_defect_return",
+          "q_addon_used_authenticity",
+          "q_addon_used_seller_trust",
+          "q_addon_media_motive",
+          "q_addon_media_playback_space",
+          "q_addon_media_limited_pressure"
         ],
         "used#gc=itabag_badge": [
           "q_storage_space",
@@ -2519,7 +2589,7 @@
       "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
-        "standard": "狙い方は？（本命一点 / 幅広く楽しむ）",
+        "standard": "どこまで開封したら止まれそうですか？",
         "kawaii": "やめどきライン、ある？",
         "oshi": "コンプ目的か本命狙いか？"
       },
@@ -2724,7 +2794,7 @@
       "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
-        "standard": "被りが出たら交換に回せる？",
+        "standard": "最推しが出なかった場合、交換や中古で補う前提ですか？",
         "kawaii": "余りを交換する予定ある？",
         "oshi": "余剰分の交換意向は？"
       },
@@ -2825,12 +2895,14 @@
       "appearsInBranches": [
         "merch/long/goods#gc=display_large",
         "merch/long/goods#gc=itabag_badge",
+        "merch/long/goods#gc=media",
         "merch/long/goods#gc=paper",
         "merch/long/goods#gc=small_collection",
         "merch/long/goods#gc=tech",
         "merch/long/goods#gc=wearable",
         "merch/long/preorder#gc=display_large",
         "merch/long/preorder#gc=itabag_badge",
+        "merch/long/preorder#gc=media",
         "merch/long/preorder#gc=paper",
         "merch/long/preorder#gc=small_collection",
         "merch/long/preorder#gc=tech",
@@ -2838,6 +2910,7 @@
         "merch/long/ticket#gc=N/A",
         "merch/long/used#gc=display_large",
         "merch/long/used#gc=itabag_badge",
+        "merch/long/used#gc=media",
         "merch/long/used#gc=paper",
         "merch/long/used#gc=small_collection",
         "merch/long/used#gc=tech",
@@ -2928,12 +3001,14 @@
       "appearsInBranches": [
         "merch/long/goods#gc=display_large",
         "merch/long/goods#gc=itabag_badge",
+        "merch/long/goods#gc=media",
         "merch/long/goods#gc=paper",
         "merch/long/goods#gc=small_collection",
         "merch/long/goods#gc=tech",
         "merch/long/goods#gc=wearable",
         "merch/long/preorder#gc=display_large",
         "merch/long/preorder#gc=itabag_badge",
+        "merch/long/preorder#gc=media",
         "merch/long/preorder#gc=paper",
         "merch/long/preorder#gc=small_collection",
         "merch/long/preorder#gc=tech",
@@ -2941,6 +3016,7 @@
         "merch/long/ticket#gc=N/A",
         "merch/long/used#gc=display_large",
         "merch/long/used#gc=itabag_badge",
+        "merch/long/used#gc=media",
         "merch/long/used#gc=paper",
         "merch/long/used#gc=small_collection",
         "merch/long/used#gc=tech",
@@ -3035,7 +3111,7 @@
       "isOrphan": false,
       "sameAsStandard": false,
       "styles": {
-        "standard": "回収方針は？（コンプ/本命と被り許容）",
+        "standard": "揃わないと落ち着かない気持ちはありますか？",
         "kawaii": "集める目的、どれが近い？",
         "oshi": "回収目的はどれに近い？"
       },
@@ -3134,6 +3210,7 @@
       "appearsInBranches": [
         "merch/long/goods#gc=display_large",
         "merch/long/goods#gc=itabag_badge",
+        "merch/long/goods#gc=media",
         "merch/long/goods#gc=paper",
         "merch/long/goods#gc=small_collection",
         "merch/long/goods#gc=tech",
@@ -3786,6 +3863,7 @@
       "appearsInBranches": [
         "merch/long/goods#gc=display_large",
         "merch/long/goods#gc=itabag_badge",
+        "merch/long/goods#gc=media",
         "merch/long/goods#gc=paper",
         "merch/long/goods#gc=small_collection",
         "merch/long/goods#gc=tech",
@@ -4413,6 +4491,330 @@
     },
     {
       "useCase": "merch",
+      "questionId": "q_addon_media_limited_pressure",
+      "questionType": "single",
+      "scoringRelevance": "delta",
+      "impactCategory": "score",
+      "behaviorRelevance": {
+        "affectsScore": true,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "score",
+      "mapTo": null,
+      "tags": [
+        "bonus_pressure_high",
+        "bonus_pressure_mid",
+        "unknown_info"
+      ],
+      "unknownTagHints": [
+        "unknown_info"
+      ],
+      "appearsInBranches": [
+        "merch/long/goods#gc=media",
+        "merch/long/preorder#gc=media",
+        "merch/long/used#gc=media"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": true,
+      "styles": {
+        "standard": "特典や初回限定がなくても本当に欲しいですか？",
+        "kawaii": "特典や初回限定がなくても本当に欲しいですか？",
+        "oshi": "特典や初回限定がなくても本当に欲しいですか？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "maybe",
+          "labels": {
+            "standard": "特典が弱いと迷う",
+            "kawaii": "特典が弱いと迷う",
+            "oshi": "特典が弱いと迷う"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "impulse": 58,
+            "regretRisk": 60
+          },
+          "tags": [
+            "bonus_pressure_mid"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "no",
+          "labels": {
+            "standard": "特典・限定が主目的になっている",
+            "kawaii": "特典・限定が主目的になっている",
+            "oshi": "特典・限定が主目的になっている"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "impulse": 72,
+            "regretRisk": 75
+          },
+          "tags": [
+            "bonus_pressure_high"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "まだ整理できていない",
+            "kawaii": "まだ整理できていない",
+            "oshi": "まだ整理できていない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 65,
+            "opportunityCost": 60
+          },
+          "tags": [
+            "unknown_info"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "yes",
+          "labels": {
+            "standard": "特典なしでも欲しい",
+            "kawaii": "特典なしでも欲しい",
+            "oshi": "特典なしでも欲しい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "impulse": 44,
+            "regretRisk": 42
+          },
+          "tags": [],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_media_motive",
+      "questionType": "single",
+      "scoringRelevance": "delta",
+      "impactCategory": "score",
+      "behaviorRelevance": {
+        "affectsScore": true,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "score",
+      "mapTo": null,
+      "tags": [
+        "actor_fan_primary",
+        "unknown_info"
+      ],
+      "unknownTagHints": [
+        "unknown_info"
+      ],
+      "appearsInBranches": [
+        "merch/long/goods#gc=media",
+        "merch/long/preorder#gc=media",
+        "merch/long/used#gc=media"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": true,
+      "styles": {
+        "standard": "このCDを買いたい主な理由は、内容ですか？ それとも推し声優の参加ですか？",
+        "kawaii": "このCDを買いたい主な理由は、内容ですか？ それとも推し声優の参加ですか？",
+        "oshi": "このCDを買いたい主な理由は、内容ですか？ それとも推し声優の参加ですか？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "both",
+          "labels": {
+            "standard": "両方同じくらい大事",
+            "kawaii": "両方同じくらい大事",
+            "oshi": "両方同じくらい大事"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "desire": 62,
+            "regretRisk": 56
+          },
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "cast_main",
+          "labels": {
+            "standard": "推し声優・演者の参加が主な理由",
+            "kawaii": "推し声優・演者の参加が主な理由",
+            "oshi": "推し声優・演者の参加が主な理由"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "impulse": 68,
+            "regretRisk": 70
+          },
+          "tags": [
+            "actor_fan_primary"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "content_main",
+          "labels": {
+            "standard": "内容（楽曲・ドラマ・映像）が主な理由",
+            "kawaii": "内容（楽曲・ドラマ・映像）が主な理由",
+            "oshi": "内容（楽曲・ドラマ・映像）が主な理由"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "desire": 66,
+            "regretRisk": 45
+          },
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "まだ言語化できていない",
+            "kawaii": "まだ言語化できていない",
+            "oshi": "まだ言語化できていない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 65,
+            "opportunityCost": 60
+          },
+          "tags": [
+            "unknown_info"
+          ],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_media_playback_space",
+      "questionType": "single",
+      "scoringRelevance": "delta",
+      "impactCategory": "score",
+      "behaviorRelevance": {
+        "affectsScore": true,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "score",
+      "mapTo": null,
+      "tags": [
+        "media_usage_unready",
+        "unknown_info"
+      ],
+      "unknownTagHints": [
+        "unknown_info"
+      ],
+      "appearsInBranches": [
+        "merch/long/goods#gc=media",
+        "merch/long/preorder#gc=media",
+        "merch/long/used#gc=media"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": true,
+      "styles": {
+        "standard": "再生環境や保管場所に問題はありませんか？",
+        "kawaii": "再生環境や保管場所に問題はありませんか？",
+        "oshi": "再生環境や保管場所に問題はありませんか？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "not_ready",
+          "labels": {
+            "standard": "未整備で不安がある",
+            "kawaii": "未整備で不安がある",
+            "oshi": "未整備で不安がある"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 76,
+            "opportunityCost": 72
+          },
+          "tags": [
+            "media_usage_unready"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "partial",
+          "labels": {
+            "standard": "どちらかは整っている",
+            "kawaii": "どちらかは整っている",
+            "oshi": "どちらかは整っている"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 54,
+            "opportunityCost": 56
+          },
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "ready",
+          "labels": {
+            "standard": "再生環境・保管ともに問題ない",
+            "kawaii": "再生環境・保管ともに問題ない",
+            "oshi": "再生環境・保管ともに問題ない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 38,
+            "opportunityCost": 40
+          },
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "まだ確認できていない",
+            "kawaii": "まだ確認できていない",
+            "oshi": "まだ確認できていない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 68,
+            "opportunityCost": 62
+          },
+          "tags": [
+            "unknown_info"
+          ],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
       "questionId": "q_addon_preorder_compare_loss",
       "questionType": "single",
       "scoringRelevance": "delta",
@@ -4432,6 +4834,7 @@
       "appearsInBranches": [
         "merch/long/preorder#gc=display_large",
         "merch/long/preorder#gc=itabag_badge",
+        "merch/long/preorder#gc=media",
         "merch/long/preorder#gc=paper",
         "merch/long/preorder#gc=small_collection",
         "merch/long/preorder#gc=tech",
@@ -4517,6 +4920,7 @@
       "appearsInBranches": [
         "merch/long/preorder#gc=display_large",
         "merch/long/preorder#gc=itabag_badge",
+        "merch/long/preorder#gc=media",
         "merch/long/preorder#gc=paper",
         "merch/long/preorder#gc=small_collection",
         "merch/long/preorder#gc=tech",
@@ -4685,6 +5089,7 @@
       "appearsInBranches": [
         "merch/long/preorder#gc=display_large",
         "merch/long/preorder#gc=itabag_badge",
+        "merch/long/preorder#gc=media",
         "merch/long/preorder#gc=paper",
         "merch/long/preorder#gc=small_collection",
         "merch/long/preorder#gc=tech",
@@ -5122,6 +5527,7 @@
       "appearsInBranches": [
         "merch/long/used#gc=display_large",
         "merch/long/used#gc=itabag_badge",
+        "merch/long/used#gc=media",
         "merch/long/used#gc=paper",
         "merch/long/used#gc=small_collection",
         "merch/long/used#gc=tech",
@@ -5216,6 +5622,7 @@
       "appearsInBranches": [
         "merch/long/used#gc=display_large",
         "merch/long/used#gc=itabag_badge",
+        "merch/long/used#gc=media",
         "merch/long/used#gc=paper",
         "merch/long/used#gc=small_collection",
         "merch/long/used#gc=tech",
@@ -5304,6 +5711,7 @@
       "appearsInBranches": [
         "merch/long/used#gc=display_large",
         "merch/long/used#gc=itabag_badge",
+        "merch/long/used#gc=media",
         "merch/long/used#gc=paper",
         "merch/long/used#gc=small_collection",
         "merch/long/used#gc=tech",
@@ -5402,6 +5810,7 @@
       "appearsInBranches": [
         "merch/long/used#gc=display_large",
         "merch/long/used#gc=itabag_badge",
+        "merch/long/used#gc=media",
         "merch/long/used#gc=paper",
         "merch/long/used#gc=small_collection",
         "merch/long/used#gc=tech",
@@ -5487,6 +5896,7 @@
       "appearsInBranches": [
         "merch/long/used#gc=display_large",
         "merch/long/used#gc=itabag_badge",
+        "merch/long/used#gc=media",
         "merch/long/used#gc=paper",
         "merch/long/used#gc=small_collection",
         "merch/long/used#gc=tech",
@@ -5591,12 +6001,14 @@
         "merch/long/blind_draw#gc=N/A",
         "merch/long/goods#gc=display_large",
         "merch/long/goods#gc=itabag_badge",
+        "merch/long/goods#gc=media",
         "merch/long/goods#gc=paper",
         "merch/long/goods#gc=small_collection",
         "merch/long/goods#gc=tech",
         "merch/long/goods#gc=wearable",
         "merch/long/preorder#gc=display_large",
         "merch/long/preorder#gc=itabag_badge",
+        "merch/long/preorder#gc=media",
         "merch/long/preorder#gc=paper",
         "merch/long/preorder#gc=small_collection",
         "merch/long/preorder#gc=tech",
@@ -5604,6 +6016,7 @@
         "merch/long/ticket#gc=N/A",
         "merch/long/used#gc=display_large",
         "merch/long/used#gc=itabag_badge",
+        "merch/long/used#gc=media",
         "merch/long/used#gc=paper",
         "merch/long/used#gc=small_collection",
         "merch/long/used#gc=tech",
@@ -5691,12 +6104,14 @@
         "merch/long/blind_draw#gc=N/A",
         "merch/long/goods#gc=display_large",
         "merch/long/goods#gc=itabag_badge",
+        "merch/long/goods#gc=media",
         "merch/long/goods#gc=paper",
         "merch/long/goods#gc=small_collection",
         "merch/long/goods#gc=tech",
         "merch/long/goods#gc=wearable",
         "merch/long/preorder#gc=display_large",
         "merch/long/preorder#gc=itabag_badge",
+        "merch/long/preorder#gc=media",
         "merch/long/preorder#gc=paper",
         "merch/long/preorder#gc=small_collection",
         "merch/long/preorder#gc=tech",
@@ -5704,6 +6119,7 @@
         "merch/long/ticket#gc=N/A",
         "merch/long/used#gc=display_large",
         "merch/long/used#gc=itabag_badge",
+        "merch/long/used#gc=media",
         "merch/long/used#gc=paper",
         "merch/long/used#gc=small_collection",
         "merch/long/used#gc=tech",
@@ -5825,12 +6241,14 @@
         "merch/long/blind_draw#gc=N/A",
         "merch/long/goods#gc=display_large",
         "merch/long/goods#gc=itabag_badge",
+        "merch/long/goods#gc=media",
         "merch/long/goods#gc=paper",
         "merch/long/goods#gc=small_collection",
         "merch/long/goods#gc=tech",
         "merch/long/goods#gc=wearable",
         "merch/long/preorder#gc=display_large",
         "merch/long/preorder#gc=itabag_badge",
+        "merch/long/preorder#gc=media",
         "merch/long/preorder#gc=paper",
         "merch/long/preorder#gc=small_collection",
         "merch/long/preorder#gc=tech",
@@ -5838,6 +6256,7 @@
         "merch/long/ticket#gc=N/A",
         "merch/long/used#gc=display_large",
         "merch/long/used#gc=itabag_badge",
+        "merch/long/used#gc=media",
         "merch/long/used#gc=paper",
         "merch/long/used#gc=small_collection",
         "merch/long/used#gc=tech",
@@ -5893,12 +6312,14 @@
         "merch/long/blind_draw#gc=N/A",
         "merch/long/goods#gc=display_large",
         "merch/long/goods#gc=itabag_badge",
+        "merch/long/goods#gc=media",
         "merch/long/goods#gc=paper",
         "merch/long/goods#gc=small_collection",
         "merch/long/goods#gc=tech",
         "merch/long/goods#gc=wearable",
         "merch/long/preorder#gc=display_large",
         "merch/long/preorder#gc=itabag_badge",
+        "merch/long/preorder#gc=media",
         "merch/long/preorder#gc=paper",
         "merch/long/preorder#gc=small_collection",
         "merch/long/preorder#gc=tech",
@@ -5906,6 +6327,7 @@
         "merch/long/ticket#gc=N/A",
         "merch/long/used#gc=display_large",
         "merch/long/used#gc=itabag_badge",
+        "merch/long/used#gc=media",
         "merch/long/used#gc=paper",
         "merch/long/used#gc=small_collection",
         "merch/long/used#gc=tech",
@@ -6016,12 +6438,14 @@
         "merch/long/blind_draw#gc=N/A",
         "merch/long/goods#gc=display_large",
         "merch/long/goods#gc=itabag_badge",
+        "merch/long/goods#gc=media",
         "merch/long/goods#gc=paper",
         "merch/long/goods#gc=small_collection",
         "merch/long/goods#gc=tech",
         "merch/long/goods#gc=wearable",
         "merch/long/preorder#gc=display_large",
         "merch/long/preorder#gc=itabag_badge",
+        "merch/long/preorder#gc=media",
         "merch/long/preorder#gc=paper",
         "merch/long/preorder#gc=small_collection",
         "merch/long/preorder#gc=tech",
@@ -6029,6 +6453,7 @@
         "merch/long/ticket#gc=N/A",
         "merch/long/used#gc=display_large",
         "merch/long/used#gc=itabag_badge",
+        "merch/long/used#gc=media",
         "merch/long/used#gc=paper",
         "merch/long/used#gc=small_collection",
         "merch/long/used#gc=tech",
@@ -6137,12 +6562,14 @@
         "merch/long/blind_draw#gc=N/A",
         "merch/long/goods#gc=display_large",
         "merch/long/goods#gc=itabag_badge",
+        "merch/long/goods#gc=media",
         "merch/long/goods#gc=paper",
         "merch/long/goods#gc=small_collection",
         "merch/long/goods#gc=tech",
         "merch/long/goods#gc=wearable",
         "merch/long/preorder#gc=display_large",
         "merch/long/preorder#gc=itabag_badge",
+        "merch/long/preorder#gc=media",
         "merch/long/preorder#gc=paper",
         "merch/long/preorder#gc=small_collection",
         "merch/long/preorder#gc=tech",
@@ -6150,6 +6577,7 @@
         "merch/long/ticket#gc=N/A",
         "merch/long/used#gc=display_large",
         "merch/long/used#gc=itabag_badge",
+        "merch/long/used#gc=media",
         "merch/long/used#gc=paper",
         "merch/long/used#gc=small_collection",
         "merch/long/used#gc=tech",
@@ -6229,12 +6657,14 @@
         "merch/long/blind_draw#gc=N/A",
         "merch/long/goods#gc=display_large",
         "merch/long/goods#gc=itabag_badge",
+        "merch/long/goods#gc=media",
         "merch/long/goods#gc=paper",
         "merch/long/goods#gc=small_collection",
         "merch/long/goods#gc=tech",
         "merch/long/goods#gc=wearable",
         "merch/long/preorder#gc=display_large",
         "merch/long/preorder#gc=itabag_badge",
+        "merch/long/preorder#gc=media",
         "merch/long/preorder#gc=paper",
         "merch/long/preorder#gc=small_collection",
         "merch/long/preorder#gc=tech",
@@ -6242,6 +6672,7 @@
         "merch/long/ticket#gc=N/A",
         "merch/long/used#gc=display_large",
         "merch/long/used#gc=itabag_badge",
+        "merch/long/used#gc=media",
         "merch/long/used#gc=paper",
         "merch/long/used#gc=small_collection",
         "merch/long/used#gc=tech",
@@ -6418,6 +6849,19 @@
           "buyStopDelta": null
         },
         {
+          "optionId": "seiyuu_cast",
+          "labels": {
+            "standard": "推し声優・演者の参加が決め手",
+            "kawaii": "推し声優・演者の参加が決め手",
+            "oshi": "推し声優・演者の参加が決め手"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": null,
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
           "optionId": "support",
           "labels": {
             "standard": "推しを応援したい（気持ち）",
@@ -6497,12 +6941,14 @@
         "merch/long/blind_draw#gc=N/A",
         "merch/long/goods#gc=display_large",
         "merch/long/goods#gc=itabag_badge",
+        "merch/long/goods#gc=media",
         "merch/long/goods#gc=paper",
         "merch/long/goods#gc=small_collection",
         "merch/long/goods#gc=tech",
         "merch/long/goods#gc=wearable",
         "merch/long/preorder#gc=display_large",
         "merch/long/preorder#gc=itabag_badge",
+        "merch/long/preorder#gc=media",
         "merch/long/preorder#gc=paper",
         "merch/long/preorder#gc=small_collection",
         "merch/long/preorder#gc=tech",
@@ -6510,6 +6956,7 @@
         "merch/long/ticket#gc=N/A",
         "merch/long/used#gc=display_large",
         "merch/long/used#gc=itabag_badge",
+        "merch/long/used#gc=media",
         "merch/long/used#gc=paper",
         "merch/long/used#gc=small_collection",
         "merch/long/used#gc=tech",
@@ -6627,12 +7074,14 @@
         "merch/long/blind_draw#gc=N/A",
         "merch/long/goods#gc=display_large",
         "merch/long/goods#gc=itabag_badge",
+        "merch/long/goods#gc=media",
         "merch/long/goods#gc=paper",
         "merch/long/goods#gc=small_collection",
         "merch/long/goods#gc=tech",
         "merch/long/goods#gc=wearable",
         "merch/long/preorder#gc=display_large",
         "merch/long/preorder#gc=itabag_badge",
+        "merch/long/preorder#gc=media",
         "merch/long/preorder#gc=paper",
         "merch/long/preorder#gc=small_collection",
         "merch/long/preorder#gc=tech",
@@ -6640,6 +7089,7 @@
         "merch/long/ticket#gc=N/A",
         "merch/long/used#gc=display_large",
         "merch/long/used#gc=itabag_badge",
+        "merch/long/used#gc=media",
         "merch/long/used#gc=paper",
         "merch/long/used#gc=small_collection",
         "merch/long/used#gc=tech",
@@ -6765,12 +7215,14 @@
         "merch/long/blind_draw#gc=N/A",
         "merch/long/goods#gc=display_large",
         "merch/long/goods#gc=itabag_badge",
+        "merch/long/goods#gc=media",
         "merch/long/goods#gc=paper",
         "merch/long/goods#gc=small_collection",
         "merch/long/goods#gc=tech",
         "merch/long/goods#gc=wearable",
         "merch/long/preorder#gc=display_large",
         "merch/long/preorder#gc=itabag_badge",
+        "merch/long/preorder#gc=media",
         "merch/long/preorder#gc=paper",
         "merch/long/preorder#gc=small_collection",
         "merch/long/preorder#gc=tech",
@@ -6778,6 +7230,7 @@
         "merch/long/ticket#gc=N/A",
         "merch/long/used#gc=display_large",
         "merch/long/used#gc=itabag_badge",
+        "merch/long/used#gc=media",
         "merch/long/used#gc=paper",
         "merch/long/used#gc=small_collection",
         "merch/long/used#gc=tech",
@@ -6897,14 +7350,17 @@
       "unknownTagHints": [],
       "appearsInBranches": [
         "merch/long/blind_draw#gc=N/A",
+        "merch/long/goods#gc=media",
         "merch/long/goods#gc=paper",
         "merch/long/goods#gc=small_collection",
         "merch/long/goods#gc=tech",
         "merch/long/goods#gc=wearable",
+        "merch/long/preorder#gc=media",
         "merch/long/preorder#gc=paper",
         "merch/long/preorder#gc=small_collection",
         "merch/long/preorder#gc=tech",
         "merch/long/preorder#gc=wearable",
+        "merch/long/used#gc=media",
         "merch/long/used#gc=paper",
         "merch/long/used#gc=small_collection",
         "merch/long/used#gc=tech",
@@ -7007,12 +7463,14 @@
         "merch/long/blind_draw#gc=N/A",
         "merch/long/goods#gc=display_large",
         "merch/long/goods#gc=itabag_badge",
+        "merch/long/goods#gc=media",
         "merch/long/goods#gc=paper",
         "merch/long/goods#gc=small_collection",
         "merch/long/goods#gc=tech",
         "merch/long/goods#gc=wearable",
         "merch/long/preorder#gc=display_large",
         "merch/long/preorder#gc=itabag_badge",
+        "merch/long/preorder#gc=media",
         "merch/long/preorder#gc=paper",
         "merch/long/preorder#gc=small_collection",
         "merch/long/preorder#gc=tech",
@@ -7020,6 +7478,7 @@
         "merch/long/ticket#gc=N/A",
         "merch/long/used#gc=display_large",
         "merch/long/used#gc=itabag_badge",
+        "merch/long/used#gc=media",
         "merch/long/used#gc=paper",
         "merch/long/used#gc=small_collection",
         "merch/long/used#gc=tech",
@@ -7120,12 +7579,14 @@
         "merch/long/blind_draw#gc=N/A",
         "merch/long/goods#gc=display_large",
         "merch/long/goods#gc=itabag_badge",
+        "merch/long/goods#gc=media",
         "merch/long/goods#gc=paper",
         "merch/long/goods#gc=small_collection",
         "merch/long/goods#gc=tech",
         "merch/long/goods#gc=wearable",
         "merch/long/preorder#gc=display_large",
         "merch/long/preorder#gc=itabag_badge",
+        "merch/long/preorder#gc=media",
         "merch/long/preorder#gc=paper",
         "merch/long/preorder#gc=small_collection",
         "merch/long/preorder#gc=tech",
@@ -7133,6 +7594,7 @@
         "merch/long/ticket#gc=N/A",
         "merch/long/used#gc=display_large",
         "merch/long/used#gc=itabag_badge",
+        "merch/long/used#gc=media",
         "merch/long/used#gc=paper",
         "merch/long/used#gc=small_collection",
         "merch/long/used#gc=tech",

@@ -34,6 +34,7 @@ export const goodsClassOptions: { value: GoodsClass; label: string }[] = [
   { value: "wearable", label: "身につける" },
   { value: "display_large", label: "飾る・大きめ" },
   { value: "tech", label: "機能系" },
+  { value: "media", label: "CD・DVD・Blu-ray・書籍" },
   { value: "itabag_badge", label: "例外：痛バ・缶バ大量回収" },
 ];
 export const modeLabelMap: Record<Mode, string> = {
