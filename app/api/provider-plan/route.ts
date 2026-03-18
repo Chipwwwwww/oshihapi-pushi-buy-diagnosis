@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findAmazonAffiliateDestinationById } from "@/src/oshihapi/amazonAffiliateConfig";
 import { planProviderCards } from "@/src/oshihapi/providerPlanner";
+import type { ParsedSearchClues } from "@/src/oshihapi/input/types";
 
 type ProviderPlanRequest = {
   runId?: string;
@@ -17,6 +18,7 @@ type ProviderPlanRequest = {
   amiamiDestination?: string | null;
   gamersDestination?: string | null;
   hmvDestination?: string | null;
+  searchClues?: ParsedSearchClues | null;
 };
 
 function isObjectRecord(value: unknown): value is Record<string, unknown> {
@@ -54,6 +56,7 @@ export async function POST(request: NextRequest) {
     amiamiDestination: typeof body.amiamiDestination === "string" ? body.amiamiDestination : null,
     gamersDestination: typeof body.gamersDestination === "string" ? body.gamersDestination : null,
     hmvDestination: typeof body.hmvDestination === "string" ? body.hmvDestination : null,
+    searchClues: isObjectRecord(body.searchClues) ? (body.searchClues as ParsedSearchClues) : undefined,
   });
 
   return NextResponse.json({ ok: true, ...result });

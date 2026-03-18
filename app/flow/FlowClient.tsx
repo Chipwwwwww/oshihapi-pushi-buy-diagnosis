@@ -50,6 +50,9 @@ import {
   sectionTitleClass,
 } from "@/components/ui/tokens";
 import { buildMercariKeyword, isMercariRelevantScenario } from "@/src/oshihapi/mercariKeyword";
+import { getSearchClueClarification } from "@/src/oshihapi/input/getSearchClueClarification";
+import { parseSearchClues, toSearchClueDiagnostics } from "@/src/oshihapi/input/parseSearchClues";
+import type { SearchClueClarification } from "@/src/oshihapi/input/types";
 
 const DEADLINE_VALUES = [
   "today",
@@ -157,6 +160,11 @@ export default function FlowPage() {
   const rawMode = searchParams.get("mode");
   const mode: Mode = normalizeMode(rawMode ?? "short");
   const itemNameParam = searchParams.get("itemName") ?? "";
+  const searchClueParam = searchParams.get("searchClue") ?? "";
+  const clarificationKind = searchParams.get("searchClueClarificationKind");
+  const clarificationValue = searchParams.get("searchClueClarificationValue");
+  const clarificationLabel = searchParams.get("searchClueClarificationLabel");
+  const clarificationSkipped = searchParams.get("skipSearchClueClarification") === "1";
   const priceYenParam = searchParams.get("priceYen") ?? "";
   const itemName = itemNameParam || undefined;
   const priceYen = parsePriceYen(priceYenParam);
@@ -176,6 +184,20 @@ export default function FlowPage() {
   const [draftGoodsClass, setDraftGoodsClass] = useState<GoodsClass>(goodsClass);
   const [draftDecisiveness, setDraftDecisiveness] = useState<Decisiveness>(decisiveness);
 
+  const searchClueClarification: SearchClueClarification | null =
+    clarificationKind && clarificationValue && clarificationLabel
+      ? {
+          kind: clarificationKind as SearchClueClarification["kind"],
+          value: clarificationValue,
+          label: clarificationLabel,
+        }
+      : null;
+  const baseParsedSearchClues = useMemo(() => parseSearchClues(searchClueParam), [searchClueParam]);
+  const clarificationPrompt = useMemo(() => getSearchClueClarification(baseParsedSearchClues), [baseParsedSearchClues]);
+  const parsedSearchClues = useMemo(
+    () => parseSearchClues(searchClueParam, searchClueClarification),
+    [searchClueClarification, searchClueParam],
+  );
   const useCase = itemKind === "game_billing" ? "game_billing" : "merch";
   const initialDraft = useMemo(() => {
     if (typeof window === "undefined") return null;
@@ -201,6 +223,9 @@ export default function FlowPage() {
         : "fresh";
   const [currentIndex, setCurrentIndex] = useState(initialDraft?.status === "restored" ? initialDraft.draft.currentQuestionIndex : 0);
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>(initialDraft?.status === "restored" ? (initialDraft.draft.answers ?? {}) : {});
+  const shouldShowClarification = Boolean(
+    currentIndex === 0 && searchClueParam.trim() && clarificationPrompt && !searchClueClarification && !clarificationSkipped && parsedSearchClues.mode === "fuzzy",
+  );
 
   const flowResolution = useMemo(
     () =>
@@ -211,10 +236,21 @@ export default function FlowPage() {
         goodsSubtype,
         useCase,
         answers,
-        meta: { itemName, priceYen, deadline, itemKind, goodsSubtype, goodsClass, basketId, basketItemId },
+        meta: {
+          itemName,
+          searchClueRaw: searchClueParam || undefined,
+          parsedSearchClues: parsedSearchClues.mode === "empty" ? undefined : parsedSearchClues,
+          priceYen,
+          deadline,
+          itemKind,
+          goodsSubtype,
+          goodsClass,
+          basketId,
+          basketItemId,
+        },
         styleMode,
       }),
-    [answers, basketId, basketItemId, deadline, goodsClass, goodsSubtype, itemKind, itemName, mode, priceYen, styleMode, useCase],
+    [answers, basketId, basketItemId, deadline, goodsClass, goodsSubtype, itemKind, itemName, mode, parsedSearchClues, priceYen, searchClueParam, styleMode, useCase],
   );
   const questions = flowResolution.questions;
 
@@ -236,13 +272,15 @@ export default function FlowPage() {
   const mercariKeywordResult = useMemo(
     () =>
       buildMercariKeyword({
-        rawSearchWord: itemName,
+        rawSearchWord: (itemName ?? searchClueParam) || undefined,
         itemName,
         itemKind,
         goodsClass,
         answers,
         meta: {
           itemName,
+          searchClueRaw: searchClueParam || undefined,
+          parsedSearchClues: parsedSearchClues.mode === "empty" ? undefined : parsedSearchClues,
           itemKind,
           goodsClass,
           deadline,
@@ -252,7 +290,7 @@ export default function FlowPage() {
           basketItemId,
         },
       }),
-    [answers, basketId, basketItemId, deadline, goodsClass, goodsSubtype, itemKind, itemName, priceYen],
+    [answers, basketId, basketItemId, deadline, goodsClass, goodsSubtype, itemKind, itemName, parsedSearchClues, priceYen, searchClueParam],
   );
   const showQuestionMercariCta =
     currentQuestion?.id === "q_hot_cold" &&
@@ -353,6 +391,8 @@ export default function FlowPage() {
         goodsClass,
         styleMode,
         itemName,
+        searchClueRaw: searchClueParam || undefined,
+        parsedSearchClues: parsedSearchClues.mode === "empty" ? undefined : parsedSearchClues,
         priceYen,
         deadline,
       },
@@ -365,7 +405,7 @@ export default function FlowPage() {
       diagnosticTrace: flowResolution.diagnosticTrace,
       persistenceState,
     });
-  }, [answers, currentIndex, deadline, decisiveness, draftId, flowResolution.diagnosticTrace, goodsClass, itemKind, itemName, mode, persistenceState, priceYen, questions, styleMode]);
+  }, [answers, currentIndex, deadline, decisiveness, draftId, flowResolution.diagnosticTrace, goodsClass, itemKind, itemName, mode, parsedSearchClues, persistenceState, priceYen, questions, searchClueParam, styleMode]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !Number.isFinite(priceYen ?? Number.NaN) || !itemKind) return;
@@ -458,7 +498,18 @@ export default function FlowPage() {
     const runId = crypto.randomUUID();
     const output = evaluate({
       questionSet: { ...merch_v2_ja, questions },
-      meta: { itemName, priceYen, deadline, itemKind, goodsSubtype, goodsClass, basketId, basketItemId },
+      meta: {
+        itemName,
+        searchClueRaw: searchClueParam || undefined,
+        parsedSearchClues: parsedSearchClues.mode === "empty" ? undefined : parsedSearchClues,
+        priceYen,
+        deadline,
+        itemKind,
+        goodsSubtype,
+        goodsClass,
+        basketId,
+        basketItemId,
+      },
       answers: normalizedAnswers,
       mode,
       decisiveness,
@@ -481,7 +532,18 @@ export default function FlowPage() {
       useCase,
       mode,
       decisiveness,
-      meta: { itemName, priceYen, deadline, itemKind, goodsSubtype, goodsClass, basketId, basketItemId },
+      meta: {
+        itemName,
+        searchClueRaw: searchClueParam || undefined,
+        parsedSearchClues: parsedSearchClues.mode === "empty" ? undefined : parsedSearchClues,
+        priceYen,
+        deadline,
+        itemKind,
+        goodsSubtype,
+        goodsClass,
+        basketId,
+        basketItemId,
+      },
       answers: normalizedAnswers,
       gameBillingAnswers: useCase === "game_billing" ? normalizedAnswers : undefined,
       output,
@@ -489,6 +551,10 @@ export default function FlowPage() {
       diagnosticTrace: {
         ...flowResolution.diagnosticTrace,
         resultInputsSummary: output.diagnosticTrace?.resultInputsSummary,
+        searchClue: toSearchClueDiagnostics(parsedSearchClues, {
+          clarificationShown: Boolean(baseParsedSearchClues.raw.trim() && clarificationPrompt),
+          clarificationResolved: Boolean(searchClueClarification),
+        }),
         persistence: {
           state: persistenceState,
           restoreSourceDraftId: persistenceState === "restored" ? draftId : undefined,
@@ -517,6 +583,24 @@ export default function FlowPage() {
       numBacktracksRef.current += 1;
       setCurrentIndex((prev) => prev - 1);
     }
+  };
+
+  const handleClarificationSelect = (option: SearchClueClarification) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("searchClueClarificationKind", option.kind);
+    params.set("searchClueClarificationValue", option.value);
+    params.set("searchClueClarificationLabel", option.label);
+    params.delete("skipSearchClueClarification");
+    router.replace(`/flow?${params.toString()}`);
+  };
+
+  const handleSkipClarification = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("skipSearchClueClarification", "1");
+    params.delete("searchClueClarificationKind");
+    params.delete("searchClueClarificationValue");
+    params.delete("searchClueClarificationLabel");
+    router.replace(`/flow?${params.toString()}`);
   };
 
   if (!currentQuestion) {
@@ -569,6 +653,35 @@ export default function FlowPage() {
         </div>
         <Progress value={currentIndex + 1} max={questions.length} />
       </header>
+
+      {shouldShowClarification && clarificationPrompt ? (
+        <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-accent">手がかりの補足（1回だけ）</p>
+            <h2 className={sectionTitleClass}>{clarificationPrompt.title}</h2>
+            <p className={helperTextClass}>入力: {searchClueParam}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {clarificationPrompt.options.map((option) => (
+              <button
+                key={`${option.kind}:${option.value}`}
+                type="button"
+                onClick={() => handleClarificationSelect(option)}
+                className="min-h-11 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50 dark:border-white/15 dark:bg-[#111827] dark:text-zinc-50"
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={handleSkipClarification}
+            className="text-sm font-semibold text-slate-600 underline underline-offset-4 hover:text-slate-900 dark:text-zinc-300 dark:hover:text-zinc-100"
+          >
+            このまま進む
+          </button>
+        </Card>
+      ) : null}
 
       <Card className="space-y-4">
         <div className="space-y-2">

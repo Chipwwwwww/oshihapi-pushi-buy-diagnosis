@@ -10,6 +10,7 @@ import type { ProviderId, ProviderRole } from "@/src/oshihapi/providerRegistry";
 import { getProviderConfig, getProviderRankBase } from "@/src/oshihapi/providerRegistry";
 import { getAiModel, getGeminiApiKey, isAiRerankEnabled } from "@/src/oshihapi/ai/provider";
 import { rerankProvidersWithAI, type AiRerankAction, type AiRerankAdjustment, type AiRerankRequest } from "@/src/oshihapi/ai/rerankProviders";
+import type { ParsedSearchClues } from "@/src/oshihapi/input/types";
 
 export type ProviderVisibility = "public" | "internal";
 
@@ -69,6 +70,7 @@ type PlannerInput = {
   amiamiDestination: string | null;
   gamersDestination: string | null;
   hmvDestination: string | null;
+  searchClues?: ParsedSearchClues;
 };
 
 type AiEligibility = {
@@ -117,8 +119,11 @@ function isRakutenScenarioEligible(input: Pick<PlannerInput, "itemKind" | "goods
   return input.itemKind === "preorder" || input.itemKind === "goods";
 }
 
-function getScenarioRankDelta(providerId: ProviderId, input: Pick<PlannerInput, "itemKind" | "goodsClass">): number {
-  const { itemKind, goodsClass } = input;
+function getScenarioRankDelta(providerId: ProviderId, input: Pick<PlannerInput, "itemKind" | "goodsClass" | "searchClues">): number {
+  const { itemKind, goodsClass, searchClues } = input;
+
+  const hasBonusClue = Boolean(searchClues?.bonusClues.length);
+  const hasMediaClue = Boolean(searchClues?.itemTypeCandidates.some((candidate) => candidate === "Blu-ray" || candidate === "CD"));
 
   if (goodsClass === "media") {
     if (providerId === "hmv") return -34;
@@ -165,11 +170,23 @@ function getScenarioRankDelta(providerId: ProviderId, input: Pick<PlannerInput, 
     if (providerId === "rakuten") return 6;
   }
 
+  if (hasBonusClue) {
+    if (providerId === "gamers" || providerId === "animate") return -4;
+    if (providerId === "mercari") return 4;
+  }
+
+  if (hasMediaClue && providerId === "hmv") return -6;
+
   return 0;
 }
 
-function buildShortReason(providerId: ProviderId, input: Pick<PlannerInput, "itemKind" | "goodsClass">): string {
-  const { itemKind, goodsClass } = input;
+function buildShortReason(providerId: ProviderId, input: Pick<PlannerInput, "itemKind" | "goodsClass" | "searchClues">): string {
+  const { itemKind, goodsClass, searchClues } = input;
+
+  if (searchClues?.bonusClues.length) {
+    if (providerId === "gamers") return "特典条件の確認向き";
+    if (providerId === "animate") return "店舗特典の確認向き";
+  }
 
   if (goodsClass === "media") {
     if (providerId === "hmv") return "媒体在庫を優先確認";
@@ -277,6 +294,9 @@ function getCandidateSignals(candidate: ProviderCandidate, input: PlannerInput):
   if (candidate.providerId === "amazon") signals.add("broad_catalog");
   if (candidate.providerId === "mercari" || candidate.providerId === "surugaya") signals.add("secondary_market");
   if ((input.resultTags ?? []).includes("bonus_pressure_high")) signals.add("bonus_sensitive");
+  if (input.searchClues?.bonusClues.length) signals.add("search_bonus_clue");
+  if (input.searchClues?.itemTypeCandidates.includes("Blu-ray")) signals.add("search_bluray_clue");
+  if (input.searchClues?.workCandidates.length) signals.add("search_work_clue");
 
   return [...signals];
 }

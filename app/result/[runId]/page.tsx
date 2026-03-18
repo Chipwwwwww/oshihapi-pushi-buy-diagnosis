@@ -66,6 +66,7 @@ type RakutenSearchItem = {
 
 function getDefaultSearchWord(run: DecisionRun): string {
   const itemName = run.meta.itemName?.trim() ?? "";
+  const parsedSearchClues = run.meta.parsedSearchClues;
   const kind = run.meta.itemKind ?? "goods";
   if (run.useCase === "game_billing") {
     const billingType = typeof run.gameBillingAnswers?.gb_q2_type === "string"
@@ -75,6 +76,17 @@ function getDefaultSearchWord(run: DecisionRun): string {
   }
   if (itemName) return `${itemName} ${kind}`.trim();
 
+  if (parsedSearchClues) {
+    const clueParts = [
+      ...parsedSearchClues.workCandidates,
+      ...parsedSearchClues.characterCandidates,
+      ...parsedSearchClues.itemTypeCandidates,
+      ...parsedSearchClues.bonusClues,
+      ...parsedSearchClues.editionClues,
+    ].filter(Boolean);
+    if (clueParts.length > 0) return clueParts.join(" ");
+    if (parsedSearchClues.raw.trim()) return parsedSearchClues.raw.trim();
+  }
 
   const item = (run.answers.item ?? {}) as Record<string, string | undefined>;
   const candidates = [
@@ -284,6 +296,7 @@ export default function ResultPage() {
             amiamiDestination,
             gamersDestination,
             hmvDestination,
+            searchClues: run.meta.parsedSearchClues,
           }),
         });
         if (!response.ok) {
