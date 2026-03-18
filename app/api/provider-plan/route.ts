@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { findAmazonAffiliateDestinationById } from "@/src/oshihapi/amazonAffiliateConfig";
 import { planProviderCards } from "@/src/oshihapi/providerPlanner";
 import type { ParsedSearchClues } from "@/src/oshihapi/input/types";
+import type { GoodsClass, ItemKind, Decision } from "@/src/oshihapi/model";
 
 type ProviderPlanRequest = {
   runId?: string;
@@ -25,6 +26,22 @@ function isObjectRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+const ITEM_KIND_VALUES: ItemKind[] = ["goods", "blind_draw", "used", "preorder", "ticket", "game_billing"];
+const GOODS_CLASS_VALUES: GoodsClass[] = ["small_collection", "paper", "wearable", "display_large", "tech", "media", "itabag_badge"];
+const DECISION_VALUES: Decision[] = ["BUY", "THINK", "SKIP"];
+
+function isItemKind(value: string): value is ItemKind {
+  return ITEM_KIND_VALUES.includes(value as ItemKind);
+}
+
+function isGoodsClass(value: string): value is GoodsClass {
+  return GOODS_CLASS_VALUES.includes(value as GoodsClass);
+}
+
+function isDecision(value: string): value is Decision {
+  return DECISION_VALUES.includes(value as Decision);
+}
+
 export async function POST(request: NextRequest) {
   let payload: unknown;
   try {
@@ -41,9 +58,9 @@ export async function POST(request: NextRequest) {
   const runId = payload.runId;
   const result = await planProviderCards({
     runId,
-    itemKind: typeof body.itemKind === "string" ? (body.itemKind as any) : undefined,
-    goodsClass: typeof body.goodsClass === "string" ? (body.goodsClass as any) : undefined,
-    verdict: typeof body.verdict === "string" ? (body.verdict as any) : undefined,
+    itemKind: typeof body.itemKind === "string" && isItemKind(body.itemKind) ? body.itemKind : undefined,
+    goodsClass: typeof body.goodsClass === "string" && isGoodsClass(body.goodsClass) ? body.goodsClass : undefined,
+    verdict: typeof body.verdict === "string" && isDecision(body.verdict) ? body.verdict : undefined,
     confidence: typeof body.confidence === "number" ? body.confidence : undefined,
     resultTags: Array.isArray(body.resultTags) ? body.resultTags.filter((value): value is string => typeof value === "string") : undefined,
     mercariRelevant: body.mercariRelevant === true,
