@@ -347,7 +347,8 @@ function isSmallCollectionFamily(goodsClass?: GoodsClass): boolean {
 }
 
 function hasBonusSensitiveSignals(input: Pick<PlannerInput, "resultTags" | "searchClues">): boolean {
-  return Boolean((input.resultTags ?? []).includes("bonus_pressure_high") || input.searchClues?.bonusClues.length);
+  if ((input.resultTags ?? []).includes("bonus_pressure_high")) return true;
+  return Boolean(input.searchClues?.bonusClues.some((clue) => clue === "特典"));
 }
 
 function getCandidateSignals(candidate: ProviderCandidate, input: PlannerInput): string[] {
