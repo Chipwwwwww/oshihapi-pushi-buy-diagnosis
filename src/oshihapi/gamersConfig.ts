@@ -3,7 +3,7 @@ import type { GoodsClass, ItemKind } from "@/src/oshihapi/model";
 export const GAMERS_CANONICAL_AFFILIATE_URL =
   "https://px.a8.net/svt/ejp?a8mat=4AZH4C+CVSP0Y+4AHY+5YJRM";
 
-const GAMERS_ITEM_KIND_ALLOWLIST: ItemKind[] = ["goods", "blind_draw"];
+const GAMERS_ITEM_KIND_ALLOWLIST: ItemKind[] = ["goods", "blind_draw", "preorder"];
 const GAMERS_GOODS_CLASS_ALLOWLIST: GoodsClass[] = ["paper", "small_collection", "itabag_badge", "wearable"];
 
 export function isGamersRelevantScenario(input: {

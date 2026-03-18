@@ -775,26 +775,6 @@ export default function ResultPage() {
         </Card>
       ) : null}
 
-      <div id="market-check" style={{ scrollMarginTop: "96px" }}>
-        <MarketCheckCard
-          runId={run.runId}
-          defaultSearchWord={defaultSearchWord}
-          itemKind={run.meta.itemKind}
-          goodsClass={run.meta.goodsClass}
-          verdict={run.output.decision}
-          mercariEnabled={mercariRelevant}
-          onMercariClick={() => logActionClick("mercari_search_click")}
-          showBecausePricecheck={showBecausePricecheck || hasPlatformMarketAction || run.useCase === "game_billing"}
-          title={run.useCase === "game_billing" ? "情報チェック（評価・天井など）" : undefined}
-          description={run.useCase === "game_billing" ? "※判定は変わりません。外部で情報を確認してから決めましょう。" : undefined}
-          placeholder={
-            run.useCase === "game_billing"
-              ? "ゲーム名 + 施策名（例：◯◯ 限定ガチャ 評価 / ◯◯ 天井）"
-              : undefined
-          }
-        />
-      </div>
-
       <ProviderComparisonModule
         cards={providerPlan.cards}
         onProviderClick={(providerId) => {
@@ -821,6 +801,26 @@ export default function ResultPage() {
           logActionClick(`provider_click:${providerId}`);
         }}
       />
+
+      <div id="market-check" style={{ scrollMarginTop: "96px" }}>
+        <MarketCheckCard
+          runId={run.runId}
+          defaultSearchWord={defaultSearchWord}
+          itemKind={run.meta.itemKind}
+          goodsClass={run.meta.goodsClass}
+          verdict={run.output.decision}
+          mercariEnabled={mercariRelevant}
+          onMercariClick={() => logActionClick("mercari_search_click")}
+          showBecausePricecheck={showBecausePricecheck || hasPlatformMarketAction || run.useCase === "game_billing"}
+          title={run.useCase === "game_billing" ? "情報チェック（評価・天井など）" : undefined}
+          description={run.useCase === "game_billing" ? "※判定は変わりません。外部で情報を確認してから決めましょう。" : undefined}
+          placeholder={
+            run.useCase === "game_billing"
+              ? "ゲーム名 + 施策名（例：◯◯ 限定ガチャ 評価 / ◯◯ 天井）"
+              : undefined
+          }
+        />
+      </div>
 
       <Card className="space-y-4">
         <h2 className={sectionTitleClass}>このあとどうした？</h2>
