@@ -111,7 +111,7 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
     externalSiteNote: "※外部サイト（ゲーマーズ）に移動します",
     allowlistedDomains: ["px.a8.net"],
     defaultRank: 37,
-    supportedItemKinds: ["goods", "blind_draw"],
+    supportedItemKinds: ["goods", "blind_draw", "preorder"],
     supportedGoodsClasses: ["paper", "small_collection", "itabag_badge", "wearable"],
   },
   amazon: {
