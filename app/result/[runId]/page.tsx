@@ -47,7 +47,7 @@ import { resolveSurugayaAffiliateDestination } from "@/src/oshihapi/surugayaConf
 import { resolveAmiamiAffiliateDestination } from "@/src/oshihapi/amiamiConfig";
 import { resolveGamersAffiliateDestination } from "@/src/oshihapi/gamersConfig";
 import { resolveHmvAffiliateDestination } from "@/src/oshihapi/hmvConfig";
-import { planProviderCards } from "@/src/oshihapi/providerPlanner";
+import type { ProviderCandidate, ProviderDiagnostics } from "@/src/oshihapi/providerPlanner";
 import ProviderComparisonModule from "@/components/ProviderComparisonModule";
 
 const BASKET_STORAGE_KEY = "oshihapi_basket_last";
@@ -145,6 +145,7 @@ export default function ResultPage() {
   const [showAllActions, setShowAllActions] = useState(false);
   const [rakutenItems, setRakutenItems] = useState<RakutenSearchItem[]>([]);
   const [rakutenReady, setRakutenReady] = useState(false);
+  const [providerPlan, setProviderPlan] = useState<{ cards: ProviderCandidate[]; diagnostics: ProviderDiagnostics | null }>({ cards: [], diagnostics: null });
   const [styleMode, setStyleMode] = useState<StyleMode>(() => getStyleModeFromSearchParams(searchParams) ?? "standard");
 
   const runId = params?.runId;
@@ -254,23 +255,62 @@ export default function ResultPage() {
       }),
     [run?.meta.goodsClass, run?.meta.itemKind],
   );
-  const providerPlan = useMemo(() => {
-    if (!run || !rakutenReady) return { cards: [], diagnostics: null };
-    const planned = planProviderCards({
-      runId: run.runId,
-      itemKind: run.meta.itemKind,
-      goodsClass: run.meta.goodsClass,
-      verdict: run.output.decision,
-      mercariRelevant,
-      mercariKeyword: mercariKeywordResult.keyword,
-      amazonDestination,
-      rakutenAffiliateUrl: rakutenItem?.affiliateUrl ?? null,
-      surugayaDestination,
-      amiamiDestination,
-      gamersDestination,
-      hmvDestination,
-    });
-    return { cards: planned.cards, diagnostics: planned.diagnostics };
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchProviderPlan = async () => {
+      if (!run || !rakutenReady) {
+        if (!cancelled) setProviderPlan({ cards: [], diagnostics: null });
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/provider-plan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+          body: JSON.stringify({
+            runId: run.runId,
+            itemKind: run.meta.itemKind,
+            goodsClass: run.meta.goodsClass,
+            verdict: run.output.decision,
+            confidence: run.output.confidence,
+            resultTags: run.output.diagnosticTrace?.resultInputsSummary?.tags ?? [],
+            mercariRelevant,
+            mercariKeyword: mercariKeywordResult.keyword,
+            amazonDestination,
+            rakutenAffiliateUrl: rakutenItem?.affiliateUrl ?? null,
+            surugayaDestination,
+            amiamiDestination,
+            gamersDestination,
+            hmvDestination,
+          }),
+        });
+        if (!response.ok) {
+          if (!cancelled) setProviderPlan({ cards: [], diagnostics: null });
+          return;
+        }
+        const payload = (await response.json()) as {
+          ok?: boolean;
+          cards?: ProviderCandidate[];
+          diagnostics?: ProviderDiagnostics | null;
+        };
+        if (!cancelled) {
+          setProviderPlan({
+            cards: Array.isArray(payload.cards) ? payload.cards : [],
+            diagnostics: payload.diagnostics ?? null,
+          });
+        }
+      } catch {
+        if (!cancelled) setProviderPlan({ cards: [], diagnostics: null });
+      }
+    };
+
+    void fetchProviderPlan();
+
+    return () => {
+      cancelled = true;
+    };
   }, [
     amazonDestination,
     mercariKeywordResult.keyword,

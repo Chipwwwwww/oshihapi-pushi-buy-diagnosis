@@ -8,6 +8,8 @@ import { isTowerRecordsRelevantScenario, resolveTowerRecordsAffiliateDestination
 import { isYahooShoppingRelevantScenario, resolveYahooShoppingAffiliateDestination } from "@/src/oshihapi/yahooShoppingConfig";
 import type { ProviderId, ProviderRole } from "@/src/oshihapi/providerRegistry";
 import { getProviderConfig, getProviderRankBase } from "@/src/oshihapi/providerRegistry";
+import { getAiModel, getGeminiApiKey, isAiRerankEnabled } from "@/src/oshihapi/ai/provider";
+import { rerankProvidersWithAI, type AiRerankAction, type AiRerankAdjustment, type AiRerankRequest } from "@/src/oshihapi/ai/rerankProviders";
 
 export type ProviderVisibility = "public" | "internal";
 
@@ -43,6 +45,13 @@ export type ProviderDiagnostics = {
     visibility: ProviderVisibility;
     suppressReason?: string;
   }>;
+  aiRerankEligible: boolean;
+  aiRerankEnabled: boolean;
+  aiRerankInvoked: boolean;
+  aiRerankApplied: boolean;
+  aiRerankModel?: string;
+  aiRerankFallbackReason?: string;
+  aiRerankAdjustments: Array<{ providerId: ProviderId; action: AiRerankAction; reason: string }>;
 };
 
 type PlannerInput = {
@@ -50,6 +59,8 @@ type PlannerInput = {
   itemKind?: ItemKind;
   goodsClass?: GoodsClass;
   verdict?: Decision;
+  confidence?: number;
+  resultTags?: string[];
   mercariRelevant: boolean;
   mercariKeyword: string | null;
   amazonDestination: AmazonAffiliateDestination | null;
@@ -58,6 +69,11 @@ type PlannerInput = {
   amiamiDestination: string | null;
   gamersDestination: string | null;
   hmvDestination: string | null;
+};
+
+type AiEligibility = {
+  eligible: boolean;
+  reason: "media_preorder" | "low_confidence" | "recommended_crowded" | "ambiguous_candidates" | "not_needed";
 };
 
 const PLANNED_PROVIDER_IDS: ProviderId[] = [
@@ -74,6 +90,8 @@ const PLANNED_PROVIDER_IDS: ProviderId[] = [
   "a8Generic",
 ];
 
+const TIER_ORDER: ProviderTier[] = ["recommended", "okay", "lowProbability"];
+
 function buildOutHref(params: Record<string, string | undefined>): string {
   const query = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
@@ -86,7 +104,6 @@ function verdictBoost(verdict?: Decision): number {
   if (verdict === "THINK") return -2;
   return 0;
 }
-
 
 function isAmazonScenarioEligible(input: Pick<PlannerInput, "itemKind" | "goodsClass">): boolean {
   if (!input.itemKind || input.itemKind === "ticket" || input.itemKind === "used") return false;
@@ -231,10 +248,169 @@ function isPubliclyRenderable(candidate: ProviderCandidate): boolean {
   return candidate.destinationReady;
 }
 
-export function planProviderCards(input: PlannerInput): {
+function normalizeConfidence(confidence?: number): number {
+  if (!Number.isFinite(confidence)) return 0;
+  const numeric = Number(confidence);
+  if (numeric <= 1) return Math.max(0, Math.min(1, numeric));
+  return Math.max(0, Math.min(1, numeric / 100));
+}
+
+function getTierIndex(tier: ProviderTier): number {
+  return TIER_ORDER.indexOf(tier);
+}
+
+function toTier(index: number): ProviderTier | null {
+  return TIER_ORDER[index] ?? null;
+}
+
+function getCandidateSignals(candidate: ProviderCandidate, input: PlannerInput): string[] {
+  const signals = new Set<string>();
+  const config = getProviderConfig(candidate.providerId);
+
+  if (input.goodsClass === "media" && candidate.providerId === "hmv") signals.add("media_fit");
+  if (input.itemKind === "preorder" && (candidate.providerId === "amiami" || candidate.providerId === "gamers")) signals.add("preorder_fit");
+  if (config.role === "general_new") signals.add("general_new");
+  if (config.role === "used_market" || config.role === "used_shop") signals.add("used_fallback");
+  if (candidate.destinationReady) signals.add("destination_ready");
+  if (candidate.rank <= 45) signals.add("high_base_rank");
+  if (candidate.tier === "recommended") signals.add("currently_recommended");
+  if (candidate.providerId === "amazon") signals.add("broad_catalog");
+  if (candidate.providerId === "mercari" || candidate.providerId === "surugaya") signals.add("secondary_market");
+  if ((input.resultTags ?? []).includes("bonus_pressure_high")) signals.add("bonus_sensitive");
+
+  return [...signals];
+}
+
+function buildAiRequest(input: PlannerInput, cards: Array<ProviderCandidate & { tier: ProviderTier }>): AiRerankRequest {
+  const normalizedConfidence = normalizeConfidence(input.confidence);
+  const tags = input.resultTags ?? [];
+
+  return {
+    scenario: {
+      itemKind: input.itemKind,
+      goodsClass: input.goodsClass,
+      confidence: Number(normalizedConfidence.toFixed(2)),
+      bonusSensitive: tags.includes("bonus_pressure_high"),
+      usedIntent: input.itemKind === "used",
+      mediaIntent: input.goodsClass === "media",
+    },
+    candidates: cards.map((candidate) => ({
+      provider: candidate.providerId,
+      baseTier: candidate.tier,
+      score: Math.max(0, 100 - candidate.rank),
+      hardBlocked: false,
+      signals: getCandidateSignals(candidate, input),
+    })),
+    rules: {
+      cannotIntroduceNewProviders: true,
+      cannotOverrideHardBlocks: true,
+      maxTierChange: 1,
+    },
+  };
+}
+
+function getAiEligibility(input: PlannerInput, cards: Array<ProviderCandidate & { tier: ProviderTier }>): AiEligibility {
+  if (cards.length < 2) return { eligible: false, reason: "not_needed" };
+  if (input.goodsClass === "media" && input.itemKind === "preorder") return { eligible: true, reason: "media_preorder" };
+
+  const confidence = normalizeConfidence(input.confidence);
+  if (confidence > 0 && confidence <= 0.62) return { eligible: true, reason: "low_confidence" };
+
+  const recommendedCount = cards.filter((candidate) => candidate.tier === "recommended").length;
+  if (recommendedCount >= 3) return { eligible: true, reason: "recommended_crowded" };
+
+  const sortedRanks = cards.map((candidate) => candidate.rank).sort((a, b) => a - b);
+  const topSpread = (sortedRanks[2] ?? sortedRanks[1] ?? sortedRanks[0]) - sortedRanks[0];
+  if (topSpread <= 6) return { eligible: true, reason: "ambiguous_candidates" };
+
+  return { eligible: false, reason: "not_needed" };
+}
+
+function applyAdjustment(baseTier: ProviderTier, action: AiRerankAction): ProviderTier | null {
+  const currentIndex = getTierIndex(baseTier);
+  if (currentIndex === -1) return null;
+  if (action === "keep") return baseTier;
+  if (action === "promote_one_level") return toTier(currentIndex - 1);
+  if (action === "demote_one_level") return toTier(currentIndex + 1);
+  return null;
+}
+
+function applyRecommendedCap(cards: Array<ProviderCandidate & { tier: ProviderTier }>, capRecommendedTo?: 0 | 1 | 2): Array<ProviderCandidate & { tier: ProviderTier }> {
+  if (capRecommendedTo == null) return cards;
+  const recommended = cards
+    .filter((card) => card.tier === "recommended")
+    .sort((a, b) => a.rank - b.rank || a.providerId.localeCompare(b.providerId));
+
+  if (recommended.length <= capRecommendedTo) return cards;
+
+  const demoted = new Set(recommended.slice(capRecommendedTo).map((card) => card.providerId));
+  return cards.map((card) => (demoted.has(card.providerId) ? { ...card, tier: "okay" } : card));
+}
+
+function sortTieredCards(cards: Array<ProviderCandidate & { tier: ProviderTier }>): Array<ProviderCandidate & { tier: ProviderTier }> {
+  return [...cards].sort((a, b) => {
+    const tierDelta = getTierIndex(a.tier) - getTierIndex(b.tier);
+    if (tierDelta !== 0) return tierDelta;
+    return a.rank - b.rank || a.providerId.localeCompare(b.providerId);
+  });
+}
+
+function buildDiagnostics(
+  allCandidates: ProviderCandidate[],
+  finalCards: Array<ProviderCandidate & { tier: ProviderTier }>,
+  ai: {
+    eligible: boolean;
+    enabled: boolean;
+    invoked: boolean;
+    applied: boolean;
+    model?: string;
+    fallbackReason?: string;
+    adjustments: AiRerankAdjustment[];
+  },
+): ProviderDiagnostics {
+  return {
+    eligibleProviders: allCandidates.filter((candidate) => candidate.destinationReady).map((candidate) => candidate.providerId),
+    suppressedProviders: allCandidates
+      .filter((candidate) => !finalCards.some((entry) => entry.providerId === candidate.providerId))
+      .map((candidate) => ({
+        providerId: candidate.providerId,
+        reason:
+          candidate.suppressReason ??
+          (candidate.destinationReady ? "tier_filtered" : getProviderConfig(candidate.providerId).state !== "live" ? "not_live" : "not_public"),
+      })),
+    renderedProviders: finalCards.map((candidate) => candidate.providerId),
+    providerRanks: allCandidates.map((candidate) => ({ providerId: candidate.providerId, rank: candidate.rank })),
+    destinationAvailability: allCandidates.map((candidate) => ({
+      providerId: candidate.providerId,
+      ready: candidate.destinationReady,
+    })),
+    candidateEvaluations: allCandidates.map((candidate) => ({
+      providerId: candidate.providerId,
+      role: getProviderConfig(candidate.providerId).role,
+      scenarioEligible: candidate.scenarioEligible ?? candidate.destinationReady,
+      rank: candidate.rank,
+      destinationReady: candidate.destinationReady,
+      visibility: candidate.visibility,
+      suppressReason: candidate.suppressReason,
+    })),
+    aiRerankEligible: ai.eligible,
+    aiRerankEnabled: ai.enabled,
+    aiRerankInvoked: ai.invoked,
+    aiRerankApplied: ai.applied,
+    aiRerankModel: ai.model,
+    aiRerankFallbackReason: ai.fallbackReason,
+    aiRerankAdjustments: ai.adjustments.map((adjustment) => ({
+      providerId: adjustment.provider,
+      action: adjustment.action,
+      reason: adjustment.reason,
+    })),
+  };
+}
+
+export async function planProviderCards(input: PlannerInput): Promise<{
   cards: ProviderCandidate[];
   diagnostics: ProviderDiagnostics;
-} {
+}> {
   const allCandidates: ProviderCandidate[] = PLANNED_PROVIDER_IDS.map((providerId) => {
     const config = getProviderConfig(providerId);
     const baseRank = getProviderRankBase(providerId) + verdictBoost(input.verdict) + getScenarioRankDelta(providerId, input);
@@ -296,7 +472,6 @@ export function planProviderCards(input: PlannerInput): {
       };
     }
 
-
     if (providerId === "amiami") {
       const scenarioEligible = isAmiamiRelevantScenario({
         itemKind: input.itemKind,
@@ -331,7 +506,6 @@ export function planProviderCards(input: PlannerInput): {
       };
     }
 
-
     if (providerId === "gamers") {
       const scenarioEligible = isGamersRelevantScenario({
         itemKind: input.itemKind,
@@ -365,7 +539,6 @@ export function planProviderCards(input: PlannerInput): {
             : "scenario_not_eligible",
       };
     }
-
 
     if (providerId === "hmv") {
       const scenarioEligible = isHmvRelevantScenario({ itemKind: input.itemKind, goodsClass: input.goodsClass });
@@ -545,39 +718,129 @@ export function planProviderCards(input: PlannerInput): {
     .sort((a, b) => a.rank - b.rank || a.providerId.localeCompare(b.providerId));
 
   const bestRank = rendered[0]?.rank ?? 0;
-  const tiered = rendered
+  const deterministicCards = rendered
     .map((candidate) => ({
       ...candidate,
       tier: mapTier(candidate.rank, bestRank, getProviderConfig(candidate.providerId).role),
     }))
     .filter((candidate): candidate is ProviderCandidate & { tier: ProviderTier } => candidate.tier != null);
 
-  const diagnostics: ProviderDiagnostics = {
-    eligibleProviders: allCandidates.filter((candidate) => candidate.destinationReady).map((candidate) => candidate.providerId),
-    suppressedProviders: allCandidates
-      .filter((candidate) => !tiered.some((entry) => entry.providerId === candidate.providerId))
-      .map((candidate) => ({
-        providerId: candidate.providerId,
-        reason:
-          candidate.suppressReason ??
-          (candidate.destinationReady ? "tier_filtered" : getProviderConfig(candidate.providerId).state !== "live" ? "not_live" : "not_public"),
-      })),
-    renderedProviders: tiered.map((candidate) => candidate.providerId),
-    providerRanks: allCandidates.map((candidate) => ({ providerId: candidate.providerId, rank: candidate.rank })),
-    destinationAvailability: allCandidates.map((candidate) => ({
-      providerId: candidate.providerId,
-      ready: candidate.destinationReady,
-    })),
-    candidateEvaluations: allCandidates.map((candidate) => ({
-      providerId: candidate.providerId,
-      role: getProviderConfig(candidate.providerId).role,
-      scenarioEligible: candidate.scenarioEligible ?? candidate.destinationReady,
-      rank: candidate.rank,
-      destinationReady: candidate.destinationReady,
-      visibility: candidate.visibility,
-      suppressReason: candidate.suppressReason,
-    })),
-  };
+  const eligibility = getAiEligibility(input, deterministicCards);
+  const aiEnabled = isAiRerankEnabled();
+  const aiModel = getAiModel();
 
-  return { cards: tiered, diagnostics };
+  if (!eligibility.eligible) {
+    return {
+      cards: sortTieredCards(deterministicCards),
+      diagnostics: buildDiagnostics(allCandidates, sortTieredCards(deterministicCards), {
+        eligible: false,
+        enabled: aiEnabled,
+        invoked: false,
+        applied: false,
+        model: aiModel,
+        fallbackReason: eligibility.reason,
+        adjustments: [],
+      }),
+    };
+  }
+
+  if (!aiEnabled) {
+    const finalCards = sortTieredCards(deterministicCards);
+    return {
+      cards: finalCards,
+      diagnostics: buildDiagnostics(allCandidates, finalCards, {
+        eligible: true,
+        enabled: false,
+        invoked: false,
+        applied: false,
+        model: aiModel,
+        fallbackReason: "disabled",
+        adjustments: [],
+      }),
+    };
+  }
+
+  if (!getGeminiApiKey()) {
+    const finalCards = sortTieredCards(deterministicCards);
+    return {
+      cards: finalCards,
+      diagnostics: buildDiagnostics(allCandidates, finalCards, {
+        eligible: true,
+        enabled: true,
+        invoked: false,
+        applied: false,
+        model: aiModel,
+        fallbackReason: "missing_api_key",
+        adjustments: [],
+      }),
+    };
+  }
+
+  const aiInput = buildAiRequest(input, deterministicCards);
+  const aiAttempt = await rerankProvidersWithAI(aiInput);
+  if (!aiAttempt.result) {
+    const finalCards = sortTieredCards(deterministicCards);
+    return {
+      cards: finalCards,
+      diagnostics: buildDiagnostics(allCandidates, finalCards, {
+        eligible: true,
+        enabled: true,
+        invoked: aiAttempt.invoked,
+        applied: false,
+        model: aiAttempt.model,
+        fallbackReason: aiAttempt.fallbackReason,
+        adjustments: [],
+      }),
+    };
+  }
+
+  const visibleProviders = new Set(deterministicCards.map((candidate) => candidate.providerId));
+  const baseByProvider = new Map(deterministicCards.map((candidate) => [candidate.providerId, candidate]));
+  const sanitizedAdjustments: AiRerankAdjustment[] = [];
+
+  for (const adjustment of aiAttempt.result.adjustments) {
+    if (!visibleProviders.has(adjustment.provider)) continue;
+    const base = baseByProvider.get(adjustment.provider);
+    if (!base?.tier) continue;
+    const nextTier = applyAdjustment(base.tier, adjustment.action);
+    if (!nextTier) continue;
+    if (Math.abs(getTierIndex(nextTier) - getTierIndex(base.tier)) > 1) continue;
+    sanitizedAdjustments.push(adjustment);
+  }
+
+  const sanitizedByProvider = new Map<ProviderId, AiRerankAdjustment>();
+  for (const adjustment of sanitizedAdjustments) {
+    if (!sanitizedByProvider.has(adjustment.provider)) {
+      sanitizedByProvider.set(adjustment.provider, adjustment);
+    }
+  }
+
+  let finalCards = deterministicCards.map((candidate) => {
+    const adjustment = sanitizedByProvider.get(candidate.providerId);
+    if (!adjustment) return candidate;
+    const nextTier = applyAdjustment(candidate.tier, adjustment.action);
+    if (!nextTier) return candidate;
+    return { ...candidate, tier: nextTier };
+  });
+
+  finalCards = applyRecommendedCap(finalCards, aiAttempt.result.capRecommendedTo);
+  finalCards = sortTieredCards(finalCards);
+
+  const aiApplied = finalCards.some((candidate) => {
+    const base = baseByProvider.get(candidate.providerId);
+    return base?.tier !== candidate.tier;
+  });
+
+  return {
+    cards: finalCards,
+    diagnostics: buildDiagnostics(allCandidates, finalCards, {
+      eligible: true,
+      enabled: true,
+      invoked: aiAttempt.invoked,
+      applied: aiApplied,
+      model: aiAttempt.model,
+      fallbackReason: aiApplied ? undefined : "no_legal_adjustment",
+      adjustments: [...sanitizedByProvider.values()],
+    }),
+  };
 }
