@@ -437,7 +437,7 @@ for (const mode of modes) {
   }
 }
 
-const goodsClasses: GoodsClass[] = ["small_collection", "paper", "wearable", "display_large", "tech", "itabag_badge"];
+const goodsClasses: GoodsClass[] = ["small_collection", "paper", "wearable", "display_large", "tech", "media", "itabag_badge"];
 for (const gc of goodsClasses) {
   scenarios.push({ id: `long_goods_${gc}`, mode: "long", itemKind: "goods", goodsClass: gc, styleMode: "standard", metaVariant: "full", minBranchHitIds: ["long_goods_class_addon"] });
   scenarios.push({ id: `long_used_${gc}`, mode: "long", itemKind: "used", goodsClass: gc, styleMode: "oshi", metaVariant: "full", minBranchHitIds: ["long_goods_class_addon"] });
@@ -458,6 +458,7 @@ assertUniqueQuestion(results, "long_goods_paper", "q_addon_goods_paper_care");
 assertUniqueQuestion(results, "long_goods_wearable", "q_addon_goods_wear_fit");
 assertUniqueQuestion(results, "long_goods_display_large", "q_addon_goods_display_space_plan");
 assertUniqueQuestion(results, "long_goods_tech", "q_addon_goods_tech_compat");
+assertUniqueQuestion(results, "long_goods_media", "q_addon_media_motive");
 assertUniqueQuestion(results, "long_goods_itabag_badge", "q_addon_goods_itabag_target");
 assertUniqueQuestion(results, "long_blind_draw", "q_addon_blind_draw_miss_pain");
 assertUniqueQuestion(results, "long_preorder", "q_addon_preorder_decay");

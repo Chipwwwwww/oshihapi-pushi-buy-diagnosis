@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-03-16T12:48:42.634Z",
-  "scenarioCount": 30,
+  "generatedAt": "2026-03-18T06:03:17.485Z",
+  "scenarioCount": 32,
   "scenarios": [
     {
       "id": "short_goods",
@@ -1018,6 +1018,91 @@
         "holdSubtype": "risk_uncertain",
         "confidence": 41,
         "score": 0.030321692307692338,
+        "reasonCount": 3,
+        "actionCount": 3
+      }
+    },
+    {
+      "id": "long_goods_media",
+      "questionCount": 20,
+      "shownQuestionIds": [
+        "q_storage_fit",
+        "q_storage_space",
+        "q_desire",
+        "q_goal",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_budget_pain",
+        "q_price_feel",
+        "q_motives_multi",
+        "q_hot_cold",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_alternative_plan",
+        "q_addon_common_info",
+        "q_addon_common_priority",
+        "q_addon_goods_compare",
+        "q_addon_goods_portability",
+        "q_addon_media_motive",
+        "q_addon_media_playback_space",
+        "q_addon_media_limited_pressure"
+      ],
+      "branchHits": [
+        "mode_long",
+        "long_goods_class_addon",
+        "goods_class_media",
+        "unknown_budget_or_short_or_lacks_meta"
+      ],
+      "result": {
+        "decision": "THINK",
+        "holdSubtype": "risk_uncertain",
+        "confidence": 42,
+        "score": 0.0517467692307693,
+        "reasonCount": 3,
+        "actionCount": 3
+      }
+    },
+    {
+      "id": "long_used_media",
+      "questionCount": 23,
+      "shownQuestionIds": [
+        "q_storage_fit",
+        "q_storage_space",
+        "q_desire",
+        "q_goal",
+        "q_urgency",
+        "q_rarity_restock",
+        "q_budget_pain",
+        "q_price_feel",
+        "q_motives_multi",
+        "q_hot_cold",
+        "q_regret_impulse",
+        "q_impulse_axis_short",
+        "q_alternative_plan",
+        "q_addon_common_info",
+        "q_addon_common_priority",
+        "q_addon_used_condition",
+        "q_addon_used_price_gap",
+        "q_addon_used_defect_return",
+        "q_addon_used_authenticity",
+        "q_addon_used_seller_trust",
+        "q_addon_media_motive",
+        "q_addon_media_playback_space",
+        "q_addon_media_limited_pressure"
+      ],
+      "branchHits": [
+        "mode_long",
+        "kind_used",
+        "long_goods_class_addon",
+        "goods_class_media",
+        "unknown_budget_or_short_or_lacks_meta",
+        "force_common_info"
+      ],
+      "result": {
+        "decision": "THINK",
+        "holdSubtype": "risk_uncertain",
+        "confidence": 41,
+        "score": 0.02887646153846157,
         "reasonCount": 3,
         "actionCount": 3
       }
