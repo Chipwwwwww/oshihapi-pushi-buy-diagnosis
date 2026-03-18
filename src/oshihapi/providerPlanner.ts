@@ -4,9 +4,10 @@ import { isAmiamiRelevantScenario } from "@/src/oshihapi/amiamiConfig";
 import { isHmvRelevantScenario } from "@/src/oshihapi/hmvConfig";
 import { isAnimateRelevantScenario, resolveAnimateAffiliateDestination } from "@/src/oshihapi/animateConfig";
 import { isGamersRelevantScenario } from "@/src/oshihapi/gamersConfig";
+import { isSurugayaRelevantScenario } from "@/src/oshihapi/surugayaConfig";
 import { isTowerRecordsRelevantScenario, resolveTowerRecordsAffiliateDestination } from "@/src/oshihapi/towerRecordsConfig";
 import { isYahooShoppingRelevantScenario, resolveYahooShoppingAffiliateDestination } from "@/src/oshihapi/yahooShoppingConfig";
-import type { ProviderId, ProviderRole } from "@/src/oshihapi/providerRegistry";
+import type { ProviderBuilderMode, ProviderId, ProviderRole, ProviderUniverseStatus } from "@/src/oshihapi/providerRegistry";
 import { getProviderConfig, getProviderRankBase } from "@/src/oshihapi/providerRegistry";
 import { getAiModel, getGeminiApiKey, isAiRerankEnabled } from "@/src/oshihapi/ai/provider";
 import { rerankProvidersWithAI, type AiRerankAction, type AiRerankAdjustment, type AiRerankRequest } from "@/src/oshihapi/ai/rerankProviders";
@@ -33,6 +34,10 @@ export type ProviderCandidate = {
 
 export type ProviderDiagnostics = {
   eligibleProviders: ProviderId[];
+  truthCandidates: ProviderId[];
+  truthRankedProviders: Array<{ providerId: ProviderId; rank: number }>;
+  deliveryCandidates: ProviderId[];
+  deliveryFilteredProviders: Array<{ providerId: ProviderId; reason: string }>;
   suppressedProviders: Array<{ providerId: ProviderId; reason: string }>;
   renderedProviders: ProviderId[];
   providerRanks: Array<{ providerId: ProviderId; rank: number }>;
@@ -40,10 +45,18 @@ export type ProviderDiagnostics = {
   candidateEvaluations: Array<{
     providerId: ProviderId;
     role: string;
+    universeStatus: ProviderUniverseStatus;
+    truthLayerEligible: boolean;
+    deliveryEnabled: boolean;
+    displayable: boolean;
+    builderEligibility: ProviderBuilderMode | "ineligible";
     scenarioEligible: boolean;
     rank: number;
     destinationReady: boolean;
     visibility: ProviderVisibility;
+    hardBlocked: boolean;
+    hardBlockReasons: string[];
+    demotionReasons: string[];
     suppressReason?: string;
   }>;
   aiRerankEligible: boolean;
@@ -78,6 +91,26 @@ type AiEligibility = {
   reason: "media_preorder" | "low_confidence" | "recommended_crowded" | "ambiguous_candidates" | "not_needed";
 };
 
+type RawProviderCandidate = ProviderCandidate & {
+  scenarioEligible: boolean;
+};
+
+type ProviderEvaluation = RawProviderCandidate & {
+  universeStatus: ProviderUniverseStatus;
+  truthLayerEligible: boolean;
+  deliveryEnabled: boolean;
+  displayable: boolean;
+  builderEligibility: ProviderBuilderMode | "ineligible";
+  hardBlocked: boolean;
+  hardBlockReasons: string[];
+  demotionReasons: string[];
+  maxTier?: ProviderTier;
+  truthRank?: number;
+  truthOnly: boolean;
+  deliverySuppressedReason?: string;
+  finalSuppressReason?: string;
+};
+
 const PLANNED_PROVIDER_IDS: ProviderId[] = [
   "mercari",
   "surugaya",
@@ -89,10 +122,12 @@ const PLANNED_PROVIDER_IDS: ProviderId[] = [
   "hmv",
   "towerRecords",
   "yahooShopping",
+  "melonbooks",
   "a8Generic",
 ];
 
 const TIER_ORDER: ProviderTier[] = ["recommended", "okay", "lowProbability"];
+const SMALL_COLLECTION_FAMILY = new Set<GoodsClass>(["small_collection", "paper", "itabag_badge"]);
 
 function buildOutHref(params: Record<string, string | undefined>): string {
   const query = new URLSearchParams();
@@ -119,6 +154,16 @@ function isRakutenScenarioEligible(input: Pick<PlannerInput, "itemKind" | "goods
   return input.itemKind === "preorder" || input.itemKind === "goods";
 }
 
+function isMelonbooksRelevantScenario(input: Pick<PlannerInput, "itemKind" | "goodsClass" | "searchClues">): boolean {
+  if (!input.itemKind) return false;
+  if (input.goodsClass === "tech" || input.goodsClass === "display_large") return false;
+  if (input.goodsClass === "media") return input.itemKind === "goods" || input.itemKind === "preorder";
+  if (input.itemKind === "preorder" || input.itemKind === "blind_draw") return true;
+  if (input.itemKind !== "goods") return false;
+  if (!input.goodsClass) return Boolean(input.searchClues?.bonusClues.length);
+  return SMALL_COLLECTION_FAMILY.has(input.goodsClass);
+}
+
 function getScenarioRankDelta(providerId: ProviderId, input: Pick<PlannerInput, "itemKind" | "goodsClass" | "searchClues">): number {
   const { itemKind, goodsClass, searchClues } = input;
 
@@ -127,6 +172,8 @@ function getScenarioRankDelta(providerId: ProviderId, input: Pick<PlannerInput, 
 
   if (goodsClass === "media") {
     if (providerId === "hmv") return -34;
+    if (providerId === "towerRecords") return -24;
+    if (providerId === "melonbooks") return -18;
     if (providerId === "amazon") return -12;
     if (providerId === "mercari") return 10;
     if (providerId === "surugaya") return 8;
@@ -145,6 +192,7 @@ function getScenarioRankDelta(providerId: ProviderId, input: Pick<PlannerInput, 
   if (itemKind === "preorder") {
     if (providerId === "amiami") return -18;
     if (providerId === "gamers") return -14;
+    if (providerId === "melonbooks") return -10;
     if (providerId === "amazon") return -6;
     if (providerId === "rakuten") return -2;
     if (providerId === "mercari") return 26;
@@ -155,6 +203,7 @@ function getScenarioRankDelta(providerId: ProviderId, input: Pick<PlannerInput, 
   if (itemKind === "blind_draw") {
     if (providerId === "gamers") return -10;
     if (providerId === "amiami") return -8;
+    if (providerId === "melonbooks") return -7;
     if (providerId === "mercari") return 6;
     if (providerId === "surugaya") return 8;
     if (providerId === "amazon") return 10;
@@ -163,6 +212,7 @@ function getScenarioRankDelta(providerId: ProviderId, input: Pick<PlannerInput, 
 
   if (itemKind === "goods" && goodsClass !== "media") {
     if (providerId === "gamers" && (goodsClass === "paper" || goodsClass === "itabag_badge" || goodsClass === "small_collection" || goodsClass === "wearable")) return -8;
+    if (providerId === "melonbooks" && (goodsClass === "paper" || goodsClass === "itabag_badge" || goodsClass === "small_collection")) return -12;
     if (providerId === "amiami" && (goodsClass === "display_large" || goodsClass === "small_collection" || goodsClass === "itabag_badge")) return -6;
     if (providerId === "mercari") return 10;
     if (providerId === "surugaya") return 12;
@@ -171,11 +221,11 @@ function getScenarioRankDelta(providerId: ProviderId, input: Pick<PlannerInput, 
   }
 
   if (hasBonusClue) {
-    if (providerId === "gamers" || providerId === "animate") return -4;
+    if (providerId === "gamers" || providerId === "animate" || providerId === "melonbooks") return -4;
     if (providerId === "mercari") return 4;
   }
 
-  if (hasMediaClue && providerId === "hmv") return -6;
+  if (hasMediaClue && (providerId === "hmv" || providerId === "towerRecords")) return -6;
 
   return 0;
 }
@@ -186,10 +236,13 @@ function buildShortReason(providerId: ProviderId, input: Pick<PlannerInput, "ite
   if (searchClues?.bonusClues.length) {
     if (providerId === "gamers") return "特典条件の確認向き";
     if (providerId === "animate") return "店舗特典の確認向き";
+    if (providerId === "melonbooks") return "特典・紙もの候補";
   }
 
   if (goodsClass === "media") {
     if (providerId === "hmv") return "媒体在庫を優先確認";
+    if (providerId === "towerRecords") return "媒体特化の補助候補";
+    if (providerId === "melonbooks") return "特典媒体の候補";
     if (providerId === "amazon") return "新品比較がしやすい";
     if (providerId === "mercari") return "中古相場の保険先";
     if (providerId === "surugaya") return "中古在庫の保険先";
@@ -204,6 +257,7 @@ function buildShortReason(providerId: ProviderId, input: Pick<PlannerInput, "ite
   if (itemKind === "preorder") {
     if (providerId === "amiami") return "予約在庫を優先確認";
     if (providerId === "gamers") return "特典系を先確認";
+    if (providerId === "melonbooks") return "特典・専門店の候補";
     if (providerId === "amazon") return "新品比較の補助";
     if (providerId === "rakuten") return "横断比較の補助";
     if (providerId === "mercari") return "中古化後の逃げ道";
@@ -213,12 +267,14 @@ function buildShortReason(providerId: ProviderId, input: Pick<PlannerInput, "ite
   if (itemKind === "blind_draw") {
     if (providerId === "gamers") return "特典・箱買い向き";
     if (providerId === "amiami") return "予約枠を確認";
+    if (providerId === "melonbooks") return "専門店の補助候補";
     if (providerId === "mercari") return "単品相場の確認";
     if (providerId === "surugaya") return "中古単品の補助";
   }
 
   if (itemKind === "goods" && goodsClass !== "media") {
     if (providerId === "gamers") return "専門店在庫を確認";
+    if (providerId === "melonbooks") return "紙もの・特典系に強い";
     if (providerId === "amiami") return "定番ホビー枠";
     if (providerId === "amazon") return "新品比較の候補";
     if (providerId === "rakuten") return "ショップ横断候補";
@@ -235,6 +291,8 @@ function buildCompactCta(providerId: ProviderId): string {
       return "あみあみで見る";
     case "gamers":
       return "ゲーマーズで見る";
+    case "melonbooks":
+      return "メロンブックスで見る";
     case "amazon":
       return "Amazonで確認";
     case "rakuten":
@@ -258,18 +316,17 @@ function mapTier(rank: number, bestRank: number, role: ProviderRole): ProviderTi
   return null;
 }
 
-function isPubliclyRenderable(candidate: ProviderCandidate): boolean {
-  const config = getProviderConfig(candidate.providerId);
-  if (config.state !== "live") return false;
-  if (!config.publicFacing) return false;
-  return candidate.destinationReady;
-}
-
 function normalizeConfidence(confidence?: number): number {
   if (!Number.isFinite(confidence)) return 0;
   const numeric = Number(confidence);
   if (numeric <= 1) return Math.max(0, Math.min(1, numeric));
   return Math.max(0, Math.min(1, numeric / 100));
+}
+
+function isLowConfidenceScenario(input: Pick<PlannerInput, "confidence" | "itemKind" | "goodsClass">): boolean {
+  const confidence = normalizeConfidence(input.confidence);
+  if (!input.itemKind || !input.goodsClass) return true;
+  return confidence > 0 ? confidence <= 0.58 : true;
 }
 
 function getTierIndex(tier: ProviderTier): number {
@@ -280,12 +337,25 @@ function toTier(index: number): ProviderTier | null {
   return TIER_ORDER[index] ?? null;
 }
 
+function tightenMaxTier(current: ProviderTier | undefined, next: ProviderTier): ProviderTier {
+  if (!current) return next;
+  return getTierIndex(next) > getTierIndex(current) ? next : current;
+}
+
+function isSmallCollectionFamily(goodsClass?: GoodsClass): boolean {
+  return Boolean(goodsClass && SMALL_COLLECTION_FAMILY.has(goodsClass));
+}
+
+function hasBonusSensitiveSignals(input: Pick<PlannerInput, "resultTags" | "searchClues">): boolean {
+  return Boolean((input.resultTags ?? []).includes("bonus_pressure_high") || input.searchClues?.bonusClues.length);
+}
+
 function getCandidateSignals(candidate: ProviderCandidate, input: PlannerInput): string[] {
   const signals = new Set<string>();
   const config = getProviderConfig(candidate.providerId);
 
   if (input.goodsClass === "media" && candidate.providerId === "hmv") signals.add("media_fit");
-  if (input.itemKind === "preorder" && (candidate.providerId === "amiami" || candidate.providerId === "gamers")) signals.add("preorder_fit");
+  if (input.itemKind === "preorder" && (candidate.providerId === "amiami" || candidate.providerId === "gamers" || candidate.providerId === "melonbooks")) signals.add("preorder_fit");
   if (config.role === "general_new") signals.add("general_new");
   if (config.role === "used_market" || config.role === "used_shop") signals.add("used_fallback");
   if (candidate.destinationReady) signals.add("destination_ready");
@@ -375,8 +445,221 @@ function sortTieredCards(cards: Array<ProviderCandidate & { tier: ProviderTier }
   });
 }
 
+function dedupeReasons(reasons: string[]): string[] {
+  return [...new Set(reasons)];
+}
+
+function resolveBuilderEligibility(providerId: ProviderId, input: PlannerInput): ProviderBuilderMode | "ineligible" {
+  const config = getProviderConfig(providerId);
+
+  if (config.canonicalOnly) return "canonical_only";
+  if (config.fallbackOnly) return "fallback_only";
+  if (!config.supportsBuilder) return "ineligible";
+
+  if (config.builderItemKinds?.length && input.itemKind && !config.builderItemKinds.includes(input.itemKind)) {
+    if (input.itemKind === "preorder" && (providerId === "amiami" || providerId === "gamers" || providerId === "melonbooks")) {
+      return "limited";
+    }
+    return "ineligible";
+  }
+
+  if (config.builderGoodsClasses?.length && input.goodsClass && !config.builderGoodsClasses.includes(input.goodsClass)) {
+    if (input.itemKind === "preorder" && (providerId === "amiami" || providerId === "gamers" || providerId === "melonbooks")) {
+      return "limited";
+    }
+    return "ineligible";
+  }
+
+  if (config.usedMarketCheck && (input.itemKind === "used" || isSmallCollectionFamily(input.goodsClass))) return "precision";
+  if (config.mediaSpecialty && input.goodsClass === "media") return "precision";
+  if (config.bonusSpecialty && hasBonusSensitiveSignals(input)) return "precision";
+  return config.builderMode ?? "limited";
+}
+
+function evaluateCandidate(rawCandidate: RawProviderCandidate, input: PlannerInput): ProviderEvaluation {
+  const config = getProviderConfig(rawCandidate.providerId);
+  const lowConfidence = isLowConfidenceScenario(input);
+  const bonusSensitive = hasBonusSensitiveSignals(input);
+  const smallCollectionFamily = isSmallCollectionFamily(input.goodsClass);
+  const mediaPreorder = input.goodsClass === "media" && input.itemKind === "preorder";
+
+  const hardBlockReasons: string[] = [];
+  const demotionReasons: string[] = [];
+  let rank = rawCandidate.rank;
+  let maxTier: ProviderTier | undefined;
+
+  if (!config.truthLayerEligible) hardBlockReasons.push("truth_layer_disabled");
+  if (!rawCandidate.scenarioEligible) hardBlockReasons.push("scenario_not_eligible");
+  if (config.supportedItemKinds?.length && input.itemKind && !config.supportedItemKinds.includes(input.itemKind)) {
+    hardBlockReasons.push("item_kind_mismatch");
+  }
+  if (config.supportedGoodsClasses?.length && input.goodsClass && !config.supportedGoodsClasses.includes(input.goodsClass)) {
+    hardBlockReasons.push("goods_class_mismatch");
+  }
+
+  const builderEligibility = resolveBuilderEligibility(rawCandidate.providerId, input);
+
+  if (builderEligibility === "ineligible" && (config.specialtyRetail || config.mediaSpecialty || config.bonusSpecialty)) {
+    demotionReasons.push("builder_ineligible");
+    rank += 14;
+    maxTier = tightenMaxTier(maxTier, "okay");
+  }
+
+  if (config.fallbackOnly) {
+    demotionReasons.push("fallback_only");
+    rank += 12;
+    maxTier = tightenMaxTier(maxTier, lowConfidence ? "lowProbability" : "okay");
+  }
+
+  if (config.highNoiseRisk && lowConfidence) {
+    demotionReasons.push("low_confidence_clamp");
+    rank += 8;
+    maxTier = tightenMaxTier(maxTier, "lowProbability");
+  }
+
+  if (config.canonicalOnly) {
+    demotionReasons.push("canonical_only");
+    maxTier = tightenMaxTier(maxTier, input.goodsClass === "media" || bonusSensitive ? "recommended" : "okay");
+  }
+
+  if (smallCollectionFamily && input.itemKind !== "preorder") {
+    if (rawCandidate.providerId === "mercari") rank -= 12;
+    if (rawCandidate.providerId === "surugaya") rank -= 10;
+    if (rawCandidate.providerId === "melonbooks") rank -= 14;
+    if (rawCandidate.providerId === "gamers") rank -= input.goodsClass === "paper" ? 6 : 2;
+    if (rawCandidate.providerId === "amiami") {
+      demotionReasons.push("goods_class_mismatch");
+      rank += 18;
+      maxTier = tightenMaxTier(maxTier, "lowProbability");
+    }
+    if (rawCandidate.providerId === "amazon" || rawCandidate.providerId === "rakuten" || rawCandidate.providerId === "yahooShopping") {
+      demotionReasons.push("goods_class_mismatch");
+      rank += 18;
+      maxTier = tightenMaxTier(maxTier, lowConfidence ? "lowProbability" : "okay");
+    }
+  }
+
+  if (mediaPreorder) {
+    if (rawCandidate.providerId === "hmv") rank -= 18;
+    if (rawCandidate.providerId === "towerRecords") rank -= 14;
+    if (rawCandidate.providerId === "melonbooks") rank -= bonusSensitive ? 16 : 10;
+    if (rawCandidate.providerId === "gamers") rank -= bonusSensitive ? 10 : 6;
+    if (rawCandidate.providerId === "animate") rank -= bonusSensitive ? 12 : 6;
+    if (rawCandidate.providerId === "amiami") {
+      demotionReasons.push("goods_class_mismatch");
+      rank += 18;
+      maxTier = tightenMaxTier(maxTier, "okay");
+    }
+    if (rawCandidate.providerId === "amazon" || rawCandidate.providerId === "rakuten" || rawCandidate.providerId === "yahooShopping") {
+      demotionReasons.push("media_specialty_mismatch");
+      rank += 14;
+      maxTier = tightenMaxTier(maxTier, "lowProbability");
+    }
+    if (rawCandidate.providerId === "mercari" || rawCandidate.providerId === "surugaya") {
+      demotionReasons.push("secondary_market_not_primary");
+      rank += bonusSensitive ? 10 : 6;
+      maxTier = tightenMaxTier(maxTier, "okay");
+    }
+  }
+
+  if (input.itemKind === "used") {
+    if (config.usedMarketCheck) rank -= 10;
+    if (config.officialInfoCheck) {
+      demotionReasons.push("secondary_market_alive");
+      rank += 10;
+      maxTier = tightenMaxTier(maxTier, "okay");
+    }
+  }
+
+  if (input.itemKind === "preorder" && bonusSensitive && config.officialInfoCheck) {
+    rank -= 4;
+  }
+
+  if (input.itemKind === "preorder" && bonusSensitive && (rawCandidate.providerId === "amazon" || rawCandidate.providerId === "rakuten")) {
+    demotionReasons.push("bonus_specialty_mismatch");
+    rank += 8;
+    maxTier = tightenMaxTier(maxTier, "okay");
+  }
+
+  const truthLayerEligible = hardBlockReasons.length === 0;
+  const deliveryEnabled = config.deliveryEnabled && config.state === "live" && config.publicFacing && rawCandidate.visibility === "public";
+  const displayable = truthLayerEligible && deliveryEnabled && rawCandidate.destinationReady;
+
+  let deliverySuppressedReason: string | undefined;
+  if (truthLayerEligible && !displayable) {
+    if (!config.deliveryEnabled) {
+      deliverySuppressedReason = "not_delivery_enabled";
+    } else if (config.state !== "live") {
+      deliverySuppressedReason = "not_live";
+    } else if (!config.publicFacing || rawCandidate.visibility !== "public") {
+      deliverySuppressedReason = "not_public";
+    } else if (!rawCandidate.destinationReady) {
+      deliverySuppressedReason = rawCandidate.suppressReason ?? "destination_missing_or_not_relevant";
+    }
+  }
+
+  const finalSuppressReason = truthLayerEligible ? deliverySuppressedReason ?? rawCandidate.suppressReason : dedupeReasons(hardBlockReasons)[0];
+
+  return {
+    ...rawCandidate,
+    rank,
+    universeStatus: config.universeStatus,
+    truthLayerEligible,
+    deliveryEnabled,
+    displayable,
+    builderEligibility,
+    hardBlocked: hardBlockReasons.length > 0,
+    hardBlockReasons: dedupeReasons(hardBlockReasons),
+    demotionReasons: dedupeReasons(demotionReasons),
+    maxTier,
+    truthOnly: truthLayerEligible && !displayable,
+    deliverySuppressedReason,
+    finalSuppressReason,
+  };
+}
+
+function clampTier(baseTier: ProviderTier, evaluation: ProviderEvaluation): ProviderTier | null {
+  if (!evaluation.maxTier) return baseTier;
+  const baseIndex = getTierIndex(baseTier);
+  const maxIndex = getTierIndex(evaluation.maxTier);
+  if (baseIndex === -1 || maxIndex === -1) return baseTier;
+  return toTier(Math.max(baseIndex, maxIndex));
+}
+
+function applyLowConfidenceCardClamp(
+  cards: Array<ProviderCandidate & { tier: ProviderTier }>,
+  evaluationsById: Map<ProviderId, ProviderEvaluation>,
+  input: PlannerInput,
+): { cards: Array<ProviderCandidate & { tier: ProviderTier }>; suppressed: Map<ProviderId, string> } {
+  const suppressed = new Map<ProviderId, string>();
+  if (!isLowConfidenceScenario(input)) return { cards, suppressed };
+
+  let constrained = applyRecommendedCap(cards, 1);
+  constrained = constrained.filter((card) => {
+    const config = getProviderConfig(card.providerId);
+    if (config.fallbackOnly && card.tier === "lowProbability") {
+      suppressed.set(card.providerId, "low_confidence_clamp");
+      return false;
+    }
+    return true;
+  });
+
+  constrained = sortTieredCards(constrained).slice(0, 4);
+  const visible = new Set(constrained.map((card) => card.providerId));
+  for (const card of cards) {
+    if (!visible.has(card.providerId) && !suppressed.has(card.providerId)) {
+      const evaluation = evaluationsById.get(card.providerId);
+      if (evaluation?.demotionReasons.includes("low_confidence_clamp") || getProviderConfig(card.providerId).fallbackOnly) {
+        suppressed.set(card.providerId, "low_confidence_clamp");
+      }
+    }
+  }
+
+  return { cards: constrained, suppressed };
+}
+
 function buildDiagnostics(
-  allCandidates: ProviderCandidate[],
+  allCandidates: ProviderEvaluation[],
   finalCards: Array<ProviderCandidate & { tier: ProviderTier }>,
   ai: {
     eligible: boolean;
@@ -388,15 +671,27 @@ function buildDiagnostics(
     adjustments: AiRerankAdjustment[];
   },
 ): ProviderDiagnostics {
+  const truthCandidates = allCandidates
+    .filter((candidate) => candidate.truthLayerEligible)
+    .sort((a, b) => a.rank - b.rank || a.providerId.localeCompare(b.providerId));
+  const deliveryCandidates = truthCandidates.filter((candidate) => candidate.displayable);
+
   return {
-    eligibleProviders: allCandidates.filter((candidate) => candidate.destinationReady).map((candidate) => candidate.providerId),
+    eligibleProviders: deliveryCandidates.map((candidate) => candidate.providerId),
+    truthCandidates: truthCandidates.map((candidate) => candidate.providerId),
+    truthRankedProviders: truthCandidates.map((candidate) => ({ providerId: candidate.providerId, rank: candidate.rank })),
+    deliveryCandidates: deliveryCandidates.map((candidate) => candidate.providerId),
+    deliveryFilteredProviders: truthCandidates
+      .filter((candidate) => !candidate.displayable)
+      .map((candidate) => ({
+        providerId: candidate.providerId,
+        reason: candidate.deliverySuppressedReason ?? candidate.finalSuppressReason ?? "not_delivery_enabled",
+      })),
     suppressedProviders: allCandidates
       .filter((candidate) => !finalCards.some((entry) => entry.providerId === candidate.providerId))
       .map((candidate) => ({
         providerId: candidate.providerId,
-        reason:
-          candidate.suppressReason ??
-          (candidate.destinationReady ? "tier_filtered" : getProviderConfig(candidate.providerId).state !== "live" ? "not_live" : "not_public"),
+        reason: candidate.finalSuppressReason ?? (candidate.displayable ? "tier_filtered" : "not_delivery_enabled"),
       })),
     renderedProviders: finalCards.map((candidate) => candidate.providerId),
     providerRanks: allCandidates.map((candidate) => ({ providerId: candidate.providerId, rank: candidate.rank })),
@@ -407,11 +702,19 @@ function buildDiagnostics(
     candidateEvaluations: allCandidates.map((candidate) => ({
       providerId: candidate.providerId,
       role: getProviderConfig(candidate.providerId).role,
-      scenarioEligible: candidate.scenarioEligible ?? candidate.destinationReady,
+      universeStatus: candidate.universeStatus,
+      truthLayerEligible: candidate.truthLayerEligible,
+      deliveryEnabled: candidate.deliveryEnabled,
+      displayable: candidate.displayable,
+      builderEligibility: candidate.builderEligibility,
+      scenarioEligible: candidate.scenarioEligible,
       rank: candidate.rank,
       destinationReady: candidate.destinationReady,
       visibility: candidate.visibility,
-      suppressReason: candidate.suppressReason,
+      hardBlocked: candidate.hardBlocked,
+      hardBlockReasons: candidate.hardBlockReasons,
+      demotionReasons: candidate.demotionReasons,
+      suppressReason: candidate.finalSuppressReason,
     })),
     aiRerankEligible: ai.eligible,
     aiRerankEnabled: ai.enabled,
@@ -427,300 +730,268 @@ function buildDiagnostics(
   };
 }
 
-export async function planProviderCards(input: PlannerInput): Promise<{
-  cards: ProviderCandidate[];
-  diagnostics: ProviderDiagnostics;
-}> {
-  const allCandidates: ProviderCandidate[] = PLANNED_PROVIDER_IDS.map((providerId) => {
-    const config = getProviderConfig(providerId);
-    const baseRank = getProviderRankBase(providerId) + verdictBoost(input.verdict) + getScenarioRankDelta(providerId, input);
+function buildRawCandidate(providerId: ProviderId, input: PlannerInput): RawProviderCandidate {
+  const config = getProviderConfig(providerId);
+  const baseRank = getProviderRankBase(providerId) + verdictBoost(input.verdict) + getScenarioRankDelta(providerId, input);
 
-    if (providerId === "mercari") {
-      const scenarioEligible = input.mercariRelevant;
-      const destinationReady = Boolean(scenarioEligible && input.mercariKeyword);
-      return {
-        providerId,
-        rank: baseRank,
-        roleReason: config.roleLabel,
-        shortReason: buildShortReason(providerId, input),
-        ctaLabel: buildCompactCta(providerId),
-        outHref: destinationReady
-          ? buildOutHref({
-              provider: providerId,
-              dest: "mercari-search",
-              keyword: input.mercariKeyword ?? undefined,
-              runId: input.runId,
-              source: "result_page",
-              itemKind: input.itemKind,
-              gc: input.goodsClass,
-              verdict: input.verdict,
-            })
-          : "",
-        badge: config.badge,
-        visibility: "public",
-        destinationReady,
-        scenarioEligible,
-        suppressReason: destinationReady ? undefined : scenarioEligible ? "destination_missing_or_not_relevant" : "scenario_not_eligible",
-      };
-    }
-
-    if (providerId === "surugaya") {
-      const scenarioEligible = Boolean(input.surugayaDestination);
-      const destinationReady = scenarioEligible;
-      return {
-        providerId,
-        rank: baseRank,
-        roleReason: config.roleLabel,
-        shortReason: buildShortReason(providerId, input),
-        ctaLabel: buildCompactCta(providerId),
-        outHref: destinationReady
-          ? buildOutHref({
-              provider: providerId,
-              dest: "surugaya-affiliate",
-              runId: input.runId,
-              source: "result_page",
-              itemKind: input.itemKind,
-              gc: input.goodsClass,
-              verdict: input.verdict,
-            })
-          : "",
-        badge: config.badge,
-        visibility: "public",
-        destinationReady,
-        scenarioEligible,
-        suppressReason: destinationReady ? undefined : "destination_missing_or_not_relevant",
-      };
-    }
-
-    if (providerId === "amiami") {
-      const scenarioEligible = isAmiamiRelevantScenario({
-        itemKind: input.itemKind,
-        goodsClass: input.goodsClass,
-      });
-      const destinationReady = Boolean(scenarioEligible && input.amiamiDestination);
-      return {
-        providerId,
-        rank: baseRank,
-        roleReason: config.roleLabel,
-        shortReason: buildShortReason(providerId, input),
-        ctaLabel: buildCompactCta(providerId),
-        outHref: destinationReady
-          ? buildOutHref({
-              provider: providerId,
-              dest: "amiami-affiliate",
-              runId: input.runId,
-              source: "result_page",
-              itemKind: input.itemKind,
-              gc: input.goodsClass,
-              verdict: input.verdict,
-            })
-          : "",
-        badge: config.badge,
-        visibility: "public",
-        destinationReady,
-        suppressReason: destinationReady
-          ? undefined
-          : scenarioEligible
-            ? "destination_missing_or_not_relevant"
-            : "scenario_not_eligible",
-      };
-    }
-
-    if (providerId === "gamers") {
-      const scenarioEligible = isGamersRelevantScenario({
-        itemKind: input.itemKind,
-        goodsClass: input.goodsClass,
-      });
-      const destinationReady = Boolean(scenarioEligible && input.gamersDestination);
-      return {
-        providerId,
-        rank: baseRank,
-        roleReason: config.roleLabel,
-        shortReason: buildShortReason(providerId, input),
-        ctaLabel: buildCompactCta(providerId),
-        outHref: destinationReady
-          ? buildOutHref({
-              provider: providerId,
-              dest: "gamers-affiliate",
-              runId: input.runId,
-              source: "result_page",
-              itemKind: input.itemKind,
-              gc: input.goodsClass,
-              verdict: input.verdict,
-            })
-          : "",
-        badge: config.badge,
-        visibility: "public",
-        destinationReady,
-        suppressReason: destinationReady
-          ? undefined
-          : scenarioEligible
-            ? "destination_missing_or_not_relevant"
-            : "scenario_not_eligible",
-      };
-    }
-
-    if (providerId === "hmv") {
-      const scenarioEligible = isHmvRelevantScenario({ itemKind: input.itemKind, goodsClass: input.goodsClass });
-      const destinationReady = Boolean(scenarioEligible && input.hmvDestination);
-      return {
-        providerId,
-        rank: baseRank,
-        roleReason: config.roleLabel,
-        shortReason: buildShortReason(providerId, input),
-        ctaLabel: buildCompactCta(providerId),
-        outHref: destinationReady
-          ? buildOutHref({
-              provider: providerId,
-              dest: "hmv-affiliate",
-              runId: input.runId,
-              source: "result_page",
-              itemKind: input.itemKind,
-              gc: input.goodsClass,
-              verdict: input.verdict,
-            })
-          : "",
-        badge: config.badge,
-        visibility: "public",
-        destinationReady,
-        scenarioEligible,
-        suppressReason: destinationReady ? undefined : scenarioEligible ? "destination_missing_or_not_relevant" : "scenario_not_eligible",
-      };
-    }
-
-    if (providerId === "amazon") {
-      const scenarioEligible = isAmazonScenarioEligible(input);
-      const destinationReady = Boolean(scenarioEligible && input.amazonDestination);
-      return {
-        providerId,
-        rank: baseRank,
-        roleReason: config.roleLabel,
-        shortReason: buildShortReason(providerId, input),
-        ctaLabel: buildCompactCta(providerId),
-        outHref: destinationReady
-          ? buildOutHref({
-              provider: providerId,
-              dest: "amazon-static",
-              id: input.amazonDestination?.id,
-              runId: input.runId,
-              source: "result_page",
-              itemKind: input.itemKind,
-              gc: input.goodsClass,
-              verdict: input.verdict,
-            })
-          : "",
-        badge: config.badge,
-        visibility: "public",
-        destinationReady,
-        scenarioEligible,
-        suppressReason: destinationReady ? undefined : scenarioEligible ? "destination_missing_or_not_relevant" : "scenario_not_eligible",
-      };
-    }
-
-    if (providerId === "rakuten") {
-      const scenarioEligible = isRakutenScenarioEligible(input);
-      const destinationReady = Boolean(scenarioEligible && input.rakutenAffiliateUrl);
-      return {
-        providerId,
-        rank: baseRank,
-        roleReason: config.roleLabel,
-        shortReason: buildShortReason(providerId, input),
-        ctaLabel: buildCompactCta(providerId),
-        outHref: destinationReady
-          ? buildOutHref({
-              provider: providerId,
-              dest: "rakuten-item",
-              href: input.rakutenAffiliateUrl ?? undefined,
-              runId: input.runId,
-              source: "result_page",
-              itemKind: input.itemKind,
-              gc: input.goodsClass,
-              verdict: input.verdict,
-            })
-          : "",
-        badge: config.badge,
-        visibility: "public",
-        destinationReady,
-        scenarioEligible,
-        suppressReason: destinationReady ? undefined : scenarioEligible ? "destination_missing_or_not_relevant" : "scenario_not_eligible",
-      };
-    }
-
-    if (providerId === "towerRecords") {
-      const scenarioEligible = isTowerRecordsRelevantScenario({
-        itemKind: input.itemKind,
-        goodsClass: input.goodsClass,
-      });
-      const destinationReady = Boolean(scenarioEligible && resolveTowerRecordsAffiliateDestination());
-      return {
-        providerId,
-        rank: scenarioEligible ? baseRank - 4 : baseRank + 5,
-        roleReason: config.roleLabel,
-        shortReason: buildShortReason(providerId, input),
-        ctaLabel: buildCompactCta(providerId),
-        outHref: "",
-        badge: config.badge,
-        visibility: "internal",
-        destinationReady,
-        scenarioEligible,
-        suppressReason: destinationReady
-          ? "pending_provider_not_public"
-          : scenarioEligible
-            ? "awaiting_vc_affiliate_url"
-            : "scenario_not_eligible",
-      };
-    }
-
-    if (providerId === "animate") {
-      const scenarioEligible = isAnimateRelevantScenario({
-        itemKind: input.itemKind,
-        goodsClass: input.goodsClass,
-      });
-      const destinationReady = Boolean(scenarioEligible && resolveAnimateAffiliateDestination());
-      return {
-        providerId,
-        rank: scenarioEligible ? baseRank - 12 : baseRank + 6,
-        roleReason: config.roleLabel,
-        shortReason: buildShortReason(providerId, input),
-        ctaLabel: buildCompactCta(providerId),
-        outHref: "",
-        badge: config.badge,
-        visibility: "internal",
-        destinationReady,
-        scenarioEligible,
-        suppressReason: destinationReady
-          ? "pending_provider_not_public"
-          : scenarioEligible
-            ? "destination_unresolved"
-            : "scenario_not_eligible",
-      };
-    }
-
-    if (providerId === "yahooShopping") {
-      const scenarioEligible = isYahooShoppingRelevantScenario({ itemKind: input.itemKind });
-      const destinationReady = Boolean(scenarioEligible && resolveYahooShoppingAffiliateDestination());
-      return {
-        providerId,
-        rank: scenarioEligible ? baseRank + 5 : baseRank + 9,
-        roleReason: config.roleLabel,
-        shortReason: buildShortReason(providerId, input),
-        ctaLabel: buildCompactCta(providerId),
-        outHref: "",
-        badge: config.badge,
-        visibility: "internal",
-        destinationReady,
-        scenarioEligible,
-        suppressReason: destinationReady
-          ? "pending_provider_not_public"
-          : scenarioEligible
-            ? "awaiting_vc_affiliate_url"
-            : "scenario_not_eligible",
-      };
-    }
-
+  if (providerId === "mercari") {
+    const scenarioEligible = input.mercariRelevant;
+    const destinationReady = Boolean(scenarioEligible && input.mercariKeyword);
     return {
       providerId,
       rank: baseRank,
+      roleReason: config.roleLabel,
+      shortReason: buildShortReason(providerId, input),
+      ctaLabel: buildCompactCta(providerId),
+      outHref: destinationReady
+        ? buildOutHref({
+            provider: providerId,
+            dest: "mercari-search",
+            keyword: input.mercariKeyword ?? undefined,
+            runId: input.runId,
+            source: "result_page",
+            itemKind: input.itemKind,
+            gc: input.goodsClass,
+            verdict: input.verdict,
+          })
+        : "",
+      badge: config.badge,
+      visibility: "public",
+      destinationReady,
+      scenarioEligible,
+      suppressReason: destinationReady ? undefined : scenarioEligible ? "destination_missing_or_not_relevant" : "scenario_not_eligible",
+    };
+  }
+
+  if (providerId === "surugaya") {
+    const scenarioEligible = isSurugayaRelevantScenario(input.itemKind, input.goodsClass);
+    const destinationReady = Boolean(scenarioEligible && input.surugayaDestination);
+    return {
+      providerId,
+      rank: baseRank,
+      roleReason: config.roleLabel,
+      shortReason: buildShortReason(providerId, input),
+      ctaLabel: buildCompactCta(providerId),
+      outHref: destinationReady
+        ? buildOutHref({
+            provider: providerId,
+            dest: "surugaya-affiliate",
+            runId: input.runId,
+            source: "result_page",
+            itemKind: input.itemKind,
+            gc: input.goodsClass,
+            verdict: input.verdict,
+          })
+        : "",
+      badge: config.badge,
+      visibility: "public",
+      destinationReady,
+      scenarioEligible,
+      suppressReason: destinationReady ? undefined : scenarioEligible ? "destination_missing_or_not_relevant" : "scenario_not_eligible",
+    };
+  }
+
+  if (providerId === "amiami") {
+    const scenarioEligible = isAmiamiRelevantScenario({ itemKind: input.itemKind, goodsClass: input.goodsClass });
+    const destinationReady = Boolean(scenarioEligible && input.amiamiDestination);
+    return {
+      providerId,
+      rank: baseRank,
+      roleReason: config.roleLabel,
+      shortReason: buildShortReason(providerId, input),
+      ctaLabel: buildCompactCta(providerId),
+      outHref: destinationReady
+        ? buildOutHref({
+            provider: providerId,
+            dest: "amiami-affiliate",
+            runId: input.runId,
+            source: "result_page",
+            itemKind: input.itemKind,
+            gc: input.goodsClass,
+            verdict: input.verdict,
+          })
+        : "",
+      badge: config.badge,
+      visibility: "public",
+      destinationReady,
+      scenarioEligible,
+      suppressReason: destinationReady ? undefined : scenarioEligible ? "destination_missing_or_not_relevant" : "scenario_not_eligible",
+    };
+  }
+
+  if (providerId === "gamers") {
+    const scenarioEligible = isGamersRelevantScenario({ itemKind: input.itemKind, goodsClass: input.goodsClass });
+    const destinationReady = Boolean(scenarioEligible && input.gamersDestination);
+    return {
+      providerId,
+      rank: baseRank,
+      roleReason: config.roleLabel,
+      shortReason: buildShortReason(providerId, input),
+      ctaLabel: buildCompactCta(providerId),
+      outHref: destinationReady
+        ? buildOutHref({
+            provider: providerId,
+            dest: "gamers-affiliate",
+            runId: input.runId,
+            source: "result_page",
+            itemKind: input.itemKind,
+            gc: input.goodsClass,
+            verdict: input.verdict,
+          })
+        : "",
+      badge: config.badge,
+      visibility: "public",
+      destinationReady,
+      scenarioEligible,
+      suppressReason: destinationReady ? undefined : scenarioEligible ? "destination_missing_or_not_relevant" : "scenario_not_eligible",
+    };
+  }
+
+  if (providerId === "hmv") {
+    const scenarioEligible = isHmvRelevantScenario({ itemKind: input.itemKind, goodsClass: input.goodsClass });
+    const destinationReady = Boolean(scenarioEligible && input.hmvDestination);
+    return {
+      providerId,
+      rank: baseRank,
+      roleReason: config.roleLabel,
+      shortReason: buildShortReason(providerId, input),
+      ctaLabel: buildCompactCta(providerId),
+      outHref: destinationReady
+        ? buildOutHref({
+            provider: providerId,
+            dest: "hmv-affiliate",
+            runId: input.runId,
+            source: "result_page",
+            itemKind: input.itemKind,
+            gc: input.goodsClass,
+            verdict: input.verdict,
+          })
+        : "",
+      badge: config.badge,
+      visibility: "public",
+      destinationReady,
+      scenarioEligible,
+      suppressReason: destinationReady ? undefined : scenarioEligible ? "destination_missing_or_not_relevant" : "scenario_not_eligible",
+    };
+  }
+
+  if (providerId === "amazon") {
+    const scenarioEligible = isAmazonScenarioEligible(input);
+    const destinationReady = Boolean(scenarioEligible && input.amazonDestination);
+    return {
+      providerId,
+      rank: baseRank,
+      roleReason: config.roleLabel,
+      shortReason: buildShortReason(providerId, input),
+      ctaLabel: buildCompactCta(providerId),
+      outHref: destinationReady
+        ? buildOutHref({
+            provider: providerId,
+            dest: "amazon-static",
+            id: input.amazonDestination?.id,
+            runId: input.runId,
+            source: "result_page",
+            itemKind: input.itemKind,
+            gc: input.goodsClass,
+            verdict: input.verdict,
+          })
+        : "",
+      badge: config.badge,
+      visibility: "public",
+      destinationReady,
+      scenarioEligible,
+      suppressReason: destinationReady ? undefined : scenarioEligible ? "destination_missing_or_not_relevant" : "scenario_not_eligible",
+    };
+  }
+
+  if (providerId === "rakuten") {
+    const scenarioEligible = isRakutenScenarioEligible(input);
+    const destinationReady = Boolean(scenarioEligible && input.rakutenAffiliateUrl);
+    return {
+      providerId,
+      rank: baseRank,
+      roleReason: config.roleLabel,
+      shortReason: buildShortReason(providerId, input),
+      ctaLabel: buildCompactCta(providerId),
+      outHref: destinationReady
+        ? buildOutHref({
+            provider: providerId,
+            dest: "rakuten-item",
+            href: input.rakutenAffiliateUrl ?? undefined,
+            runId: input.runId,
+            source: "result_page",
+            itemKind: input.itemKind,
+            gc: input.goodsClass,
+            verdict: input.verdict,
+          })
+        : "",
+      badge: config.badge,
+      visibility: "public",
+      destinationReady,
+      scenarioEligible,
+      suppressReason: destinationReady ? undefined : scenarioEligible ? "destination_missing_or_not_relevant" : "scenario_not_eligible",
+    };
+  }
+
+  if (providerId === "towerRecords") {
+    const scenarioEligible = isTowerRecordsRelevantScenario({ itemKind: input.itemKind, goodsClass: input.goodsClass });
+    const destinationReady = Boolean(scenarioEligible && resolveTowerRecordsAffiliateDestination());
+    return {
+      providerId,
+      rank: scenarioEligible ? baseRank - 4 : baseRank + 5,
+      roleReason: config.roleLabel,
+      shortReason: buildShortReason(providerId, input),
+      ctaLabel: buildCompactCta(providerId),
+      outHref: "",
+      badge: config.badge,
+      visibility: "internal",
+      destinationReady,
+      scenarioEligible,
+      suppressReason: destinationReady ? "pending_provider_not_public" : scenarioEligible ? "awaiting_vc_affiliate_url" : "scenario_not_eligible",
+    };
+  }
+
+  if (providerId === "animate") {
+    const scenarioEligible = isAnimateRelevantScenario({ itemKind: input.itemKind, goodsClass: input.goodsClass });
+    const destinationReady = Boolean(scenarioEligible && resolveAnimateAffiliateDestination());
+    return {
+      providerId,
+      rank: scenarioEligible ? baseRank - 12 : baseRank + 6,
+      roleReason: config.roleLabel,
+      shortReason: buildShortReason(providerId, input),
+      ctaLabel: buildCompactCta(providerId),
+      outHref: "",
+      badge: config.badge,
+      visibility: "internal",
+      destinationReady,
+      scenarioEligible,
+      suppressReason: destinationReady ? "pending_provider_not_public" : scenarioEligible ? "destination_unresolved" : "scenario_not_eligible",
+    };
+  }
+
+  if (providerId === "yahooShopping") {
+    const scenarioEligible = isYahooShoppingRelevantScenario({ itemKind: input.itemKind });
+    const destinationReady = Boolean(scenarioEligible && resolveYahooShoppingAffiliateDestination());
+    return {
+      providerId,
+      rank: scenarioEligible ? baseRank + 5 : baseRank + 9,
+      roleReason: config.roleLabel,
+      shortReason: buildShortReason(providerId, input),
+      ctaLabel: buildCompactCta(providerId),
+      outHref: "",
+      badge: config.badge,
+      visibility: "internal",
+      destinationReady,
+      scenarioEligible,
+      suppressReason: destinationReady ? "pending_provider_not_public" : scenarioEligible ? "awaiting_vc_affiliate_url" : "scenario_not_eligible",
+    };
+  }
+
+  if (providerId === "melonbooks") {
+    const scenarioEligible = isMelonbooksRelevantScenario(input);
+    return {
+      providerId,
+      rank: scenarioEligible ? baseRank - 6 : baseRank + 12,
       roleReason: config.roleLabel,
       shortReason: buildShortReason(providerId, input),
       ctaLabel: buildCompactCta(providerId),
@@ -728,31 +999,75 @@ export async function planProviderCards(input: PlannerInput): Promise<{
       badge: config.badge,
       visibility: "internal",
       destinationReady: false,
-      scenarioEligible: false,
-      suppressReason: `pending_provider_slot:${config.role}`,
+      scenarioEligible,
+      suppressReason: scenarioEligible ? "not_delivery_enabled" : "scenario_not_eligible",
     };
-  });
+  }
 
-  const rendered = allCandidates
-    .filter(isPubliclyRenderable)
+  return {
+    providerId,
+    rank: baseRank,
+    roleReason: config.roleLabel,
+    shortReason: buildShortReason(providerId, input),
+    ctaLabel: buildCompactCta(providerId),
+    outHref: "",
+    badge: config.badge,
+    visibility: "internal",
+    destinationReady: false,
+    scenarioEligible: false,
+    suppressReason: `pending_provider_slot:${config.role}`,
+  };
+}
+
+export async function planProviderCards(input: PlannerInput): Promise<{
+  cards: ProviderCandidate[];
+  diagnostics: ProviderDiagnostics;
+}> {
+  const evaluatedCandidates = PLANNED_PROVIDER_IDS.map((providerId) => evaluateCandidate(buildRawCandidate(providerId, input), input));
+
+  const truthRanked = evaluatedCandidates
+    .filter((candidate) => candidate.truthLayerEligible)
+    .sort((a, b) => a.rank - b.rank || a.providerId.localeCompare(b.providerId))
+    .map((candidate, index) => ({ ...candidate, truthRank: index + 1 }));
+
+  const truthRankByProvider = new Map(truthRanked.map((candidate) => [candidate.providerId, candidate.truthRank] as const));
+  const truthEvaluations = evaluatedCandidates.map((candidate) => ({
+    ...candidate,
+    truthRank: truthRankByProvider.get(candidate.providerId),
+  }));
+
+  const deliveryCandidates = truthRanked
+    .filter((candidate) => candidate.displayable)
     .sort((a, b) => a.rank - b.rank || a.providerId.localeCompare(b.providerId));
 
-  const bestRank = rendered[0]?.rank ?? 0;
-  const deterministicCards = rendered
-    .map((candidate) => ({
-      ...candidate,
-      tier: mapTier(candidate.rank, bestRank, getProviderConfig(candidate.providerId).role),
-    }))
-    .filter((candidate): candidate is ProviderCandidate & { tier: ProviderTier } => candidate.tier != null);
+  const bestRank = deliveryCandidates[0]?.rank ?? 0;
+  const mappedTieredCards = deliveryCandidates.map((candidate) => {
+    const mappedTier = mapTier(candidate.rank, bestRank, getProviderConfig(candidate.providerId).role);
+    if (!mappedTier) return null;
+    const tier = clampTier(mappedTier, candidate);
+    if (!tier) return null;
+    return { ...candidate, tier };
+  });
+  const tieredCards = mappedTieredCards.filter((candidate): candidate is NonNullable<(typeof mappedTieredCards)[number]> => candidate != null);
 
+  const evaluationsById = new Map(truthEvaluations.map((candidate) => [candidate.providerId, candidate] as const));
+  const lowConfidenceClamp = applyLowConfidenceCardClamp(sortTieredCards(tieredCards), evaluationsById, input);
+  for (const [providerId, reason] of lowConfidenceClamp.suppressed.entries()) {
+    const existing = evaluationsById.get(providerId);
+    if (existing) {
+      existing.finalSuppressReason = reason;
+    }
+  }
+
+  const deterministicCards = sortTieredCards(lowConfidenceClamp.cards);
   const eligibility = getAiEligibility(input, deterministicCards);
   const aiEnabled = isAiRerankEnabled();
   const aiModel = getAiModel();
 
   if (!eligibility.eligible) {
     return {
-      cards: sortTieredCards(deterministicCards),
-      diagnostics: buildDiagnostics(allCandidates, sortTieredCards(deterministicCards), {
+      cards: deterministicCards,
+      diagnostics: buildDiagnostics(truthEvaluations, deterministicCards, {
         eligible: false,
         enabled: aiEnabled,
         invoked: false,
@@ -765,10 +1080,9 @@ export async function planProviderCards(input: PlannerInput): Promise<{
   }
 
   if (!aiEnabled) {
-    const finalCards = sortTieredCards(deterministicCards);
     return {
-      cards: finalCards,
-      diagnostics: buildDiagnostics(allCandidates, finalCards, {
+      cards: deterministicCards,
+      diagnostics: buildDiagnostics(truthEvaluations, deterministicCards, {
         eligible: true,
         enabled: false,
         invoked: false,
@@ -781,10 +1095,9 @@ export async function planProviderCards(input: PlannerInput): Promise<{
   }
 
   if (!getGeminiApiKey()) {
-    const finalCards = sortTieredCards(deterministicCards);
     return {
-      cards: finalCards,
-      diagnostics: buildDiagnostics(allCandidates, finalCards, {
+      cards: deterministicCards,
+      diagnostics: buildDiagnostics(truthEvaluations, deterministicCards, {
         eligible: true,
         enabled: true,
         invoked: false,
@@ -799,10 +1112,9 @@ export async function planProviderCards(input: PlannerInput): Promise<{
   const aiInput = buildAiRequest(input, deterministicCards);
   const aiAttempt = await rerankProvidersWithAI(aiInput);
   if (!aiAttempt.result) {
-    const finalCards = sortTieredCards(deterministicCards);
     return {
-      cards: finalCards,
-      diagnostics: buildDiagnostics(allCandidates, finalCards, {
+      cards: deterministicCards,
+      diagnostics: buildDiagnostics(truthEvaluations, deterministicCards, {
         eligible: true,
         enabled: true,
         invoked: aiAttempt.invoked,
@@ -853,7 +1165,7 @@ export async function planProviderCards(input: PlannerInput): Promise<{
 
   return {
     cards: finalCards,
-    diagnostics: buildDiagnostics(allCandidates, finalCards, {
+    diagnostics: buildDiagnostics(truthEvaluations, finalCards, {
       eligible: true,
       enabled: true,
       invoked: aiAttempt.invoked,
