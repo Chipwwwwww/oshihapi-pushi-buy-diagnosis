@@ -1,3 +1,5 @@
+import type { ParsedSearchClues, SearchClueDiagnostics } from "@/src/oshihapi/input/types";
+
 export type Locale = 'ja';
 export type Mode = 'short' | 'medium' | 'long';
 export type Decisiveness = 'careful' | 'standard' | 'quick';
@@ -88,6 +90,8 @@ export type EngineConfig = {
 
 export type InputMeta = {
   itemName?: string;
+  searchClueRaw?: string;
+  parsedSearchClues?: ParsedSearchClues;
   priceYen?: number;
   deadline?: 'today' | 'tomorrow' | 'in3days' | 'in1week' | 'unknown';
   itemKind?: ItemKind;
@@ -130,6 +134,7 @@ export type DiagnosticTrace = {
   branchHits: BranchTrace[];
   branchMisses: BranchTrace[];
   resultInputsSummary?: ResultInputsSummaryTrace;
+  searchClue?: SearchClueDiagnostics;
   persistence?: {
     state: "fresh" | "restored" | "invalidated" | "replaySeeded";
     restoreSourceDraftId?: string;

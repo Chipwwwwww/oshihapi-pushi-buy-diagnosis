@@ -1,4 +1,5 @@
 import type { AnswerValue, BranchTrace, DiagnosticTrace, GoodsClass, GoodsSubtype, InputMeta, ItemKind, Mode, Question, RunContextTrace } from "@/src/oshihapi/model";
+import { toSearchClueDiagnostics } from "@/src/oshihapi/input/parseSearchClues";
 import { merch_v2_ja } from "@/src/oshihapi/merch_v2_ja";
 import { getGameBillingQuestions } from "@/src/oshihapi/gameBillingNeutralV1";
 import {
@@ -54,6 +55,7 @@ export function resolveFlowQuestions(input: FlowResolverInput): FlowResolution {
           },
         ],
         branchMisses: [],
+        searchClue: input.meta.parsedSearchClues ? toSearchClueDiagnostics(input.meta.parsedSearchClues) : undefined,
       },
     };
   }
@@ -130,6 +132,7 @@ export function resolveFlowQuestions(input: FlowResolverInput): FlowResolution {
       skippedQuestionIds: [...universe].filter((id) => !questions.some((q) => q.id === id)),
       branchHits,
       branchMisses,
+      searchClue: input.meta.parsedSearchClues ? toSearchClueDiagnostics(input.meta.parsedSearchClues) : undefined,
     },
   };
 }

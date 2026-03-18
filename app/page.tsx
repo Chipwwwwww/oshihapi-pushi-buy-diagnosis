@@ -48,9 +48,11 @@ export default function Home() {
   const [itemKind, setItemKind] = useState<ItemKind>("goods");
   const [goodsClass, setGoodsClass] = useState<GoodsClass>("small_collection");
   const [mode, setMode] = useState<Mode>("short");
+  const [searchClue, setSearchClue] = useState("");
   const [itemName, setItemName] = useState("");
   const [priceYen, setPriceYen] = useState("");
   const [deadline, setDeadline] = useState<DeadlineValue>("unknown");
+  const [showClueHelp, setShowClueHelp] = useState(false);
   const [styleMode] = useState<StyleMode>(() => getStyleModeFromLocalStorage());
   const [decisiveness] = useState<Decisiveness>(() => {
     if (typeof window === "undefined") return "standard";
@@ -67,9 +69,29 @@ export default function Home() {
     return Number.isFinite(parsed) ? parsed : undefined;
   }, [priceYen]);
   const recommendation = useMemo(
-    () => recommendMode({ itemName: itemName.trim() || undefined, priceYen: parsedPriceYen, deadline, itemKind }),
-    [itemName, parsedPriceYen, deadline, itemKind],
+    () =>
+      recommendMode({
+        itemName: itemName.trim() || searchClue.trim() || undefined,
+        priceYen: parsedPriceYen,
+        deadline,
+        itemKind,
+      }),
+    [deadline, itemKind, itemName, parsedPriceYen, searchClue],
   );
+
+  const buildFlowParams = () => {
+    const params = new URLSearchParams();
+    params.set("mode", mode);
+    params.set("styleMode", styleMode);
+    params.set("itemKind", itemKind);
+    if (isGoodsClassApplicable(itemKind)) params.set("gc", goodsClass);
+    if (searchClue.trim()) params.set("searchClue", searchClue.trim());
+    if (itemName.trim()) params.set("itemName", itemName.trim());
+    if (parsedPriceYen !== undefined) params.set("priceYen", String(parsedPriceYen));
+    params.set("deadline", deadline);
+    params.set("decisiveness", decisiveness);
+    return params;
+  };
 
   const handleResumeDraft = () => {
     if (!latestDraft) return;
@@ -79,6 +101,12 @@ export default function Home() {
     params.set("itemKind", latestDraft.runContext.itemKind);
     params.set("gc", latestDraft.runContext.goodsClass);
     params.set("decisiveness", latestDraft.decisiveness);
+    if (latestDraft.runContext.searchClueRaw) params.set("searchClue", latestDraft.runContext.searchClueRaw);
+    if (latestDraft.runContext.parsedSearchClues?.clarification) {
+      params.set("searchClueClarificationKind", latestDraft.runContext.parsedSearchClues.clarification.kind);
+      params.set("searchClueClarificationValue", latestDraft.runContext.parsedSearchClues.clarification.value);
+      params.set("searchClueClarificationLabel", latestDraft.runContext.parsedSearchClues.clarification.label);
+    }
     if (latestDraft.runContext.itemName) params.set("itemName", latestDraft.runContext.itemName);
     if (Number.isFinite(latestDraft.runContext.priceYen ?? Number.NaN)) params.set("priceYen", String(latestDraft.runContext.priceYen));
     if (latestDraft.runContext.deadline) params.set("deadline", latestDraft.runContext.deadline);
@@ -87,40 +115,54 @@ export default function Home() {
   };
 
   const handleStartNew = () => {
-    const params = new URLSearchParams();
-    params.set("mode", mode);
-    params.set("styleMode", styleMode);
-    params.set("itemKind", itemKind);
-    if (isGoodsClassApplicable(itemKind)) params.set("gc", goodsClass);
-    if (itemName.trim()) params.set("itemName", itemName.trim());
-    if (parsedPriceYen !== undefined) params.set("priceYen", String(parsedPriceYen));
-    params.set("deadline", deadline);
-    params.set("decisiveness", decisiveness);
+    const params = buildFlowParams();
     params.set("startNew", "1");
     router.push(`/flow?${params.toString()}`);
   };
 
   const handleStart = () => {
-    const params = new URLSearchParams();
-    params.set("mode", mode);
-    params.set("styleMode", styleMode);
-    params.set("itemKind", itemKind);
-    if (isGoodsClassApplicable(itemKind)) params.set("gc", goodsClass);
-    if (itemName.trim()) params.set("itemName", itemName.trim());
-    if (parsedPriceYen !== undefined) params.set("priceYen", String(parsedPriceYen));
-    params.set("deadline", deadline);
-    params.set("decisiveness", decisiveness);
-    router.push(`/flow?${params.toString()}`);
+    router.push(`/flow?${buildFlowParams().toString()}`);
   };
 
+  const latestDraftLabel = latestDraft?.runContext.searchClueRaw ?? latestDraft?.runContext.itemName ?? "（商品名なし）";
+
   return (
-    <div className={`${containerClass} safe-bottom flex min-h-screen flex-col gap-6 py-8 bg-transparent dark:bg-[#0b0f1a]`}>
+    <div className={`${containerClass} safe-bottom flex min-h-screen flex-col gap-6 bg-transparent py-8 dark:bg-[#0b0f1a]`}>
       <header className="flex flex-col gap-2">
         <p className="text-sm font-semibold uppercase tracking-widest text-accent">オシハピ</p>
         <h1 className={pageTitleClass}>推し買い診断</h1>
         <p className={bodyTextClass}>先に「何を決めるか」、次に「どれだけ深く考えるか」を選ぶ2ステップ診断。</p>
         <p className="text-xs text-slate-500 dark:text-zinc-400">※ まとめ買い（β）は検証中です <Link href="/basket" className="underline underline-offset-2">βページを見る</Link></p>
       </header>
+
+      <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
+        <div className="space-y-2">
+          <h2 className={sectionTitleClass}>商品名・作品名・キャラ名・手がかり（任意）</h2>
+          <p className="text-sm text-slate-600 dark:text-zinc-300">商品名が正確でなくても使えます。入力があると、特典・在庫・予約状況の確認精度を少し上げられます。</p>
+        </div>
+        <div className="grid gap-3">
+          <textarea
+            value={searchClue}
+            onChange={(event) => setSearchClue(event.target.value)}
+            placeholder={"うたプリ 特典付きCD\n倉本ちな 缶バッジ\n初回限定 Blu-ray\n作品名・キャラ名・価格・特典の手がかりでもOK"}
+            className="min-h-28 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm dark:border-white/15 dark:bg-[#111827] dark:text-zinc-50"
+            aria-label="商品名・作品名・キャラ名・手がかり（任意）"
+          />
+          <button
+            type="button"
+            onClick={() => setShowClueHelp((prev) => !prev)}
+            className="w-fit text-sm font-semibold text-slate-600 underline underline-offset-4 hover:text-slate-900 dark:text-zinc-300 dark:hover:text-zinc-100"
+          >
+            商品名がわからないときはこちら
+          </button>
+          {showClueHelp ? (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-white/10 dark:bg-white/8 dark:text-zinc-200">
+              <p>作品名だけ、キャラ名だけ、価格感、特典ワードでも始められます。</p>
+              <p className="mt-2 text-xs text-slate-500 dark:text-zinc-400">例: 学マス ちな 缶バ / うたプリ 特典 / 二手店看到的藍光</p>
+            </div>
+          ) : null}
+        </div>
+      </Card>
 
       <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
         <h2 className={sectionTitleClass}>Step 1: 何について判断する？</h2>
@@ -165,7 +207,7 @@ export default function Home() {
         <h2 className={sectionTitleClass}>任意メモ（未入力でも開始できます）</h2>
         <p className="text-sm text-slate-600 dark:text-zinc-300">{getOptionalMetaHint(itemKind)}</p>
         <div className="grid gap-3">
-          <input value={itemName} onChange={(e) => setItemName(e.target.value)} placeholder="アイテム名（任意）" className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/15 dark:bg-[#111827] dark:text-zinc-50" />
+          <input value={itemName} onChange={(e) => setItemName(e.target.value)} placeholder="アイテム名メモ（任意）" className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/15 dark:bg-[#111827] dark:text-zinc-50" />
           <input value={priceYen} onChange={(e) => setPriceYen(e.target.value)} inputMode="numeric" placeholder="価格（任意）" className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/15 dark:bg-[#111827] dark:text-zinc-50" />
           <select value={deadline} onChange={(e) => setDeadline(e.target.value as DeadlineValue)} className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/15 dark:bg-[#111827] dark:text-zinc-50">
             {deadlineOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
@@ -173,11 +215,10 @@ export default function Home() {
         </div>
       </Card>
 
-
       {latestDraft ? (
         <Card className="space-y-3 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
           <h2 className={sectionTitleClass}>前回の下書き</h2>
-          <p className="text-sm text-slate-600 dark:text-zinc-300">{latestDraft.runContext.itemName ?? "（商品名なし）"} / {latestDraft.runContext.mode}</p>
+          <p className="text-sm text-slate-600 dark:text-zinc-300">{latestDraftLabel} / {latestDraft.runContext.mode}</p>
           <div className="grid gap-2 sm:grid-cols-2">
             <button onClick={handleResumeDraft} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50 dark:border-white/15 dark:bg-[#111827] dark:text-zinc-50">下書きを再開</button>
             <button onClick={handleStartNew} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50 dark:border-white/15 dark:bg-[#111827] dark:text-zinc-50">新規診断を開始</button>

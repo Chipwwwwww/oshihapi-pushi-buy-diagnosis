@@ -7,7 +7,7 @@ const DRAFT_STORAGE_KEY = "oshihapi:diagnosis:drafts:v1";
 const DRAFT_INVALIDATION_LOG_KEY = "oshihapi:diagnosis:draft_invalidations:v1";
 const FLOW_CONFIG_HASH = "flow-resolver-v4";
 
-export type DiagnosisMeta = Pick<InputMeta, "itemName" | "priceYen" | "deadline" | "itemKind" | "goodsClass">;
+export type DiagnosisMeta = Pick<InputMeta, "itemName" | "searchClueRaw" | "parsedSearchClues" | "priceYen" | "deadline" | "itemKind" | "goodsClass">;
 
 export type DraftPersistenceState = "fresh" | "restored" | "invalidated" | "replaySeeded";
 
@@ -17,6 +17,8 @@ export type DraftRunContext = {
   goodsClass: GoodsClass;
   styleMode: StyleMode;
   itemName?: string;
+  searchClueRaw?: string;
+  parsedSearchClues?: InputMeta["parsedSearchClues"];
   priceYen?: number;
   deadline?: InputMeta["deadline"];
 };
@@ -219,6 +221,8 @@ export function createReplayDraft(run: DecisionRun, styleMode: StyleMode): Draft
       goodsClass,
       styleMode,
       itemName: run.meta.itemName,
+      searchClueRaw: run.meta.searchClueRaw,
+      parsedSearchClues: run.meta.parsedSearchClues,
       priceYen: run.meta.priceYen,
       deadline: run.meta.deadline,
     },
@@ -259,6 +263,8 @@ export function loadDiagnosisState(): DiagnosisState | null {
     styleMode: latest.runContext.styleMode,
     meta: {
       itemName: latest.runContext.itemName,
+      searchClueRaw: latest.runContext.searchClueRaw,
+      parsedSearchClues: latest.runContext.parsedSearchClues,
       priceYen: latest.runContext.priceYen,
       deadline: latest.runContext.deadline,
       itemKind: latest.runContext.itemKind,
@@ -281,6 +287,8 @@ export function saveDiagnosisState(state: DiagnosisState) {
       goodsClass: state.goodsClass,
       styleMode: state.styleMode,
       itemName: state.meta.itemName,
+      searchClueRaw: state.meta.searchClueRaw,
+      parsedSearchClues: state.meta.parsedSearchClues,
       priceYen: state.meta.priceYen,
       deadline: state.meta.deadline,
     },
