@@ -109,6 +109,13 @@ export type BranchTrace = {
   detail?: string;
 };
 
+export type SkippedQuestionTrace = {
+  questionId: string;
+  reason: string;
+  source: "search_clue" | "answer" | "flow";
+  detail?: string;
+};
+
 export type RunContextTrace = {
   mode: Mode;
   itemKind: ItemKind;
@@ -131,6 +138,7 @@ export type DiagnosticTrace = {
   runContext: RunContextTrace;
   shownQuestionIds: string[];
   skippedQuestionIds: string[];
+  skippedQuestionTraces?: SkippedQuestionTrace[];
   branchHits: BranchTrace[];
   branchMisses: BranchTrace[];
   resultInputsSummary?: ResultInputsSummaryTrace;

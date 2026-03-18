@@ -65,6 +65,41 @@ function main() {
   assert(flow.diagnosticTrace.searchClue?.searchClueMode === refinedFuzzyB.mode, "diagnostics should include search clue mode");
   assert(JSON.stringify(flow.diagnosticTrace).includes("normalizedSearchClue"), "diagnostics should stay JSON-safe");
 
+  const exactBonusMedia = parseSearchClues("うたプリ 初回限定 Blu-ray 特典");
+  const mediaFlow = resolveFlowQuestions({
+    mode: "long",
+    itemKind: "goods",
+    goodsClass: "media",
+    goodsSubtype: "general",
+    useCase: "merch",
+    answers: {},
+    meta: {
+      itemKind: "goods",
+      goodsClass: "media",
+      searchClueRaw: exactBonusMedia.raw,
+      parsedSearchClues: exactBonusMedia,
+      itemName: "特典付き円盤",
+      priceYen: 7800,
+    },
+    styleMode: "standard",
+  });
+  assert(!mediaFlow.questions.some((question) => question.id === "q_addon_media_limited_pressure"), "strong bonus clue should skip duplicate media bonus pressure question");
+  assert(
+    mediaFlow.diagnosticTrace.skippedQuestionTraces?.some(
+      (trace) =>
+        trace.questionId === "q_addon_media_limited_pressure" &&
+        trace.reason === "search_clue_already_covers_bonus_pressure",
+    ),
+    "skipped media bonus question should remain diagnosable",
+  );
+
+  const mediaMotiveIndex = mediaFlow.questions.findIndex((question) => question.id === "q_addon_media_motive");
+  const commonPriorityIndex = mediaFlow.questions.findIndex((question) => question.id === "q_addon_common_priority");
+  assert(
+    mediaMotiveIndex !== -1 && commonPriorityIndex !== -1 && mediaMotiveIndex < commonPriorityIndex,
+    "resolved media clue should move motive disambiguation ahead of generic common priority",
+  );
+
   const noClueFlow = resolveFlowQuestions({
     mode: "medium",
     itemKind: "goods",
@@ -80,6 +115,36 @@ function main() {
     styleMode: "standard",
   });
   assert(noClueFlow.questions.length > 0, "planner flow should still work without clue input");
+
+  const singleFocusLongFlow = resolveFlowQuestions({
+    mode: "long",
+    itemKind: "goods",
+    goodsClass: "small_collection",
+    goodsSubtype: "general",
+    useCase: "merch",
+    answers: { q_goal: "single" },
+    meta: {
+      itemKind: "goods",
+      goodsClass: "small_collection",
+      itemName: "アクスタ",
+      priceYen: 2200,
+    },
+    styleMode: "standard",
+  });
+  assert(
+    !singleFocusLongFlow.questions.some((question) => question.id === "q_addon_goods_collection_goal"),
+    "single-target goal should skip duplicate collection-goal question",
+  );
+  assert(
+    !singleFocusLongFlow.questions.some((question) => question.id === "q_addon_goods_trade_intent"),
+    "single-target goal should skip duplicate trade-intent question",
+  );
+  assert(
+    singleFocusLongFlow.diagnosticTrace.skippedQuestionTraces?.filter(
+      (trace) => trace.reason === "single_target_goal_already_resolved_collection_intent",
+    ).length === 2,
+    "single-target skip rules should stay diagnosable",
+  );
 
   const diagnostics = toSearchClueDiagnostics(refinedFuzzyB, { clarificationShown: true, clarificationResolved: true });
   assert(JSON.parse(JSON.stringify(diagnostics)).clarificationResolved === true, "search clue diagnostics should serialize safely");
