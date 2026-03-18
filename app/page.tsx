@@ -144,7 +144,7 @@ export default function Home() {
           <textarea
             value={searchClue}
             onChange={(event) => setSearchClue(event.target.value)}
-            placeholder={"うたプリ 特典付きCD\n倉本ちな 缶バッジ\n初回限定 Blu-ray\n作品名・キャラ名・価格・特典の手がかりでもOK"}
+            placeholder={"例：作品名＋缶バッジ / 初回限定 Blu-ray / 特典付きCD"}
             className="min-h-28 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm dark:border-white/15 dark:bg-[#111827] dark:text-zinc-50"
             aria-label="商品名・作品名・キャラ名・手がかり（任意）"
           />
@@ -157,8 +157,8 @@ export default function Home() {
           </button>
           {showClueHelp ? (
             <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-white/10 dark:bg-white/8 dark:text-zinc-200">
-              <p>作品名だけ、キャラ名だけ、価格感、特典ワードでも始められます。</p>
-              <p className="mt-2 text-xs text-slate-500 dark:text-zinc-400">例: 学マス ちな 缶バ / うたプリ 特典 / 二手店看到的藍光</p>
+              <p>商品名がわからなくても、作品名・キャラ名・価格・特典の手がかりで使えます。</p>
+              <p className="mt-2 text-xs text-slate-500 dark:text-zinc-400">例: 作品名＋缶バッジ / 初回限定 Blu-ray / 特典付きCD</p>
             </div>
           ) : null}
         </div>
