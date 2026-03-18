@@ -184,14 +184,17 @@ export default function FlowPage() {
   const [draftGoodsClass, setDraftGoodsClass] = useState<GoodsClass>(goodsClass);
   const [draftDecisiveness, setDraftDecisiveness] = useState<Decisiveness>(decisiveness);
 
-  const searchClueClarification: SearchClueClarification | null =
-    clarificationKind && clarificationValue && clarificationLabel
-      ? {
-          kind: clarificationKind as SearchClueClarification["kind"],
-          value: clarificationValue,
-          label: clarificationLabel,
-        }
-      : null;
+  const searchClueClarification = useMemo<SearchClueClarification | null>(
+    () =>
+      clarificationKind && clarificationValue && clarificationLabel
+        ? {
+            kind: clarificationKind as SearchClueClarification["kind"],
+            value: clarificationValue,
+            label: clarificationLabel,
+          }
+        : null,
+    [clarificationKind, clarificationLabel, clarificationValue],
+  );
   const baseParsedSearchClues = useMemo(() => parseSearchClues(searchClueParam), [searchClueParam]);
   const clarificationPrompt = useMemo(() => getSearchClueClarification(baseParsedSearchClues), [baseParsedSearchClues]);
   const parsedSearchClues = useMemo(
