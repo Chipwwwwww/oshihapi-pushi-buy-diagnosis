@@ -49,6 +49,7 @@ import { resolveGamersAffiliateDestination } from "@/src/oshihapi/gamersConfig";
 import { resolveHmvAffiliateDestination } from "@/src/oshihapi/hmvConfig";
 import type { ProviderCandidate, ProviderDiagnostics } from "@/src/oshihapi/providerPlanner";
 import ProviderComparisonModule from "@/components/ProviderComparisonModule";
+import { getScenarioCoverageSummary, getSupportLevelBadgeLabel } from "@/src/oshihapi/scenarioCoverage";
 
 const BASKET_STORAGE_KEY = "oshihapi_basket_last";
 
@@ -199,6 +200,19 @@ export default function ResultPage() {
       })
     );
   }, [run]);
+  const scenarioCoverage = useMemo(
+    () =>
+      run
+        ? getScenarioCoverageSummary({
+            itemKind: run.meta.itemKind,
+            goodsClass: run.meta.goodsClass,
+            parsedSearchClues: run.meta.parsedSearchClues,
+            searchClueRaw: run.meta.searchClueRaw,
+            answers: run.answers,
+          })
+        : null,
+    [run],
+  );
 
   const defaultSearchWord = useMemo(() => (run ? getDefaultSearchWord(run) : ""), [run]);
   const hasSearchWord = defaultSearchWord.trim().length > 0;
@@ -699,6 +713,34 @@ export default function ResultPage() {
           {modeCopy.result.waitTypeLabel[normalizedWaitType] ?? modeCopy.result.waitTypeLabel.none}
         </p>
       </Card>
+
+      {scenarioCoverage ? (
+        <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className={sectionTitleClass}>この結果が前提にしている守備範囲</h2>
+            <Badge variant="outline">{getSupportLevelBadgeLabel(scenarioCoverage.supportLevel)}</Badge>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-2xl border border-border p-4">
+              <p className="text-sm font-semibold">判定しているシナリオ</p>
+              <p className="mt-2 text-sm text-muted-foreground">{scenarioCoverage.recommendedEntryLabel}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{scenarioCoverage.resultExplanationHint}</p>
+            </div>
+            <div className="rounded-2xl border border-border p-4">
+              <p className="text-sm font-semibold">なぜこの provider / 理由が出るか</p>
+              <p className="mt-2 text-sm text-muted-foreground">{scenarioCoverage.providerEcologyHint}</p>
+            </div>
+            <div className="rounded-2xl border border-border p-4">
+              <p className="text-sm font-semibold">外で確認すると安全な点</p>
+              <p className="mt-2 text-sm text-muted-foreground">{scenarioCoverage.verificationHint}</p>
+            </div>
+            <div className="rounded-2xl border border-border p-4">
+              <p className="text-sm font-semibold">サポート境界</p>
+              <p className="mt-2 text-sm text-muted-foreground">{scenarioCoverage.scopeDisclosure}</p>
+            </div>
+          </div>
+        </Card>
+      ) : null}
 
       <Card className="space-y-4">
         <h2 className={sectionTitleClass}>{modeCopy.ui.actionsTitle}</h2>

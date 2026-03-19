@@ -1,4 +1,5 @@
 import type { ParsedSearchClues, SearchClueDiagnostics } from "@/src/oshihapi/input/types";
+import type { ScenarioKey, ScenarioSupportLevel } from "@/src/oshihapi/scenarioCoverage";
 
 export type Locale = 'ja';
 export type Mode = 'short' | 'medium' | 'long';
@@ -136,6 +137,11 @@ export type ResultInputsSummaryTrace = {
 
 export type DiagnosticTrace = {
   runContext: RunContextTrace;
+  scenario?: {
+    key: ScenarioKey;
+    supportLevel: ScenarioSupportLevel;
+    diagnosticsTag?: string;
+  };
   shownQuestionIds: string[];
   skippedQuestionIds: string[];
   skippedQuestionTraces?: SkippedQuestionTrace[];

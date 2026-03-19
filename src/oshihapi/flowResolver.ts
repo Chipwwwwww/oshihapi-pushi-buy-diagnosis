@@ -2,6 +2,7 @@ import type { AnswerValue, BranchTrace, DiagnosticTrace, GoodsClass, GoodsSubtyp
 import { toSearchClueDiagnostics } from "@/src/oshihapi/input/parseSearchClues";
 import { merch_v2_ja } from "@/src/oshihapi/merch_v2_ja";
 import { getGameBillingQuestions } from "@/src/oshihapi/gameBillingNeutralV1";
+import { getScenarioCoverageSummary } from "@/src/oshihapi/scenarioCoverage";
 import {
   ADDON_BY_GOODS_CLASS,
   ADDON_BY_ITEM_KIND,
@@ -23,6 +24,7 @@ export type FlowResolverInput = {
 };
 
 export type FlowResolution = {
+  coverage: ReturnType<typeof getScenarioCoverageSummary>;
   questions: Question[];
   diagnosticTrace: DiagnosticTrace;
 };
@@ -65,12 +67,26 @@ function moveQuestionBefore(ids: string[], questionId: string, beforeId: string)
 }
 
 export function resolveFlowQuestions(input: FlowResolverInput): FlowResolution {
+  const coverage = getScenarioCoverageSummary({
+    itemKind: input.itemKind,
+    goodsClass: input.goodsClass,
+    parsedSearchClues: input.meta.parsedSearchClues,
+    searchClueRaw: input.meta.searchClueRaw,
+    answers: input.answers,
+  });
+
   if (input.useCase === "game_billing") {
     const questions = getGameBillingQuestions(input.mode, input.answers);
     return {
+      coverage,
       questions,
       diagnosticTrace: {
         runContext: toTraceContext(input),
+        scenario: {
+          key: coverage.key,
+          supportLevel: coverage.supportLevel,
+          diagnosticsTag: coverage.diagnosticsTag,
+        },
         shownQuestionIds: questions.map((q) => q.id),
         skippedQuestionIds: [],
         branchHits: [
@@ -192,9 +208,15 @@ export function resolveFlowQuestions(input: FlowResolverInput): FlowResolution {
   ]);
 
   return {
+    coverage,
     questions,
     diagnosticTrace: {
       runContext: toTraceContext(input),
+      scenario: {
+        key: coverage.key,
+        supportLevel: coverage.supportLevel,
+        diagnosticsTag: coverage.diagnosticsTag,
+      },
       shownQuestionIds: questions.map((q) => q.id),
       skippedQuestionIds: [...universe].filter((id) => !questions.some((q) => q.id === id)),
       skippedQuestionTraces,
