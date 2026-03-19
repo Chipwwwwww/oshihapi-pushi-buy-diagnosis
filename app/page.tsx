@@ -9,6 +9,13 @@ import { MODE_LABELS, recommendMode } from "@/src/oshihapi/modeGuide";
 import { DECISIVENESS_STORAGE_KEY, parseDecisiveness } from "@/src/oshihapi/decisiveness";
 import { getStyleModeFromLocalStorage, type StyleMode } from "@/src/oshihapi/modes/useStyleMode";
 import { getModeTradeoff, getOptionalMetaHint, isGoodsClassApplicable } from "@/src/oshihapi/homeFunnel";
+import {
+  getCoveragePreset,
+  getEntryCoverageGroups,
+  getScenarioCoverageSummary,
+  getSupportLevelBadgeLabel,
+  type ScenarioKey,
+} from "@/src/oshihapi/scenarioCoverage";
 import { loadDrafts } from "@/src/store/diagnosisStore";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
@@ -77,6 +84,16 @@ export default function Home() {
       }),
     [deadline, itemKind, itemName, parsedPriceYen, searchClue],
   );
+  const selectedCoverage = useMemo(
+    () =>
+      getScenarioCoverageSummary({
+        itemKind,
+        goodsClass,
+        searchClueRaw: searchClue.trim() || undefined,
+      }),
+    [goodsClass, itemKind, searchClue],
+  );
+  const coverageGroups = useMemo(() => getEntryCoverageGroups(), []);
 
   const buildFlowParams = () => {
     const params = new URLSearchParams();
@@ -125,6 +142,12 @@ export default function Home() {
 
   const latestDraftLabel = latestDraft?.runContext.searchClueRaw ?? latestDraft?.runContext.itemName ?? "（商品名なし）";
 
+  const handleScenarioSelect = (scenarioKey: ScenarioKey) => {
+    const preset = getCoveragePreset(scenarioKey);
+    setItemKind(preset.itemKind ?? "goods");
+    if (preset.goodsClass) setGoodsClass(preset.goodsClass);
+  };
+
   return (
     <div className={`${containerClass} safe-bottom flex min-h-screen flex-col gap-6 bg-transparent py-8 dark:bg-[#0b0f1a]`}>
       <header className="flex flex-col gap-2">
@@ -134,6 +157,78 @@ export default function Home() {
         <p className="text-sm text-slate-600 dark:text-zinc-300">手がかり入力は任意です。空欄でも診断を始められ、入力があると候補の絞り込み精度を少し上げられます。</p>
         <p className="text-xs text-slate-500 dark:text-zinc-400">※ まとめ買い（β）は検証中です <Link href="/basket" className="underline underline-offset-2">βページを見る</Link></p>
       </header>
+
+      <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className={sectionTitleClass}>この診断が得意な判断シナリオ</h2>
+            <Badge variant="accent">scenario-first</Badge>
+          </div>
+          <p className="text-sm text-slate-600 dark:text-zinc-300">
+            まずは「どんな判断で迷っているか」から入れます。強めに対応しているシナリオを先に並べ、部分対応と対象外は同列に見せないようにしています。
+          </p>
+        </div>
+        <div className="grid gap-3">
+          {coverageGroups.strong.map((entry) => (
+            <button
+              key={entry.key}
+              type="button"
+              onClick={() => handleScenarioSelect(entry.key)}
+              className={[
+                "rounded-2xl border px-4 py-4 text-left transition",
+                selectedCoverage.key === entry.key
+                  ? "border-accent bg-accent/5 shadow-sm"
+                  : "border-slate-200 bg-white hover:border-accent/40 dark:border-white/10 dark:bg-white/4 dark:hover:border-accent/40",
+              ].join(" ")}
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-sm font-semibold text-slate-900 dark:text-zinc-50">{entry.recommendedEntryLabel}</p>
+                <Badge variant="outline">{getSupportLevelBadgeLabel(entry.supportLevel)}</Badge>
+              </div>
+              <p className="mt-2 text-sm text-slate-600 dark:text-zinc-300">{entry.shopperIntent}</p>
+            </button>
+          ))}
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          {coverageGroups.partial.map((entry) => (
+            <button
+              key={entry.key}
+              type="button"
+              onClick={() => handleScenarioSelect(entry.key)}
+              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-left transition hover:border-slate-300 dark:border-white/10 dark:bg-white/4"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-sm font-semibold text-slate-900 dark:text-zinc-50">{entry.recommendedEntryLabel}</p>
+                <Badge variant="outline">{getSupportLevelBadgeLabel(entry.supportLevel)}</Badge>
+              </div>
+              <p className="mt-2 text-sm text-slate-600 dark:text-zinc-300">{entry.scopeDisclosure}</p>
+            </button>
+          ))}
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 dark:border-white/10 dark:bg-white/4">
+          <p className="text-sm font-semibold text-slate-900 dark:text-zinc-50">今は対象外として明示している領域</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {coverageGroups.notNow.map((entry) => (
+              <span key={entry.key} className="rounded-full border border-slate-300 px-3 py-1 text-xs text-slate-600 dark:border-white/15 dark:text-zinc-300">
+                {entry.recommendedEntryLabel}
+              </span>
+            ))}
+          </div>
+          <p className="mt-3 text-sm text-slate-600 dark:text-zinc-300">
+            チケット、遠征、3D idol、K-pop、provider fit が薄い niche 店舗は「忘れている」のではなく、いまは守備範囲外として静かに明示しています。
+          </p>
+        </div>
+      </Card>
+
+      <Card className="space-y-3 border border-accent/20 bg-accent/5 text-slate-900 dark:border-accent/25 dark:bg-accent/10 dark:text-zinc-50">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className={sectionTitleClass}>現在の選択シナリオ</h2>
+          <Badge variant="accent">{getSupportLevelBadgeLabel(selectedCoverage.supportLevel)}</Badge>
+        </div>
+        <p className="text-sm text-slate-700 dark:text-zinc-200">{selectedCoverage.recommendedEntryLabel}</p>
+        <p className="text-sm text-slate-600 dark:text-zinc-300">{selectedCoverage.questionHint}</p>
+        <p className="text-xs text-slate-500 dark:text-zinc-400">{selectedCoverage.scopeDisclosure}</p>
+      </Card>
 
       <Card className="space-y-4 border border-accent/25 bg-white text-slate-900 shadow-sm shadow-accent/5 dark:border-accent/30 dark:bg-white/6 dark:text-zinc-50">
         <div className="space-y-3">
@@ -156,7 +251,10 @@ export default function Home() {
       </Card>
 
       <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
-        <h2 className={sectionTitleClass}>Step 1: 何を診断する？</h2>
+        <h2 className={sectionTitleClass}>Step 1: 診断の土台を合わせる</h2>
+        <p className="text-sm text-slate-600 dark:text-zinc-300">
+          入口はシナリオ基準ですが、診断精度のために商品種別も合わせます。対象外の種別は後段でも対象外として伝えます。
+        </p>
         <div className="grid gap-3">
           {itemKindOptions.map((option) => (
             <RadioCard key={option.value} title={option.label} description={option.lead} isSelected={itemKind === option.value} onClick={() => setItemKind(option.value)} />

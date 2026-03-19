@@ -53,6 +53,7 @@ import { buildMercariKeyword, isMercariRelevantScenario } from "@/src/oshihapi/m
 import { getSearchClueClarification } from "@/src/oshihapi/input/getSearchClueClarification";
 import { parseSearchClues, toSearchClueDiagnostics } from "@/src/oshihapi/input/parseSearchClues";
 import type { SearchClueClarification } from "@/src/oshihapi/input/types";
+import { getSupportLevelBadgeLabel } from "@/src/oshihapi/scenarioCoverage";
 
 const DEADLINE_VALUES = [
   "today",
@@ -272,6 +273,7 @@ export default function FlowPage() {
     : undefined;
   const currentTitle = currentQuestionCopy?.title ?? currentQuestion?.title ?? "";
   const currentHelper = currentQuestionCopy?.helper ?? currentQuestion?.description;
+  const scenarioCoverage = flowResolution.coverage;
   const mercariKeywordResult = useMemo(
     () =>
       buildMercariKeyword({
@@ -687,11 +689,25 @@ export default function FlowPage() {
       ) : null}
 
       <Card className="space-y-4">
+        <div className="rounded-2xl border border-accent/20 bg-accent/5 px-4 py-3 dark:border-accent/25 dark:bg-accent/10">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm font-semibold text-slate-900 dark:text-zinc-50">このフローが見ている判断シナリオ</p>
+            <span className="rounded-full border border-accent/30 px-3 py-1 text-xs font-semibold text-slate-700 dark:text-zinc-200">
+              {getSupportLevelBadgeLabel(scenarioCoverage.supportLevel)}
+            </span>
+          </div>
+          <p className="mt-2 text-sm text-slate-700 dark:text-zinc-200">{scenarioCoverage.recommendedEntryLabel}</p>
+          <p className="mt-2 text-sm text-slate-600 dark:text-zinc-300">{scenarioCoverage.questionHint}</p>
+          <p className="mt-2 text-xs text-slate-500 dark:text-zinc-400">{scenarioCoverage.scopeDisclosure}</p>
+        </div>
         <div className="space-y-2">
           <h2 className={sectionTitleClass}>{hotColdTitle}</h2>
           {hotColdHelper ? (
             <p className={helperTextClass}>{hotColdHelper}</p>
           ) : null}
+          <p className="text-xs text-slate-500 dark:text-zinc-400">
+            何を最適化するフローか: {scenarioCoverage.resultExplanationHint}
+          </p>
           {showQuestionMercariCta && flowMercariOutHref ? (
             <div className="space-y-2 rounded-xl border border-border bg-card px-3 py-3">
               <a
