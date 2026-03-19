@@ -7,8 +7,13 @@ export function isHmvRelevantScenario(input: {
   itemKind?: ItemKind;
   goodsClass?: GoodsClass;
 }): boolean {
-  if (input.goodsClass !== "media") return false;
-  return input.itemKind === "goods" || input.itemKind === "used" || input.itemKind === "preorder";
+  if (input.goodsClass === "media") {
+    return input.itemKind === "goods" || input.itemKind === "used" || input.itemKind === "preorder";
+  }
+  if (input.goodsClass === "paper") {
+    return input.itemKind === "goods" || input.itemKind === "preorder";
+  }
+  return false;
 }
 
 export function resolveHmvAffiliateDestination(input: {

@@ -134,17 +134,15 @@ const SCENARIOS: ScenarioSpec[] = [
     resultTags: ["bonus_pressure_high"],
     expected: [
       "Media-specialty and official-info-aware truth candidates should outrank generic fallback retail.",
-      "Visible delivery should favor HMV while keeping pending/truth-only specialty providers diagnosable.",
+      "Visible delivery should favor HMV while keeping non-book specialty references hidden unless the context fits.",
       "Hobby/preorder misfits should not overtake media-specialty delivery.",
     ],
-    improvedVsOldLogic: "Bonus-sensitive media preorder routing now concentrates on media-specialty delivery while preserving truth-only specialty candidates in diagnostics only.",
+    improvedVsOldLogic: "Bonus-sensitive media preorder routing now concentrates on HMV/Gamers and only surfaces Melonbooks when the clue actually points to bookstore-style bonus checking.",
     assertions: (result) => {
       assert(result.cards[0]?.providerId === "hmv", "media_bonus_sensitive: HMV should lead visible media delivery");
-      assert(result.diagnostics.truthCandidates.includes("melonbooks"), "media_bonus_sensitive: Melonbooks should remain in truth layer");
-      assert(!result.diagnostics.deliveryCandidates.includes("melonbooks"), "media_bonus_sensitive: Melonbooks must not enter delivery");
       assert(
-        result.diagnostics.deliveryFilteredProviders.some((entry) => entry.providerId === "melonbooks" && entry.reason === "not_delivery_enabled"),
-        "media_bonus_sensitive: diagnostics should explain truth-only Melonbooks exclusion",
+        !result.cards.some((card) => card.providerId === "melonbooks"),
+        "media_bonus_sensitive: Melonbooks should stay hidden when the clue is CD/media-only",
       );
       assert(
         findEvaluation(result.diagnostics, "amazon")?.demotionReasons.includes("bonus_specialty_mismatch"),
