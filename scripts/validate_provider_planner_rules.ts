@@ -112,8 +112,8 @@ async function main() {
   assert(mediaPreorder.cards[0]?.providerId === "hmv", "media preorder should prefer HMV in delivery layer");
   assert(!mediaPreorder.cards.some((card) => (card.providerId === "amazon" || card.providerId === "rakuten") && card.tier === "recommended"), "general retail should not dominate media preorder");
   assert(
-    mediaPreorder.diagnostics.truthRankedProviders.some((entry) => entry.providerId === "melonbooks"),
-    "media preorder truth ranking should still include Melonbooks",
+    !mediaPreorder.diagnostics.renderedProviders.includes("melonbooks"),
+    "media preorder should keep Melonbooks hidden when the clue is media-only",
   );
 
   const lowConfidence = await scenario({

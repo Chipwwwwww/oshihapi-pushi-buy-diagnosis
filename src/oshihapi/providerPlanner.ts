@@ -4,6 +4,7 @@ import { isAmiamiRelevantScenario } from "@/src/oshihapi/amiamiConfig";
 import { isHmvRelevantScenario } from "@/src/oshihapi/hmvConfig";
 import { isAnimateRelevantScenario, resolveAnimateAffiliateDestination } from "@/src/oshihapi/animateConfig";
 import { isGamersRelevantScenario } from "@/src/oshihapi/gamersConfig";
+import { resolveMelonbooksReferenceUrl } from "@/src/oshihapi/melonbooksConfig";
 import { isSurugayaRelevantScenario } from "@/src/oshihapi/surugayaConfig";
 import { isTowerRecordsRelevantScenario, resolveTowerRecordsAffiliateDestination } from "@/src/oshihapi/towerRecordsConfig";
 import { isYahooShoppingRelevantScenario, resolveYahooShoppingAffiliateDestination } from "@/src/oshihapi/yahooShoppingConfig";
@@ -26,6 +27,7 @@ export type ProviderCandidate = {
   outHref: string;
   badge?: string;
   visibility: ProviderVisibility;
+  renderMode?: "primary" | "reference" | "fallback";
   suppressReason?: string;
   destinationReady: boolean;
   scenarioEligible?: boolean;
@@ -54,10 +56,12 @@ export type ProviderDiagnostics = {
     rank: number;
     destinationReady: boolean;
     visibility: ProviderVisibility;
+    renderMode?: "primary" | "reference" | "fallback";
     hardBlocked: boolean;
     hardBlockReasons: string[];
     demotionReasons: string[];
     suppressReason?: string;
+    referenceReason?: string;
   }>;
   aiRerankEligible: boolean;
   aiRerankEnabled: boolean;
@@ -107,6 +111,8 @@ type ProviderEvaluation = RawProviderCandidate & {
   maxTier?: ProviderTier;
   truthRank?: number;
   truthOnly: boolean;
+  referenceRenderable: boolean;
+  referenceReason?: string;
   deliverySuppressedReason?: string;
   finalSuppressReason?: string;
 };
@@ -128,6 +134,14 @@ const PLANNED_PROVIDER_IDS: ProviderId[] = [
 
 const TIER_ORDER: ProviderTier[] = ["recommended", "okay", "lowProbability"];
 const SMALL_COLLECTION_FAMILY = new Set<GoodsClass>(["small_collection", "paper", "itabag_badge"]);
+const BOOKSTORE_CONTEXT_KEYWORDS = ["書籍", "本", "新刊", "漫画", "コミック", "同人", "小説", "冊子"];
+const BONUS_EXPLICIT_KEYWORDS = ["特典", "有償特典", "無償特典", "店舗別", "店舗特典", "予約特典"];
+
+type SpecialtyScenario =
+  | "book_bonus"
+  | "media_bonus"
+  | "doujin_bonus_extreme"
+  | "generic";
 
 function buildOutHref(params: Record<string, string | undefined>): string {
   const query = new URLSearchParams();
@@ -154,96 +168,162 @@ function isRakutenScenarioEligible(input: Pick<PlannerInput, "itemKind" | "goods
   return input.itemKind === "preorder" || input.itemKind === "goods";
 }
 
-function isMelonbooksRelevantScenario(input: Pick<PlannerInput, "itemKind" | "goodsClass" | "searchClues">): boolean {
-  if (!input.itemKind) return false;
-  if (input.goodsClass === "tech" || input.goodsClass === "display_large") return false;
-  if (input.goodsClass === "media") return input.itemKind === "goods" || input.itemKind === "preorder";
-  if (input.itemKind === "preorder" || input.itemKind === "blind_draw") return true;
-  if (input.itemKind !== "goods") return false;
-  if (!input.goodsClass) return Boolean(input.searchClues?.bonusClues.length);
-  return SMALL_COLLECTION_FAMILY.has(input.goodsClass);
+function hasKeyword(raw: string | undefined, keywords: string[]): boolean {
+  if (!raw) return false;
+  return keywords.some((keyword) => raw.includes(keyword));
 }
 
-function getScenarioRankDelta(providerId: ProviderId, input: Pick<PlannerInput, "itemKind" | "goodsClass" | "searchClues">): number {
+function isBookOrComicContext(input: Pick<PlannerInput, "goodsClass" | "searchClues" | "itemKind">): boolean {
+  if (input.goodsClass === "paper") return true;
+  if (input.searchClues?.itemTypeCandidates.includes("紙類")) return true;
+  if (hasKeyword(input.searchClues?.raw, BOOKSTORE_CONTEXT_KEYWORDS)) return true;
+  if (hasKeyword(input.searchClues?.normalized, BOOKSTORE_CONTEXT_KEYWORDS)) return true;
+  return false;
+}
+
+function isDoujinOrComicContext(input: Pick<PlannerInput, "searchClues">): boolean {
+  return hasKeyword(input.searchClues?.raw, ["同人", "漫画", "コミック", "新刊"]) || hasKeyword(input.searchClues?.normalized, ["同人", "漫画", "コミック", "新刊"]);
+}
+
+function hasExplicitBonusMentions(input: Pick<PlannerInput, "searchClues">): boolean {
+  if (input.searchClues?.bonusClues.some((clue) => clue === "特典")) return true;
+  return hasKeyword(input.searchClues?.raw, BONUS_EXPLICIT_KEYWORDS) || hasKeyword(input.searchClues?.normalized, BONUS_EXPLICIT_KEYWORDS);
+}
+
+function countMelonbooksSignals(input: Pick<PlannerInput, "itemKind" | "goodsClass" | "searchClues" | "resultTags">): number {
+  let count = 0;
+  if (input.itemKind === "goods" || input.itemKind === "preorder") count += 1;
+  if (isBookOrComicContext(input) || isDoujinOrComicContext(input)) count += 1;
+  if (hasBonusSensitiveSignals(input)) count += 1;
+  if (hasExplicitBonusMentions(input)) count += 1;
+  if ((input.resultTags ?? []).includes("collection_pressure")) count += 1;
+  if (input.goodsClass === "paper" || isDoujinOrComicContext(input)) count += 1;
+  return count;
+}
+
+function isMelonbooksRelevantScenario(input: Pick<PlannerInput, "itemKind" | "goodsClass" | "searchClues" | "resultTags">): boolean {
+  if (!input.itemKind) return false;
+  if (input.itemKind === "used" || input.itemKind === "ticket" || input.itemKind === "blind_draw") return false;
+  if (input.goodsClass === "tech" || input.goodsClass === "display_large") return false;
+  const bookstoreContext = isBookOrComicContext(input) || isDoujinOrComicContext(input);
+  const pressureOrPath =
+    hasBonusSensitiveSignals(input) ||
+    hasExplicitBonusMentions(input) ||
+    (input.resultTags ?? []).includes("collection_pressure") ||
+    input.itemKind === "preorder";
+  return bookstoreContext && pressureOrPath && countMelonbooksSignals(input) >= 2;
+}
+
+function classifySpecialtyScenario(input: Pick<PlannerInput, "itemKind" | "goodsClass" | "searchClues" | "resultTags">): SpecialtyScenario {
+  const bonusSensitive = hasBonusSensitiveSignals(input);
+  const bookContext = isBookOrComicContext(input);
+  const doujinContext = isDoujinOrComicContext(input);
+  const mediaContext =
+    input.goodsClass === "media" ||
+    Boolean(input.searchClues?.itemTypeCandidates.some((candidate) => candidate === "Blu-ray" || candidate === "CD")) ||
+    (input.resultTags ?? []).includes("actor_fan_primary");
+
+  if (bonusSensitive && doujinContext) return "doujin_bonus_extreme";
+  if (bonusSensitive && mediaContext) return "media_bonus";
+  if (bonusSensitive && bookContext) return "book_bonus";
+  return "generic";
+}
+
+function getScenarioOrderWeight(providerId: ProviderId, input: Pick<PlannerInput, "itemKind" | "goodsClass" | "searchClues" | "resultTags">): number {
+  const orderMap: Record<SpecialtyScenario, ProviderId[]> = {
+    book_bonus: ["melonbooks", "gamers", "hmv", "amazon"],
+    media_bonus: ["hmv", "gamers", "melonbooks", "amazon"],
+    doujin_bonus_extreme: ["melonbooks", "gamers", "amazon", "hmv"],
+    generic: [],
+  };
+  const order = orderMap[classifySpecialtyScenario(input)];
+  const index = order.indexOf(providerId);
+  if (index === -1) return 0;
+  return -28 + index * 8;
+}
+
+function getScenarioRankDelta(providerId: ProviderId, input: Pick<PlannerInput, "itemKind" | "goodsClass" | "searchClues" | "resultTags">): number {
   const { itemKind, goodsClass, searchClues } = input;
+  let delta = 0;
 
   const hasBonusClue = Boolean(searchClues?.bonusClues.length);
   const hasMediaClue = Boolean(searchClues?.itemTypeCandidates.some((candidate) => candidate === "Blu-ray" || candidate === "CD"));
 
   if (goodsClass === "media") {
-    if (providerId === "hmv") return -34;
-    if (providerId === "towerRecords") return -24;
-    if (providerId === "melonbooks") return -18;
-    if (providerId === "amazon") return -12;
-    if (providerId === "mercari") return 10;
-    if (providerId === "surugaya") return 8;
-    if (providerId === "rakuten") return 16;
+    if (providerId === "hmv") delta -= 34;
+    if (providerId === "towerRecords") delta -= 24;
+    if (providerId === "melonbooks") delta -= 18;
+    if (providerId === "amazon") delta -= 12;
+    if (providerId === "mercari") delta += 10;
+    if (providerId === "surugaya") delta += 8;
+    if (providerId === "rakuten") delta += 16;
   }
 
   if (itemKind === "used") {
-    if (providerId === "mercari") return -18;
-    if (providerId === "surugaya") return -14;
-    if (providerId === "hmv") return goodsClass === "media" ? -10 : 22;
-    if (providerId === "amiami" || providerId === "gamers") return 18;
-    if (providerId === "amazon") return 24;
-    if (providerId === "rakuten") return 28;
+    if (providerId === "mercari") delta -= 18;
+    if (providerId === "surugaya") delta -= 14;
+    if (providerId === "hmv") delta += goodsClass === "media" ? -10 : 22;
+    if (providerId === "amiami" || providerId === "gamers") delta += 18;
+    if (providerId === "amazon") delta += 24;
+    if (providerId === "rakuten") delta += 28;
   }
 
   if (itemKind === "preorder") {
-    if (providerId === "amiami") return -18;
-    if (providerId === "gamers") return -14;
-    if (providerId === "melonbooks") return -10;
-    if (providerId === "amazon") return -6;
-    if (providerId === "rakuten") return -2;
-    if (providerId === "mercari") return 26;
-    if (providerId === "surugaya") return 18;
-    if (providerId === "hmv") return goodsClass === "media" ? -10 : 20;
+    if (providerId === "amiami") delta -= 18;
+    if (providerId === "gamers") delta -= 14;
+    if (providerId === "melonbooks") delta -= 10;
+    if (providerId === "amazon") delta -= 6;
+    if (providerId === "rakuten") delta -= 2;
+    if (providerId === "mercari") delta += 26;
+    if (providerId === "surugaya") delta += 18;
+    if (providerId === "hmv") delta += goodsClass === "media" ? -10 : 20;
   }
 
   if (itemKind === "blind_draw") {
-    if (providerId === "gamers") return -10;
-    if (providerId === "amiami") return -8;
-    if (providerId === "melonbooks") return -7;
-    if (providerId === "mercari") return 6;
-    if (providerId === "surugaya") return 8;
-    if (providerId === "amazon") return 10;
-    if (providerId === "rakuten") return 12;
+    if (providerId === "gamers") delta -= 10;
+    if (providerId === "amiami") delta -= 8;
+    if (providerId === "melonbooks") delta -= 7;
+    if (providerId === "mercari") delta += 6;
+    if (providerId === "surugaya") delta += 8;
+    if (providerId === "amazon") delta += 10;
+    if (providerId === "rakuten") delta += 12;
   }
 
   if (itemKind === "goods" && goodsClass !== "media") {
-    if (providerId === "gamers" && (goodsClass === "paper" || goodsClass === "itabag_badge" || goodsClass === "small_collection" || goodsClass === "wearable")) return -8;
-    if (providerId === "melonbooks" && (goodsClass === "paper" || goodsClass === "itabag_badge" || goodsClass === "small_collection")) return -12;
-    if (providerId === "amiami" && (goodsClass === "display_large" || goodsClass === "small_collection" || goodsClass === "itabag_badge")) return -6;
-    if (providerId === "mercari") return 10;
-    if (providerId === "surugaya") return 12;
-    if (providerId === "amazon") return -6;
-    if (providerId === "rakuten") return 6;
+    if (providerId === "gamers" && (goodsClass === "paper" || goodsClass === "itabag_badge" || goodsClass === "small_collection" || goodsClass === "wearable")) delta -= 8;
+    if (providerId === "melonbooks" && (goodsClass === "paper" || goodsClass === "itabag_badge" || goodsClass === "small_collection")) delta -= 12;
+    if (providerId === "amiami" && (goodsClass === "display_large" || goodsClass === "small_collection" || goodsClass === "itabag_badge")) delta -= 6;
+    if (providerId === "mercari") delta += 10;
+    if (providerId === "surugaya") delta += 12;
+    if (providerId === "amazon") delta -= 6;
+    if (providerId === "rakuten") delta += 6;
   }
 
   if (hasBonusClue) {
-    if (providerId === "gamers" || providerId === "animate" || providerId === "melonbooks") return -4;
-    if (providerId === "mercari") return 4;
+    if (providerId === "gamers" || providerId === "animate" || providerId === "melonbooks") delta -= 4;
+    if (providerId === "mercari") delta += 4;
   }
 
-  if (hasMediaClue && (providerId === "hmv" || providerId === "towerRecords")) return -6;
+  if (hasMediaClue && (providerId === "hmv" || providerId === "towerRecords")) delta -= 6;
 
-  return 0;
+  return delta + getScenarioOrderWeight(providerId, input);
 }
 
-function buildShortReason(providerId: ProviderId, input: Pick<PlannerInput, "itemKind" | "goodsClass" | "searchClues">): string {
+function buildShortReason(providerId: ProviderId, input: Pick<PlannerInput, "itemKind" | "goodsClass" | "searchClues" | "resultTags">): string {
   const { itemKind, goodsClass, searchClues } = input;
+  const specialtyScenario = classifySpecialtyScenario(input);
 
-  if (searchClues?.bonusClues.length) {
-    if (providerId === "gamers") return "特典条件の確認向き";
+  if (searchClues?.bonusClues.length || specialtyScenario !== "generic") {
+    if (providerId === "gamers") return goodsClass === "media" ? "特典重視の専門店候補" : "店舗別特典を見比べやすい";
     if (providerId === "animate") return "店舗特典の確認向き";
-    if (providerId === "melonbooks") return "特典・紙もの候補";
+    if (providerId === "melonbooks") return "新刊・店舗別特典の確認先";
   }
 
   if (goodsClass === "media") {
-    if (providerId === "hmv") return "媒体在庫を優先確認";
+    if (providerId === "hmv") return "CD・映像・書籍の発売情報に強い";
     if (providerId === "towerRecords") return "媒体特化の補助候補";
-    if (providerId === "melonbooks") return "特典媒体の候補";
-    if (providerId === "amazon") return "新品比較がしやすい";
+    if (providerId === "melonbooks") return "書籍系特典の参考先";
+    if (providerId === "amazon") return "一般流通の比較先";
     if (providerId === "mercari") return "中古相場の保険先";
     if (providerId === "surugaya") return "中古在庫の保険先";
   }
@@ -256,9 +336,10 @@ function buildShortReason(providerId: ProviderId, input: Pick<PlannerInput, "ite
 
   if (itemKind === "preorder") {
     if (providerId === "amiami") return "予約在庫を優先確認";
-    if (providerId === "gamers") return "特典系を先確認";
-    if (providerId === "melonbooks") return "特典・専門店の候補";
-    if (providerId === "amazon") return "新品比較の補助";
+    if (providerId === "gamers") return "特典重視なら先に確認";
+    if (providerId === "melonbooks") return "特典確認先の専門店参考";
+    if (providerId === "hmv") return goodsClass === "paper" ? "書籍の発売情報を確認" : "CD・映像の発売情報を確認";
+    if (providerId === "amazon") return "一般流通の比較補助";
     if (providerId === "rakuten") return "横断比較の補助";
     if (providerId === "mercari") return "中古化後の逃げ道";
     if (providerId === "surugaya") return "中古店の保険先";
@@ -267,16 +348,17 @@ function buildShortReason(providerId: ProviderId, input: Pick<PlannerInput, "ite
   if (itemKind === "blind_draw") {
     if (providerId === "gamers") return "特典・箱買い向き";
     if (providerId === "amiami") return "予約枠を確認";
-    if (providerId === "melonbooks") return "専門店の補助候補";
+    if (providerId === "melonbooks") return "書店特典文脈のみ参考";
     if (providerId === "mercari") return "単品相場の確認";
     if (providerId === "surugaya") return "中古単品の補助";
   }
 
   if (itemKind === "goods" && goodsClass !== "media") {
-    if (providerId === "gamers") return "専門店在庫を確認";
-    if (providerId === "melonbooks") return "紙もの・特典系に強い";
+    if (providerId === "gamers") return "専門店の特典・在庫を確認";
+    if (providerId === "melonbooks") return "書籍・漫画・同人の特典確認向き";
+    if (providerId === "hmv") return goodsClass === "paper" ? "書籍の通常流通も確認" : "一般流通の発売情報を確認";
     if (providerId === "amiami") return "定番ホビー枠";
-    if (providerId === "amazon") return "新品比較の候補";
+    if (providerId === "amazon") return "一般小売の比較候補";
     if (providerId === "rakuten") return "ショップ横断候補";
     if (providerId === "mercari") return "中古相場の保険先";
     if (providerId === "surugaya") return "中古店の保険先";
@@ -290,11 +372,11 @@ function buildCompactCta(providerId: ProviderId): string {
     case "amiami":
       return "あみあみで見る";
     case "gamers":
-      return "ゲーマーズで見る";
+      return "ゲーマーズで特典を確認";
     case "melonbooks":
-      return "メロンブックスで見る";
+      return "メロンブックスで特典情報を見る";
     case "amazon":
-      return "Amazonで確認";
+      return "Amazonで一般流通を比較";
     case "rakuten":
       return "楽天で確認";
     case "mercari":
@@ -302,7 +384,7 @@ function buildCompactCta(providerId: ProviderId): string {
     case "surugaya":
       return "駿河屋で見る";
     case "hmv":
-      return "HMVで見る";
+      return "HMVで発売情報を確認";
     default:
       return getProviderConfig(providerId).defaultCtaLabel;
   }
@@ -348,6 +430,7 @@ function isSmallCollectionFamily(goodsClass?: GoodsClass): boolean {
 
 function hasBonusSensitiveSignals(input: Pick<PlannerInput, "resultTags" | "searchClues">): boolean {
   if ((input.resultTags ?? []).includes("bonus_pressure_high")) return true;
+  if ((input.resultTags ?? []).includes("bonus_pressure_mid")) return true;
   return Boolean(input.searchClues?.bonusClues.some((clue) => clue === "特典"));
 }
 
@@ -357,7 +440,7 @@ function getCandidateSignals(candidate: ProviderCandidate, input: PlannerInput):
 
   if (input.goodsClass === "media" && candidate.providerId === "hmv") signals.add("media_fit");
   if (input.itemKind === "preorder" && (candidate.providerId === "amiami" || candidate.providerId === "gamers" || candidate.providerId === "melonbooks")) signals.add("preorder_fit");
-  if (config.role === "general_new") signals.add("general_new");
+  if (config.role === "generic_retail_fallback") signals.add("general_new");
   if (config.role === "used_market" || config.role === "used_shop") signals.add("used_fallback");
   if (candidate.destinationReady) signals.add("destination_ready");
   if (candidate.rank <= 45) signals.add("high_base_rank");
@@ -368,6 +451,8 @@ function getCandidateSignals(candidate: ProviderCandidate, input: PlannerInput):
   if (input.searchClues?.bonusClues.length) signals.add("search_bonus_clue");
   if (input.searchClues?.itemTypeCandidates.includes("Blu-ray")) signals.add("search_bluray_clue");
   if (input.searchClues?.workCandidates.length) signals.add("search_work_clue");
+  if (candidate.renderMode === "reference") signals.add("reference_only_display");
+  if (candidate.providerId === "melonbooks" && isBookOrComicContext(input)) signals.add("bookstore_specialty_path");
 
   return [...signals];
 }
@@ -567,7 +652,7 @@ function evaluateCandidate(rawCandidate: RawProviderCandidate, input: PlannerInp
     if (config.usedMarketCheck) rank -= 10;
     if (config.officialInfoCheck) {
       demotionReasons.push("secondary_market_alive");
-      rank += 10;
+      rank += input.goodsClass === "media" ? 24 : 10;
       maxTier = tightenMaxTier(maxTier, "okay");
     }
   }
@@ -581,10 +666,25 @@ function evaluateCandidate(rawCandidate: RawProviderCandidate, input: PlannerInp
     rank += 8;
     maxTier = tightenMaxTier(maxTier, "okay");
   }
+  if (
+    bonusSensitive &&
+    (rawCandidate.providerId === "amazon" || rawCandidate.providerId === "rakuten") &&
+    (isBookOrComicContext(input) || input.goodsClass === "media")
+  ) {
+    demotionReasons.push("specialty_provider_preferred");
+    rank += 10;
+    maxTier = tightenMaxTier(maxTier, "lowProbability");
+  }
 
   const truthLayerEligible = hardBlockReasons.length === 0;
   const deliveryEnabled = config.deliveryEnabled && config.state === "live" && config.publicFacing && rawCandidate.visibility === "public";
   const displayable = truthLayerEligible && deliveryEnabled && rawCandidate.destinationReady;
+  const referenceRenderable =
+    truthLayerEligible &&
+    !displayable &&
+    config.referenceEnabled === true &&
+    rawCandidate.destinationReady &&
+    rawCandidate.renderMode === "reference";
 
   let deliverySuppressedReason: string | undefined;
   if (truthLayerEligible && !displayable) {
@@ -614,6 +714,8 @@ function evaluateCandidate(rawCandidate: RawProviderCandidate, input: PlannerInp
     demotionReasons: dedupeReasons(demotionReasons),
     maxTier,
     truthOnly: truthLayerEligible && !displayable,
+    referenceRenderable,
+    referenceReason: rawCandidate.renderMode === "reference" ? "reference_only_specialty_check" : undefined,
     deliverySuppressedReason,
     finalSuppressReason,
   };
@@ -676,9 +778,10 @@ function buildDiagnostics(
     .filter((candidate) => candidate.truthLayerEligible)
     .sort((a, b) => a.rank - b.rank || a.providerId.localeCompare(b.providerId));
   const deliveryCandidates = truthCandidates.filter((candidate) => candidate.displayable);
+  const eligibleRenderCandidates = truthCandidates.filter((candidate) => candidate.displayable || candidate.referenceRenderable);
 
   return {
-    eligibleProviders: deliveryCandidates.map((candidate) => candidate.providerId),
+    eligibleProviders: eligibleRenderCandidates.map((candidate) => candidate.providerId),
     truthCandidates: truthCandidates.map((candidate) => candidate.providerId),
     truthRankedProviders: truthCandidates.map((candidate) => ({ providerId: candidate.providerId, rank: candidate.rank })),
     deliveryCandidates: deliveryCandidates.map((candidate) => candidate.providerId),
@@ -712,10 +815,12 @@ function buildDiagnostics(
       rank: candidate.rank,
       destinationReady: candidate.destinationReady,
       visibility: candidate.visibility,
+      renderMode: candidate.renderMode,
       hardBlocked: candidate.hardBlocked,
       hardBlockReasons: candidate.hardBlockReasons,
       demotionReasons: candidate.demotionReasons,
       suppressReason: candidate.finalSuppressReason,
+      referenceReason: candidate.referenceReason,
     })),
     aiRerankEligible: ai.eligible,
     aiRerankEnabled: ai.enabled,
@@ -758,6 +863,7 @@ function buildRawCandidate(providerId: ProviderId, input: PlannerInput): RawProv
         : "",
       badge: config.badge,
       visibility: "public",
+      renderMode: "primary",
       destinationReady,
       scenarioEligible,
       suppressReason: destinationReady ? undefined : scenarioEligible ? "destination_missing_or_not_relevant" : "scenario_not_eligible",
@@ -786,6 +892,7 @@ function buildRawCandidate(providerId: ProviderId, input: PlannerInput): RawProv
         : "",
       badge: config.badge,
       visibility: "public",
+      renderMode: "primary",
       destinationReady,
       scenarioEligible,
       suppressReason: destinationReady ? undefined : scenarioEligible ? "destination_missing_or_not_relevant" : "scenario_not_eligible",
@@ -814,6 +921,7 @@ function buildRawCandidate(providerId: ProviderId, input: PlannerInput): RawProv
         : "",
       badge: config.badge,
       visibility: "public",
+      renderMode: "primary",
       destinationReady,
       scenarioEligible,
       suppressReason: destinationReady ? undefined : scenarioEligible ? "destination_missing_or_not_relevant" : "scenario_not_eligible",
@@ -842,6 +950,7 @@ function buildRawCandidate(providerId: ProviderId, input: PlannerInput): RawProv
         : "",
       badge: config.badge,
       visibility: "public",
+      renderMode: "primary",
       destinationReady,
       scenarioEligible,
       suppressReason: destinationReady ? undefined : scenarioEligible ? "destination_missing_or_not_relevant" : "scenario_not_eligible",
@@ -870,6 +979,7 @@ function buildRawCandidate(providerId: ProviderId, input: PlannerInput): RawProv
         : "",
       badge: config.badge,
       visibility: "public",
+      renderMode: "primary",
       destinationReady,
       scenarioEligible,
       suppressReason: destinationReady ? undefined : scenarioEligible ? "destination_missing_or_not_relevant" : "scenario_not_eligible",
@@ -899,6 +1009,7 @@ function buildRawCandidate(providerId: ProviderId, input: PlannerInput): RawProv
         : "",
       badge: config.badge,
       visibility: "public",
+      renderMode: "fallback",
       destinationReady,
       scenarioEligible,
       suppressReason: destinationReady ? undefined : scenarioEligible ? "destination_missing_or_not_relevant" : "scenario_not_eligible",
@@ -928,6 +1039,7 @@ function buildRawCandidate(providerId: ProviderId, input: PlannerInput): RawProv
         : "",
       badge: config.badge,
       visibility: "public",
+      renderMode: "fallback",
       destinationReady,
       scenarioEligible,
       suppressReason: destinationReady ? undefined : scenarioEligible ? "destination_missing_or_not_relevant" : "scenario_not_eligible",
@@ -946,6 +1058,7 @@ function buildRawCandidate(providerId: ProviderId, input: PlannerInput): RawProv
       outHref: "",
       badge: config.badge,
       visibility: "internal",
+      renderMode: "primary",
       destinationReady,
       scenarioEligible,
       suppressReason: destinationReady ? "pending_provider_not_public" : scenarioEligible ? "awaiting_vc_affiliate_url" : "scenario_not_eligible",
@@ -964,6 +1077,7 @@ function buildRawCandidate(providerId: ProviderId, input: PlannerInput): RawProv
       outHref: "",
       badge: config.badge,
       visibility: "internal",
+      renderMode: "primary",
       destinationReady,
       scenarioEligible,
       suppressReason: destinationReady ? "pending_provider_not_public" : scenarioEligible ? "destination_unresolved" : "scenario_not_eligible",
@@ -982,6 +1096,7 @@ function buildRawCandidate(providerId: ProviderId, input: PlannerInput): RawProv
       outHref: "",
       badge: config.badge,
       visibility: "internal",
+      renderMode: "primary",
       destinationReady,
       scenarioEligible,
       suppressReason: destinationReady ? "pending_provider_not_public" : scenarioEligible ? "awaiting_vc_affiliate_url" : "scenario_not_eligible",
@@ -990,18 +1105,30 @@ function buildRawCandidate(providerId: ProviderId, input: PlannerInput): RawProv
 
   if (providerId === "melonbooks") {
     const scenarioEligible = isMelonbooksRelevantScenario(input);
+    const destinationReady = scenarioEligible && Boolean(resolveMelonbooksReferenceUrl());
     return {
       providerId,
-      rank: scenarioEligible ? baseRank - 6 : baseRank + 12,
+      rank: scenarioEligible ? baseRank - 10 : baseRank + 16,
       roleReason: config.roleLabel,
       shortReason: buildShortReason(providerId, input),
       ctaLabel: buildCompactCta(providerId),
-      outHref: "",
+      outHref: destinationReady
+        ? buildOutHref({
+            provider: providerId,
+            dest: "melonbooks-reference",
+            runId: input.runId,
+            source: "result_page",
+            itemKind: input.itemKind,
+            gc: input.goodsClass,
+            verdict: input.verdict,
+          })
+        : "",
       badge: config.badge,
-      visibility: "internal",
-      destinationReady: false,
+      visibility: "public",
+      renderMode: "reference",
+      destinationReady,
       scenarioEligible,
-      suppressReason: scenarioEligible ? "not_delivery_enabled" : "scenario_not_eligible",
+      suppressReason: scenarioEligible ? "reference_only_specialty_check" : "scenario_not_eligible",
     };
   }
 
@@ -1014,6 +1141,7 @@ function buildRawCandidate(providerId: ProviderId, input: PlannerInput): RawProv
     outHref: "",
     badge: config.badge,
     visibility: "internal",
+    renderMode: "primary",
     destinationReady: false,
     scenarioEligible: false,
     suppressReason: `pending_provider_slot:${config.role}`,
@@ -1038,7 +1166,7 @@ export async function planProviderCards(input: PlannerInput): Promise<{
   }));
 
   const deliveryCandidates = truthRanked
-    .filter((candidate) => candidate.displayable)
+    .filter((candidate) => candidate.displayable || candidate.referenceRenderable)
     .sort((a, b) => a.rank - b.rank || a.providerId.localeCompare(b.providerId));
 
   const bestRank = deliveryCandidates[0]?.rank ?? 0;

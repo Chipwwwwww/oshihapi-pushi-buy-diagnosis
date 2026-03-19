@@ -17,8 +17,18 @@ export type ProviderId =
 export type ProviderState = "live" | "pending" | "off";
 export type ProviderUniverseStatus = "active" | "pending" | "candidate";
 export type ProviderDestinationType = "keyword_search" | "static" | "item_link";
-export type ProviderRole = "used_market" | "used_shop" | "specialty_hobby" | "specialty_anime" | "all_anime" | "media" | "general_new" | "promo_slot";
+export type ProviderRole =
+  | "used_market"
+  | "used_shop"
+  | "specialty_hobby"
+  | "specialty_bonus_anime_store"
+  | "specialty_bonus_bookstore"
+  | "all_anime"
+  | "media_book_specialty_retail"
+  | "generic_retail_fallback"
+  | "promo_slot";
 export type ProviderBuilderMode = "precision" | "limited" | "canonical_only" | "fallback_only" | "none";
+export type ProviderDisplayState = "display_enabled" | "truth_only";
 
 export type ProviderRegistryEntry = {
   id: ProviderId;
@@ -28,6 +38,7 @@ export type ProviderRegistryEntry = {
   badge?: string;
   defaultCtaLabel: string;
   destinationType: ProviderDestinationType;
+  displayState: ProviderDisplayState;
   state: ProviderState;
   universeStatus: ProviderUniverseStatus;
   truthLayerEligible: boolean;
@@ -53,6 +64,9 @@ export type ProviderRegistryEntry = {
   mediaSpecialty?: boolean;
   specialtyRetail?: boolean;
   highNoiseRisk?: boolean;
+  referenceEnabled?: boolean;
+  primaryBuyCtaEnabled?: boolean;
+  genericFallbackEnabled?: boolean;
 };
 
 const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
@@ -64,6 +78,7 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
     badge: "中古相場",
     defaultCtaLabel: "メルカリで探す",
     destinationType: "keyword_search",
+    displayState: "display_enabled",
     state: "live",
     universeStatus: "active",
     truthLayerEligible: true,
@@ -91,6 +106,7 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
     badge: "中古ショップ",
     defaultCtaLabel: "駿河屋で中古ショップ在庫を確認",
     destinationType: "static",
+    displayState: "display_enabled",
     state: "live",
     universeStatus: "active",
     truthLayerEligible: true,
@@ -118,6 +134,7 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
     badge: "新品・予約",
     defaultCtaLabel: "あみあみで新品・予約を確認",
     destinationType: "static",
+    displayState: "display_enabled",
     state: "live",
     universeStatus: "active",
     truthLayerEligible: true,
@@ -140,11 +157,12 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
   gamers: {
     id: "gamers",
     displayName: "ゲーマーズ",
-    role: "specialty_anime",
-    roleLabel: "専門店・特典・新品",
+    role: "specialty_bonus_anime_store",
+    roleLabel: "特典重視のアニメ専門店",
     badge: "専門店",
-    defaultCtaLabel: "ゲーマーズでアニメ・グッズ専門店を確認",
+    defaultCtaLabel: "ゲーマーズで特典・専門店在庫を確認",
     destinationType: "static",
+    displayState: "display_enabled",
     state: "live",
     universeStatus: "active",
     truthLayerEligible: true,
@@ -164,15 +182,18 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
     builderGoodsClasses: ["paper", "small_collection", "itabag_badge", "wearable", "media"],
     bonusSpecialty: true,
     specialtyRetail: true,
+    primaryBuyCtaEnabled: true,
+    genericFallbackEnabled: false,
   },
   amazon: {
     id: "amazon",
     displayName: "Amazon",
-    role: "general_new",
-    roleLabel: "新品・関連商品の比較",
+    role: "generic_retail_fallback",
+    roleLabel: "一般小売の比較候補",
     badge: "新品・関連",
-    defaultCtaLabel: "Amazonで比較する",
+    defaultCtaLabel: "Amazonで一般流通を比較",
     destinationType: "static",
+    displayState: "display_enabled",
     state: "live",
     universeStatus: "active",
     truthLayerEligible: true,
@@ -186,15 +207,18 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
     defaultRank: 40,
     fallbackOnly: true,
     highNoiseRisk: true,
+    primaryBuyCtaEnabled: false,
+    genericFallbackEnabled: true,
   },
   rakuten: {
     id: "rakuten",
     displayName: "楽天市場",
-    role: "general_new",
+    role: "generic_retail_fallback",
     roleLabel: "新品・収納/関連アクセの比較",
     badge: "新品・付随品",
     defaultCtaLabel: "楽天で見る",
     destinationType: "item_link",
+    displayState: "display_enabled",
     state: "live",
     universeStatus: "active",
     truthLayerEligible: true,
@@ -217,6 +241,7 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
     badge: "公式・予約",
     defaultCtaLabel: "アニメイトで作品関連商品を確認",
     destinationType: "static",
+    displayState: "truth_only",
     state: "pending",
     universeStatus: "pending",
     truthLayerEligible: true,
@@ -238,11 +263,12 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
   hmv: {
     id: "hmv",
     displayName: "HMV",
-    role: "media",
-    roleLabel: "CD・映像・書籍",
+    role: "media_book_specialty_retail",
+    roleLabel: "CD・映像・書籍の発売情報",
     badge: "Media",
-    defaultCtaLabel: "HMVでCD・映像・書籍を確認",
+    defaultCtaLabel: "HMVで発売情報・在庫を確認",
     destinationType: "static",
+    displayState: "display_enabled",
     state: "live",
     universeStatus: "active",
     truthLayerEligible: true,
@@ -255,22 +281,25 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
     allowlistedDomains: ["click.linksynergy.com", "www.hmv.co.jp"],
     defaultRank: 62,
     supportedItemKinds: ["goods", "used", "preorder"],
-    supportedGoodsClasses: ["media"],
+    supportedGoodsClasses: ["media", "paper"],
     supportsBuilder: true,
     builderMode: "precision",
     builderItemKinds: ["goods", "used", "preorder"],
-    builderGoodsClasses: ["media"],
+    builderGoodsClasses: ["media", "paper"],
     officialInfoCheck: true,
     mediaSpecialty: true,
+    primaryBuyCtaEnabled: true,
+    genericFallbackEnabled: false,
   },
   towerRecords: {
     id: "towerRecords",
     displayName: "タワーレコード",
-    role: "media",
+    role: "media_book_specialty_retail",
     roleLabel: "CD・映像・書籍",
     badge: "Media",
     defaultCtaLabel: "タワレコでCD・映像を確認",
     destinationType: "static",
+    displayState: "truth_only",
     state: "pending",
     universeStatus: "pending",
     truthLayerEligible: true,
@@ -278,7 +307,7 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
     publicFacing: false,
     requiresAffiliateApproval: true,
     disclosureRequired: true,
-    allowlistedDomains: [],
+    allowlistedDomains: ["www.melonbooks.co.jp", "melonbooks.co.jp"],
     defaultRank: 63,
     supportsBuilder: true,
     builderMode: "canonical_only",
@@ -291,11 +320,12 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
   yahooShopping: {
     id: "yahooShopping",
     displayName: "Yahoo!ショッピング",
-    role: "general_new",
+    role: "generic_retail_fallback",
     roleLabel: "新品・ショップ横断",
     badge: "新品比較",
     defaultCtaLabel: "Yahoo!ショッピングで新品を確認",
     destinationType: "static",
+    displayState: "truth_only",
     state: "pending",
     universeStatus: "pending",
     truthLayerEligible: true,
@@ -311,11 +341,12 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
   melonbooks: {
     id: "melonbooks",
     displayName: "メロンブックス",
-    role: "specialty_anime",
-    roleLabel: "特典・紙もの・媒体候補",
-    badge: "候補・専門",
-    defaultCtaLabel: "メロンブックスで確認",
+    role: "specialty_bonus_bookstore",
+    roleLabel: "新刊・店舗別特典の専門店参考",
+    badge: "専門店参考",
+    defaultCtaLabel: "メロンブックスで特典情報を確認",
     destinationType: "static",
+    displayState: "truth_only",
     state: "pending",
     universeStatus: "candidate",
     truthLayerEligible: true,
@@ -336,6 +367,9 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
     bonusSpecialty: true,
     mediaSpecialty: true,
     specialtyRetail: true,
+    referenceEnabled: true,
+    primaryBuyCtaEnabled: false,
+    genericFallbackEnabled: false,
   },
   a8Generic: {
     id: "a8Generic",
@@ -345,6 +379,7 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
     badge: "PR枠",
     defaultCtaLabel: "提携先で確認する",
     destinationType: "static",
+    displayState: "truth_only",
     state: "pending",
     universeStatus: "pending",
     truthLayerEligible: false,

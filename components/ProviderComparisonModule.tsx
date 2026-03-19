@@ -24,6 +24,18 @@ const TIER_BADGE_STYLES: Record<ProviderTier, string> = {
   lowProbability: "border-zinc-500/40 bg-zinc-500/10 text-zinc-700 dark:text-zinc-300",
 };
 
+const RENDER_MODE_LABELS: Record<NonNullable<ProviderCandidate["renderMode"]>, string> = {
+  primary: "購入先",
+  reference: "特典確認先",
+  fallback: "比較用",
+};
+
+const RENDER_MODE_STYLES: Record<NonNullable<ProviderCandidate["renderMode"]>, string> = {
+  primary: "border-violet-500/40 bg-violet-500/10 text-violet-700 dark:text-violet-300",
+  reference: "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  fallback: "border-slate-500/40 bg-slate-500/10 text-slate-700 dark:text-slate-300",
+};
+
 function groupCards(cards: ProviderCandidate[]): Record<ProviderTier, ProviderCandidate[]> {
   return cards.reduce(
     (acc, card) => {
@@ -79,6 +91,11 @@ function TierSection({
                     <Badge variant="outline" className={TIER_BADGE_STYLES[tier]}>
                       {TIER_LABELS[tier]}
                     </Badge>
+                    {card.renderMode ? (
+                      <Badge variant="outline" className={RENDER_MODE_STYLES[card.renderMode]}>
+                        {RENDER_MODE_LABELS[card.renderMode]}
+                      </Badge>
+                    ) : null}
                   </div>
                   <p className="text-sm text-muted-foreground">{card.shortReason || card.roleReason}</p>
                 </div>
@@ -110,7 +127,7 @@ export default function ProviderComparisonModule({ cards, onProviderClick }: Pro
     <Card className="space-y-4">
       <div className="space-y-1">
         <h2 className={sectionTitleClass}>次にチェックする場所</h2>
-        <p className={helperTextClass}>まず見る先を絞って、必要なら下の検索ツールを使ってください。</p>
+        <p className={helperTextClass}>特典確認先・専門店・比較先を分けて表示しています。必要なら下の検索ツールも使ってください。</p>
       </div>
 
       <div className="space-y-4">
