@@ -307,6 +307,9 @@ export default function FlowPage() {
     currentQuestion?.id === "q_hot_cold"
       ? "迷うなら、今のメルカリ相場を見ておく"
       : currentHelper;
+  const remainingQuestions = Math.max(questions.length - (safeCurrentIndex + 1), 0);
+  const progressPercent = questions.length > 0 ? Math.round(((safeCurrentIndex + 1) / questions.length) * 100) : 0;
+  const isLongFlow = mode === "long" || questions.length >= 8;
   const flowMercariOutHref = useMemo(() => {
     if (!mercariKeywordResult.keyword || !showQuestionMercariCta || !currentQuestion) return "";
     const params = new URLSearchParams({
@@ -471,6 +474,13 @@ export default function FlowPage() {
     }
     return next;
   }, [effectiveAnswers, questions]);
+
+  const currentScaleValue =
+    currentQuestion?.type === "scale"
+      ? ((typeof normalizedAnswers[currentQuestion.id] === "number"
+          ? normalizedAnswers[currentQuestion.id]
+          : currentQuestion.defaultValue ?? currentQuestion.min ?? 0) as number)
+      : null;
 
   const isAnswered = (question: Question | undefined) => {
     if (!question) return false;
@@ -664,9 +674,12 @@ export default function FlowPage() {
           <Button variant="ghost" onClick={handleBack} className="px-3">
             戻る
           </Button>
-          <p className={helperTextClass}>
-            {safeCurrentIndex + 1}/{questions.length}
-          </p>
+          <div className="text-right">
+            <p className={helperTextClass}>
+              {safeCurrentIndex + 1}/{questions.length}
+            </p>
+            <p className="text-xs font-medium text-slate-500 dark:text-zinc-400">{progressPercent}% 完了</p>
+          </div>
         </div>
         <div className="space-y-2">
           <p className="text-sm font-semibold text-accent">質問フロー</p>
@@ -697,7 +710,16 @@ export default function FlowPage() {
             </button>
           ) : null}
         </div>
-        <Progress value={currentIndex + 1} max={questions.length} />
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-medium text-slate-600 dark:text-zinc-300">
+            <span>{progressPercent}% 完了</span>
+            <span>{remainingQuestions === 0 ? "この質問で完了" : `残り ${remainingQuestions} 問`}</span>
+          </div>
+          <Progress value={currentIndex + 1} max={questions.length} label={`質問 ${safeCurrentIndex + 1} / ${questions.length}`} className="h-3 bg-slate-200/80 dark:bg-white/10" />
+          {isLongFlow ? (
+            <p className="text-xs text-slate-500 dark:text-zinc-400">長めフローです。残り {remainingQuestions} 問まで見えています。</p>
+          ) : null}
+        </div>
       </header>
 
       {shouldShowClarification && clarificationPrompt ? (
@@ -780,24 +802,34 @@ export default function FlowPage() {
                 <span>{currentQuestion.leftLabel ?? "低い"}</span>
                 <span>{currentQuestion.rightLabel ?? "高い"}</span>
               </div>
-              <input
-                type="range"
-                min={currentQuestion.min ?? 0}
-                max={currentQuestion.max ?? 5}
-                step={currentQuestion.step ?? 1}
-                value={
-                  (typeof normalizedAnswers[currentQuestion.id] === "number"
-                    ? normalizedAnswers[currentQuestion.id]
-                    : currentQuestion.defaultValue ?? currentQuestion.min ?? 0) as number
-                }
-                onChange={(event) =>
-                  updateAnswer(currentQuestion.id, Number(event.target.value))
-                }
-                className="w-full accent-primary"
-              />
-              <p className={helperTextClass}>
-                選択値: {effectiveAnswers[currentQuestion.id]}
-              </p>
+              <div className="rounded-2xl border border-border bg-card/80 px-4 py-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-foreground">現在値: {currentScaleValue}</p>
+                  <p className="text-xs text-muted-foreground">最大値 {currentQuestion.max ?? 5} まで選べます</p>
+                </div>
+                <input
+                  type="range"
+                  min={currentQuestion.min ?? 0}
+                  max={currentQuestion.max ?? 5}
+                  step={currentQuestion.step ?? 1}
+                  value={currentScaleValue as number}
+                  onChange={(event) =>
+                    updateAnswer(currentQuestion.id, Number(event.target.value))
+                  }
+                  className="mt-4 w-full accent-primary"
+                  aria-describedby={`${currentQuestion.id}-scale-help`}
+                />
+                <div className="mt-3 flex items-center justify-between text-xs font-medium text-muted-foreground">
+                  <span>最小 {currentQuestion.min ?? 0}</span>
+                  <span>{currentQuestion.step ?? 1} 刻み</span>
+                  <span>最大 {currentQuestion.max ?? 5}</span>
+                </div>
+                <p id={`${currentQuestion.id}-scale-help`} className="mt-3 text-sm text-muted-foreground">
+                  {currentScaleValue === (currentQuestion.max ?? 5)
+                    ? "最大値を選択中です。端まで到達しています。"
+                    : `選択値: ${effectiveAnswers[currentQuestion.id]}`}
+                </p>
+              </div>
             </div>
           ) : null}
 
