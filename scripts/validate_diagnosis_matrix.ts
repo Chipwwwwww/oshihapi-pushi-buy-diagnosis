@@ -323,7 +323,12 @@ function runScoringSeparationChecks() {
   const blindHighRisk = build('blind_draw', {
     q_addon_blind_draw_cap: 'not_good',
     q_addon_blind_draw_exit: 'complete',
+    q_addon_blind_draw_duplicate_tolerance: 'low',
     q_addon_blind_draw_trade_intent: 'no',
+    q_addon_blind_draw_exchange_friction: 'high',
+    q_addon_blind_draw_single_fallback: 'now',
+    q_addon_blind_draw_stop_budget: 'over_limit',
+    q_addon_blind_draw_miss_pain: 'high',
     q_regret_impulse: 'excited',
   });
   if (
@@ -332,6 +337,39 @@ function runScoringSeparationChecks() {
     Math.abs(blindHighRisk.score - plainGoods.score) < 0.12
   ) {
     throw new Error('separation: blind_draw high risk should differ from normal goods');
+  }
+  if (blindHighRisk.randomGoodsPlan?.chosenPath !== 'step_back_from_completion_pressure') {
+    throw new Error('separation: blind_draw high risk should clamp to completion-pressure step-back');
+  }
+
+  const blindExchange = build('blind_draw', {
+    q_goal: 'set',
+    q_addon_blind_draw_cap: 'used_to_it',
+    q_addon_blind_draw_exit: 'mixed',
+    q_addon_blind_draw_duplicate_tolerance: 'medium',
+    q_addon_blind_draw_trade_intent: 'yes',
+    q_addon_blind_draw_exchange_friction: 'low',
+    q_addon_blind_draw_single_fallback: 'after_stop',
+    q_addon_blind_draw_stop_budget: 'soft',
+    q_regret_impulse: 'calm',
+  });
+  if (blindExchange.randomGoodsPlan?.chosenPath !== 'switch_to_exchange_path') {
+    throw new Error('separation: exchange-friendly blind_draw should choose exchange path');
+  }
+
+  const blindFun = build('blind_draw', {
+    q_goal: 'fun',
+    q_addon_blind_draw_cap: 'used_to_it',
+    q_addon_blind_draw_exit: 'fun',
+    q_addon_blind_draw_duplicate_tolerance: 'high',
+    q_addon_blind_draw_trade_intent: 'no',
+    q_addon_blind_draw_exchange_friction: 'medium',
+    q_addon_blind_draw_single_fallback: 'after_stop',
+    q_addon_blind_draw_stop_budget: 'strict',
+    q_regret_impulse: 'calm',
+  });
+  if (blindFun.randomGoodsPlan?.chosenPath !== 'continue_a_little_more') {
+    throw new Error('separation: fun blind_draw should allow a limited continue path');
   }
 
   const billingNeedClear = build('game_billing', {
@@ -344,7 +382,7 @@ function runScoringSeparationChecks() {
     throw new Error('separation: game_billing clear-need should differ from impulsive uncertain gacha');
   }
 
-  if ([highBuy, highRiskHold, lowDesireSkip, plainGoods, usedRisk, blindHighRisk, billingNeedClear, billingImpulsive].some((o) => o.confidence < 0 || o.confidence > 100)) {
+  if ([highBuy, highRiskHold, lowDesireSkip, plainGoods, usedRisk, blindHighRisk, blindExchange, blindFun, billingNeedClear, billingImpulsive].some((o) => o.confidence < 0 || o.confidence > 100)) {
     throw new Error('bounds: confidence must stay within 0..100');
   }
 }
@@ -461,6 +499,7 @@ assertUniqueQuestion(results, "long_goods_tech", "q_addon_goods_tech_compat");
 assertUniqueQuestion(results, "long_goods_media", "q_addon_media_motive");
 assertUniqueQuestion(results, "long_goods_itabag_badge", "q_addon_goods_itabag_target");
 assertUniqueQuestion(results, "long_blind_draw", "q_addon_blind_draw_miss_pain");
+assertUniqueQuestion(results, "long_blind_draw", "q_addon_blind_draw_duplicate_tolerance");
 assertUniqueQuestion(results, "long_preorder", "q_addon_preorder_decay");
 assertUniqueQuestion(results, "long_ticket", "q_addon_ticket_trip_load");
 

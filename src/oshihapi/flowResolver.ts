@@ -66,6 +66,13 @@ function moveQuestionBefore(ids: string[], questionId: string, beforeId: string)
   ids.splice(toIndex, 0, questionId);
 }
 
+function resolveItemKindAddonIds(input: FlowResolverInput): string[] {
+  if (input.mode === "short" || !input.itemKind) return [];
+  const configured = ADDON_BY_ITEM_KIND[input.itemKind] ?? [];
+  if (input.itemKind === "blind_draw") return [...configured];
+  return [...configured].slice(0, input.mode === "medium" ? 2 : undefined);
+}
+
 export function resolveFlowQuestions(input: FlowResolverInput): FlowResolution {
   const coverage = getScenarioCoverageSummary({
     itemKind: input.itemKind,
@@ -103,10 +110,7 @@ export function resolveFlowQuestions(input: FlowResolverInput): FlowResolution {
   }
 
   const baseIds = input.mode === "short" ? QUICK_QUESTION_IDS : CORE_12_QUESTION_IDS;
-  const itemKindAddonIds =
-    input.mode !== "short" && input.itemKind
-      ? (ADDON_BY_ITEM_KIND[input.itemKind] ?? []).slice(0, input.mode === "medium" ? 2 : undefined)
-      : [];
+  const itemKindAddonIds = resolveItemKindAddonIds(input);
   const enableGoodsClass = input.mode === "long" && (input.itemKind === "goods" || input.itemKind === "preorder" || input.itemKind === "used");
   const goodsClassAddonIds = enableGoodsClass ? ADDON_BY_GOODS_CLASS[input.goodsClass] ?? [] : [];
   const ids = [...baseIds, ...itemKindAddonIds, ...goodsClassAddonIds];

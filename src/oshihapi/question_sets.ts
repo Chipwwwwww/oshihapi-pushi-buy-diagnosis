@@ -30,7 +30,16 @@ export const CORE_12_QUESTION_IDS = [
 
 export const ADDON_BY_ITEM_KIND: Partial<Record<ItemKind, readonly string[]>> = {
   goods: ["q_addon_common_info", "q_addon_common_priority", "q_addon_goods_compare", "q_addon_goods_portability"],
-  blind_draw: ["q_addon_blind_draw_cap", "q_addon_blind_draw_exit", "q_addon_blind_draw_trade_intent", "q_addon_blind_draw_miss_pain"],
+  blind_draw: [
+    "q_addon_blind_draw_cap",
+    "q_addon_blind_draw_exit",
+    "q_addon_blind_draw_duplicate_tolerance",
+    "q_addon_blind_draw_trade_intent",
+    "q_addon_blind_draw_exchange_friction",
+    "q_addon_blind_draw_single_fallback",
+    "q_addon_blind_draw_stop_budget",
+    "q_addon_blind_draw_miss_pain",
+  ],
   ticket: ["q_addon_common_info", "q_addon_common_priority", "q_addon_ticket_schedule", "q_addon_ticket_resale_rule", "q_addon_ticket_trip_load", "q_addon_ticket_next_chance"],
   preorder: ["q_addon_common_info", "q_addon_common_priority", "q_addon_preorder_timeline", "q_addon_preorder_decay", "q_addon_preorder_compare_loss"],
   used: [

@@ -190,6 +190,33 @@ const SCENARIOS: ScenarioSpec[] = [
     },
   },
   {
+    id: "blind_draw_used_market_fallback",
+    rawClue: "ブルーロック ブラインド 缶バッジ",
+    itemKind: "blind_draw",
+    goodsClass: "itabag_badge",
+    confidence: 86,
+    resultTags: [
+      "random_goods_path_stop_drawing_check_used_market",
+      "random_goods_used_market_fallback",
+      "random_goods_duplicate_low",
+    ],
+    expected: [
+      "Used-market recovery should dominate visible blind-draw fallback routing.",
+      "Generic retail should be demoted when the planner says to stop drawing and check used singles.",
+      "Diagnostics should explain why generic retail is mismatched for duplicate-risk recovery.",
+    ],
+    improvedVsOldLogic: "When the diagnosis says to stop drawing and complete via used singles, the planner now concentrates on Mercari/Surugaya instead of drifting back to generic retail.",
+    assertions: (result) => {
+      const ids = topIds(result);
+      assert(ids[0] === "mercari" && ids[1] === "surugaya", "blind_draw_used_market_fallback: Mercari and Surugaya should lead used-market recovery");
+      assert(!ids.includes("amazon") && !ids.includes("rakuten"), "blind_draw_used_market_fallback: generic retail should stay hidden");
+      assert(
+        findEvaluation(result.diagnostics, "amazon")?.demotionReasons.includes("duplicate_risk_recovery_mismatch"),
+        "blind_draw_used_market_fallback: diagnostics should explain generic-retail mismatch",
+      );
+    },
+  },
+  {
     id: "official_sold_out_secondary_alive",
     rawClue: "うたプリ 特典付きCD",
     itemKind: "used",

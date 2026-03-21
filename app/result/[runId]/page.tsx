@@ -754,6 +754,64 @@ export default function ResultPage() {
         </Card>
       ) : null}
 
+      {run.output.randomGoodsPlan ? (
+        <Card className="space-y-4 border border-sky-200 bg-sky-50 text-sky-950 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className={sectionTitleClass}>ランダムグッズの止めどき診断</h2>
+            <Badge variant="outline">{run.output.randomGoodsPlan.chosenPath}</Badge>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-sky-200/70 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
+              <p className="text-sm font-semibold">今回の推奨ルート</p>
+              <p className="mt-2 text-sm">
+                {run.output.randomGoodsPlan.chosenPath === "continue_a_little_more"
+                  ? "少しだけ続けてもよい。ただしソフトな stop-line を固定。"
+                  : run.output.randomGoodsPlan.chosenPath === "switch_to_exchange_path"
+                    ? "これ以上は引き足さず、交換前提の整理へ移る。"
+                    : run.output.randomGoodsPlan.chosenPath === "stop_drawing_buy_singles"
+                      ? "盲抽は止めて、必要分を単品購入に切り替える。"
+                      : run.output.randomGoodsPlan.chosenPath === "stop_drawing_check_used_market"
+                        ? "盲抽は止めて、まず中古相場・在庫確認へ切り替える。"
+                        : run.output.randomGoodsPlan.chosenPath === "step_back_from_completion_pressure"
+                          ? "コンプ圧が強すぎるため、一度離れて冷やす。"
+                          : "ここで打ち止めにする。"}
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                最適化対象: {run.output.randomGoodsPlan.stopLineOptimizingFor}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-sky-200/70 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
+              <p className="text-sm font-semibold">前提がどう効いたか</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                <li>ターゲット: {run.output.randomGoodsPlan.targetStyle}</li>
+                <li>被り許容: {run.output.randomGoodsPlan.duplicateTolerance}</li>
+                <li>交換意欲: {run.output.randomGoodsPlan.exchangeWillingness}</li>
+                <li>交換負担: {run.output.randomGoodsPlan.exchangeFriction}</li>
+                <li>単品/中古 fallback: {run.output.randomGoodsPlan.singlesFallback}</li>
+                <li>停止予算ライン: {run.output.randomGoodsPlan.stopBudget}</li>
+              </ul>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-sky-200/70 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
+              <p className="text-sm font-semibold">なぜこの stop-line か</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                {run.output.randomGoodsPlan.reasons.map((reason) => <li key={reason}>{reason}</li>)}
+              </ul>
+            </div>
+            <div className="rounded-2xl border border-sky-200/70 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
+              <p className="text-sm font-semibold">前提メモ / 診断 trace</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                {run.output.randomGoodsPlan.assumptions.map((assumption) => <li key={assumption}>{assumption}</li>)}
+                {run.output.randomGoodsPlan.clampReason ? <li>clamp理由: {run.output.randomGoodsPlan.clampReason}</li> : null}
+                <li>exchange前提が結論を変えたか: {run.output.randomGoodsPlan.exchangeAssumptionChangedRecommendation ? "はい" : "いいえ"}</li>
+                <li>単品/中古 completion が合理的か: {run.output.randomGoodsPlan.usedMarketRecommended ? "はい" : "状況次第"}</li>
+              </ul>
+            </div>
+          </div>
+        </Card>
+      ) : null}
+
       <Card className="space-y-4">
         <h2 className={sectionTitleClass}>{modeCopy.ui.actionsTitle}</h2>
         <ul className="grid gap-4">

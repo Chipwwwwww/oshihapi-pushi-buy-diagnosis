@@ -9,6 +9,8 @@ import type {
   InputMeta,
   ItemKind,
   Mode,
+  RandomGoodsPlan,
+  RandomGoodsPlannerPath,
   QuestionSet,
   ReasonItem,
   ScoreDimension,
@@ -19,6 +21,7 @@ import { pickReasons, pickActions, buildShareText, getStorageGuidance } from './
 import { decideMerchMethod } from './merchMethod';
 import { buildPresentation } from './decisionPresentation';
 import { shouldAskStorage } from './storageGate';
+import { resolveScenarioKey } from './scenarioCoverage';
 
 type EvaluateInput = {
   config?: EngineConfig;
@@ -132,6 +135,217 @@ function getTopFactors(scores: Record<ScoreDimension, number>, kind: 'positive' 
 function getSingleAnswer(answers: Record<string, AnswerValue>, id: string): string | undefined {
   const value = answers[id];
   return typeof value === 'string' ? value : undefined;
+}
+
+function hasCompleteMotive(motives: string[]) {
+  return motives.includes('complete');
+}
+
+function resolveRandomGoodsTargetStyle(answers: Record<string, AnswerValue>): RandomGoodsPlan['targetStyle'] {
+  const goal = getSingleAnswer(answers, 'q_goal');
+  if (goal === 'fun') return 'fun_casual';
+  if (goal === 'set') return 'full_set';
+  if (goal === 'single') return 'one_or_few';
+
+  const exit = getSingleAnswer(answers, 'q_addon_blind_draw_exit');
+  if (exit === 'complete') return 'full_set';
+  if (exit === 'oshi_only') return 'one_or_few';
+  if (exit === 'fun') return 'fun_casual';
+  if (exit === 'mixed') return 'mixed';
+  return 'unknown';
+}
+
+function resolveRandomGoodsDuplicateTolerance(answers: Record<string, AnswerValue>): RandomGoodsPlan['duplicateTolerance'] {
+  const answer = getSingleAnswer(answers, 'q_addon_blind_draw_duplicate_tolerance');
+  if (answer === 'high' || answer === 'medium' || answer === 'low') return answer;
+  return 'unknown';
+}
+
+function resolveRandomGoodsExchangeWillingness(answers: Record<string, AnswerValue>): RandomGoodsPlan['exchangeWillingness'] {
+  const answer = getSingleAnswer(answers, 'q_addon_blind_draw_trade_intent');
+  if (answer === 'yes') return 'high';
+  if (answer === 'maybe') return 'medium';
+  if (answer === 'no') return 'low';
+  return 'unknown';
+}
+
+function resolveRandomGoodsExchangeFriction(answers: Record<string, AnswerValue>): RandomGoodsPlan['exchangeFriction'] {
+  const answer = getSingleAnswer(answers, 'q_addon_blind_draw_exchange_friction');
+  if (answer === 'low' || answer === 'medium' || answer === 'high') return answer;
+  return 'unknown';
+}
+
+function resolveRandomGoodsSinglesFallback(answers: Record<string, AnswerValue>): RandomGoodsPlan['singlesFallback'] {
+  const answer = getSingleAnswer(answers, 'q_addon_blind_draw_single_fallback');
+  if (answer === 'now') return 'now';
+  if (answer === 'after_stop') return 'after_stop';
+  if (answer === 'avoid') return 'avoid';
+  return 'unknown';
+}
+
+function resolveRandomGoodsStopBudget(answers: Record<string, AnswerValue>): RandomGoodsPlan['stopBudget'] {
+  const answer = getSingleAnswer(answers, 'q_addon_blind_draw_stop_budget');
+  if (answer === 'strict' || answer === 'soft' || answer === 'over_limit') return answer;
+  return 'unknown';
+}
+
+function buildRandomGoodsPlan(params: {
+  meta: InputMeta;
+  answers: Record<string, AnswerValue>;
+  motives: string[];
+  scores: Record<ScoreDimension, number>;
+  factorBuckets: FactorBuckets;
+}): RandomGoodsPlan | undefined {
+  if (params.meta.itemKind !== 'blind_draw') return undefined;
+
+  const targetStyle = resolveRandomGoodsTargetStyle(params.answers);
+  const duplicateTolerance = resolveRandomGoodsDuplicateTolerance(params.answers);
+  const exchangeWillingness = resolveRandomGoodsExchangeWillingness(params.answers);
+  const exchangeFriction = resolveRandomGoodsExchangeFriction(params.answers);
+  const singlesFallback = resolveRandomGoodsSinglesFallback(params.answers);
+  const stopBudget = resolveRandomGoodsStopBudget(params.answers);
+  const missPain = getSingleAnswer(params.answers, 'q_addon_blind_draw_miss_pain');
+  const budgetPain = getSingleAnswer(params.answers, 'q_budget_pain');
+  const impulseState = getSingleAnswer(params.answers, 'q_regret_impulse');
+  const goodsClass = params.meta.goodsClass;
+  const usedMarketPreferredClass = goodsClass === 'small_collection' || goodsClass === 'paper' || goodsClass === 'itabag_badge';
+  const fullSetAmbition = targetStyle === 'full_set' || hasCompleteMotive(params.motives);
+  const funDraw = targetStyle === 'fun_casual' || getSingleAnswer(params.answers, 'q_goal') === 'fun';
+  const oneOrFewTarget = targetStyle === 'one_or_few' || getSingleAnswer(params.answers, 'q_goal') === 'single';
+  const lowDuplicateTolerance = duplicateTolerance === 'low';
+  const highDuplicateTolerance = duplicateTolerance === 'high';
+  const exchangeHelpful = exchangeWillingness === 'high' || (exchangeWillingness === 'medium' && exchangeFriction !== 'high');
+  const exchangeBlocked = exchangeWillingness === 'low' || exchangeFriction === 'high';
+  const singlesReady = singlesFallback === 'now';
+  const singlesAvailableAfterStop = singlesFallback === 'after_stop';
+  const overBudget = stopBudget === 'over_limit';
+  const budgetTight = overBudget || budgetPain === 'hard' || budgetPain === 'force' || params.factorBuckets.budgetPressure >= 68;
+  const impulseHigh =
+    impulseState === 'excited' ||
+    impulseState === 'fomo' ||
+    impulseState === 'tired' ||
+    params.factorBuckets.impulseVolatility >= 68;
+  const poorMarginalProgress =
+    (oneOrFewTarget && lowDuplicateTolerance && exchangeBlocked) ||
+    (fullSetAmbition && (budgetTight || lowDuplicateTolerance || exchangeBlocked));
+  const completionPressureHigh =
+    fullSetAmbition ||
+    missPain === 'high' ||
+    (params.scores.regretRisk >= 72 && params.scores.impulse >= 64);
+
+  let chosenPath: RandomGoodsPlannerPath = 'stop_now';
+  let clampReason: string | undefined;
+  const reasonFlags: string[] = [];
+
+  if (overBudget) {
+    chosenPath = completionPressureHigh ? 'step_back_from_completion_pressure' : 'stop_now';
+    clampReason = 'stop_budget_over_limit';
+    reasonFlags.push('stop_budget_over_limit');
+  } else if (impulseHigh && poorMarginalProgress) {
+    chosenPath = completionPressureHigh ? 'step_back_from_completion_pressure' : 'stop_now';
+    clampReason = 'impulse_high_low_progress';
+    reasonFlags.push('impulse_high_low_progress');
+  } else if (fullSetAmbition && (budgetTight || poorMarginalProgress)) {
+    chosenPath = singlesReady
+      ? 'stop_drawing_buy_singles'
+      : usedMarketPreferredClass
+        ? 'stop_drawing_check_used_market'
+        : 'stop_now';
+    clampReason = budgetTight ? 'full_set_budget_unfavorable' : 'full_set_randomness_unfavorable';
+    reasonFlags.push(clampReason);
+  } else if (oneOrFewTarget && lowDuplicateTolerance && exchangeBlocked) {
+    chosenPath = singlesReady ? 'stop_drawing_buy_singles' : 'stop_drawing_check_used_market';
+    clampReason = 'single_target_duplicate_risk';
+    reasonFlags.push('single_target_duplicate_risk');
+  } else if (exchangeHelpful && exchangeFriction !== 'high' && !budgetTight && !overBudget) {
+    chosenPath = 'switch_to_exchange_path';
+    reasonFlags.push('exchange_path_viable');
+  } else if (funDraw && highDuplicateTolerance && !budgetTight && !impulseHigh) {
+    chosenPath = 'continue_a_little_more';
+    reasonFlags.push('fun_draw_continue_ok');
+  } else if ((singlesReady || singlesAvailableAfterStop) && usedMarketPreferredClass) {
+    chosenPath = singlesReady ? 'stop_drawing_buy_singles' : 'stop_drawing_check_used_market';
+    reasonFlags.push(singlesReady ? 'single_fallback_now' : 'single_fallback_after_stop');
+  } else {
+    chosenPath = 'stop_now';
+    if (exchangeBlocked) reasonFlags.push('exchange_not_viable');
+  }
+
+  const stopLineOptimizingFor =
+    chosenPath === 'continue_a_little_more'
+      ? '楽しさを残しつつ、被りと予算崩れを抑えること'
+      : chosenPath === 'switch_to_exchange_path'
+        ? '追加で引かずに、交換前提の負担と回収効率を両立すること'
+        : chosenPath === 'stop_drawing_buy_singles'
+          ? '被りを増やさず、本命回収を単品で確定に寄せること'
+          : chosenPath === 'stop_drawing_check_used_market'
+            ? '続きの盲抽より中古相場確認へ切り替えて損失を増やさないこと'
+            : chosenPath === 'step_back_from_completion_pressure'
+              ? 'コンプ圧が楽しさを上回る前にいったん止まること'
+              : '被り・衝動・予算超過を増やさずに止まること';
+
+  const reasons: string[] = [];
+  const assumptions: string[] = [];
+
+  reasons.push(
+    targetStyle === 'full_set'
+      ? 'コンプ寄りの回収だと、ランダム継続のコストが急に重くなりやすい。'
+      : targetStyle === 'one_or_few'
+        ? '本命少数狙いでは、被りが増えるほど盲抽の効率が落ちやすい。'
+        : targetStyle === 'fun_casual'
+          ? '楽しみ目的なら、撤退線さえ守れば少量継続の納得感を残しやすい。'
+          : 'ランダム商品は目的が曖昧なまま続けると撤退線を越えやすい。'
+  );
+  if (duplicateTolerance === 'low') reasons.push('被り許容が低いので、追加で引くほど後悔リスクが上がりやすい。');
+  if (exchangeWillingness === 'high' || exchangeWillingness === 'medium') {
+    reasons.push(
+      exchangeFriction === 'high'
+        ? '交換意欲はあっても、連絡・梱包・待機の負担が高いなら万能ではない。'
+        : '交換前提は有効だが、「すぐ成立する」とはみなさず負担込みで見る。'
+    );
+  }
+  if (singlesFallback === 'now' || singlesFallback === 'after_stop') {
+    reasons.push('単品/中古に逃げられるなら、盲抽を延ばすより損失を固定しやすい。');
+  }
+  if (clampReason === 'impulse_high_low_progress') reasons.push('勢いが強い一方で、追加1回の進捗期待が低く、ここで止めた方が後悔しにくい。');
+  if (clampReason === 'stop_budget_over_limit') reasons.push('予定ラインを超えた時点で、くじの楽しさより予算崩れが主役になりやすい。');
+
+  assumptions.push(
+    exchangeWillingness === 'high' || exchangeWillingness === 'medium'
+      ? '交換前提なら、追加購入ではなく「今ある重複で動く」前提にしています。'
+      : '交換を前提にしない場合、被りはそのままコストとして扱います。'
+  );
+  assumptions.push(
+    usedMarketPreferredClass
+      ? '小物・紙もの・缶バ系は中古単品移行の相性が比較的高い前提です。'
+      : '中古単品移行の相性は高めに仮定していません。'
+  );
+
+  return {
+    detected: true,
+    scenarioKey: resolveScenarioKey({
+      itemKind: params.meta.itemKind,
+      goodsClass: params.meta.goodsClass,
+      parsedSearchClues: params.meta.parsedSearchClues,
+      searchClueRaw: params.meta.searchClueRaw,
+      answers: params.answers,
+    }),
+    targetStyle,
+    duplicateTolerance,
+    exchangeWillingness,
+    exchangeFriction,
+    singlesFallback,
+    stopBudget,
+    chosenPath,
+    stopLineOptimizingFor,
+    continuingJustified: chosenPath === 'continue_a_little_more',
+    exchangeAssumptionChangedRecommendation: exchangeHelpful && !exchangeBlocked && chosenPath === 'switch_to_exchange_path',
+    usedMarketRecommended: chosenPath === 'stop_drawing_check_used_market' || chosenPath === 'stop_drawing_buy_singles',
+    clampReason,
+    reasonFlags,
+    reasons: [...new Set(reasons)].slice(0, 5),
+    assumptions: [...new Set(assumptions)].slice(0, 3),
+  };
 }
 
 function computeItemKindRisk(itemKind: ItemKind, answers: Record<string, AnswerValue>, tags: string[]): number {
@@ -357,6 +571,13 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
 
   const itemKindRisk = computeItemKindRisk(itemKind, input.answers, tags);
   const factorBuckets = computeFactorBuckets(scores, unknownCount, itemKindRisk);
+  const randomGoodsPlan = buildRandomGoodsPlan({
+    meta: input.meta,
+    answers: input.answers,
+    motives,
+    scores,
+    factorBuckets,
+  });
 
   const positivePush =
     factorBuckets.desireAttachment * 0.34 +
@@ -395,6 +616,36 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     decision = 'THINK';
   }
 
+  if (randomGoodsPlan) {
+    tags.push(
+      `random_goods_path_${randomGoodsPlan.chosenPath}`,
+      `random_goods_target_${randomGoodsPlan.targetStyle}`,
+      `random_goods_duplicate_${randomGoodsPlan.duplicateTolerance}`,
+      `random_goods_exchange_${randomGoodsPlan.exchangeWillingness}`,
+      `random_goods_exchange_friction_${randomGoodsPlan.exchangeFriction}`,
+      `random_goods_singles_${randomGoodsPlan.singlesFallback}`,
+      `random_goods_stop_budget_${randomGoodsPlan.stopBudget}`,
+    );
+    tags.push(randomGoodsPlan.exchangeAssumptionChangedRecommendation ? 'random_goods_exchange_path_active' : 'random_goods_exchange_path_inactive');
+    if (randomGoodsPlan.usedMarketRecommended) tags.push('random_goods_used_market_fallback');
+    if (randomGoodsPlan.clampReason) tags.push(`random_goods_clamp_${randomGoodsPlan.clampReason}`);
+
+    if (randomGoodsPlan.chosenPath === 'continue_a_little_more') {
+      if (decision === 'SKIP' && factorBuckets.budgetPressure < 72) decision = 'THINK';
+    } else if (
+      randomGoodsPlan.chosenPath === 'stop_drawing_buy_singles' ||
+      randomGoodsPlan.chosenPath === 'stop_drawing_check_used_market' ||
+      randomGoodsPlan.chosenPath === 'switch_to_exchange_path'
+    ) {
+      if (decision === 'BUY') decision = 'THINK';
+    } else if (randomGoodsPlan.chosenPath === 'stop_now' || randomGoodsPlan.chosenPath === 'step_back_from_completion_pressure') {
+      if (decision === 'BUY') decision = 'THINK';
+      if (randomGoodsPlan.clampReason === 'stop_budget_over_limit' || randomGoodsPlan.clampReason === 'impulse_high_low_progress') {
+        decision = 'SKIP';
+      }
+    }
+  }
+
   const goal =
     tags.includes('goal_set') ? 'set' :
     tags.includes('goal_fun') ? 'fun' :
@@ -423,6 +674,47 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
   if (impulseFlag) {
     extraReasons.push({ id: 'impulse_rush', severity: 'info', text: '「買えた快感」が主役の時、満足がすぐ落ち着くこともあるかも。' });
     extraActions.push({ id: 'cooldown_10min', text: '10分だけクールダウン（カート保持）→ その後もう一回だけ判断しよ。' });
+  }
+
+  if (randomGoodsPlan) {
+    const pathText: Record<RandomGoodsPlannerPath, string> = {
+      continue_a_little_more: '今回は「少しだけ続ける」は許容範囲。ただし追加分は少量に固定した方が安全。',
+      stop_now: 'ここは追加で引くより止まる方が後悔しにくい局面。',
+      switch_to_exchange_path: '追加で引くより、いま持っている重複を交換前提で動かす方が合理的。',
+      stop_drawing_buy_singles: 'これ以上の盲抽より、必要分を単品で回収する方が損失を抑えやすい。',
+      stop_drawing_check_used_market: '追加で引くより、まず中古単品の相場と在庫を見た方が合理的。',
+      step_back_from_completion_pressure: 'いまは「揃えたい圧」が楽しさを上回っているので、一度引く手を止めるのが安全。',
+    };
+    extraReasons.unshift({
+      id: `random_goods_${randomGoodsPlan.chosenPath}`,
+      severity: randomGoodsPlan.chosenPath === 'continue_a_little_more' ? 'info' : 'strong',
+      text: pathText[randomGoodsPlan.chosenPath],
+    });
+
+    if (randomGoodsPlan.exchangeAssumptionChangedRecommendation) {
+      extraReasons.push({
+        id: 'random_goods_exchange_assumption',
+        severity: 'info',
+        text: 'この結論は「交換を回せる」前提で少し前向きに寄せています。交換負担が重いなら早め停止寄りです。',
+      });
+    }
+    if (randomGoodsPlan.clampReason === 'impulse_high_low_progress') {
+      extraReasons.push({
+        id: 'random_goods_impulse_clamp',
+        severity: 'warn',
+        text: '勢いは強いのに進捗期待が低いので、ここで止める方が regret を抑えやすい。',
+      });
+    }
+
+    const actionText: Record<RandomGoodsPlannerPath, ActionItem> = {
+      continue_a_little_more: { id: 'random_goods_continue_soft_cap', text: '追加は少量だけに固定し、その回数を超えたら終了する' },
+      stop_now: { id: 'random_goods_stop_now', text: 'ここで打ち止めにして、今日は追加購入しない' },
+      switch_to_exchange_path: { id: 'random_goods_exchange_path', text: '追加で引かず、交換前提で整理する（連絡・梱包負担も込みで判断）' },
+      stop_drawing_buy_singles: { id: 'random_goods_buy_singles', text: '盲抽は止めて、必要分は単品購入に切り替える' },
+      stop_drawing_check_used_market: { id: 'random_goods_check_used_market', text: '盲抽は止めて、まず中古単品の相場と在庫を確認する' },
+      step_back_from_completion_pressure: { id: 'random_goods_step_back', text: 'コンプ圧が下がるまで一度離れて、明日また見直す' },
+    };
+    extraActions.unshift(actionText[randomGoodsPlan.chosenPath]);
   }
 
   const reasons = [...extraReasons, ...reasonsBase].slice(0, 6);
@@ -455,6 +747,10 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
   if (unknownCount >= 5) downgradeFlags.push('force_hold_unknown_count_ge_5');
   if (impulseFlag) downgradeFlags.push('impulse_nudge_applied');
   if (holdSubtype) downgradeFlags.push(`hold_subtype_${holdSubtype}`);
+  if (randomGoodsPlan) {
+    downgradeFlags.push(`random_goods_path_${randomGoodsPlan.chosenPath}`);
+    if (randomGoodsPlan.clampReason) downgradeFlags.push(`random_goods_clamp_${randomGoodsPlan.clampReason}`);
+  }
 
   const decisionJa = decision === 'BUY' ? '買う' : decision === 'SKIP' ? 'やめる' : '保留';
   const positiveFactors = getTopFactors(scores, 'positive');
@@ -486,6 +782,7 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     whyNotSkipYet: explain.whyNotSkipYet,
     factorBuckets,
     presentation,
+    randomGoodsPlan,
     diagnosticTrace: {
       resultInputsSummary: {
         tags: [...tags],
@@ -494,6 +791,7 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
         futureUseFlag,
         downgradeFlags,
       },
+      randomGoodsPlan,
     },
   };
 }

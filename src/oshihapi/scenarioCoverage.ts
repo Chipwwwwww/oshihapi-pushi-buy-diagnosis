@@ -7,6 +7,8 @@ export type ScenarioKey =
   | "preorder_decision"
   | "used_market_check"
   | "blind_draw_stopline"
+  | "exchange_path"
+  | "random_goods_completion"
   | "media_purchase_decision"
   | "new_book_bonus_decision"
   | "collection_vs_budget"
@@ -127,6 +129,46 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     scopeDisclosure: "ランダム商品の上限整理は強めですが、イベント運営ルールまで含む判断は対象外です。",
     shortScopeDisclosure: "止めどき整理は強め対応。運営ルール判断は対象外です。",
     diagnosticsTag: "coverage_blind_draw_strong",
+  },
+  exchange_path: {
+    key: "exchange_path",
+    itemKind: "blind_draw",
+    supportLevel: "strong",
+    homepagePriority: "secondary",
+    heroOrder: 6,
+    shopperIntent: "ブラインド商品を交換前提でどこで止めるか整理したい",
+    recommendedEntryLabel: "交換前提でブラインド商品をどこで止めるか整理したい",
+    compactEntryHint: "交換前提でも手間と待ち時間を織り込んで止めどきを出します。",
+    providerEcologyHint: "交換は実行機能ではなく判断材料として扱い、負担が高い時は中古単品や相場確認へ寄せます。",
+    resultExplanationHint: "交換前提の有効性と、その前提が崩れた時の撤退線を明示します。",
+    optimizationSummary: "交換前提でも崩れにくい撤退線",
+    questionHint: "このフローでは、交換意欲だけでなく、連絡・梱包・待機の負担も確認します。",
+    flowHelperHint: "交換前提の成立条件と撤退ラインを確認中",
+    verificationHint: "交換候補の有無、発送・手渡し条件、待機コストは外部の実情に合わせて再確認してください。",
+    shortVerificationHint: "交換候補と発送/待機コストは外部で再確認。",
+    scopeDisclosure: "交換の実行機能はありません。交換前提が有効かどうかの判断整理に特化しています。",
+    shortScopeDisclosure: "交換実行は未対応。交換前提の判断整理に特化。",
+    diagnosticsTag: "coverage_exchange_path_strong",
+  },
+  random_goods_completion: {
+    key: "random_goods_completion",
+    itemKind: "blind_draw",
+    supportLevel: "strong",
+    homepagePriority: "secondary",
+    heroOrder: 7,
+    shopperIntent: "ブラインド商品のコンプ圧を整理して単品・中古へ切り替えたい",
+    recommendedEntryLabel: "ブラインド商品を続けるより単品/中古に切り替えるか整理したい",
+    compactEntryHint: "コンプ圧・被り・予算を見て、中古/単品移行をはっきり出します。",
+    providerEcologyHint: "Mercari・駿河屋などの中古単品確認を優先し、一般ECは重複リスク回復の主経路としては扱いません。",
+    resultExplanationHint: "揃えたい気持ちは尊重しつつ、くじ継続より単品/中古 completion が合理的かを説明します。",
+    optimizationSummary: "コンプ圧を単品/中古へ安全に逃がす",
+    questionHint: "このフローでは、被り許容・交換負担・単品移行意向を先に確認します。",
+    flowHelperHint: "単品/中古へ切り替える条件を確認中",
+    verificationHint: "中古単品の相場、在庫、状態差、送料込み総額は外部で最終確認してください。",
+    shortVerificationHint: "中古単品の相場・在庫・総額は外部で最終確認。",
+    scopeDisclosure: "ブラインド completion の判断整理は強めですが、全マーケットを横断した完全最適化までは対象外です。",
+    shortScopeDisclosure: "ブラインド completion 整理は強め対応。全市場最適化は対象外。",
+    diagnosticsTag: "coverage_random_goods_completion_strong",
   },
   media_purchase_decision: {
     key: "media_purchase_decision",
@@ -314,6 +356,8 @@ const ENTRY_ORDER: ScenarioKey[] = [
   "new_book_bonus_decision",
   "media_purchase_decision",
   "blind_draw_stopline",
+  "exchange_path",
+  "random_goods_completion",
   "collection_vs_budget",
   "impulse_cooling",
   "not_now_ticket",
@@ -353,6 +397,43 @@ function hasCollectionSignals(input: ScenarioResolutionInput): boolean {
   return goal === "set" || motives?.includes("complete") || input.goodsClass === "itabag_badge";
 }
 
+function resolveRandomGoodsTargetStyle(input: ScenarioResolutionInput): "one_or_few" | "full_set" | "fun_casual" | "mixed" | "unknown" {
+  if (input.answers?.q_goal === "fun") return "fun_casual";
+  if (input.answers?.q_goal === "set") return "full_set";
+  if (input.answers?.q_goal === "single") return "one_or_few";
+
+  const blindDrawExit = input.answers?.q_addon_blind_draw_exit;
+  if (blindDrawExit === "complete") return "full_set";
+  if (blindDrawExit === "oshi_only") return "one_or_few";
+  if (blindDrawExit === "mixed") return "mixed";
+  if (blindDrawExit === "fun") return "fun_casual";
+  return "unknown";
+}
+
+function hasExchangePathSignals(input: ScenarioResolutionInput): boolean {
+  const tradeIntent = input.answers?.q_addon_blind_draw_trade_intent;
+  const exchangeFriction = input.answers?.q_addon_blind_draw_exchange_friction;
+  return (
+    (tradeIntent === "yes" || tradeIntent === "maybe") &&
+    exchangeFriction !== "high" &&
+    exchangeFriction !== "unknown"
+  );
+}
+
+function hasRandomGoodsCompletionSignals(input: ScenarioResolutionInput): boolean {
+  const targetStyle = resolveRandomGoodsTargetStyle(input);
+  const duplicateTolerance = input.answers?.q_addon_blind_draw_duplicate_tolerance;
+  const singlesFallback = input.answers?.q_addon_blind_draw_single_fallback;
+  const stopBudget = input.answers?.q_addon_blind_draw_stop_budget;
+  return (
+    targetStyle === "full_set" ||
+    singlesFallback === "now" ||
+    singlesFallback === "after_stop" ||
+    duplicateTolerance === "low" ||
+    stopBudget === "over_limit"
+  );
+}
+
 function hasImpulseSignals(input: ScenarioResolutionInput): boolean {
   const state = input.answers?.q_regret_impulse;
   return state === "excited" || state === "tired" || state === "fomo";
@@ -361,7 +442,11 @@ function hasImpulseSignals(input: ScenarioResolutionInput): boolean {
 export function resolveScenarioKey(input: ScenarioResolutionInput): ScenarioKey {
   if (input.itemKind === "ticket") return "not_now_ticket";
   if (input.itemKind === "used") return "used_market_check";
-  if (input.itemKind === "blind_draw") return "blind_draw_stopline";
+  if (input.itemKind === "blind_draw") {
+    if (hasExchangePathSignals(input)) return "exchange_path";
+    if (hasRandomGoodsCompletionSignals(input)) return "random_goods_completion";
+    return "blind_draw_stopline";
+  }
   if (
     input.goodsClass === "paper" &&
     (input.itemKind === "preorder" || input.itemKind === "goods" || hasBonusSignals(input.parsedSearchClues, input.searchClueRaw))
@@ -420,6 +505,9 @@ export function getCoveragePreset(entryKey: ScenarioKey): Pick<InputMeta, "itemK
   }
   if (entry.key === "collection_vs_budget" || entry.key === "impulse_cooling") {
     return { itemKind: "goods", goodsClass: "small_collection" };
+  }
+  if (entry.key === "exchange_path" || entry.key === "random_goods_completion") {
+    return { itemKind: "blind_draw", goodsClass: "small_collection" };
   }
   return { itemKind: entry.itemKind ?? "goods", goodsClass: entry.goodsClass ?? "small_collection" };
 }
