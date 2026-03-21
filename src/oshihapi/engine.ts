@@ -11,6 +11,8 @@ import type {
   Mode,
   RandomGoodsPlan,
   RandomGoodsPlannerPath,
+  VenueLimitedGoodsPlan,
+  VenueLimitedPlannerPath,
   QuestionSet,
   ReasonItem,
   ScoreDimension,
@@ -348,6 +350,190 @@ function buildRandomGoodsPlan(params: {
   };
 }
 
+function resolveVenueContext(answers: Record<string, AnswerValue>): VenueLimitedGoodsPlan['venueContext'] {
+  const answer = getSingleAnswer(answers, 'q_addon_goods_event_limit_context');
+  if (answer === 'venue_limited' || answer === 'event_limited' || answer === 'missed_onsite') return answer;
+  if (answer === 'none') return 'other';
+  return 'unknown';
+}
+
+function resolveVenueRecoveryPlausibility(answers: Record<string, AnswerValue>): VenueLimitedGoodsPlan['recoveryPlausibility'] {
+  const answer = getSingleAnswer(answers, 'q_addon_goods_post_event_mailorder');
+  if (answer === 'likely') return 'high';
+  if (answer === 'maybe') return 'medium';
+  if (answer === 'unlikely') return 'low';
+  return 'unknown';
+}
+
+function resolveVenueWaitTolerance(answers: Record<string, AnswerValue>): VenueLimitedGoodsPlan['waitTolerance'] {
+  const answer = getSingleAnswer(answers, 'q_addon_goods_wait_tolerance');
+  if (answer === 'high' || answer === 'medium' || answer === 'low') return answer;
+  return 'unknown';
+}
+
+function resolveVenueFirstChanceTolerance(answers: Record<string, AnswerValue>): VenueLimitedGoodsPlan['firstChanceTolerance'] {
+  const answer = getSingleAnswer(answers, 'q_addon_goods_first_chance_tolerance');
+  if (answer === 'high' || answer === 'medium' || answer === 'low') return answer;
+  return 'unknown';
+}
+
+function resolveVenueUsedFallback(answers: Record<string, AnswerValue>): VenueLimitedGoodsPlan['usedFallbackWillingness'] {
+  const answer = getSingleAnswer(answers, 'q_addon_goods_used_fallback');
+  if (answer === 'high' || answer === 'medium' || answer === 'low') return answer;
+  return 'unknown';
+}
+
+function resolveVenueScarcityPressure(answers: Record<string, AnswerValue>): VenueLimitedGoodsPlan['scarcityPressure'] {
+  const answer = getSingleAnswer(answers, 'q_addon_goods_scarcity_pressure');
+  if (answer === 'high' || answer === 'medium' || answer === 'low') return answer;
+  return 'unknown';
+}
+
+function resolveVenuePrimaryMotive(answers: Record<string, AnswerValue>): VenueLimitedGoodsPlan['primaryMotive'] {
+  const answer = getSingleAnswer(answers, 'q_addon_goods_venue_motive');
+  if (answer === 'collection_completeness' || answer === 'event_memory' || answer === 'practical_collecting' || answer === 'mixed') return answer;
+  return 'unknown';
+}
+
+function resolveVenueRegretAxis(answers: Record<string, AnswerValue>): VenueLimitedGoodsPlan['regretAxis'] {
+  const answer = getSingleAnswer(answers, 'q_addon_goods_regret_axis');
+  if (answer === 'overpay_more' || answer === 'miss_more' || answer === 'balanced') return answer;
+  return 'unknown';
+}
+
+function buildVenueLimitedGoodsPlan(params: {
+  meta: InputMeta;
+  answers: Record<string, AnswerValue>;
+  motives: string[];
+  scores: Record<ScoreDimension, number>;
+  factorBuckets: FactorBuckets;
+}): VenueLimitedGoodsPlan | undefined {
+  if (params.meta.itemKind !== 'goods') return undefined;
+
+  const venueContext = resolveVenueContext(params.answers);
+  const hasVenueKeyword = [params.meta.parsedSearchClues?.raw, params.meta.parsedSearchClues?.normalized, params.meta.searchClueRaw]
+    .filter((value): value is string => Boolean(value))
+    .some((value) => ['会場限定', 'イベント限定', '会場先行', '現地限定', '現地販売', '会場物販', '事後通販', '事後受注'].some((keyword) => value.includes(keyword)));
+
+  if (venueContext === 'other' && !hasVenueKeyword) return undefined;
+
+  const recoveryPlausibility = resolveVenueRecoveryPlausibility(params.answers);
+  const waitTolerance = resolveVenueWaitTolerance(params.answers);
+  const firstChanceTolerance = resolveVenueFirstChanceTolerance(params.answers);
+  const usedFallbackWillingness = resolveVenueUsedFallback(params.answers);
+  const scarcityPressure = resolveVenueScarcityPressure(params.answers);
+  const primaryMotive = resolveVenuePrimaryMotive(params.answers);
+  const regretAxis = resolveVenueRegretAxis(params.answers);
+
+  const pressureHigh = scarcityPressure === 'high' || params.factorBuckets.impulseVolatility >= 70 || params.motives.includes('fomo');
+  const recoveryStrong = recoveryPlausibility === 'high' || (recoveryPlausibility === 'medium' && usedFallbackWillingness !== 'low');
+  const canWait = waitTolerance === 'high' || waitTolerance === 'medium';
+  const canMissFirstChance = firstChanceTolerance === 'high' || firstChanceTolerance === 'medium';
+  const usedFallbackReady = usedFallbackWillingness === 'high' || usedFallbackWillingness === 'medium';
+  const overpaySensitive = regretAxis === 'overpay_more';
+  const missSensitive = regretAxis === 'miss_more';
+  const completionPressureHigh = primaryMotive === 'collection_completeness' || params.motives.includes('complete');
+  const memoryDriven = primaryMotive === 'event_memory' || params.motives.includes('memory');
+  const trueScarcityLikely =
+    (venueContext === 'venue_limited' || venueContext === 'missed_onsite') &&
+    recoveryPlausibility === 'low' &&
+    !usedFallbackReady;
+
+  let chosenPath: VenueLimitedPlannerPath = 'wait_for_post_event_mailorder';
+  let clampReason: string | undefined;
+  const reasonFlags: string[] = [];
+
+  if (trueScarcityLikely && waitTolerance === 'low' && firstChanceTolerance === 'low' && (missSensitive || memoryDriven) && !overpaySensitive) {
+    chosenPath = 'buy_now_if_it_is_truly_hard_to_recover';
+    reasonFlags.push('true_scarcity_recovery_weak');
+  } else if (venueContext === 'missed_onsite' && usedFallbackReady) {
+    chosenPath = 'fallback_to_used_market_if_missed';
+    reasonFlags.push('missed_onsite_used_fallback_ready');
+  } else if (recoveryStrong && canWait) {
+    chosenPath = 'wait_for_post_event_mailorder';
+    reasonFlags.push('recovery_plausible_wait_ok');
+  } else if ((canMissFirstChance || overpaySensitive) && usedFallbackReady) {
+    chosenPath = venueContext === 'missed_onsite' ? 'fallback_to_used_market_if_missed' : 'skip_onsite_chase_and_check_later';
+    reasonFlags.push('used_fallback_safer_than_rush');
+  } else if (pressureHigh && (recoveryStrong || overpaySensitive || completionPressureHigh)) {
+    chosenPath = 'step_back_from_fomo_pressure';
+    clampReason = recoveryStrong ? 'recovery_plausible_not_true_scarcity' : completionPressureHigh ? 'collection_pressure_exceeds_evidence' : 'overpay_regret_dominant';
+    reasonFlags.push(clampReason);
+  } else if (venueContext === 'missed_onsite') {
+    chosenPath = 'skip_onsite_chase_and_check_later';
+    reasonFlags.push('missed_onsite_later_check_first');
+  } else if (pressureHigh && !trueScarcityLikely) {
+    chosenPath = 'step_back_from_fomo_pressure';
+    clampReason = 'atmosphere_pressure_outpaces_evidence';
+    reasonFlags.push('atmosphere_pressure_outpaces_evidence');
+  } else if (trueScarcityLikely) {
+    chosenPath = 'buy_now_if_it_is_truly_hard_to_recover';
+    reasonFlags.push('true_scarcity_recovery_weak');
+  }
+
+  const optimizingFor =
+    chosenPath === 'buy_now_if_it_is_truly_hard_to_recover'
+      ? '回復経路が弱い時だけ急ぐこと'
+      : chosenPath === 'wait_for_post_event_mailorder'
+        ? '事後通販や後日販売のシグナルを待って高値追いを避けること'
+        : chosenPath === 'skip_onsite_chase_and_check_later'
+          ? '現地の熱量に押されず、あとで根拠を確認してから動くこと'
+          : chosenPath === 'fallback_to_used_market_if_missed'
+            ? '取り逃し後も中古回復で panic-buy を避けること'
+            : 'FOMO 圧が証拠を上回る時に一歩引くこと';
+
+  const reasons: string[] = [];
+  const assumptions: string[] = [];
+
+  if (recoveryStrong) reasons.push('後日通販や後追い回復の見込みがあり、現地の urgency はその分だけ弱まる。');
+  if (usedFallbackReady) reasons.push('取り逃しても中古・フリマ fallback を使えるなら、今の panic-buy を減らしやすい。');
+  if (overpaySensitive) reasons.push('「逃す後悔」より「高く掴む後悔」が重いので、焦って高値で取りに行かない方が安全。');
+  if (completionPressureHigh) reasons.push('揃えたい圧が強い時ほど、限定感を scarcity の証拠と誤認しやすい。');
+  if (memoryDriven) reasons.push('思い出価値は大事だが、回復経路が残るなら即断の根拠にはしすぎない。');
+  if (trueScarcityLikely) reasons.push('会場限定らしさが強く、回復経路の根拠が弱いので今回は本当の scarcity 寄り。');
+  if (clampReason === 'atmosphere_pressure_outpaces_evidence') reasons.push('焦りの強さに対して、回復不能だという証拠はまだ十分ではない。');
+  if (clampReason === 'recovery_plausible_not_true_scarcity') reasons.push('回復可能性が見えているため、限定感だけで urgent に寄せない。');
+
+  assumptions.push(
+    recoveryPlausibility === 'high' || recoveryPlausibility === 'medium'
+      ? '事後通販は保証ではなく、待って確認する価値がある可能性として扱います。'
+      : '事後通販は強く見込まず、現時点で見えている回復経路を中心に見ます。'
+  );
+  assumptions.push(
+    usedFallbackReady
+      ? '中古 fallback は、状態差と送料込み総額を後から確認する前提です。'
+      : '中古 fallback を主経路には置かず、別の回復経路を優先します。'
+  );
+
+  return {
+    detected: true,
+    scenarioKey: resolveScenarioKey({
+      itemKind: params.meta.itemKind,
+      goodsClass: params.meta.goodsClass,
+      parsedSearchClues: params.meta.parsedSearchClues,
+      searchClueRaw: params.meta.searchClueRaw,
+      answers: params.answers,
+    }),
+    venueContext,
+    recoveryPlausibility,
+    waitTolerance,
+    firstChanceTolerance,
+    usedFallbackWillingness,
+    scarcityPressure,
+    primaryMotive,
+    regretAxis,
+    chosenPath,
+    optimizingFor,
+    recoveryChangedRecommendation: recoveryStrong && chosenPath !== 'buy_now_if_it_is_truly_hard_to_recover',
+    usedMarketPartOfSaferPath: chosenPath === 'fallback_to_used_market_if_missed' || chosenPath === 'skip_onsite_chase_and_check_later',
+    trueScarcityLikely,
+    clampReason,
+    reasonFlags,
+    reasons: [...new Set(reasons)].slice(0, 5),
+    assumptions: [...new Set(assumptions)].slice(0, 3),
+  };
+}
+
 function computeItemKindRisk(itemKind: ItemKind, answers: Record<string, AnswerValue>, tags: string[]): number {
   const unknownInfoCount = tags.filter((tag) => tag === 'unknown_info' || tag === 'unknown_compare').length;
   if (itemKind === 'used') {
@@ -578,6 +764,13 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     scores,
     factorBuckets,
   });
+  const venueLimitedGoodsPlan = buildVenueLimitedGoodsPlan({
+    meta: input.meta,
+    answers: input.answers,
+    motives,
+    scores,
+    factorBuckets,
+  });
 
   const positivePush =
     factorBuckets.desireAttachment * 0.34 +
@@ -642,6 +835,32 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
       if (decision === 'BUY') decision = 'THINK';
       if (randomGoodsPlan.clampReason === 'stop_budget_over_limit' || randomGoodsPlan.clampReason === 'impulse_high_low_progress') {
         decision = 'SKIP';
+      }
+    }
+  }
+
+  if (venueLimitedGoodsPlan) {
+    tags.push(
+      `venue_limited_path_${venueLimitedGoodsPlan.chosenPath}`,
+      `venue_limited_context_${venueLimitedGoodsPlan.venueContext}`,
+      `venue_limited_recovery_${venueLimitedGoodsPlan.recoveryPlausibility}`,
+      `venue_limited_wait_${venueLimitedGoodsPlan.waitTolerance}`,
+      `venue_limited_used_${venueLimitedGoodsPlan.usedFallbackWillingness}`,
+      `venue_limited_pressure_${venueLimitedGoodsPlan.scarcityPressure}`,
+      `venue_limited_regret_${venueLimitedGoodsPlan.regretAxis}`,
+      `venue_limited_motive_${venueLimitedGoodsPlan.primaryMotive}`,
+    );
+    if (venueLimitedGoodsPlan.clampReason) tags.push(`venue_limited_clamp_${venueLimitedGoodsPlan.clampReason}`);
+    if (venueLimitedGoodsPlan.recoveryChangedRecommendation) tags.push('venue_limited_recovery_changed_recommendation');
+    if (venueLimitedGoodsPlan.usedMarketPartOfSaferPath) tags.push('venue_limited_used_market_safer_path');
+    if (venueLimitedGoodsPlan.trueScarcityLikely) tags.push('venue_limited_true_scarcity_likely');
+
+    if (venueLimitedGoodsPlan.chosenPath === 'buy_now_if_it_is_truly_hard_to_recover') {
+      if (decision === 'SKIP' && factorBuckets.budgetPressure < 72) decision = 'THINK';
+    } else {
+      if (decision === 'BUY') decision = 'THINK';
+      if (venueLimitedGoodsPlan.chosenPath === 'step_back_from_fomo_pressure' && venueLimitedGoodsPlan.clampReason === 'atmosphere_pressure_outpaces_evidence') {
+        decision = factorBuckets.budgetPressure >= 68 || scores.impulse >= 72 ? 'SKIP' : 'THINK';
       }
     }
   }
@@ -717,6 +936,44 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     extraActions.unshift(actionText[randomGoodsPlan.chosenPath]);
   }
 
+  if (venueLimitedGoodsPlan) {
+    const pathText: Record<VenueLimitedPlannerPath, string> = {
+      buy_now_if_it_is_truly_hard_to_recover: '回復経路が弱い根拠がある時だけ、今の確保を優先してよい。',
+      wait_for_post_event_mailorder: '事後通販や後日販売のシグナルを待つ方が、FOMO 追いより安全。',
+      skip_onsite_chase_and_check_later: '現地で追いかけ回すより、いったん離れて後で確認する方が合理的。',
+      fallback_to_used_market_if_missed: '取り逃し後は panic-buy せず、中古・フリマ fallback を計画的に使う。',
+      step_back_from_fomo_pressure: '今の圧は true scarcity より雰囲気要因が大きいので、一歩引く方が安全。',
+    };
+    extraReasons.unshift({
+      id: `venue_limited_${venueLimitedGoodsPlan.chosenPath}`,
+      severity: venueLimitedGoodsPlan.chosenPath === 'buy_now_if_it_is_truly_hard_to_recover' ? 'strong' : 'info',
+      text: pathText[venueLimitedGoodsPlan.chosenPath],
+    });
+    if (venueLimitedGoodsPlan.recoveryChangedRecommendation) {
+      extraReasons.push({
+        id: 'venue_limited_recovery_changed',
+        severity: 'info',
+        text: '回復可能性が見えているため、限定感そのものでは urgent 推奨にしませんでした。',
+      });
+    }
+    if (venueLimitedGoodsPlan.clampReason === 'atmosphere_pressure_outpaces_evidence') {
+      extraReasons.push({
+        id: 'venue_limited_fomo_clamp',
+        severity: 'warn',
+        text: 'いまの焦りは強い一方で、「本当に回復不能」という証拠はまだ薄めです。',
+      });
+    }
+
+    const actionText: Record<VenueLimitedPlannerPath, ActionItem> = {
+      buy_now_if_it_is_truly_hard_to_recover: { id: 'venue_limited_buy_now', text: '買うなら上限金額だけ決めて、回復不能の根拠がある時だけ確保する' },
+      wait_for_post_event_mailorder: { id: 'venue_limited_wait_mailorder', text: '事後通販・後日販売の告知を待ち、出なければ再評価する' },
+      skip_onsite_chase_and_check_later: { id: 'venue_limited_skip_onsite_chase', text: '現地で追いかけず、あとで公式告知と相場を見てから判断する' },
+      fallback_to_used_market_if_missed: { id: 'venue_limited_used_fallback', text: '逃した後は Mercari / 駿河屋などの中古 fallback を前提に、送料込み総額で比較する' },
+      step_back_from_fomo_pressure: { id: 'venue_limited_step_back', text: 'いったん離れて、限定表記・後日販売例・相場を確認してから戻る' },
+    };
+    extraActions.unshift(actionText[venueLimitedGoodsPlan.chosenPath]);
+  }
+
   const reasons = [...extraReasons, ...reasonsBase].slice(0, 6);
   const actions = [...extraActions, ...actionsBase].slice(0, 3);
 
@@ -751,6 +1008,10 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     downgradeFlags.push(`random_goods_path_${randomGoodsPlan.chosenPath}`);
     if (randomGoodsPlan.clampReason) downgradeFlags.push(`random_goods_clamp_${randomGoodsPlan.clampReason}`);
   }
+  if (venueLimitedGoodsPlan) {
+    downgradeFlags.push(`venue_limited_path_${venueLimitedGoodsPlan.chosenPath}`);
+    if (venueLimitedGoodsPlan.clampReason) downgradeFlags.push(`venue_limited_clamp_${venueLimitedGoodsPlan.clampReason}`);
+  }
 
   const decisionJa = decision === 'BUY' ? '買う' : decision === 'SKIP' ? 'やめる' : '保留';
   const positiveFactors = getTopFactors(scores, 'positive');
@@ -783,6 +1044,7 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     factorBuckets,
     presentation,
     randomGoodsPlan,
+    venueLimitedGoodsPlan,
     diagnosticTrace: {
       resultInputsSummary: {
         tags: [...tags],
@@ -792,6 +1054,7 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
         downgradeFlags,
       },
       randomGoodsPlan,
+      venueLimitedGoodsPlan,
     },
   };
 }

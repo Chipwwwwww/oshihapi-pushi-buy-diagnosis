@@ -58,6 +58,23 @@ function hasStrongBonusSignal(parsed?: ParsedSearchClues): boolean {
   return parsed.bonusClues.length > 0 || parsed.editionClues.length > 0;
 }
 
+const VENUE_LIMITED_RECOVERY_QUESTION_IDS = [
+  "q_addon_goods_post_event_mailorder",
+  "q_addon_goods_wait_tolerance",
+  "q_addon_goods_first_chance_tolerance",
+  "q_addon_goods_used_fallback",
+  "q_addon_goods_scarcity_pressure",
+  "q_addon_goods_venue_motive",
+  "q_addon_goods_regret_axis",
+] as const;
+
+function shouldAskVenueRecoveryQuestions(input: FlowResolverInput): boolean {
+  const context = input.answers.q_addon_goods_event_limit_context;
+  if (context === "venue_limited" || context === "event_limited" || context === "missed_onsite") return true;
+  const raw = `${input.meta.parsedSearchClues?.raw ?? ""} ${input.meta.parsedSearchClues?.normalized ?? ""} ${input.meta.searchClueRaw ?? ""}`;
+  return ["会場限定", "イベント限定", "会場先行", "現地限定", "現地販売", "会場物販", "事後通販", "事後受注"].some((keyword) => raw.includes(keyword));
+}
+
 function moveQuestionBefore(ids: string[], questionId: string, beforeId: string) {
   const fromIndex = ids.indexOf(questionId);
   const toIndex = ids.indexOf(beforeId);
@@ -154,6 +171,16 @@ export function resolveFlowQuestions(input: FlowResolverInput): FlowResolution {
     ids.push("q_addon_common_info");
   }
 
+  if (input.itemKind === "goods" && shouldAskVenueRecoveryQuestions(input)) {
+    pushBranch("venue_limited_recovery_questions", true, `context=${String(input.answers.q_addon_goods_event_limit_context ?? "search_clue")}`);
+    ids.push(...VENUE_LIMITED_RECOVERY_QUESTION_IDS);
+    moveQuestionBefore(ids, "q_addon_goods_post_event_mailorder", "q_addon_common_priority");
+    moveQuestionBefore(ids, "q_addon_goods_wait_tolerance", "q_addon_common_priority");
+    moveQuestionBefore(ids, "q_addon_goods_first_chance_tolerance", "q_addon_common_priority");
+  } else {
+    pushBranch("venue_limited_recovery_questions", false, `context=${String(input.answers.q_addon_goods_event_limit_context ?? "none")}`);
+  }
+
   if (input.goodsClass === "media" && hasResolvedMediaItemType(parsedSearchClues)) {
     moveQuestionBefore(ids, "q_addon_media_motive", "q_addon_common_priority");
   }
@@ -206,6 +233,8 @@ export function resolveFlowQuestions(input: FlowResolverInput): FlowResolution {
     ...CORE_12_QUESTION_IDS,
     ...Object.values(ADDON_BY_ITEM_KIND).flat(),
     ...Object.values(ADDON_BY_GOODS_CLASS).flat(),
+    ...VENUE_LIMITED_RECOVERY_QUESTION_IDS,
+    "q_addon_goods_event_limit_context",
     "q_storage_space",
     "q_price_feel",
     "q_addon_common_info",

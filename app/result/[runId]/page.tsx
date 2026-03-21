@@ -754,6 +754,65 @@ export default function ResultPage() {
         </Card>
       ) : null}
 
+      {run.output.venueLimitedGoodsPlan ? (
+        <Card className="space-y-4 border border-violet-200 bg-violet-50 text-violet-950 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className={sectionTitleClass}>会場限定グッズ / 事後回復の診断</h2>
+            <Badge variant="outline">{run.output.venueLimitedGoodsPlan.chosenPath}</Badge>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-violet-200/70 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
+              <p className="text-sm font-semibold">今回の推奨ルート</p>
+              <p className="mt-2 text-sm">
+                {run.output.venueLimitedGoodsPlan.chosenPath === "buy_now_if_it_is_truly_hard_to_recover"
+                  ? "回復経路が本当に弱い時だけ、今の確保を優先してよい。"
+                  : run.output.venueLimitedGoodsPlan.chosenPath === "wait_for_post_event_mailorder"
+                    ? "今は追い込みすぎず、事後通販や後日販売のシグナル待ちを優先。"
+                    : run.output.venueLimitedGoodsPlan.chosenPath === "skip_onsite_chase_and_check_later"
+                      ? "現地の追い買いは止めて、あとで再確認してから動く。"
+                      : run.output.venueLimitedGoodsPlan.chosenPath === "fallback_to_used_market_if_missed"
+                        ? "取り逃し後は panic-buy せず、中古 fallback での回復を前提にする。"
+                        : "今の圧は true scarcity より FOMO 寄りなので、一歩引く。"}
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                最適化対象: {run.output.venueLimitedGoodsPlan.optimizingFor}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-violet-200/70 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
+              <p className="text-sm font-semibold">前提がどう効いたか</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                <li>現地文脈: {run.output.venueLimitedGoodsPlan.venueContext}</li>
+                <li>回復可能性: {run.output.venueLimitedGoodsPlan.recoveryPlausibility}</li>
+                <li>待てる度合い: {run.output.venueLimitedGoodsPlan.waitTolerance}</li>
+                <li>初回機会を逃す耐性: {run.output.venueLimitedGoodsPlan.firstChanceTolerance}</li>
+                <li>中古 fallback 意欲: {run.output.venueLimitedGoodsPlan.usedFallbackWillingness}</li>
+                <li>scarcity 圧: {run.output.venueLimitedGoodsPlan.scarcityPressure}</li>
+                <li>主 motive: {run.output.venueLimitedGoodsPlan.primaryMotive}</li>
+                <li>後悔軸: {run.output.venueLimitedGoodsPlan.regretAxis}</li>
+              </ul>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-violet-200/70 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
+              <p className="text-sm font-semibold">なぜこの diagnosis か</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                {run.output.venueLimitedGoodsPlan.reasons.map((reason) => <li key={reason}>{reason}</li>)}
+              </ul>
+            </div>
+            <div className="rounded-2xl border border-violet-200/70 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
+              <p className="text-sm font-semibold">診断 trace</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                {run.output.venueLimitedGoodsPlan.assumptions.map((assumption) => <li key={assumption}>{assumption}</li>)}
+                {run.output.venueLimitedGoodsPlan.clampReason ? <li>clamp理由: {run.output.venueLimitedGoodsPlan.clampReason}</li> : null}
+                <li>回復可能性が結論を変えたか: {run.output.venueLimitedGoodsPlan.recoveryChangedRecommendation ? "はい" : "いいえ"}</li>
+                <li>中古 fallback が safer path に入るか: {run.output.venueLimitedGoodsPlan.usedMarketPartOfSaferPath ? "はい" : "いいえ"}</li>
+                <li>true scarcity 寄りか: {run.output.venueLimitedGoodsPlan.trueScarcityLikely ? "はい" : "いいえ"}</li>
+              </ul>
+            </div>
+          </div>
+        </Card>
+      ) : null}
+
       {run.output.randomGoodsPlan ? (
         <Card className="space-y-4 border border-sky-200 bg-sky-50 text-sky-950 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
           <div className="flex flex-wrap items-center gap-2">

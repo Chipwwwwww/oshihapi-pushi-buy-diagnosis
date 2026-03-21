@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-21T11:51:39.288Z",
+  "generatedAt": "2026-03-21T12:11:48.051Z",
   "scenarioCount": 32,
   "scenarios": [
     {
@@ -29,7 +29,7 @@
         "holdSubtype": "risk_uncertain",
         "confidence": 40,
         "score": -0.013936153846153859,
-        "reasonCount": 3,
+        "reasonCount": 4,
         "actionCount": 3
       }
     },
@@ -198,8 +198,8 @@
         "q_regret_impulse",
         "q_impulse_axis_short",
         "q_alternative_plan",
-        "q_addon_common_info",
-        "q_addon_common_priority"
+        "q_addon_goods_event_limit_context",
+        "q_addon_common_info"
       ],
       "branchHits": [
         "mode_medium",
@@ -209,8 +209,8 @@
       "result": {
         "decision": "THINK",
         "holdSubtype": "risk_uncertain",
-        "confidence": 42,
-        "score": 0.05782799999999999,
+        "confidence": 41,
+        "score": 0.04244661538461539,
         "reasonCount": 3,
         "actionCount": 3
       }
@@ -389,7 +389,7 @@
     },
     {
       "id": "long_goods",
-      "questionCount": 19,
+      "questionCount": 20,
       "shownQuestionIds": [
         "q_storage_fit",
         "q_storage_space",
@@ -404,6 +404,7 @@
         "q_regret_impulse",
         "q_impulse_axis_short",
         "q_alternative_plan",
+        "q_addon_goods_event_limit_context",
         "q_addon_common_info",
         "q_addon_common_priority",
         "q_addon_goods_compare",
@@ -421,8 +422,8 @@
       "result": {
         "decision": "THINK",
         "holdSubtype": "risk_uncertain",
-        "confidence": 42,
-        "score": 0.05782799999999999,
+        "confidence": 41,
+        "score": 0.04244661538461539,
         "reasonCount": 3,
         "actionCount": 3
       }
@@ -621,7 +622,7 @@
     },
     {
       "id": "long_goods_small_collection",
-      "questionCount": 19,
+      "questionCount": 20,
       "shownQuestionIds": [
         "q_storage_fit",
         "q_storage_space",
@@ -636,6 +637,7 @@
         "q_regret_impulse",
         "q_impulse_axis_short",
         "q_alternative_plan",
+        "q_addon_goods_event_limit_context",
         "q_addon_common_info",
         "q_addon_common_priority",
         "q_addon_goods_compare",
@@ -652,8 +654,8 @@
       "result": {
         "decision": "THINK",
         "holdSubtype": "risk_uncertain",
-        "confidence": 42,
-        "score": 0.05782799999999999,
+        "confidence": 41,
+        "score": 0.04244661538461539,
         "reasonCount": 3,
         "actionCount": 3
       }
@@ -704,7 +706,7 @@
     },
     {
       "id": "long_goods_paper",
-      "questionCount": 19,
+      "questionCount": 20,
       "shownQuestionIds": [
         "q_storage_fit",
         "q_storage_space",
@@ -719,6 +721,7 @@
         "q_regret_impulse",
         "q_impulse_axis_short",
         "q_alternative_plan",
+        "q_addon_goods_event_limit_context",
         "q_addon_common_info",
         "q_addon_common_priority",
         "q_addon_goods_compare",
@@ -735,8 +738,8 @@
       "result": {
         "decision": "THINK",
         "holdSubtype": "risk_uncertain",
-        "confidence": 42,
-        "score": 0.05782799999999999,
+        "confidence": 41,
+        "score": 0.04244661538461539,
         "reasonCount": 3,
         "actionCount": 3
       }
@@ -787,7 +790,7 @@
     },
     {
       "id": "long_goods_wearable",
-      "questionCount": 20,
+      "questionCount": 21,
       "shownQuestionIds": [
         "q_storage_fit",
         "q_storage_space",
@@ -802,6 +805,7 @@
         "q_regret_impulse",
         "q_impulse_axis_short",
         "q_alternative_plan",
+        "q_addon_goods_event_limit_context",
         "q_addon_common_info",
         "q_addon_common_priority",
         "q_addon_goods_compare",
@@ -819,8 +823,8 @@
       "result": {
         "decision": "THINK",
         "holdSubtype": "risk_uncertain",
-        "confidence": 42,
-        "score": 0.05782799999999999,
+        "confidence": 41,
+        "score": 0.04244661538461539,
         "reasonCount": 3,
         "actionCount": 3
       }
@@ -872,7 +876,7 @@
     },
     {
       "id": "long_goods_display_large",
-      "questionCount": 17,
+      "questionCount": 18,
       "shownQuestionIds": [
         "q_desire",
         "q_goal",
@@ -885,6 +889,7 @@
         "q_regret_impulse",
         "q_impulse_axis_short",
         "q_alternative_plan",
+        "q_addon_goods_event_limit_context",
         "q_addon_common_info",
         "q_addon_common_priority",
         "q_addon_goods_compare",
@@ -901,8 +906,8 @@
       "result": {
         "decision": "THINK",
         "holdSubtype": "risk_uncertain",
-        "confidence": 42,
-        "score": 0.05901046153846152,
+        "confidence": 41,
+        "score": 0.04362907692307692,
         "reasonCount": 3,
         "actionCount": 3
       }
@@ -951,7 +956,7 @@
     },
     {
       "id": "long_goods_tech",
-      "questionCount": 19,
+      "questionCount": 20,
       "shownQuestionIds": [
         "q_storage_fit",
         "q_storage_space",
@@ -966,6 +971,7 @@
         "q_regret_impulse",
         "q_impulse_axis_short",
         "q_alternative_plan",
+        "q_addon_goods_event_limit_context",
         "q_addon_common_info",
         "q_addon_common_priority",
         "q_addon_goods_compare",
@@ -982,8 +988,8 @@
       "result": {
         "decision": "THINK",
         "holdSubtype": "risk_uncertain",
-        "confidence": 42,
-        "score": 0.05782799999999999,
+        "confidence": 41,
+        "score": 0.04244661538461539,
         "reasonCount": 3,
         "actionCount": 3
       }
@@ -1034,7 +1040,7 @@
     },
     {
       "id": "long_goods_media",
-      "questionCount": 20,
+      "questionCount": 21,
       "shownQuestionIds": [
         "q_storage_fit",
         "q_storage_space",
@@ -1049,6 +1055,7 @@
         "q_regret_impulse",
         "q_impulse_axis_short",
         "q_alternative_plan",
+        "q_addon_goods_event_limit_context",
         "q_addon_common_info",
         "q_addon_common_priority",
         "q_addon_goods_compare",
@@ -1066,8 +1073,8 @@
       "result": {
         "decision": "THINK",
         "holdSubtype": "risk_uncertain",
-        "confidence": 42,
-        "score": 0.0517467692307693,
+        "confidence": 41,
+        "score": 0.0363653846153847,
         "reasonCount": 3,
         "actionCount": 3
       }
@@ -1119,7 +1126,7 @@
     },
     {
       "id": "long_goods_itabag_badge",
-      "questionCount": 17,
+      "questionCount": 18,
       "shownQuestionIds": [
         "q_desire",
         "q_goal",
@@ -1132,6 +1139,7 @@
         "q_regret_impulse",
         "q_impulse_axis_short",
         "q_alternative_plan",
+        "q_addon_goods_event_limit_context",
         "q_addon_common_info",
         "q_addon_common_priority",
         "q_addon_goods_compare",
@@ -1148,8 +1156,8 @@
       "result": {
         "decision": "THINK",
         "holdSubtype": "risk_uncertain",
-        "confidence": 42,
-        "score": 0.05901046153846152,
+        "confidence": 41,
+        "score": 0.04362907692307692,
         "reasonCount": 3,
         "actionCount": 3
       }

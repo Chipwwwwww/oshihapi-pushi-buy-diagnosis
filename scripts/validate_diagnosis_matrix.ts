@@ -44,6 +44,14 @@ function defaultAnswer(questionId: string): AnswerValue {
   if (questionId === "q_budget_pain") return "some";
   if (questionId === "q_motives_multi") return ["use"];
   if (questionId === "q_goal") return "single";
+  if (questionId === "q_addon_goods_event_limit_context") return "none";
+  if (questionId === "q_addon_goods_post_event_mailorder") return "maybe";
+  if (questionId === "q_addon_goods_wait_tolerance") return "medium";
+  if (questionId === "q_addon_goods_first_chance_tolerance") return "medium";
+  if (questionId === "q_addon_goods_used_fallback") return "medium";
+  if (questionId === "q_addon_goods_scarcity_pressure") return "medium";
+  if (questionId === "q_addon_goods_venue_motive") return "practical_collecting";
+  if (questionId === "q_addon_goods_regret_axis") return "balanced";
   if (questionId === "q_hot_cold") return "normal";
   if (questionId === "q_price_feel") return "normal";
   if (questionId === "q_alternative_plan") return "maybe";
@@ -648,4 +656,63 @@ console.log(`diagnostics matrix pass: ${results.length} scenarios`);
 console.log(`report: ${outPath}`);
 if (uniquePathGaps.length > 0) {
   throw new Error(`unique path gaps detected: ${uniquePathGaps.join("; ")}`);
+}
+
+
+const venueRecoveryWait = buildEvaluatedOutput('goods', {
+  q_addon_goods_event_limit_context: 'event_limited',
+  q_addon_goods_post_event_mailorder: 'likely',
+  q_addon_goods_wait_tolerance: 'high',
+  q_addon_goods_first_chance_tolerance: 'high',
+  q_addon_goods_used_fallback: 'medium',
+  q_addon_goods_scarcity_pressure: 'high',
+  q_addon_goods_venue_motive: 'event_memory',
+  q_addon_goods_regret_axis: 'overpay_more',
+  q_regret_impulse: 'fomo',
+});
+if (venueRecoveryWait.venueLimitedGoodsPlan?.chosenPath !== 'wait_for_post_event_mailorder') {
+  throw new Error('venue_recovery_wait: venueLimitedGoodsPlan should prefer wait_for_post_event_mailorder');
+}
+
+const venueUsedFallback = buildEvaluatedOutput('goods', {
+  q_addon_goods_event_limit_context: 'missed_onsite',
+  q_addon_goods_post_event_mailorder: 'maybe',
+  q_addon_goods_wait_tolerance: 'medium',
+  q_addon_goods_first_chance_tolerance: 'medium',
+  q_addon_goods_used_fallback: 'high',
+  q_addon_goods_scarcity_pressure: 'medium',
+  q_addon_goods_venue_motive: 'practical_collecting',
+  q_addon_goods_regret_axis: 'overpay_more',
+});
+if (venueUsedFallback.venueLimitedGoodsPlan?.chosenPath !== 'fallback_to_used_market_if_missed') {
+  throw new Error('venue_used_fallback: venueLimitedGoodsPlan should prefer fallback_to_used_market_if_missed');
+}
+
+const venueTrueScarcity = buildEvaluatedOutput('goods', {
+  q_addon_goods_event_limit_context: 'venue_limited',
+  q_addon_goods_post_event_mailorder: 'unlikely',
+  q_addon_goods_wait_tolerance: 'low',
+  q_addon_goods_first_chance_tolerance: 'low',
+  q_addon_goods_used_fallback: 'low',
+  q_addon_goods_scarcity_pressure: 'high',
+  q_addon_goods_venue_motive: 'event_memory',
+  q_addon_goods_regret_axis: 'miss_more',
+});
+if (venueTrueScarcity.venueLimitedGoodsPlan?.chosenPath !== 'buy_now_if_it_is_truly_hard_to_recover') {
+  throw new Error('venue_true_scarcity: venueLimitedGoodsPlan should allow buy_now_if_it_is_truly_hard_to_recover');
+}
+
+const venueFomoClamp = buildEvaluatedOutput('goods', {
+  q_addon_goods_event_limit_context: 'venue_limited',
+  q_addon_goods_post_event_mailorder: 'likely',
+  q_addon_goods_wait_tolerance: 'medium',
+  q_addon_goods_first_chance_tolerance: 'high',
+  q_addon_goods_used_fallback: 'medium',
+  q_addon_goods_scarcity_pressure: 'high',
+  q_addon_goods_venue_motive: 'collection_completeness',
+  q_addon_goods_regret_axis: 'overpay_more',
+  q_regret_impulse: 'fomo',
+});
+if (venueFomoClamp.venueLimitedGoodsPlan?.chosenPath !== 'wait_for_post_event_mailorder' && venueFomoClamp.venueLimitedGoodsPlan?.chosenPath !== 'step_back_from_fomo_pressure') {
+  throw new Error('venue_fomo_clamp: venueLimitedGoodsPlan should clamp urgency when recovery is realistic');
 }

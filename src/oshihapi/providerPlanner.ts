@@ -580,6 +580,11 @@ function evaluateCandidate(rawCandidate: RawProviderCandidate, input: PlannerInp
     (input.resultTags ?? []).includes("random_goods_path_stop_drawing_buy_singles") ||
     (input.resultTags ?? []).includes("random_goods_path_stop_drawing_check_used_market");
   const randomGoodsExchangePath = (input.resultTags ?? []).includes("random_goods_path_switch_to_exchange_path");
+  const venueUsedFallbackPath =
+    (input.resultTags ?? []).includes("venue_limited_path_fallback_to_used_market_if_missed") ||
+    (input.resultTags ?? []).includes("venue_limited_path_skip_onsite_chase_and_check_later");
+  const venueWaitPath = (input.resultTags ?? []).includes("venue_limited_path_wait_for_post_event_mailorder");
+  const venueFomoClampPath = (input.resultTags ?? []).includes("venue_limited_path_step_back_from_fomo_pressure");
 
   const hardBlockReasons: string[] = [];
   const demotionReasons: string[] = [];
@@ -649,6 +654,42 @@ function evaluateCandidate(rawCandidate: RawProviderCandidate, input: PlannerInp
       demotionReasons.push("secondary_completion_preferred");
       rank += 12;
       maxTier = tightenMaxTier(maxTier, "okay");
+    }
+  }
+
+  if (input.itemKind === "goods" && venueUsedFallbackPath) {
+    if (rawCandidate.providerId === "mercari") rank -= 18;
+    if (rawCandidate.providerId === "surugaya") rank -= 16;
+    if (rawCandidate.providerId === "amazon" || rawCandidate.providerId === "rakuten" || rawCandidate.providerId === "yahooShopping") {
+      demotionReasons.push("post_event_used_market_preferred");
+      rank += 22;
+      maxTier = tightenMaxTier(maxTier, "lowProbability");
+    }
+    if (rawCandidate.providerId === "amiami" || rawCandidate.providerId === "gamers") {
+      demotionReasons.push("later_recovery_not_primary");
+      rank += 8;
+      maxTier = tightenMaxTier(maxTier, "okay");
+    }
+  }
+
+  if (input.itemKind === "goods" && venueWaitPath) {
+    if (rawCandidate.providerId === "mercari" || rawCandidate.providerId === "surugaya") {
+      demotionReasons.push("official_wait_signal_first");
+      rank += 6;
+      maxTier = tightenMaxTier(maxTier, "okay");
+    }
+    if (rawCandidate.providerId === "amazon" || rawCandidate.providerId === "rakuten") {
+      demotionReasons.push("standard_retail_only_if_continuation_realistic");
+      rank += 6;
+      maxTier = tightenMaxTier(maxTier, "okay");
+    }
+  }
+
+  if (input.itemKind === "goods" && venueFomoClampPath) {
+    if (rawCandidate.providerId === "amazon" || rawCandidate.providerId === "rakuten" || rawCandidate.providerId === "yahooShopping") {
+      demotionReasons.push("fomo_pressure_not_evidence");
+      rank += 12;
+      maxTier = tightenMaxTier(maxTier, "lowProbability");
     }
   }
 
