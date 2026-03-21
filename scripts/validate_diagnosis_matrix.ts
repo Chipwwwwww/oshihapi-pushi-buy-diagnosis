@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { evaluate } from "@/src/oshihapi/engine";
+import { merch_v2_ja } from "@/src/oshihapi/merch_v2_ja";
 import { getOptionalMetaHint, isGoodsClassApplicable } from "@/src/oshihapi/homeFunnel";
 import { resolveFlowQuestions } from "@/src/oshihapi/flowResolver";
 import { pruneAnswersAfterQuestion } from "@/src/oshihapi/flowState";
@@ -390,6 +391,33 @@ function runScoringSeparationChecks() {
   });
   if (blindFun.randomGoodsPlan?.chosenPath !== 'continue_a_little_more') {
     throw new Error('separation: fun blind_draw should allow a limited continue path');
+  }
+
+  const shortFavorableBuy = evaluate({
+    questionSet: merch_v2_ja,
+    answers: {
+      q_motives_multi: ['use'],
+      q_budget_pain: 'ok',
+      q_desire: 4,
+      q_price_feel: 'good',
+      q_regret_impulse: 'calm',
+      q_impulse_axis_short: 1,
+      q_addon_common_info: 'enough',
+      q_addon_goods_event_limit_context: 'none',
+      q_addon_goods_post_event_mailorder: 'likely',
+      q_addon_goods_wait_tolerance: 'high',
+      q_addon_goods_first_chance_tolerance: 'high',
+      q_addon_goods_used_fallback: 'high',
+      q_addon_goods_scarcity_pressure: 'low',
+      q_addon_goods_live_goods_motive: 'symbolic_value',
+      q_addon_goods_regret_axis: 'balanced',
+    },
+    meta: { itemKind: 'goods', goodsClass: 'small_collection' },
+    mode: 'short',
+    decisiveness: 'standard',
+  });
+  if (shortFavorableBuy.decision !== 'BUY') {
+    throw new Error('separation: favorable informed short flow should allow BUY instead of defaulting to THINK');
   }
 
   const billingNeedClear = build('game_billing', {

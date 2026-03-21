@@ -775,6 +775,29 @@ export default function ResultPage() {
         </Card>
       ) : null}
 
+      {scenarioCoverage?.key === "exchange_path" && run.output.randomGoodsPlan ? (
+        <Card className="space-y-4 border border-cyan-200 bg-cyan-50 text-cyan-950 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className={sectionTitleClass}>交換前提として見るポイント</h2>
+            <Badge variant="outline">exchange-aware</Badge>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-cyan-200/70 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
+              <p className="text-sm font-semibold">この結果が見ていること</p>
+              <p className="mt-2 text-sm">交換は「追加で引く言い訳」ではなく、いま持っている重複で回収効率を上げられるかを見ています。成立待ち・梱包・連絡コストまで含めて診断しています。</p>
+            </div>
+            <div className="rounded-2xl border border-cyan-200/70 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
+              <p className="text-sm font-semibold">次に確認すること</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                <li>交換候補が本当にいるか</li>
+                <li>発送・手渡しの負担を許容できるか</li>
+                <li>成立しない時に単品/中古へ切り替えられるか</li>
+              </ul>
+            </div>
+          </div>
+        </Card>
+      ) : null}
+
       {run.output.venueLimitedGoodsPlan ? (
         <Card className="space-y-4 border border-violet-200 bg-violet-50 text-violet-950 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
           <div className="flex flex-wrap items-center gap-2">
@@ -966,7 +989,7 @@ export default function ResultPage() {
                 {run.output.randomGoodsPlan.chosenPath === "continue_a_little_more"
                   ? "少しだけ続けてもよい。ただしソフトな stop-line を固定。"
                   : run.output.randomGoodsPlan.chosenPath === "switch_to_exchange_path"
-                    ? "これ以上は引き足さず、交換前提の整理へ移る。"
+                    ? "これ以上は引き足さず、交換成立の見込みと負担を先に整理する。引き足しより『いまある重複で動けるか』を優先。"
                     : run.output.randomGoodsPlan.chosenPath === "stop_drawing_buy_singles"
                       ? "盲抽は止めて、必要分を単品購入に切り替える。"
                       : run.output.randomGoodsPlan.chosenPath === "stop_drawing_check_used_market"
@@ -978,6 +1001,9 @@ export default function ResultPage() {
               <p className="mt-2 text-xs text-muted-foreground">
                 最適化対象: {run.output.randomGoodsPlan.stopLineOptimizingFor}
               </p>
+              {run.output.randomGoodsPlan.chosenPath === "switch_to_exchange_path" ? (
+                <p className="mt-2 text-xs text-cyan-700 dark:text-cyan-300">交換成立を前提に寄せています。負担が想定より重いなら、追加購入ではなく単品/中古 fallback を優先してください。</p>
+              ) : null}
             </div>
             <div className="rounded-2xl border border-sky-200/70 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
               <p className="text-sm font-semibold">前提がどう効いたか</p>
@@ -1144,6 +1170,7 @@ export default function ResultPage() {
 
       <ProviderComparisonModule
         cards={providerPlan.cards}
+        scenarioKey={scenarioCoverage?.key ?? null}
         onProviderClick={(providerId) => {
           if (providerId === "mercari") {
             logActionClick("mercari_search_click");

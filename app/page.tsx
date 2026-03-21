@@ -106,6 +106,7 @@ export default function Home() {
     : selectedCoverage;
   const visibleSupportingCoverageGroups = supportingCoverageGroups.slice(0, 6);
   const hiddenSupportingCoverageGroups = supportingCoverageGroups.slice(6);
+  const [showAllSupportingScenarios, setShowAllSupportingScenarios] = useState(false);
 
   const buildFlowParams = () => {
     const params = new URLSearchParams();
@@ -184,6 +185,24 @@ export default function Home() {
     setGoodsClass(nextGoodsClass);
   };
 
+  const isScenarioSelected = (scenarioKey: ScenarioKey) => highlightedScenarioKey === scenarioKey;
+
+  const getScenarioButtonClass = (selected: boolean, emphasis: "primary" | "secondary" | "partial" = "secondary") => {
+    if (emphasis === "primary") {
+      return selected
+        ? "border-accent bg-accent/10 shadow-sm ring-2 ring-accent/30"
+        : "border-slate-200 bg-white hover:border-accent/50 hover:bg-accent/5 dark:border-white/10 dark:bg-white/4 dark:hover:border-accent/40";
+    }
+    if (emphasis === "partial") {
+      return selected
+        ? "border-accent/60 bg-accent/10 ring-2 ring-accent/20"
+        : "border-slate-200 bg-white/70 hover:border-slate-300 hover:bg-white dark:border-white/10 dark:bg-white/5";
+    }
+    return selected
+      ? "border-accent/60 bg-accent/10 ring-2 ring-accent/20"
+      : "border-slate-200 bg-white/80 hover:border-slate-300 hover:bg-white dark:border-white/10 dark:bg-white/5";
+  };
+
   return (
     <div className={`${containerClass} safe-bottom flex min-h-screen flex-col gap-6 bg-transparent py-8 dark:bg-[#0b0f1a]`}>
       <header className="flex flex-col gap-2">
@@ -213,9 +232,7 @@ export default function Home() {
               onClick={() => handleScenarioSelect(entry.key)}
               className={[
                 "rounded-2xl border px-4 py-4 text-left transition",
-                highlightedScenarioKey === entry.key
-                  ? "border-accent bg-accent/5 shadow-sm"
-                  : "border-slate-200 bg-white hover:border-accent/40 dark:border-white/10 dark:bg-white/4 dark:hover:border-accent/40",
+                getScenarioButtonClass(isScenarioSelected(entry.key), "primary"),
               ].join(" ")}
             >
               <div className="flex items-start justify-between gap-3">
@@ -240,9 +257,7 @@ export default function Home() {
                 onClick={() => handleScenarioSelect(entry.key)}
                 className={[
                   "rounded-xl border px-3 py-3 text-left transition",
-                  highlightedScenarioKey === entry.key
-                    ? "border-accent/50 bg-accent/5"
-                    : "border-slate-200 bg-white/80 hover:border-slate-300 dark:border-white/10 dark:bg-white/5",
+                  getScenarioButtonClass(isScenarioSelected(entry.key)),
                 ].join(" ")}
               >
                 <div className="flex flex-wrap items-center gap-2">
@@ -254,32 +269,49 @@ export default function Home() {
             ))}
           </div>
           {hiddenSupportingCoverageGroups.length > 0 ? (
-            <details className="mt-3 rounded-xl border border-slate-200/80 bg-white/70 px-3 py-3 dark:border-white/10 dark:bg-white/5">
-              <summary className="cursor-pointer text-sm font-medium text-slate-700 dark:text-zinc-200">
-                残り {hiddenSupportingCoverageGroups.length} 件を開く
-              </summary>
-              <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-                {hiddenSupportingCoverageGroups.map((entry) => (
-                  <button
-                    key={entry.key}
-                    type="button"
-                    onClick={() => handleScenarioSelect(entry.key)}
-                    className={[
-                      "rounded-xl border px-3 py-3 text-left transition",
-                      highlightedScenarioKey === entry.key
-                        ? "border-accent/50 bg-accent/5"
-                        : "border-slate-200 bg-white/80 hover:border-slate-300 dark:border-white/10 dark:bg-white/5",
-                    ].join(" ")}
-                  >
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-medium text-slate-900 dark:text-zinc-50">{entry.recommendedEntryLabel}</p>
-                      <span className="text-xs text-slate-500 dark:text-zinc-400">{getSupportLevelBadgeLabel(entry.supportLevel)}</span>
-                    </div>
-                    <p className="mt-1 text-xs text-slate-600 dark:text-zinc-300">{entry.compactEntryHint}</p>
-                  </button>
-                ))}
-              </div>
-            </details>
+            <div className="mt-3 rounded-xl border border-slate-200/80 bg-white/70 px-3 py-3 dark:border-white/10 dark:bg-white/5">
+              <button
+                type="button"
+                aria-expanded={showAllSupportingScenarios}
+                aria-controls="homepage-more-scenarios"
+                onClick={() => setShowAllSupportingScenarios((current) => !current)}
+                className="flex w-full items-center justify-between gap-3 rounded-lg text-left text-sm font-medium text-slate-700 transition hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 dark:text-zinc-200 dark:hover:text-zinc-50"
+              >
+                <span>{showAllSupportingScenarios ? `残り ${hiddenSupportingCoverageGroups.length} 件を閉じる` : `残り ${hiddenSupportingCoverageGroups.length} 件を見る`}</span>
+                <span
+                  aria-hidden="true"
+                  className={[
+                    "text-base leading-none text-slate-500 transition-transform dark:text-zinc-400",
+                    showAllSupportingScenarios ? "rotate-180" : "rotate-0",
+                  ].join(" ")}
+                >
+                  ▾
+                </span>
+              </button>
+              {showAllSupportingScenarios ? (
+                <div id="homepage-more-scenarios" className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                  {hiddenSupportingCoverageGroups.map((entry) => (
+                    <button
+                      key={entry.key}
+                      type="button"
+                      onClick={() => handleScenarioSelect(entry.key)}
+                      aria-pressed={isScenarioSelected(entry.key)}
+                      aria-current={isScenarioSelected(entry.key) ? "true" : undefined}
+                      className={[
+                        "rounded-xl border px-3 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30",
+                        getScenarioButtonClass(isScenarioSelected(entry.key)),
+                      ].join(" ")}
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-medium text-slate-900 dark:text-zinc-50">{entry.recommendedEntryLabel}</p>
+                        <span className="text-xs text-slate-500 dark:text-zinc-400">{getSupportLevelBadgeLabel(entry.supportLevel)}</span>
+                      </div>
+                      <p className="mt-1 text-xs text-slate-600 dark:text-zinc-300">{entry.compactEntryHint}</p>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           ) : null}
         </div>
 
@@ -295,7 +327,12 @@ export default function Home() {
                   key={entry.key}
                   type="button"
                   onClick={() => handleScenarioSelect(entry.key)}
-                  className="rounded-xl border border-slate-200 bg-white/70 px-3 py-3 text-left transition hover:border-slate-300 dark:border-white/10 dark:bg-white/5"
+                  aria-pressed={isScenarioSelected(entry.key)}
+                aria-current={isScenarioSelected(entry.key) ? "true" : undefined}
+                className={[
+                  "rounded-xl border px-3 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30",
+                  getScenarioButtonClass(isScenarioSelected(entry.key), "partial"),
+                ].join(" ")}
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-sm font-medium text-slate-900 dark:text-zinc-50">{entry.recommendedEntryLabel}</p>
@@ -329,14 +366,14 @@ export default function Home() {
         <div className="flex flex-wrap items-center gap-2">
           <h2 className={sectionTitleClass}>現在の選択シナリオ</h2>
           <Badge variant="accent">{getSupportLevelBadgeLabel(highlightedCoverage.supportLevel)}</Badge>
-          {selectedScenarioKey ? <Badge variant="outline">プリセット固定中</Badge> : null}
+          {selectedScenarioKey ? <Badge variant="outline">プリセット固定中</Badge> : <Badge variant="outline">自動おすすめ</Badge>}
         </div>
         <p className="text-sm font-semibold text-slate-800 dark:text-zinc-100">{highlightedCoverage.recommendedEntryLabel}</p>
         <p className="text-sm text-slate-700 dark:text-zinc-200">最適化: {highlightedCoverage.optimizationSummary}</p>
         <p className="text-xs text-slate-500 dark:text-zinc-400">
           {selectedScenarioKey
-            ? "カード選択に合わせて種別プリセットを同期しました。必要なら下の種別変更で解除できます。"
-            : highlightedCoverage.shortScopeDisclosure}
+            ? "カードを1回押すだけで選択とプリセットを同期します。必要なら下の種別変更で解除できます。"
+            : `現在の入力から自動でこのシナリオを強めに表示しています。${highlightedCoverage.shortScopeDisclosure}`}
         </p>
       </Card>
 

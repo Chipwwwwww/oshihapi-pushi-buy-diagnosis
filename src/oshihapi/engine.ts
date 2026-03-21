@@ -1466,9 +1466,20 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     (decisivenessMultiplierMap[decisiveness] ?? 1) *
     (modeMultiplierMap[mode] ?? 1);
 
+  const shortFlowPositiveBuyWindow =
+    mode === 'short' &&
+    unknownCount <= 1 &&
+    factorBuckets.desireAttachment >= 72 &&
+    factorBuckets.budgetPressure < 48 &&
+    factorBuckets.uncertaintyUnknowns < 42 &&
+    factorBuckets.impulseVolatility < 48 &&
+    factorBuckets.readinessLogistics < 58 &&
+    scoreSigned >= holdBand * 0.8;
+
   let decision: Decision = 'THINK';
   if (scoreSigned >= holdBand) decision = 'BUY';
   else if (scoreSigned <= -holdBand) decision = 'SKIP';
+  else if (shortFlowPositiveBuyWindow) decision = 'BUY';
 
   if (unknownCount >= 5 && decision === 'BUY') {
     decision = 'THINK';
