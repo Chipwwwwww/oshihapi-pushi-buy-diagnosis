@@ -312,6 +312,9 @@ function getScenarioRankDelta(providerId: ProviderId, input: Pick<PlannerInput, 
 function buildShortReason(providerId: ProviderId, input: Pick<PlannerInput, "itemKind" | "goodsClass" | "searchClues" | "resultTags">): string {
   const { itemKind, goodsClass, searchClues } = input;
   const specialtyScenario = classifySpecialtyScenario(input);
+  const randomGoodsSinglesPath =
+    (input.resultTags ?? []).includes("random_goods_path_stop_drawing_buy_singles") ||
+    (input.resultTags ?? []).includes("random_goods_path_stop_drawing_check_used_market");
 
   if (searchClues?.bonusClues.length || specialtyScenario !== "generic") {
     if (providerId === "gamers") return goodsClass === "media" ? "特典重視の専門店候補" : "店舗別特典を見比べやすい";
@@ -346,6 +349,11 @@ function buildShortReason(providerId: ProviderId, input: Pick<PlannerInput, "ite
   }
 
   if (itemKind === "blind_draw") {
+    if (randomGoodsSinglesPath) {
+      if (providerId === "mercari") return "単品回収の相場確認";
+      if (providerId === "surugaya") return "中古単品の在庫確認";
+      if (providerId === "amazon" || providerId === "rakuten") return "重複回避の主経路ではない";
+    }
     if (providerId === "gamers") return "特典・箱買い向き";
     if (providerId === "amiami") return "予約枠を確認";
     if (providerId === "melonbooks") return "書店特典文脈のみ参考";
@@ -568,6 +576,10 @@ function evaluateCandidate(rawCandidate: RawProviderCandidate, input: PlannerInp
   const bonusSensitive = hasBonusSensitiveSignals(input);
   const smallCollectionFamily = isSmallCollectionFamily(input.goodsClass);
   const mediaPreorder = input.goodsClass === "media" && input.itemKind === "preorder";
+  const randomGoodsSinglesPath =
+    (input.resultTags ?? []).includes("random_goods_path_stop_drawing_buy_singles") ||
+    (input.resultTags ?? []).includes("random_goods_path_stop_drawing_check_used_market");
+  const randomGoodsExchangePath = (input.resultTags ?? []).includes("random_goods_path_switch_to_exchange_path");
 
   const hardBlockReasons: string[] = [];
   const demotionReasons: string[] = [];
@@ -622,6 +634,30 @@ function evaluateCandidate(rawCandidate: RawProviderCandidate, input: PlannerInp
       demotionReasons.push("goods_class_mismatch");
       rank += 18;
       maxTier = tightenMaxTier(maxTier, lowConfidence ? "lowProbability" : "okay");
+    }
+  }
+
+  if (input.itemKind === "blind_draw" && randomGoodsSinglesPath) {
+    if (rawCandidate.providerId === "mercari") rank -= 18;
+    if (rawCandidate.providerId === "surugaya") rank -= 16;
+    if (rawCandidate.providerId === "amazon" || rawCandidate.providerId === "rakuten" || rawCandidate.providerId === "yahooShopping") {
+      demotionReasons.push("duplicate_risk_recovery_mismatch");
+      rank += 22;
+      maxTier = tightenMaxTier(maxTier, "lowProbability");
+    }
+    if (rawCandidate.providerId === "amiami" || rawCandidate.providerId === "gamers") {
+      demotionReasons.push("secondary_completion_preferred");
+      rank += 12;
+      maxTier = tightenMaxTier(maxTier, "okay");
+    }
+  }
+
+  if (input.itemKind === "blind_draw" && randomGoodsExchangePath) {
+    if (rawCandidate.providerId === "mercari" || rawCandidate.providerId === "surugaya") rank -= 6;
+    if (rawCandidate.providerId === "amazon" || rawCandidate.providerId === "rakuten") {
+      demotionReasons.push("exchange_path_not_primary");
+      rank += 12;
+      maxTier = tightenMaxTier(maxTier, "okay");
     }
   }
 

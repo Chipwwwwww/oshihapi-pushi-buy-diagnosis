@@ -21,6 +21,13 @@ export type GoodsClass =
 export type QuestionType = 'single' | 'multi' | 'scale' | 'number' | 'text';
 
 export type Decision = 'BUY' | 'THINK' | 'SKIP';
+export type RandomGoodsPlannerPath =
+  | 'continue_a_little_more'
+  | 'stop_now'
+  | 'switch_to_exchange_path'
+  | 'stop_drawing_buy_singles'
+  | 'stop_drawing_check_used_market'
+  | 'step_back_from_completion_pressure';
 export type HoldSubtype =
   | 'info_missing'
   | 'budget_pain'
@@ -135,6 +142,26 @@ export type ResultInputsSummaryTrace = {
   downgradeFlags: string[];
 };
 
+export type RandomGoodsPlan = {
+  detected: boolean;
+  scenarioKey: ScenarioKey;
+  targetStyle: 'one_or_few' | 'full_set' | 'fun_casual' | 'mixed' | 'unknown';
+  duplicateTolerance: 'low' | 'medium' | 'high' | 'unknown';
+  exchangeWillingness: 'high' | 'medium' | 'low' | 'unknown';
+  exchangeFriction: 'low' | 'medium' | 'high' | 'unknown';
+  singlesFallback: 'now' | 'after_stop' | 'avoid' | 'unknown';
+  stopBudget: 'strict' | 'soft' | 'over_limit' | 'unknown';
+  chosenPath: RandomGoodsPlannerPath;
+  stopLineOptimizingFor: string;
+  continuingJustified: boolean;
+  exchangeAssumptionChangedRecommendation: boolean;
+  usedMarketRecommended: boolean;
+  clampReason?: string;
+  reasonFlags: string[];
+  reasons: string[];
+  assumptions: string[];
+};
+
 export type DiagnosticTrace = {
   runContext: RunContextTrace;
   scenario?: {
@@ -148,6 +175,7 @@ export type DiagnosticTrace = {
   branchHits: BranchTrace[];
   branchMisses: BranchTrace[];
   resultInputsSummary?: ResultInputsSummaryTrace;
+  randomGoods?: RandomGoodsPlan;
   searchClue?: SearchClueDiagnostics;
   persistence?: {
     state: "fresh" | "restored" | "invalidated" | "replaySeeded";
@@ -182,6 +210,7 @@ export type ActionItem = { id: string; text: string; linkOut?: { label: string; 
 export type DecisionOutput = {
   diagnosticTrace?: {
     resultInputsSummary: ResultInputsSummaryTrace;
+    randomGoodsPlan?: RandomGoodsPlan;
   };
   decision: Decision;
   holdSubtype?: HoldSubtype;
@@ -213,6 +242,7 @@ export type DecisionOutput = {
     itemKindRisk: number;
   };
   presentation?: DecisionPresentation;
+  randomGoodsPlan?: RandomGoodsPlan;
 };
 
 

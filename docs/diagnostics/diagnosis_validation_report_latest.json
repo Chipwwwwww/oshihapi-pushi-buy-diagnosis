@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-19T09:03:02.688Z",
+  "generatedAt": "2026-03-21T11:07:00.448Z",
   "scenarioCount": 32,
   "scenarios": [
     {
@@ -61,7 +61,7 @@
         "holdSubtype": "risk_uncertain",
         "confidence": 40,
         "score": -0.02615492307692306,
-        "reasonCount": 3,
+        "reasonCount": 4,
         "actionCount": 3
       }
     },
@@ -217,7 +217,7 @@
     },
     {
       "id": "medium_blind_draw",
-      "questionCount": 16,
+      "questionCount": 22,
       "shownQuestionIds": [
         "q_storage_fit",
         "q_storage_space",
@@ -234,6 +234,12 @@
         "q_alternative_plan",
         "q_addon_blind_draw_cap",
         "q_addon_blind_draw_exit",
+        "q_addon_blind_draw_duplicate_tolerance",
+        "q_addon_blind_draw_trade_intent",
+        "q_addon_blind_draw_exchange_friction",
+        "q_addon_blind_draw_single_fallback",
+        "q_addon_blind_draw_stop_budget",
+        "q_addon_blind_draw_miss_pain",
         "q_addon_common_info"
       ],
       "branchHits": [
@@ -245,9 +251,9 @@
       "result": {
         "decision": "THINK",
         "holdSubtype": "risk_uncertain",
-        "confidence": 42,
-        "score": 0.04744861538461538,
-        "reasonCount": 3,
+        "confidence": 41,
+        "score": 0.041104615384615406,
+        "reasonCount": 5,
         "actionCount": 3
       }
     },
@@ -423,7 +429,7 @@
     },
     {
       "id": "long_blind_draw",
-      "questionCount": 18,
+      "questionCount": 22,
       "shownQuestionIds": [
         "q_storage_fit",
         "q_storage_space",
@@ -440,7 +446,11 @@
         "q_alternative_plan",
         "q_addon_blind_draw_cap",
         "q_addon_blind_draw_exit",
+        "q_addon_blind_draw_duplicate_tolerance",
         "q_addon_blind_draw_trade_intent",
+        "q_addon_blind_draw_exchange_friction",
+        "q_addon_blind_draw_single_fallback",
+        "q_addon_blind_draw_stop_budget",
         "q_addon_blind_draw_miss_pain",
         "q_addon_common_info"
       ],
@@ -455,7 +465,7 @@
         "holdSubtype": "risk_uncertain",
         "confidence": 41,
         "score": 0.041104615384615406,
-        "reasonCount": 3,
+        "reasonCount": 5,
         "actionCount": 3
       }
     },

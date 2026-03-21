@@ -18,7 +18,7 @@
 - itemKind=used#gc=N/A: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan
 
 #### mode=long
-- itemKind=blind_draw#gc=N/A: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_blind_draw_cap -> q_addon_blind_draw_exit -> q_addon_blind_draw_trade_intent -> q_addon_blind_draw_miss_pain
+- itemKind=blind_draw#gc=N/A: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_blind_draw_cap -> q_addon_blind_draw_exit -> q_addon_blind_draw_duplicate_tolerance -> q_addon_blind_draw_trade_intent -> q_addon_blind_draw_exchange_friction -> q_addon_blind_draw_single_fallback -> q_addon_blind_draw_stop_budget -> q_addon_blind_draw_miss_pain
 - itemKind=goods#gc=display_large: q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_goods_compare -> q_addon_goods_portability -> q_addon_goods_display_space_plan -> q_addon_goods_display_move_risk
 - itemKind=goods#gc=itabag_badge: q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_goods_compare -> q_addon_goods_portability -> q_addon_goods_itabag_target -> q_addon_goods_itabag_usage
 - itemKind=goods#gc=media: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_goods_compare -> q_addon_goods_portability -> q_addon_media_motive -> q_addon_media_playback_space -> q_addon_media_limited_pressure
@@ -682,6 +682,62 @@
 
 </details>
 
+### q_addon_blind_draw_duplicate_tolerance
+- useCase: merch
+- type: single
+- scoring relevance: delta
+- impactCategory: score
+- relevanceSummary: score
+- behaviorRelevance: {"affectsScore":true,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/blind_draw#gc=N/A
+- isOrphan: false
+- mapTo: 
+- tags: blind_draw_duplicate_high, blind_draw_duplicate_low, blind_draw_duplicate_medium, unknown_info
+- unknown tags hints: unknown_info
+- text_standard: 被りが出た時の許容度は？
+- text_kawaii: 被り、どこまで平気？
+- text_oshi: 重複許容度は？
+- sameAsStandard: false
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| high | 被っても楽しめる/保管できる | 被っても楽しめる/保管できる | 被っても楽しめる/保管できる | true | blind_draw_duplicate_high | opportunityCost:42;regretRisk:40 |  |  |  |
+| low | 被りはかなりつらい | 被りはかなりつらい | 被りはかなりつらい | true | blind_draw_duplicate_low | impulse:62;opportunityCost:74;regretRisk:80 |  |  |  |
+| medium | 少しなら大丈夫 | 少しなら大丈夫 | 少しなら大丈夫 | true | blind_draw_duplicate_medium | opportunityCost:56;regretRisk:56 |  |  |  |
+| unknown | まだわからない | まだわからない | まだわからない | true | unknown_info | opportunityCost:60;regretRisk:66 |  |  |  |
+
+</details>
+
+### q_addon_blind_draw_exchange_friction
+- useCase: merch
+- type: single
+- scoring relevance: delta
+- impactCategory: score
+- relevanceSummary: score
+- behaviorRelevance: {"affectsScore":true,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/blind_draw#gc=N/A
+- isOrphan: false
+- mapTo: 
+- tags: blind_draw_exchange_friction_high, blind_draw_exchange_friction_low, blind_draw_exchange_friction_medium, unknown_info
+- unknown tags hints: unknown_info
+- text_standard: 交換するなら、連絡・梱包・待ち時間の負担はどのくらい平気？
+- text_kawaii: 交換の手間、どこまで平気？
+- text_oshi: 交換実務の負担許容は？
+- sameAsStandard: false
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| high | かなり負担に感じる | かなり負担に感じる | かなり負担に感じる | true | blind_draw_exchange_friction_high | opportunityCost:74;regretRisk:76 |  |  |  |
+| low | それ込みでも回せる | それ込みでも回せる | それ込みでも回せる | true | blind_draw_exchange_friction_low | opportunityCost:46;regretRisk:42 |  |  |  |
+| medium | 少しなら対応できる | 少しなら対応できる | 少しなら対応できる | true | blind_draw_exchange_friction_medium | opportunityCost:58;regretRisk:56 |  |  |  |
+| unknown | まだ想像できない | まだ想像できない | まだ想像できない | true | unknown_info | opportunityCost:60;regretRisk:66 |  |  |  |
+
+</details>
+
 ### q_addon_blind_draw_exit
 - useCase: merch
 - type: single
@@ -692,7 +748,7 @@
 - appears in: merch/long/blind_draw#gc=N/A
 - isOrphan: false
 - mapTo: 
-- tags: unknown_info
+- tags: blind_draw_target_full_set, blind_draw_target_fun, blind_draw_target_mixed, blind_draw_target_one_or_few, unknown_info
 - unknown tags hints: unknown_info
 - text_standard: どこまで開封したら止まれそうですか？
 - text_kawaii: やめどきライン、ある？
@@ -703,9 +759,10 @@
 
 | optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
 |---|---|---|---|---|---|---|---|---|---|
-| complete | 広く揃えて楽しみたい | 広く揃えて楽しみたい | 広く揃えて楽しみたい | true |  | desire:66;opportunityCost:58 |  |  |  |
-| mixed | 当たり次第で調整する | 当たり次第で調整する | 当たり次第で調整する | true |  | impulse:62;regretRisk:58 |  |  |  |
-| oshi_only | 本命1〜2種だけ狙う | 本命1〜2種だけ狙う | 本命1〜2種だけ狙う | true |  | desire:62;regretRisk:46 |  |  |  |
+| complete | フルセット/コンプ寄りで揃えたい | フルセット/コンプ寄りで揃えたい | フルセット/コンプ寄りで揃えたい | true | blind_draw_target_full_set | desire:66;opportunityCost:62;regretRisk:60 |  |  |  |
+| fun | 運試し/開封そのものを楽しみたい | 運試し/開封そのものを楽しみたい | 運試し/開封そのものを楽しみたい | true | blind_draw_target_fun | desire:60;impulse:52;regretRisk:44 |  |  |  |
+| mixed | 引きながら様子見で調整したい | 引きながら様子見で調整したい | 引きながら様子見で調整したい | true | blind_draw_target_mixed | impulse:62;regretRisk:58 |  |  |  |
+| oshi_only | 本命1〜2種だけ狙いたい | 本命1〜2種だけ狙いたい | 本命1〜2種だけ狙いたい | true | blind_draw_target_one_or_few | desire:62;regretRisk:46 |  |  |  |
 | unknown | まだわからない | まだわからない | まだわからない | true | unknown_info | opportunityCost:60;regretRisk:65 |  |  |  |
 
 </details>
@@ -735,6 +792,62 @@
 | low | 運試しとして割り切れる | 運試しとして割り切れる | 運試しとして割り切れる | true |  | impulse:44;regretRisk:42 |  |  |  |
 | mid | 少し引きずる | 少し引きずる | 少し引きずる | true |  | impulse:56;regretRisk:58 |  |  |  |
 | unknown | わからない | わからない | わからない | true | unknown_info | opportunityCost:60;regretRisk:66 |  |  |  |
+
+</details>
+
+### q_addon_blind_draw_single_fallback
+- useCase: merch
+- type: single
+- scoring relevance: delta
+- impactCategory: score
+- relevanceSummary: score
+- behaviorRelevance: {"affectsScore":true,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/blind_draw#gc=N/A
+- isOrphan: false
+- mapTo: 
+- tags: blind_draw_single_fallback_after_stop, blind_draw_single_fallback_avoid, blind_draw_single_fallback_now, unknown_info
+- unknown tags hints: unknown_info
+- text_standard: 止めた後は中古/単品回収に切り替えられますか？
+- text_kawaii: あとで単品回収に切り替えられる？
+- text_oshi: 停止後の単品/中古移行意向は？
+- sameAsStandard: false
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| after_stop | 上限まで引いたら切り替える | 上限まで引いたら切り替える | 上限まで引いたら切り替える | true | blind_draw_single_fallback_after_stop | opportunityCost:50;regretRisk:52 |  |  |  |
+| avoid | できれば単品回収は避けたい | できれば単品回収は避けたい | できれば単品回収は避けたい | true | blind_draw_single_fallback_avoid | opportunityCost:66;regretRisk:68 |  |  |  |
+| now | 必要ならすぐ切り替えられる | 必要ならすぐ切り替えられる | 必要ならすぐ切り替えられる | true | blind_draw_single_fallback_now | opportunityCost:44;regretRisk:42 |  |  |  |
+| unknown | まだ決めていない | まだ決めていない | まだ決めていない | true | unknown_info | opportunityCost:60;regretRisk:66 |  |  |  |
+
+</details>
+
+### q_addon_blind_draw_stop_budget
+- useCase: merch
+- type: single
+- scoring relevance: delta
+- impactCategory: score
+- relevanceSummary: score
+- behaviorRelevance: {"affectsScore":true,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/blind_draw#gc=N/A
+- isOrphan: false
+- mapTo: 
+- tags: blind_draw_stop_budget_over_limit, blind_draw_stop_budget_soft, blind_draw_stop_budget_strict, unknown_info
+- unknown tags hints: unknown_info
+- text_standard: 今回の「ここで止める」予算ラインは？
+- text_kawaii: 止める予算ライン、ある？
+- text_oshi: 停止予算ラインは設定済み？
+- sameAsStandard: false
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| over_limit | もう超えそう/超えている | もう超えそう/超えている | もう超えそう/超えている | true | blind_draw_stop_budget_over_limit | affordability:26;impulse:70;opportunityCost:76;regretRisk:82 |  |  |  |
+| soft | だいたいの目安はある | だいたいの目安はある | だいたいの目安はある | true | blind_draw_stop_budget_soft | impulse:54;regretRisk:54 |  |  |  |
+| strict | 厳守ラインがある | 厳守ラインがある | 厳守ラインがある | true | blind_draw_stop_budget_strict | impulse:40;regretRisk:42 |  |  |  |
+| unknown | まだ決めていない | まだ決めていない | まだ決めていない | true | unknown_info | impulse:66;opportunityCost:62;regretRisk:68 |  |  |  |
 
 </details>
 
