@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-21T19:34:44.850Z",
+  "generatedAt": "2026-03-21T20:37:52.552Z",
   "scenarioCount": 32,
   "scenarios": [
     {
@@ -1254,7 +1254,87 @@
     "trustRepairAcceptance": "pass",
     "homepageFunnel": "pass",
     "draftInvalidation": "pass",
-    "replaySeed": "pass"
+    "replaySeed": "pass",
+    "bandNarrowing": {
+      "highSignalBuy": {
+        "isHighSignalForBandNarrowing": true,
+        "bandNarrowingApplied": true,
+        "bandNarrowingReason": "high_signal_aligned",
+        "bandNarrowingSignals": [
+          "critical_questions_answered",
+          "high_impact_inputs_stable",
+          "confidence_above_floor",
+          "no_fallback_state",
+          "score_direction_concentrated",
+          "motive_signal_explained",
+          "no_major_conflicts"
+        ],
+        "bandNarrowingBlockedBy": [],
+        "effectiveBandHalfWidth": 10,
+        "answeredCriticalCount": 10,
+        "totalCriticalQuestions": 10
+      },
+      "highSignalWait": {
+        "isHighSignalForBandNarrowing": true,
+        "bandNarrowingApplied": true,
+        "bandNarrowingReason": "high_signal_aligned",
+        "bandNarrowingSignals": [
+          "critical_questions_answered",
+          "high_impact_inputs_stable",
+          "confidence_above_floor",
+          "no_fallback_state",
+          "clear_hold_path",
+          "motive_signal_explained",
+          "no_major_conflicts"
+        ],
+        "bandNarrowingBlockedBy": [],
+        "effectiveBandHalfWidth": 10,
+        "answeredCriticalCount": 10,
+        "totalCriticalQuestions": 10
+      },
+      "lowSignalIncomplete": {
+        "isHighSignalForBandNarrowing": false,
+        "bandNarrowingApplied": false,
+        "bandNarrowingReason": "conflicting_signals",
+        "bandNarrowingSignals": [
+          "critical_questions_answered"
+        ],
+        "bandNarrowingBlockedBy": [
+          "incomplete_high_impact_inputs",
+          "low_confidence_trace",
+          "fallback_or_trust_gate_active",
+          "ambiguous_decision_signal",
+          "budget_urgency_tension",
+          "impulse_conflict"
+        ],
+        "effectiveBandHalfWidth": 18,
+        "answeredCriticalCount": 10,
+        "totalCriticalQuestions": 10
+      },
+      "conflictingSignals": {
+        "isHighSignalForBandNarrowing": false,
+        "bandNarrowingApplied": false,
+        "bandNarrowingReason": "conflicting_signals",
+        "bandNarrowingSignals": [
+          "critical_questions_answered",
+          "high_impact_inputs_stable",
+          "no_fallback_state",
+          "motive_signal_explained"
+        ],
+        "bandNarrowingBlockedBy": [
+          "low_confidence_trace",
+          "ambiguous_decision_signal",
+          "budget_urgency_tension",
+          "mixed_motive_tension",
+          "wait_vs_buy_tension",
+          "impulse_conflict"
+        ],
+        "effectiveBandHalfWidth": 18,
+        "answeredCriticalCount": 10,
+        "totalCriticalQuestions": 10
+      },
+      "replayStable": true
+    }
   },
   "blindDrawAcceptanceCases": [
     {

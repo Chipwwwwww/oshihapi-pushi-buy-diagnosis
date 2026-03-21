@@ -162,12 +162,24 @@ export type RunContextTrace = {
   hasItemName: boolean;
 };
 
+export type ResultBandTrace = {
+  isHighSignalForBandNarrowing: boolean;
+  bandNarrowingApplied: boolean;
+  bandNarrowingReason: 'high_signal_aligned' | 'insufficient_signal' | 'conflicting_signals' | 'low_confidence' | 'fallback_state' | 'ambiguous_path';
+  bandNarrowingSignals: string[];
+  bandNarrowingBlockedBy: string[];
+  effectiveBandHalfWidth: number;
+  answeredCriticalCount: number;
+  totalCriticalQuestions: number;
+};
+
 export type ResultInputsSummaryTrace = {
   tags: string[];
   unknownCount: number;
   impulseFlag: boolean;
   futureUseFlag: boolean;
   downgradeFlags: string[];
+  bandTrace?: ResultBandTrace;
 };
 
 export type RandomGoodsPlan = {
@@ -309,6 +321,7 @@ export type DecisionOutput = {
     randomGoodsPlan?: RandomGoodsPlan;
     venueLimitedGoodsPlan?: VenueLimitedGoodsPlan;
   };
+  bandTrace?: ResultBandTrace;
   decision: Decision;
   holdSubtype?: HoldSubtype;
   confidence: number; // 0-100

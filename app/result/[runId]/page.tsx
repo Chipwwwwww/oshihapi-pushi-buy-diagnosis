@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/tokens";
 import { merch_v2_ja } from "@/src/oshihapi/merch_v2_ja";
 import { buildLongPrompt } from "@/src/oshihapi/promptBuilder";
-import type { DecisionRun, FeedbackImmediate } from "@/src/oshihapi/model";
+import type { DecisionRun, FeedbackImmediate, ResultBandTrace } from "@/src/oshihapi/model";
 import type { BasketInput } from "@/src/oshihapi/basket_c0";
 import { decisivenessLabels } from "@/src/oshihapi/decisiveness";
 import { buildPresentation } from "@/src/oshihapi/decisionPresentation";
@@ -129,6 +129,79 @@ function getActionLink(action: DecisionRun["output"]["actions"][number]): {
 
   if (!label || !href) return null;
   return { label, href };
+}
+
+const BAND_REASON_LABEL: Record<ResultBandTrace["bandNarrowingReason"], string> = {
+  high_signal_aligned: "高シグナルで判定帯を狭めました",
+  insufficient_signal: "入力がまだ足りないため帯は広めです",
+  conflicting_signals: "相反するシグナルがあるため帯は広めです",
+  low_confidence: "低信頼の trace が残るため帯は広めです",
+  fallback_state: "fallback / trust gate があるため帯は広めです",
+  ambiguous_path: "判定軸が割れているため帯は広めです",
+};
+
+const BAND_BLOCKER_LABEL: Record<string, string> = {
+  insufficient_critical_answers: "高影響の回答数が不足",
+  incomplete_high_impact_inputs: "未確定の高影響入力あり",
+  low_confidence_trace: "低信頼 trace が残存",
+  fallback_or_trust_gate_active: "fallback / trust gate 中",
+  ambiguous_decision_signal: "判定方向がまだ集中しきっていない",
+  budget_urgency_tension: "予算と欲しさ・急ぎが綱引き",
+  mixed_motive_tension: " motive が混在",
+  wait_vs_buy_tension: "待つ理由と今買う理由が両立",
+  impulse_conflict: "気分の勢いが強い",
+  bonus_pressure_tension: "bonus / completion 圧が強い",
+  score_axis_imbalance: "主要スコア軸が割れている",
+};
+
+function getBandTrace(run: DecisionRun | undefined): ResultBandTrace | null {
+  return run?.output.bandTrace ?? run?.output.diagnosticTrace?.resultInputsSummary?.bandTrace ?? run?.diagnosticTrace?.resultInputsSummary?.bandTrace ?? null;
+}
+
+function getBandNarrative(styleMode: StyleMode, decision: DecisionRun["output"]["decision"], bandTrace: ResultBandTrace | null) {
+  if (!bandTrace) {
+    return {
+      summary: "この結果は従来どおり広めの判定帯で表示しています。",
+      adviceLead: null,
+      blockerText: null,
+    };
+  }
+
+  const blockerText = bandTrace.bandNarrowingBlockedBy
+    .slice(0, 3)
+    .map((blocker) => BAND_BLOCKER_LABEL[blocker] ?? blocker)
+    .join(" / ");
+
+  if (bandTrace.bandNarrowingApplied) {
+    const decisiveByMode: Record<StyleMode, Record<DecisionRun["output"]["decision"], string>> = {
+      standard: {
+        BUY: "今回は買ってよい寄りです。上限だけ固定して進めて問題ありません。",
+        THINK: "今回は保留維持が妥当です。追加購入より先に条件整理を優先してください。",
+        SKIP: "今回は見送り寄りで固めてよい状態です。次の候補へ資源を回す判断が合理的です。",
+      },
+      kawaii: {
+        BUY: "今回は買ってよさそう。予算ラインだけ決めて、そのまま進んでOKだよ。",
+        THINK: "今回は保留のままで大丈夫。追加で広げる前に条件を整えよう。",
+        SKIP: "今回は見送りで固めてOK。次のときめきに残しておこう。",
+      },
+      oshi: {
+        BUY: "今回は回収GO寄り。上限固定だけして安全運転で進めて大丈夫です。",
+        THINK: "今回は保留維持が本線。追加回収より先に前提整理を優先しましょう。",
+        SKIP: "今回は見送り線で固めてOK。次案件へリソースを回す判断が合理的です。",
+      },
+    };
+    return {
+      summary: `入力が揃っているため、判定帯を±${bandTrace.effectiveBandHalfWidth}まで絞っています。`,
+      adviceLead: decisiveByMode[styleMode][decision],
+      blockerText: null,
+    };
+  }
+
+  return {
+    summary: `今回は判定帯を±${bandTrace.effectiveBandHalfWidth}のまま維持しています。無理に絞っていません。`,
+    adviceLead: null,
+    blockerText: blockerText || BAND_REASON_LABEL[bandTrace.bandNarrowingReason],
+  };
 }
 
 export default function ResultPage() {
@@ -440,27 +513,33 @@ export default function ResultPage() {
       })
     | undefined;
   const modeCopy = COPY_BY_MODE[styleMode];
+  const bandTrace = getBandTrace(run);
   const normalizedWaitType = outputExt?.waitType ?? (run?.output.decision === "THINK" ? "none" : "none");
   const storageFitValue =
     run && shouldAskStorage(run.meta.itemKind, run.meta.goodsSubtype) && typeof run.answers.q_storage_fit === "string"
       ? STORAGE_FIT_LABEL[run.answers.q_storage_fit] ?? run.answers.q_storage_fit
       : null;
 
-  const adviceText =
+  const baseAdviceText =
     run?.output.decision === "BUY"
       ? MODE_DICTIONARY[styleMode].explanation.buy
       : run?.output.decision === "THINK"
         ? MODE_DICTIONARY[styleMode].explanation.wait[normalizedWaitType] ??
           MODE_DICTIONARY[styleMode].explanation.wait.none
         : MODE_DICTIONARY[styleMode].explanation.skip;
+  const bandNarrative = run ? getBandNarrative(styleMode, run.output.decision, bandTrace) : null;
+  const adviceText = bandNarrative?.adviceLead ?? baseAdviceText;
 
   const safeConfidence = clamp(0, 100, Number.isFinite(run?.output.confidence) ? (run?.output.confidence ?? 0) : 0);
-  const confidenceSummary =
-    safeConfidence >= 75
-      ? "根拠は比較的そろっています。"
-      : safeConfidence >= 55
-        ? "いくつか前提つきの結論です。"
-        : "不明点が残るため、強い推奨ではありません。";
+  const confidenceSummary = bandTrace?.bandNarrowingApplied
+    ? `根拠が揃っているため、判定帯も±${bandTrace.effectiveBandHalfWidth}まで絞っています。`
+    : bandTrace
+      ? `判定帯は±${bandTrace.effectiveBandHalfWidth}で維持中。${bandNarrative?.blockerText ?? BAND_REASON_LABEL[bandTrace.bandNarrowingReason]}`
+      : safeConfidence >= 75
+        ? "根拠は比較的そろっています。"
+        : safeConfidence >= 55
+          ? "いくつか前提つきの結論です。"
+          : "不明点が残るため、強い推奨ではありません。";
   const primaryAction = displayActions[0];
 
   const decisionScale = useMemo(() => {
@@ -666,6 +745,9 @@ export default function ResultPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="primary">信頼度 {safeConfidence}%</Badge>
+          {bandTrace ? (
+            <Badge variant={bandTrace.bandNarrowingApplied ? "accent" : "outline"}>判定帯 ±{bandTrace.effectiveBandHalfWidth}</Badge>
+          ) : null}
           {presentation?.badge && !presentation.badge.includes("判定") ? (
             <Badge variant="outline">{presentation.badge}</Badge>
           ) : null}
@@ -711,7 +793,7 @@ export default function ResultPage() {
         ) : null}
       </header>
 
-      <DecisionScale decision={decisionScale} index={decisionIndex} />
+      <DecisionScale decision={decisionScale} index={decisionIndex} bandHalfWidth={bandTrace?.effectiveBandHalfWidth} />
 
       <Card className="space-y-3 border border-accent/20 bg-accent/5">
         <div className="flex flex-wrap items-center gap-2">
@@ -722,6 +804,12 @@ export default function ResultPage() {
           {primaryAction ? primaryAction.text : adviceText}
         </p>
         <p className="text-sm text-muted-foreground">{confidenceSummary}</p>
+        {bandNarrative?.summary ? (
+          <p className="text-xs text-muted-foreground">{bandNarrative.summary}</p>
+        ) : null}
+        {bandTrace && !bandTrace.bandNarrowingApplied && bandNarrative?.blockerText ? (
+          <p className="text-xs text-muted-foreground">帯を絞らなかった理由: {bandNarrative.blockerText}</p>
+        ) : null}
         {run.output.subtypeReason ? (
           <p className="text-xs text-muted-foreground">補足: {run.output.subtypeReason}</p>
         ) : null}
@@ -730,6 +818,12 @@ export default function ResultPage() {
       <Card className="space-y-3 border-amber-200 bg-amber-50 dark:ring-1 dark:ring-white/10">
         <h2 className="text-lg font-semibold text-amber-900">{modeCopy.ui.adviceTitle}</h2>
         <p className="text-sm text-amber-800">{adviceText}</p>
+        {bandTrace ? (
+          <div className="flex flex-wrap gap-2">
+            <Badge variant={bandTrace.bandNarrowingApplied ? "accent" : "outline"}>{BAND_REASON_LABEL[bandTrace.bandNarrowingReason]}</Badge>
+            <Badge variant="outline">critical {bandTrace.answeredCriticalCount}/{bandTrace.totalCriticalQuestions}</Badge>
+          </div>
+        ) : null}
         <p className="text-xs text-amber-700">
           {modeCopy.result.waitTypeLabel[normalizedWaitType] ?? modeCopy.result.waitTypeLabel.none}
         </p>

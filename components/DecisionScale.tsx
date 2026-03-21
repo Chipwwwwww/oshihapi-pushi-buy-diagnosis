@@ -9,6 +9,7 @@ export type DecisionScaleProps = {
    * 0 は保留寄り
    */
   index: number;
+  bandHalfWidth?: number;
   className?: string;
 };
 
@@ -18,9 +19,12 @@ const LABEL = {
   buy: { top: "買う", sub: "買ってOK（上限だけ決めて）" },
 } as const;
 
-export default function DecisionScale({ decision, index, className }: DecisionScaleProps) {
+export default function DecisionScale({ decision, index, bandHalfWidth = 18, className }: DecisionScaleProps) {
   const clamped = Math.max(-1, Math.min(1, index));
   const pos = ((clamped + 1) / 2) * 100;
+  const normalizedBand = Math.max(4, Math.min(20, bandHalfWidth));
+  const bandStart = Math.max(0, pos - normalizedBand);
+  const bandWidth = Math.min(100 - bandStart, normalizedBand * 2);
 
   const t = LABEL[decision];
 
@@ -56,6 +60,11 @@ export default function DecisionScale({ decision, index, className }: DecisionSc
           <div className="absolute right-0 top-4 h-5 w-px bg-border" />
 
           <div
+            className="absolute top-[22px] h-3 rounded-full bg-accent/20 transition-all duration-300"
+            style={{ left: `${bandStart}%`, width: `${bandWidth}%` }}
+          />
+
+          <div
             className="absolute bottom-0 top-3 w-[2px] -translate-x-1/2 bg-foreground/85 transition-all duration-300"
             style={{ left: `${pos}%` }}
           />
@@ -74,6 +83,7 @@ export default function DecisionScale({ decision, index, className }: DecisionSc
           </div>
         </div>
 
+        <div className="mt-2 text-xs text-muted-foreground">判定帯: ±{Math.round(normalizedBand)} points</div>
         <div className="mt-1 flex justify-between text-xs text-muted-foreground">
           <span>やめる</span>
           <span>保留</span>

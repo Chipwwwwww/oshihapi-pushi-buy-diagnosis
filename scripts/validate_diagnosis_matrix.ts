@@ -963,6 +963,160 @@ function runTrustRepairAcceptanceChecks() {
   }
 }
 
+
+function runBandNarrowingAcceptanceChecks() {
+  const highSignalBuy = buildEvaluatedOutput('goods', {
+    q_desire: 5,
+    q_budget_pain: 'ok',
+    q_urgency: 'last',
+    q_rarity_restock: 'unlikely',
+    q_price_feel: 'good',
+    q_goal: 'single',
+    q_motives_multi: ['use', 'content'],
+    q_hot_cold: 'hot',
+    q_alternative_plan: 'none',
+    q_regret_impulse: 'calm',
+    q_storage_fit: 'CONFIRMED',
+    q_storage_space: 'enough',
+    q_addon_goods_event_limit_context: 'none',
+    q_addon_common_info: 'enough',
+    q_addon_common_priority: 'this_one',
+    q_addon_goods_compare: 'enough',
+    q_addon_goods_portability: 'easy',
+    q_addon_goods_collection_goal: 'focused',
+    q_addon_goods_trade_intent: 'no_need',
+  });
+  if (!highSignalBuy.bandTrace?.bandNarrowingApplied || highSignalBuy.bandTrace.effectiveBandHalfWidth !== 10) {
+    throw new Error('band_high_signal_buy: expected narrowing to apply at ±10');
+  }
+
+  const highSignalWait = buildEvaluatedOutput('goods', {
+    q_desire: 5,
+    q_budget_pain: 'ok',
+    q_urgency: 'last',
+    q_rarity_restock: 'unlikely',
+    q_price_feel: 'good',
+    q_goal: 'single',
+    q_motives_multi: ['use'],
+    q_hot_cold: 'hot',
+    q_alternative_plan: 'none',
+    q_regret_impulse: 'calm',
+    q_storage_fit: 'NONE',
+    q_storage_space: 'tight',
+    q_addon_goods_event_limit_context: 'none',
+    q_addon_common_info: 'enough',
+    q_addon_common_priority: 'this_one',
+    q_addon_goods_compare: 'enough',
+    q_addon_goods_portability: 'easy',
+    q_addon_goods_collection_goal: 'focused',
+    q_addon_goods_trade_intent: 'no_need',
+  });
+  if (highSignalWait.decision !== 'THINK' || highSignalWait.holdSubtype !== 'condition_not_ready' || !highSignalWait.bandTrace?.bandNarrowingApplied) {
+    throw new Error('band_high_signal_wait: stable hold case should still narrow');
+  }
+
+  const lowSignalIncomplete = buildEvaluatedOutput('goods', {
+    q_desire: 4,
+    q_budget_pain: 'some',
+    q_urgency: 'unknown',
+    q_rarity_restock: 'unknown',
+    q_price_feel: 'unknown',
+    q_goal: 'unknown',
+    q_motives_multi: ['fomo'],
+    q_hot_cold: 'unknown',
+    q_alternative_plan: 'maybe',
+    q_regret_impulse: 'fomo',
+    q_storage_fit: 'UNKNOWN',
+    q_storage_space: 'tight',
+    q_addon_goods_event_limit_context: 'unknown',
+    q_addon_common_info: 'lack',
+    q_addon_common_priority: 'unknown',
+    q_addon_goods_compare: 'none',
+    q_addon_goods_portability: 'unknown',
+    q_addon_goods_collection_goal: 'unknown',
+    q_addon_goods_trade_intent: 'unknown',
+  });
+  if (lowSignalIncomplete.bandTrace?.bandNarrowingApplied) {
+    throw new Error('band_low_signal_incomplete: narrowing should stay off');
+  }
+  if (!lowSignalIncomplete.bandTrace?.bandNarrowingBlockedBy.includes('incomplete_high_impact_inputs')) {
+    throw new Error('band_low_signal_incomplete: incomplete blocker should be visible');
+  }
+
+  const conflictingSignals = buildEvaluatedOutput('goods', {
+    q_desire: 5,
+    q_budget_pain: 'some',
+    q_urgency: 'last',
+    q_rarity_restock: 'likely',
+    q_price_feel: 'high',
+    q_goal: 'set',
+    q_motives_multi: ['bonus', 'use', 'fomo'],
+    q_hot_cold: 'hot',
+    q_alternative_plan: 'clear',
+    q_regret_impulse: 'excited',
+    q_storage_fit: 'PROBABLE',
+    q_storage_space: 'adjust',
+    q_addon_goods_event_limit_context: 'event_limited',
+    q_addon_common_info: 'partial',
+    q_addon_common_priority: 'this_one',
+    q_addon_goods_compare: 'some',
+    q_addon_goods_portability: 'light',
+    q_addon_goods_collection_goal: 'broaden',
+    q_addon_goods_trade_intent: 'yes',
+  });
+  if (conflictingSignals.bandTrace?.bandNarrowingApplied) {
+    throw new Error('band_conflicting_signals: narrowing should be blocked');
+  }
+  if (conflictingSignals.bandTrace?.bandNarrowingReason !== 'conflicting_signals') {
+    throw new Error('band_conflicting_signals: reason should expose conflict');
+  }
+
+  const replayRun = {
+    runId: 'band-replay-source',
+    createdAt: Date.now(),
+    locale: 'ja',
+    category: 'merch',
+    mode: 'long',
+    meta: { itemKind: 'goods', goodsClass: 'small_collection', itemName: 'Band replay', priceYen: 4200 },
+    answers: {
+      q_desire: 5,
+      q_budget_pain: 'ok',
+      q_urgency: 'last',
+      q_rarity_restock: 'unlikely',
+      q_price_feel: 'good',
+      q_goal: 'single',
+      q_motives_multi: ['use', 'content'],
+      q_hot_cold: 'hot',
+      q_alternative_plan: 'none',
+      q_regret_impulse: 'calm',
+      q_storage_fit: 'CONFIRMED',
+      q_storage_space: 'enough',
+      q_addon_goods_event_limit_context: 'none',
+      q_addon_common_info: 'enough',
+      q_addon_common_priority: 'this_one',
+      q_addon_goods_compare: 'enough',
+      q_addon_goods_portability: 'easy',
+      q_addon_goods_collection_goal: 'focused',
+      q_addon_goods_trade_intent: 'no_need',
+    },
+    output: highSignalBuy,
+    diagnosticTrace: { runContext: { mode: 'long', itemKind: 'goods', goodsClass: 'small_collection', hasPrice: true, hasItemName: true }, shownQuestionIds: Object.keys(highSignalBuy.scoreSummary), skippedQuestionIds: [], branchHits: [], branchMisses: [] },
+  } as any;
+  const replay = createReplayDraft(replayRun, 'standard');
+  const replayOutput = buildEvaluatedOutput('goods', replay.answers, 'small_collection');
+  if (replayOutput.bandTrace?.effectiveBandHalfWidth !== highSignalBuy.bandTrace?.effectiveBandHalfWidth || replayOutput.bandTrace?.bandNarrowingReason !== highSignalBuy.bandTrace?.bandNarrowingReason) {
+    throw new Error('band_replay_stability: replayed answers should preserve band behavior');
+  }
+
+  return {
+    highSignalBuy: highSignalBuy.bandTrace,
+    highSignalWait: highSignalWait.bandTrace,
+    lowSignalIncomplete: lowSignalIncomplete.bandTrace,
+    conflictingSignals: conflictingSignals.bandTrace,
+    replayStable: true,
+  };
+}
+
 function runMediumMediaCoverageCheck() {
   const flow = resolveFlowQuestions({
     mode: "medium",
@@ -1095,6 +1249,7 @@ const mediaEditionAcceptanceCases = runMediaEditionAcceptanceChecks();
 runMixedMediaFlowCheck();
 runMediumMediaCoverageCheck();
 runTrustRepairAcceptanceChecks();
+const bandNarrowingAcceptance = runBandNarrowingAcceptanceChecks();
 runHomepageFunnelChecks();
 runDraftInvalidationCheck();
 runReplaySeedCheck();
@@ -1144,6 +1299,7 @@ const report = {
     homepageFunnel: "pass",
     draftInvalidation: "pass",
     replaySeed: "pass",
+    bandNarrowing: bandNarrowingAcceptance,
   },
   blindDrawAcceptanceCases,
   mediaEditionAcceptanceCases,
