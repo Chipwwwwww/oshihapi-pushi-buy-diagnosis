@@ -119,6 +119,30 @@ function validateResultShape(id: string, output: DecisionOutput) {
   if (!Array.isArray(output.actions) || output.actions.length === 0) throw new Error(`${id}: actions missing`);
 }
 
+function buildEvaluatedOutput(itemKind: ItemKind, overrides: Record<string, AnswerValue>, goodsClass: GoodsClass = 'small_collection') {
+  const flow = resolveFlowQuestions({
+    mode: 'long',
+    itemKind,
+    goodsClass,
+    goodsSubtype: 'general',
+    useCase: itemKind === 'game_billing' ? 'game_billing' : 'merch',
+    answers: overrides,
+    meta: { itemKind, goodsClass, itemName: '検証', priceYen: 4000 },
+    styleMode: 'standard',
+  });
+  const answers: Record<string, AnswerValue> = {};
+  for (const q of flow.questions) {
+    answers[q.id] = overrides[q.id] ?? defaultAnswer(q.id);
+  }
+  return evaluate({
+    questionSet: { id: 'check', locale: 'ja', category: 'merch', version: 1, questions: flow.questions },
+    meta: { itemKind, goodsClass, itemName: '検証', priceYen: 4000 },
+    answers,
+    mode: 'long',
+    useCase: itemKind === 'game_billing' ? 'game_billing' : 'merch',
+  });
+}
+
 function runRefreshRestoreCheck() {
   const store = new Map<string, string>();
   (globalThis as any).window = {
@@ -251,29 +275,7 @@ function runReplaySeedCheck() {
 }
 
 function runScoringSeparationChecks() {
-  const build = (itemKind: ItemKind, overrides: Record<string, AnswerValue>) => {
-    const flow = resolveFlowQuestions({
-      mode: 'long',
-      itemKind,
-      goodsClass: 'small_collection',
-      goodsSubtype: 'general',
-      useCase: itemKind === 'game_billing' ? 'game_billing' : 'merch',
-      answers: overrides,
-      meta: { itemKind, goodsClass: 'small_collection', itemName: '検証', priceYen: 4000 },
-      styleMode: 'standard',
-    });
-    const answers: Record<string, AnswerValue> = {};
-    for (const q of flow.questions) {
-      answers[q.id] = overrides[q.id] ?? defaultAnswer(q.id);
-    }
-    return evaluate({
-      questionSet: { id: 'check', locale: 'ja', category: 'merch', version: 1, questions: flow.questions },
-      meta: { itemKind, goodsClass: 'small_collection', itemName: '検証', priceYen: 4000 },
-      answers,
-      mode: 'long',
-      useCase: itemKind === 'game_billing' ? 'game_billing' : 'merch',
-    });
-  };
+  const build = (itemKind: ItemKind, overrides: Record<string, AnswerValue>) => buildEvaluatedOutput(itemKind, overrides);
 
   const highBuy = build('goods', {
     q_motives_multi: ['use'],
@@ -387,6 +389,110 @@ function runScoringSeparationChecks() {
   }
 }
 
+function runBlindDrawAcceptanceChecks() {
+  const cases = [
+    {
+      id: 'one_oshi_low_duplicate_low_exchange',
+      output: buildEvaluatedOutput('blind_draw', {
+        q_goal: 'single',
+        q_addon_blind_draw_exit: 'oshi_only',
+        q_addon_blind_draw_duplicate_tolerance: 'low',
+        q_addon_blind_draw_trade_intent: 'no',
+        q_addon_blind_draw_exchange_friction: 'medium',
+        q_addon_blind_draw_single_fallback: 'after_stop',
+        q_addon_blind_draw_stop_budget: 'soft',
+        q_budget_pain: 'some',
+        q_regret_impulse: 'calm',
+      }, 'itabag_badge'),
+      assert(output: DecisionOutput) {
+        const plan = output.randomGoodsPlan;
+        if (!plan) throw new Error('one_oshi_low_duplicate_low_exchange: randomGoodsPlan missing');
+        if (plan.chosenPath !== 'stop_drawing_check_used_market') throw new Error('one_oshi_low_duplicate_low_exchange: should bias to early stop via used-market fallback');
+        if (plan.continuingJustified) throw new Error('one_oshi_low_duplicate_low_exchange: continue optimism should not remain');
+        if (!plan.usedMarketRecommended || plan.clampReason !== 'single_target_duplicate_risk') throw new Error('one_oshi_low_duplicate_low_exchange: should preserve duplicate-risk fallback clamp');
+      },
+    },
+    {
+      id: 'one_oshi_exchange_high_friction',
+      output: buildEvaluatedOutput('blind_draw', {
+        q_goal: 'single',
+        q_addon_blind_draw_exit: 'oshi_only',
+        q_addon_blind_draw_duplicate_tolerance: 'medium',
+        q_addon_blind_draw_trade_intent: 'yes',
+        q_addon_blind_draw_exchange_friction: 'high',
+        q_addon_blind_draw_single_fallback: 'after_stop',
+        q_addon_blind_draw_stop_budget: 'soft',
+        q_budget_pain: 'some',
+        q_regret_impulse: 'calm',
+      }, 'itabag_badge'),
+      assert(output: DecisionOutput) {
+        const plan = output.randomGoodsPlan;
+        if (!plan) throw new Error('one_oshi_exchange_high_friction: randomGoodsPlan missing');
+        if (plan.exchangeWillingness !== 'high' || plan.exchangeFriction !== 'high') throw new Error('one_oshi_exchange_high_friction: exchange signals not captured');
+        if (plan.chosenPath === 'switch_to_exchange_path' || plan.exchangeAssumptionChangedRecommendation) throw new Error('one_oshi_exchange_high_friction: high friction must block over-optimistic exchange recommendation');
+        if (!plan.reasons.some((reason) => reason.includes('負担が高い'))) throw new Error('one_oshi_exchange_high_friction: reasons should preserve exchange-friction warning');
+      },
+    },
+    {
+      id: 'fun_casual_high_duplicate_loose_budget',
+      output: buildEvaluatedOutput('blind_draw', {
+        q_goal: 'fun',
+        q_addon_blind_draw_exit: 'fun',
+        q_addon_blind_draw_duplicate_tolerance: 'high',
+        q_addon_blind_draw_trade_intent: 'no',
+        q_addon_blind_draw_exchange_friction: 'medium',
+        q_addon_blind_draw_single_fallback: 'after_stop',
+        q_addon_blind_draw_stop_budget: 'soft',
+        q_budget_pain: 'ok',
+        q_regret_impulse: 'calm',
+      }, 'small_collection'),
+      assert(output: DecisionOutput) {
+        const plan = output.randomGoodsPlan;
+        if (!plan) throw new Error('fun_casual_high_duplicate_loose_budget: randomGoodsPlan missing');
+        if (plan.chosenPath !== 'continue_a_little_more' || !plan.continuingJustified) throw new Error('fun_casual_high_duplicate_loose_budget: fun/casual case should allow limited continuation');
+        if (!plan.stopLineOptimizingFor.includes('楽しさ')) throw new Error('fun_casual_high_duplicate_loose_budget: soft stop-line rationale should stay visible');
+      },
+    },
+    {
+      id: 'full_set_tight_budget_completion_fallback',
+      output: buildEvaluatedOutput('blind_draw', {
+        q_goal: 'set',
+        q_addon_blind_draw_exit: 'complete',
+        q_addon_blind_draw_duplicate_tolerance: 'medium',
+        q_addon_blind_draw_trade_intent: 'yes',
+        q_addon_blind_draw_exchange_friction: 'medium',
+        q_addon_blind_draw_single_fallback: 'now',
+        q_addon_blind_draw_stop_budget: 'soft',
+        q_budget_pain: 'hard',
+        q_regret_impulse: 'calm',
+        q_addon_blind_draw_miss_pain: 'high',
+      }, 'itabag_badge'),
+      assert(output: DecisionOutput) {
+        const plan = output.randomGoodsPlan;
+        if (!plan) throw new Error('full_set_tight_budget_completion_fallback: randomGoodsPlan missing');
+        if (plan.chosenPath !== 'stop_drawing_buy_singles') throw new Error('full_set_tight_budget_completion_fallback: full-set+tight-budget should prefer completion fallback');
+        if (plan.continuingJustified) throw new Error('full_set_tight_budget_completion_fallback: continued draw should be discouraged');
+        if (!plan.usedMarketRecommended || plan.clampReason !== 'full_set_budget_unfavorable') throw new Error('full_set_tight_budget_completion_fallback: budget clamp should drive singles/used fallback');
+      },
+    },
+  ];
+
+  return cases.map((entry) => {
+    entry.assert(entry.output);
+    const plan = entry.output.randomGoodsPlan!;
+    return {
+      id: entry.id,
+      decision: entry.output.decision,
+      chosenPath: plan.chosenPath,
+      clampReason: plan.clampReason ?? null,
+      continuingJustified: plan.continuingJustified,
+      exchangeAssumptionChangedRecommendation: plan.exchangeAssumptionChangedRecommendation,
+      usedMarketRecommended: plan.usedMarketRecommended,
+      reasons: plan.reasons,
+    };
+  });
+}
+
 
 function runHomepageFunnelChecks() {
   if (!isGoodsClassApplicable("goods") || !isGoodsClassApplicable("used") || !isGoodsClassApplicable("preorder")) {
@@ -486,6 +592,7 @@ runRefreshRestoreCheck();
 runBackChangeCheck();
 runStyleInvariantCheck();
 runScoringSeparationChecks();
+const blindDrawAcceptanceCases = runBlindDrawAcceptanceChecks();
 runHomepageFunnelChecks();
 runDraftInvalidationCheck();
 runReplaySeedCheck();
@@ -526,10 +633,12 @@ const report = {
     backThenChangeAnswer: "pass",
     styleInvariant: "pass",
     scoringSeparation: "pass",
+    blindDrawAcceptance: "pass",
     homepageFunnel: "pass",
     draftInvalidation: "pass",
     replaySeed: "pass",
   },
+  blindDrawAcceptanceCases,
   uniquePathGaps,
 };
 

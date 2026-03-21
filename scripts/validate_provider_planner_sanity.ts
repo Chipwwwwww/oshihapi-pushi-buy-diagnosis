@@ -217,6 +217,39 @@ const SCENARIOS: ScenarioSpec[] = [
     },
   },
   {
+    id: "blind_draw_buy_singles_fallback",
+    rawClue: "ハイキュー ブラインド アクスタ",
+    itemKind: "blind_draw",
+    goodsClass: "small_collection",
+    confidence: 84,
+    resultTags: [
+      "random_goods_path_stop_drawing_buy_singles",
+      "random_goods_used_market_fallback",
+      "random_goods_target_full_set",
+    ],
+    expected: [
+      "Singles/used fallback should still concentrate the stack on Mercari and Surugaya.",
+      "Generic retail should not dominate strong completion-fallback states.",
+      "Diagnostics should keep duplicate-risk recovery mismatches visible for fallback retail.",
+    ],
+    improvedVsOldLogic: "Completion-fallback blind-draw states now keep the visible provider stack centered on Mercari/Surugaya instead of letting generic retail reclaim the top slots.",
+    assertions: (result) => {
+      const ids = topIds(result);
+      assert(ids[0] === "mercari" && ids[1] === "surugaya", "blind_draw_buy_singles_fallback: Mercari and Surugaya should lead singles fallback");
+      assert(!ids.includes("amazon") && !ids.includes("rakuten"), "blind_draw_buy_singles_fallback: generic retail should stay hidden");
+      assert(
+        findEvaluation(result.diagnostics, "amazon")?.demotionReasons.includes("duplicate_risk_recovery_mismatch"),
+        "blind_draw_buy_singles_fallback: diagnostics should keep generic-retail mismatch explanation",
+      );
+      assert(
+        result.diagnostics.truthRankedProviders
+          .filter((entry) => entry.providerId === "mercari" || entry.providerId === "surugaya")
+          .every((entry) => entry.rank < 20),
+        "blind_draw_buy_singles_fallback: used-market specialists should remain truth-top for completion fallback",
+      );
+    },
+  },
+  {
     id: "official_sold_out_secondary_alive",
     rawClue: "うたプリ 特典付きCD",
     itemKind: "used",
