@@ -205,6 +205,11 @@ export function resolveFlowQuestions(input: FlowResolverInput): FlowResolution {
     moveQuestionBefore(ids, "q_addon_media_support_scope", "q_addon_common_priority");
     moveQuestionBefore(ids, "q_addon_media_collection_budget", "q_addon_common_priority");
     moveQuestionBefore(ids, "q_addon_media_edition_intent", "q_addon_common_priority");
+    moveQuestionBefore(ids, "q_addon_media_single_vs_set_intent", "q_addon_common_priority");
+    moveQuestionBefore(ids, "q_addon_media_completion_satisfaction", "q_addon_common_priority");
+    moveQuestionBefore(ids, "q_addon_media_used_market_recovery", "q_addon_common_priority");
+    moveQuestionBefore(ids, "q_addon_media_used_market_comfort", "q_addon_common_priority");
+    moveQuestionBefore(ids, "q_addon_media_completion_pressure_type", "q_addon_common_priority");
     for (const questionId of MEDIA_P3B_QUESTION_IDS) moveQuestionBefore(ids, questionId, "q_addon_common_priority");
   } else {
     pushBranch("force_media_core_questions", false, `goodsClass=${input.goodsClass},mode=${input.mode}`);

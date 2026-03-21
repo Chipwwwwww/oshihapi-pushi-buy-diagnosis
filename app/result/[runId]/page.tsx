@@ -862,7 +862,7 @@ export default function ResultPage() {
                   ? "全店舗 chase はせず、bonus と満足のバランスが最もよい 1店舗に絞る。"
                   : run.output.mediaEditionPlan.chosenPath === "buy_product_but_do_not_chase_all_bonuses"
                     ? "商品本体は買ってよいが、all-bonus 回収までは広げない。"
-                    : run.output.mediaEditionPlan.chosenPath === "split_orders_are_not_worth_it"
+                  : run.output.mediaEditionPlan.chosenPath === "split_orders_are_not_worth_it"
                       ? "複数店舗 split は bonus 差より送料・管理負担が重いので非推奨。"
                       : run.output.mediaEditionPlan.chosenPath === "split_orders_are_justified"
                         ? "今回は複数店舗 split に筋が通るが、対象店舗は最小限に固定する。"
@@ -872,10 +872,24 @@ export default function ResultPage() {
                   ? "今回は通常版だけで十分。限定圧で版数を増やさなくてよい。"
                   : run.output.mediaEditionPlan.chosenPath === "buy_limited_only"
                     ? "限定版に意味はあるが、複数版 chase までは広げない。"
-                    : run.output.mediaEditionPlan.chosenPath === "buy_one_best_fit_edition"
+                  : run.output.mediaEditionPlan.chosenPath === "buy_one_best_fit_edition"
                       ? "自分の motive に合う 1種だけを選ぶのが最適。"
+                      : run.output.mediaEditionPlan.chosenPath === "buy_one_only_and_stop"
+                        ? "象徴になる 1点だけで満足線を作り、そこから増やさない。"
+                      : run.output.mediaEditionPlan.chosenPath === "buy_selective_subset"
+                        ? "全部ではなく、刺さる版・最推し分・必要差分だけを選んで回収する。"
+                      : run.output.mediaEditionPlan.chosenPath === "full_set_is_not_worth_it"
+                        ? "今回は full set reward より burden が勝ちやすいので、選抜回収へ戻す。"
                       : run.output.mediaEditionPlan.chosenPath === "full_set_is_justified"
                         ? "今回は全版でも筋が通る。ただし motive と予算の整合が前提。"
+                      : run.output.mediaEditionPlan.chosenPath === "wait_and_patch_holes_later"
+                        ? "初動で抱え込みすぎず、欠けた分だけ後から埋める方が安全。"
+                      : run.output.mediaEditionPlan.chosenPath === "use_secondary_market_for_missing_items"
+                        ? "新品 chase を広げず、欠けた分だけ慎重に二次流通で補う。"
+                      : run.output.mediaEditionPlan.chosenPath === "do_not_force_completion"
+                        ? "不安を下げるためだけの全回収はしない。"
+                      : run.output.mediaEditionPlan.chosenPath === "step_back_from_completion_pressure"
+                        ? "いまは comp anxiety が強いので、一度離れてから必要差分だけ見直す。"
                         : run.output.mediaEditionPlan.chosenPath === "step_back_from_bonus_or_completion_pressure"
                           ? "必要性よりも bonus / comp 圧が前に出ているため、一歩引く。"
                           : "全版 chase は広げすぎ。いったん 1種基準に戻す。"}
@@ -889,6 +903,8 @@ export default function ResultPage() {
               <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
                 <li>character vs cast: {run.output.mediaEditionPlan.characterVsCast}</li>
                 <li>one-oshi vs box: {run.output.mediaEditionPlan.oneOshiVsBox}</li>
+                <li>single vs set intent: {run.output.mediaEditionPlan.singleVsSetIntent}</li>
+                <li>without-full-completion satisfaction: {run.output.mediaEditionPlan.satisfactionWithoutFullCompletion}</li>
                 <li>completeness axis: {run.output.mediaEditionPlan.collectionCompleteness}</li>
                 <li>budget alignment: {run.output.mediaEditionPlan.budgetAlignment}</li>
                 <li>edition ambition: {run.output.mediaEditionPlan.editionAmbition}</li>
@@ -899,6 +915,11 @@ export default function ResultPage() {
                 <li>split-order burden: {run.output.mediaEditionPlan.splitOrderBurden}</li>
                 <li>product vs bonus motive: {run.output.mediaEditionPlan.productVsBonusMotive}</li>
                 <li>overpay-vs-miss: {run.output.mediaEditionPlan.overpayVsMissPreference}</li>
+                <li>recovery preference: {run.output.mediaEditionPlan.recoveryPreference}</li>
+                <li>used-market comfort: {run.output.mediaEditionPlan.usedMarketComfort}</li>
+                <li>completion pressure type: {run.output.mediaEditionPlan.completionPressureType}</li>
+                <li>motive refinement axis: {run.output.mediaEditionPlan.motiveRefinementAxis}</li>
+                <li>set reward strength: {run.output.mediaEditionPlan.setRewardStrength}</li>
                 <li>member/version preference: {run.output.mediaEditionPlan.memberVersionPreference}</li>
                 <li>random-goods addon: {run.output.mediaEditionPlan.randomGoodsStopLineAddonInvoked ? "invoked" : run.output.mediaEditionPlan.randomGoodsAddonIntent}</li>
               </ul>
@@ -920,6 +941,8 @@ export default function ResultPage() {
                   {run.output.mediaEditionPlan.clampReason ? <li>clamp理由: {run.output.mediaEditionPlan.clampReason}</li> : null}
                   <li>selected planner path: {run.output.mediaEditionPlan.chosenPath}</li>
                   <li>store-bonus scenario detected: {run.output.mediaEditionPlan.storeBonusScenarioDetected ? "はい" : "いいえ"}</li>
+                  <li>used-market completion scenario detected: {run.output.mediaEditionPlan.usedMarketCompletionScenarioDetected ? "はい" : "いいえ"}</li>
+                  <li>secondary-market fallback が結論を変えたか: {run.output.mediaEditionPlan.secondaryMarketFallbackChangedRecommendation ? "はい" : "いいえ"}</li>
                   <li>bonus pressure が結論を変えたか: {run.output.mediaEditionPlan.bonusPressureChangedRecommendation ? "はい" : "いいえ"}</li>
                   <li>split-order burden が結論を変えたか: {run.output.mediaEditionPlan.splitOrderBurdenChangedRecommendation ? "はい" : "いいえ"}</li>
                   <li>random-goods stop-line addon invoked: {run.output.mediaEditionPlan.randomGoodsStopLineAddonInvoked ? "はい" : "いいえ"}</li>

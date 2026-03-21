@@ -266,6 +266,12 @@
           "q_addon_media_support_scope",
           "q_addon_media_collection_budget",
           "q_addon_media_edition_intent",
+          "q_addon_media_single_vs_set_intent",
+          "q_addon_media_completion_satisfaction",
+          "q_addon_media_used_market_recovery",
+          "q_addon_media_used_market_comfort",
+          "q_addon_media_completion_pressure_type",
+          "q_addon_media_set_reward_strength",
           "q_addon_media_member_version",
           "q_addon_media_playback_space",
           "q_addon_media_limited_pressure",
@@ -471,6 +477,12 @@
           "q_addon_media_support_scope",
           "q_addon_media_collection_budget",
           "q_addon_media_edition_intent",
+          "q_addon_media_single_vs_set_intent",
+          "q_addon_media_completion_satisfaction",
+          "q_addon_media_used_market_recovery",
+          "q_addon_media_used_market_comfort",
+          "q_addon_media_completion_pressure_type",
+          "q_addon_media_set_reward_strength",
           "q_addon_media_member_version",
           "q_addon_media_playback_space",
           "q_addon_media_limited_pressure",
@@ -645,6 +657,12 @@
           "q_addon_media_support_scope",
           "q_addon_media_collection_budget",
           "q_addon_media_edition_intent",
+          "q_addon_media_single_vs_set_intent",
+          "q_addon_media_completion_satisfaction",
+          "q_addon_media_used_market_recovery",
+          "q_addon_media_used_market_comfort",
+          "q_addon_media_completion_pressure_type",
+          "q_addon_media_set_reward_strength",
           "q_addon_media_member_version",
           "q_addon_media_playback_space",
           "q_addon_media_limited_pressure",
@@ -6147,6 +6165,265 @@
     },
     {
       "useCase": "merch",
+      "questionId": "q_addon_media_completion_pressure_type",
+      "questionType": "single",
+      "scoringRelevance": "delta",
+      "impactCategory": "score",
+      "behaviorRelevance": {
+        "affectsScore": true,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "score",
+      "mapTo": null,
+      "tags": [
+        "bonus_pressure_mid",
+        "collection_pressure",
+        "store_bonus_collection_pressure",
+        "unknown_info"
+      ],
+      "unknownTagHints": [
+        "unknown_info"
+      ],
+      "appearsInBranches": [
+        "merch/long/goods#gc=media",
+        "merch/long/preorder#gc=media",
+        "merch/long/used#gc=media"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "「揃えたい圧」の正体はどれに近い？",
+        "kawaii": "揃えたい圧の正体、どれが近い？",
+        "oshi": "completion pressure の主因は？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "bonus_store_pressure",
+          "labels": {
+            "standard": "店舗特典・店別差分を落としたくない",
+            "kawaii": "店舗特典・店別差分を落としたくない",
+            "oshi": "店舗特典・店別差分を落としたくない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "impulse": 66,
+            "regretRisk": 68,
+            "opportunityCost": 70
+          },
+          "tags": [
+            "bonus_pressure_mid",
+            "store_bonus_collection_pressure"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "box_group_desire",
+          "labels": {
+            "standard": "箱・グループ全体で揃っていることに意味がある",
+            "kawaii": "箱・グループ全体で揃っていることに意味がある",
+            "oshi": "箱・グループ全体で揃っていることに意味がある"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "desire": 66,
+            "impulse": 60,
+            "opportunityCost": 66
+          },
+          "tags": [
+            "collection_pressure"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "complete_collection_image",
+          "labels": {
+            "standard": "「全部持っている状態」にして安心したい",
+            "kawaii": "「全部持っている状態」にして安心したい",
+            "oshi": "「全部持っている状態」にして安心したい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "impulse": 72,
+            "regretRisk": 70,
+            "opportunityCost": 72
+          },
+          "tags": [
+            "collection_pressure"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "mixed",
+          "labels": {
+            "standard": "いくつか混ざっている",
+            "kawaii": "いくつか混ざっている",
+            "oshi": "いくつか混ざっている"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "desire": 60,
+            "regretRisk": 58,
+            "impulse": 58
+          },
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "personal_standard",
+          "labels": {
+            "standard": "自分の基準として、揃いを崩したくない",
+            "kawaii": "自分の基準として、揃いを崩したくない",
+            "oshi": "自分の基準として、揃いを崩したくない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "desire": 58,
+            "regretRisk": 56
+          },
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "まだ言語化できていない",
+            "kawaii": "まだ言語化できていない",
+            "oshi": "まだ言語化できていない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 64,
+            "opportunityCost": 60
+          },
+          "tags": [
+            "unknown_info"
+          ],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_media_completion_satisfaction",
+      "questionType": "single",
+      "scoringRelevance": "delta",
+      "impactCategory": "score",
+      "behaviorRelevance": {
+        "affectsScore": true,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "score",
+      "mapTo": null,
+      "tags": [
+        "collection_pressure",
+        "unknown_info"
+      ],
+      "unknownTagHints": [
+        "unknown_info"
+      ],
+      "appearsInBranches": [
+        "merch/long/goods#gc=media",
+        "merch/long/preorder#gc=media",
+        "merch/long/used#gc=media"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "全部そろわなくても、ある程度で満足して止まれそう？",
+        "kawaii": "全部そろわなくても満足して止まれそう？",
+        "oshi": "非フルコンプでも満足停止できる？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "high",
+          "labels": {
+            "standard": "止まれる。1点/一部でも納得しやすい",
+            "kawaii": "止まれる。1点/一部でも納得しやすい",
+            "oshi": "止まれる。1点/一部でも納得しやすい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 40,
+            "impulse": 40,
+            "opportunityCost": 42
+          },
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "low",
+          "labels": {
+            "standard": "中途半端だとかなり落ち着かない",
+            "kawaii": "中途半端だとかなり落ち着かない",
+            "oshi": "中途半端だとかなり落ち着かない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 72,
+            "impulse": 68,
+            "opportunityCost": 68
+          },
+          "tags": [
+            "collection_pressure"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "medium",
+          "labels": {
+            "standard": "工夫すれば止まれそう",
+            "kawaii": "工夫すれば止まれそう",
+            "oshi": "工夫すれば止まれそう"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 54,
+            "impulse": 52
+          },
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "まだ分からない",
+            "kawaii": "まだ分からない",
+            "oshi": "まだ分からない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 64,
+            "opportunityCost": 60
+          },
+          "tags": [
+            "unknown_info"
+          ],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
       "questionId": "q_addon_media_edition_intent",
       "questionType": "single",
       "scoringRelevance": "delta",
@@ -6934,6 +7211,238 @@
     },
     {
       "useCase": "merch",
+      "questionId": "q_addon_media_set_reward_strength",
+      "questionType": "single",
+      "scoringRelevance": "delta",
+      "impactCategory": "score",
+      "behaviorRelevance": {
+        "affectsScore": true,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "score",
+      "mapTo": null,
+      "tags": [
+        "unknown_info"
+      ],
+      "unknownTagHints": [
+        "unknown_info"
+      ],
+      "appearsInBranches": [
+        "merch/long/goods#gc=media",
+        "merch/long/preorder#gc=media",
+        "merch/long/used#gc=media"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "全版/全員分でそろえた時のごほうびは、どれくらい実体がありますか？",
+        "kawaii": "フルセット報酬って、どれくらい実体ある？",
+        "oshi": "セット報酬の実体強度は？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "medium",
+          "labels": {
+            "standard": "少しあるが、絶対ではない",
+            "kawaii": "少しあるが、絶対ではない",
+            "oshi": "少しあるが、絶対ではない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "desire": 58,
+            "regretRisk": 54
+          },
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "strong",
+          "labels": {
+            "standard": "明確にある（連動特典・収納・大きい差分）",
+            "kawaii": "明確にある（連動特典・収納・大きい差分）",
+            "oshi": "明確にある（連動特典・収納・大きい差分）"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "desire": 68,
+            "regretRisk": 48
+          },
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "まだ比較できていない",
+            "kawaii": "まだ比較できていない",
+            "oshi": "まだ比較できていない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 64,
+            "opportunityCost": 60
+          },
+          "tags": [
+            "unknown_info"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "weak",
+          "labels": {
+            "standard": "ほぼ自己満足で、セット報酬は弱い",
+            "kawaii": "ほぼ自己満足で、セット報酬は弱い",
+            "oshi": "ほぼ自己満足で、セット報酬は弱い"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "affordability": 62,
+            "opportunityCost": 64,
+            "regretRisk": 58
+          },
+          "tags": [],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_media_single_vs_set_intent",
+      "questionType": "single",
+      "scoringRelevance": "delta",
+      "impactCategory": "score",
+      "behaviorRelevance": {
+        "affectsScore": true,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "score",
+      "mapTo": null,
+      "tags": [
+        "collection_pressure",
+        "unknown_info"
+      ],
+      "unknownTagHints": [
+        "unknown_info"
+      ],
+      "appearsInBranches": [
+        "merch/long/goods#gc=media",
+        "merch/long/preorder#gc=media",
+        "merch/long/used#gc=media"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "今回ほしい形は、1点・ベスト1種・選抜回収・フルセットのどれに近い？",
+        "kawaii": "今回は1点・ベスト1種・選抜回収・フルセットのどれに近い？",
+        "oshi": "1点回収 / ベスト1種 / 選抜回収 / フルセットのどれ寄り？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "full_set_bundle",
+          "labels": {
+            "standard": "セット・全版・全員分まで揃えたい",
+            "kawaii": "セット・全版・全員分まで揃えたい",
+            "oshi": "セット・全版・全員分まで揃えたい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "desire": 70,
+            "impulse": 64,
+            "opportunityCost": 74
+          },
+          "tags": [
+            "collection_pressure"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "one_best_fit_version",
+          "labels": {
+            "standard": "仕様を見てベストな1種だけ選びたい",
+            "kawaii": "仕様を見てベストな1種だけ選びたい",
+            "oshi": "仕様を見てベストな1種だけ選びたい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "affordability": 64,
+            "opportunityCost": 42,
+            "regretRisk": 44
+          },
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "one_symbolic_item",
+          "labels": {
+            "standard": "象徴になる1点があれば満足しやすい",
+            "kawaii": "象徴になる1点があれば満足しやすい",
+            "oshi": "象徴になる1点があれば満足しやすい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "affordability": 66,
+            "impulse": 40,
+            "regretRisk": 42
+          },
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "selective_subset",
+          "labels": {
+            "standard": "必要な版/絵柄/メンバー分だけ選んで回収したい",
+            "kawaii": "必要な版/絵柄/メンバー分だけ選んで回収したい",
+            "oshi": "必要な版/絵柄/メンバー分だけ選んで回収したい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "affordability": 60,
+            "desire": 60,
+            "opportunityCost": 50
+          },
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "まだ決めきれていない",
+            "kawaii": "まだ決めきれていない",
+            "oshi": "まだ決めきれていない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 64,
+            "opportunityCost": 60
+          },
+          "tags": [
+            "unknown_info"
+          ],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
       "questionId": "q_addon_media_split_order_burden",
       "questionType": "single",
       "scoringRelevance": "delta",
@@ -7143,6 +7652,268 @@
           },
           "tags": [
             "unknown_info"
+          ],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_media_used_market_comfort",
+      "questionType": "single",
+      "scoringRelevance": "delta",
+      "impactCategory": "score",
+      "behaviorRelevance": {
+        "affectsScore": true,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "score",
+      "mapTo": null,
+      "tags": [
+        "unknown_info",
+        "used_market_comfort_high",
+        "used_market_comfort_low",
+        "used_market_comfort_mid",
+        "used_market_reference_only"
+      ],
+      "unknownTagHints": [
+        "unknown_info"
+      ],
+      "appearsInBranches": [
+        "merch/long/goods#gc=media",
+        "merch/long/preorder#gc=media",
+        "merch/long/used#gc=media"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "Mercari / 駿河屋などで後から探すことへの抵抗感は？",
+        "kawaii": "あとで中古で探すの、どこまで平気？",
+        "oshi": "二次流通での後追い回収許容は？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "high",
+          "labels": {
+            "standard": "かなり平気。遅れや価格差も織り込める",
+            "kawaii": "かなり平気。遅れや価格差も織り込める",
+            "oshi": "かなり平気。遅れや価格差も織り込める"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "impulse": 38,
+            "regretRisk": 44,
+            "restockChance": 66
+          },
+          "tags": [
+            "used_market_comfort_high"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "low",
+          "labels": {
+            "standard": "状態・遅れ・不確実さが気になり、できれば避けたい",
+            "kawaii": "状態・遅れ・不確実さが気になり、できれば避けたい",
+            "oshi": "状態・遅れ・不確実さが気になり、できれば避けたい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 66,
+            "restockChance": 36,
+            "rarity": 62
+          },
+          "tags": [
+            "used_market_comfort_low"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "medium",
+          "labels": {
+            "standard": "条件が合えば使える",
+            "kawaii": "条件が合えば使える",
+            "oshi": "条件が合えば使える"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 52,
+            "restockChance": 58
+          },
+          "tags": [
+            "used_market_comfort_mid"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "reference_only",
+          "labels": {
+            "standard": "相場の参考にはするが、積極購入は慎重",
+            "kawaii": "相場の参考にはするが、積極購入は慎重",
+            "oshi": "相場の参考にはするが、積極購入は慎重"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 58,
+            "restockChance": 54
+          },
+          "tags": [
+            "used_market_reference_only"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "まだ分からない",
+            "kawaii": "まだ分からない",
+            "oshi": "まだ分からない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 64,
+            "opportunityCost": 60
+          },
+          "tags": [
+            "unknown_info"
+          ],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_media_used_market_recovery",
+      "questionType": "single",
+      "scoringRelevance": "delta",
+      "impactCategory": "score",
+      "behaviorRelevance": {
+        "affectsScore": true,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "score",
+      "mapTo": null,
+      "tags": [
+        "unknown_info",
+        "used_market_completion_interest",
+        "used_market_reference_only"
+      ],
+      "unknownTagHints": [
+        "unknown_info"
+      ],
+      "appearsInBranches": [
+        "merch/long/goods#gc=media",
+        "merch/long/preorder#gc=media",
+        "merch/long/used#gc=media"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "初回窓を逃したり欠けが出たら、あとで埋める前提はありますか？",
+        "kawaii": "逃した分をあとで埋める前提、ある？",
+        "oshi": "欠けた分を後追い回収する前提は？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "avoid_used_market",
+          "labels": {
+            "standard": "中古・フリマで埋める前提はできれば避けたい",
+            "kawaii": "中古・フリマで埋める前提はできれば避けたい",
+            "oshi": "中古・フリマで埋める前提はできれば避けたい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "rarity": 60,
+            "regretRisk": 62,
+            "urgency": 60
+          },
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "buy_now_primary",
+          "labels": {
+            "standard": "基本は今そろえたい。後追い前提にはしたくない",
+            "kawaii": "基本は今そろえたい。後追い前提にはしたくない",
+            "oshi": "基本は今そろえたい。後追い前提にはしたくない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "urgency": 66,
+            "regretRisk": 60
+          },
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "reference_only",
+          "labels": {
+            "standard": "参考相場として見るのはありだが、主導線にはしにくい",
+            "kawaii": "参考相場として見るのはありだが、主導線にはしにくい",
+            "oshi": "参考相場として見るのはありだが、主導線にはしにくい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 54,
+            "opportunityCost": 54
+          },
+          "tags": [
+            "used_market_reference_only"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "まだ整理できていない",
+            "kawaii": "まだ整理できていない",
+            "oshi": "まだ整理できていない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 64,
+            "opportunityCost": 60
+          },
+          "tags": [
+            "unknown_info"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "wait_and_patch",
+          "labels": {
+            "standard": "急がず、欠けた分だけ後で埋めたい",
+            "kawaii": "急がず、欠けた分だけ後で埋めたい",
+            "oshi": "急がず、欠けた分だけ後で埋めたい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "impulse": 42,
+            "regretRisk": 46,
+            "opportunityCost": 44
+          },
+          "tags": [
+            "used_market_completion_interest"
           ],
           "buyStopDelta": null
         }

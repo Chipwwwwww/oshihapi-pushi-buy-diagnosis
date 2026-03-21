@@ -75,11 +75,21 @@ export const MEDIA_P3B_QUESTION_IDS = [
   "q_addon_media_split_order_burden",
 ] as const;
 
+export const MEDIA_P3C_QUESTION_IDS = [
+  "q_addon_media_single_vs_set_intent",
+  "q_addon_media_completion_satisfaction",
+  "q_addon_media_used_market_recovery",
+  "q_addon_media_used_market_comfort",
+  "q_addon_media_completion_pressure_type",
+  "q_addon_media_set_reward_strength",
+] as const;
+
 export const MEDIA_CORE_QUESTION_IDS = [
   "q_addon_media_motive",
   "q_addon_media_support_scope",
   "q_addon_media_collection_budget",
   "q_addon_media_edition_intent",
+  ...MEDIA_P3C_QUESTION_IDS,
   "q_addon_media_member_version",
   "q_addon_media_playback_space",
   "q_addon_media_limited_pressure",
@@ -98,6 +108,7 @@ export const ADDON_BY_GOODS_CLASS: Record<GoodsClass, readonly string[]> = {
     "q_addon_media_support_scope",
     "q_addon_media_collection_budget",
     "q_addon_media_edition_intent",
+    ...MEDIA_P3C_QUESTION_IDS,
     "q_addon_media_member_version",
     "q_addon_media_playback_space",
     "q_addon_media_limited_pressure",
