@@ -7,6 +7,7 @@ import {
   ADDON_BY_GOODS_CLASS,
   ADDON_BY_ITEM_KIND,
   CORE_12_QUESTION_IDS,
+  MEDIA_CORE_QUESTION_IDS,
   MIXED_MEDIA_RANDOM_GOODS_QUESTION_IDS,
   QUICK_QUESTION_IDS,
   shouldAskStorage,
@@ -140,6 +141,10 @@ export function resolveFlowQuestions(input: FlowResolverInput): FlowResolution {
   const enableGoodsClass = input.mode === "long" && (input.itemKind === "goods" || input.itemKind === "preorder" || input.itemKind === "used");
   const goodsClassAddonIds = enableGoodsClass ? ADDON_BY_GOODS_CLASS[input.goodsClass] ?? [] : [];
   const ids = [...baseIds, ...itemKindAddonIds, ...goodsClassAddonIds];
+  const shouldForceMediaCoverage =
+    input.goodsClass === "media" &&
+    input.mode !== "short" &&
+    (input.itemKind === "goods" || input.itemKind === "preorder" || hasResolvedMediaItemType(input.meta.parsedSearchClues));
 
   const hasUnknownStorage = input.answers.q_storage_fit === "UNKNOWN" || input.answers.q_storage_space === "tight";
   const hasUnknownBudget = input.answers.q_budget_pain == null || input.answers.q_budget_pain === "some";
@@ -189,6 +194,17 @@ export function resolveFlowQuestions(input: FlowResolverInput): FlowResolution {
     moveQuestionBefore(ids, "q_addon_goods_first_chance_tolerance", "q_addon_common_priority");
   } else {
     pushBranch("venue_limited_recovery_questions", false, `context=${String(input.answers.q_addon_goods_event_limit_context ?? "none")}`);
+  }
+
+  if (shouldForceMediaCoverage) {
+    pushBranch("force_media_core_questions", true, `itemKind=${input.itemKind ?? "goods"},mode=${input.mode}`);
+    ids.push(...MEDIA_CORE_QUESTION_IDS);
+    moveQuestionBefore(ids, "q_addon_media_motive", "q_addon_common_priority");
+    moveQuestionBefore(ids, "q_addon_media_support_scope", "q_addon_common_priority");
+    moveQuestionBefore(ids, "q_addon_media_collection_budget", "q_addon_common_priority");
+    moveQuestionBefore(ids, "q_addon_media_edition_intent", "q_addon_common_priority");
+  } else {
+    pushBranch("force_media_core_questions", false, `goodsClass=${input.goodsClass},mode=${input.mode}`);
   }
 
   if (input.goodsClass === "media" && hasResolvedMediaItemType(parsedSearchClues)) {
@@ -248,6 +264,7 @@ export function resolveFlowQuestions(input: FlowResolverInput): FlowResolution {
     ...CORE_12_QUESTION_IDS,
     ...Object.values(ADDON_BY_ITEM_KIND).flat(),
     ...Object.values(ADDON_BY_GOODS_CLASS).flat(),
+    ...MEDIA_CORE_QUESTION_IDS,
     ...MIXED_MEDIA_RANDOM_GOODS_QUESTION_IDS,
     ...VENUE_LIMITED_RECOVERY_QUESTION_IDS,
     "q_addon_goods_event_limit_context",

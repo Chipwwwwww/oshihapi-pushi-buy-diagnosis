@@ -455,6 +455,13 @@ export default function ResultPage() {
         : MODE_DICTIONARY[styleMode].explanation.skip;
 
   const safeConfidence = clamp(0, 100, Number.isFinite(run?.output.confidence) ? (run?.output.confidence ?? 0) : 0);
+  const confidenceSummary =
+    safeConfidence >= 75
+      ? "根拠は比較的そろっています。"
+      : safeConfidence >= 55
+        ? "いくつか前提つきの結論です。"
+        : "不明点が残るため、強い推奨ではありません。";
+  const primaryAction = displayActions[0];
 
   const decisionScale = useMemo(() => {
     if (!run) return "wait";
@@ -706,6 +713,20 @@ export default function ResultPage() {
 
       <DecisionScale decision={decisionScale} index={decisionIndex} />
 
+      <Card className="space-y-3 border border-accent/20 bg-accent/5">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className={sectionTitleClass}>まず見る結論</h2>
+          <Badge variant="accent">main next step</Badge>
+        </div>
+        <p className="text-base font-semibold text-foreground">
+          {primaryAction ? primaryAction.text : adviceText}
+        </p>
+        <p className="text-sm text-muted-foreground">{confidenceSummary}</p>
+        {run.output.subtypeReason ? (
+          <p className="text-xs text-muted-foreground">補足: {run.output.subtypeReason}</p>
+        ) : null}
+      </Card>
+
       <Card className="space-y-3 border-amber-200 bg-amber-50 dark:ring-1 dark:ring-white/10">
         <h2 className="text-lg font-semibold text-amber-900">{modeCopy.ui.adviceTitle}</h2>
         <p className="text-sm text-amber-800">{adviceText}</p>
@@ -792,24 +813,27 @@ export default function ResultPage() {
               </ul>
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl border border-violet-200/70 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
-              <p className="text-sm font-semibold">なぜこの diagnosis か</p>
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-                {run.output.venueLimitedGoodsPlan.reasons.map((reason) => <li key={reason}>{reason}</li>)}
-              </ul>
+          <details className="rounded-2xl border border-violet-200/70 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
+            <summary className="cursor-pointer text-sm font-semibold">理由と診断 trace を見る</summary>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div>
+                <p className="text-sm font-semibold">なぜこの diagnosis か</p>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                  {run.output.venueLimitedGoodsPlan.reasons.map((reason) => <li key={reason}>{reason}</li>)}
+                </ul>
+              </div>
+              <div>
+                <p className="text-sm font-semibold">診断 trace</p>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                  {run.output.venueLimitedGoodsPlan.assumptions.map((assumption) => <li key={assumption}>{assumption}</li>)}
+                  {run.output.venueLimitedGoodsPlan.clampReason ? <li>clamp理由: {run.output.venueLimitedGoodsPlan.clampReason}</li> : null}
+                  <li>回復可能性が結論を変えたか: {run.output.venueLimitedGoodsPlan.recoveryChangedRecommendation ? "はい" : "いいえ"}</li>
+                  <li>中古 fallback が safer path に入るか: {run.output.venueLimitedGoodsPlan.usedMarketPartOfSaferPath ? "はい" : "いいえ"}</li>
+                  <li>true scarcity 寄りか: {run.output.venueLimitedGoodsPlan.trueScarcityLikely ? "はい" : "いいえ"}</li>
+                </ul>
+              </div>
             </div>
-            <div className="rounded-2xl border border-violet-200/70 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
-              <p className="text-sm font-semibold">診断 trace</p>
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-                {run.output.venueLimitedGoodsPlan.assumptions.map((assumption) => <li key={assumption}>{assumption}</li>)}
-                {run.output.venueLimitedGoodsPlan.clampReason ? <li>clamp理由: {run.output.venueLimitedGoodsPlan.clampReason}</li> : null}
-                <li>回復可能性が結論を変えたか: {run.output.venueLimitedGoodsPlan.recoveryChangedRecommendation ? "はい" : "いいえ"}</li>
-                <li>中古 fallback が safer path に入るか: {run.output.venueLimitedGoodsPlan.usedMarketPartOfSaferPath ? "はい" : "いいえ"}</li>
-                <li>true scarcity 寄りか: {run.output.venueLimitedGoodsPlan.trueScarcityLikely ? "はい" : "いいえ"}</li>
-              </ul>
-            </div>
-          </div>
+          </details>
         </Card>
       ) : null}
 
@@ -853,23 +877,26 @@ export default function ResultPage() {
               </ul>
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl border border-fuchsia-200/70 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
-              <p className="text-sm font-semibold">なぜこの diagnosis か</p>
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-                {run.output.mediaEditionPlan.reasons.map((reason) => <li key={reason}>{reason}</li>)}
-              </ul>
+          <details className="rounded-2xl border border-fuchsia-200/70 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
+            <summary className="cursor-pointer text-sm font-semibold">理由と診断 trace を見る</summary>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div>
+                <p className="text-sm font-semibold">なぜこの diagnosis か</p>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                  {run.output.mediaEditionPlan.reasons.map((reason) => <li key={reason}>{reason}</li>)}
+                </ul>
+              </div>
+              <div>
+                <p className="text-sm font-semibold">診断 trace</p>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                  {run.output.mediaEditionPlan.assumptions.map((assumption) => <li key={assumption}>{assumption}</li>)}
+                  {run.output.mediaEditionPlan.clampReason ? <li>clamp理由: {run.output.mediaEditionPlan.clampReason}</li> : null}
+                  <li>selected planner path: {run.output.mediaEditionPlan.chosenPath}</li>
+                  <li>random-goods stop-line addon invoked: {run.output.mediaEditionPlan.randomGoodsStopLineAddonInvoked ? "はい" : "いいえ"}</li>
+                </ul>
+              </div>
             </div>
-            <div className="rounded-2xl border border-fuchsia-200/70 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
-              <p className="text-sm font-semibold">診断 trace</p>
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-                {run.output.mediaEditionPlan.assumptions.map((assumption) => <li key={assumption}>{assumption}</li>)}
-                {run.output.mediaEditionPlan.clampReason ? <li>clamp理由: {run.output.mediaEditionPlan.clampReason}</li> : null}
-                <li>selected planner path: {run.output.mediaEditionPlan.chosenPath}</li>
-                <li>random-goods stop-line addon invoked: {run.output.mediaEditionPlan.randomGoodsStopLineAddonInvoked ? "はい" : "いいえ"}</li>
-              </ul>
-            </div>
-          </div>
+          </details>
         </Card>
       ) : null}
 
@@ -911,28 +938,31 @@ export default function ResultPage() {
               </ul>
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl border border-sky-200/70 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
-              <p className="text-sm font-semibold">なぜこの stop-line か</p>
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-                {run.output.randomGoodsPlan.reasons.map((reason) => <li key={reason}>{reason}</li>)}
-              </ul>
+          <details className="rounded-2xl border border-sky-200/70 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
+            <summary className="cursor-pointer text-sm font-semibold">理由と診断 trace を見る</summary>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div>
+                <p className="text-sm font-semibold">なぜこの stop-line か</p>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                  {run.output.randomGoodsPlan.reasons.map((reason) => <li key={reason}>{reason}</li>)}
+                </ul>
+              </div>
+              <div>
+                <p className="text-sm font-semibold">前提メモ / 診断 trace</p>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                  {run.output.randomGoodsPlan.assumptions.map((assumption) => <li key={assumption}>{assumption}</li>)}
+                  {run.output.randomGoodsPlan.clampReason ? <li>clamp理由: {run.output.randomGoodsPlan.clampReason}</li> : null}
+                  <li>exchange前提が結論を変えたか: {run.output.randomGoodsPlan.exchangeAssumptionChangedRecommendation ? "はい" : "いいえ"}</li>
+                  <li>単品/中古 completion が合理的か: {run.output.randomGoodsPlan.usedMarketRecommended ? "はい" : "状況次第"}</li>
+                </ul>
+              </div>
             </div>
-            <div className="rounded-2xl border border-sky-200/70 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
-              <p className="text-sm font-semibold">前提メモ / 診断 trace</p>
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-                {run.output.randomGoodsPlan.assumptions.map((assumption) => <li key={assumption}>{assumption}</li>)}
-                {run.output.randomGoodsPlan.clampReason ? <li>clamp理由: {run.output.randomGoodsPlan.clampReason}</li> : null}
-                <li>exchange前提が結論を変えたか: {run.output.randomGoodsPlan.exchangeAssumptionChangedRecommendation ? "はい" : "いいえ"}</li>
-                <li>単品/中古 completion が合理的か: {run.output.randomGoodsPlan.usedMarketRecommended ? "はい" : "状況次第"}</li>
-              </ul>
-            </div>
-          </div>
+          </details>
         </Card>
       ) : null}
 
       <Card className="space-y-4">
-        <h2 className={sectionTitleClass}>{modeCopy.ui.actionsTitle}</h2>
+        <h2 className={sectionTitleClass}>次の一歩と補助アクション</h2>
         <ul className="grid gap-4">
           {(showAllActions ? displayActions : displayActions.slice(0, 3)).map((action) => {
             const actionLink = getActionLink(action);
