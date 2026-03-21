@@ -160,7 +160,18 @@ export default function Home() {
     setSelectedScenarioKey(scenarioKey);
     setItemKind(preset.itemKind ?? "goods");
     if (preset.goodsClass) setGoodsClass(preset.goodsClass);
-    setMode((currentMode) => (scenarioKey === "multi_edition_media" || scenarioKey === "post_event_mailorder" || scenarioKey === "missed_onsite_recovery" ? (currentMode === "short" ? "medium" : currentMode) : currentMode));
+    setMode((currentMode) => (
+      scenarioKey === "multi_edition_media" ||
+      scenarioKey === "store_bonus_collection" ||
+      scenarioKey === "multi_store_bonus_split" ||
+      scenarioKey === "post_event_mailorder" ||
+      scenarioKey === "missed_onsite_recovery" ||
+      scenarioKey === "mixed_media_live_goods" ||
+      scenarioKey === "cast_live_goods_followup" ||
+      scenarioKey === "bonus_pressure_followup"
+        ? (currentMode === "short" ? "medium" : currentMode)
+        : currentMode
+    ));
   };
 
   const handleItemKindChange = (nextItemKind: ItemKind) => {

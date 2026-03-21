@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-21T14:17:05.533Z",
+  "generatedAt": "2026-03-21T15:41:32.872Z",
   "scenarioCount": 32,
   "scenarios": [
     {
@@ -1040,7 +1040,7 @@
     },
     {
       "id": "long_goods_media",
-      "questionCount": 26,
+      "questionCount": 29,
       "shownQuestionIds": [
         "q_storage_fit",
         "q_storage_space",
@@ -1061,6 +1061,9 @@
         "q_addon_media_support_scope",
         "q_addon_media_collection_budget",
         "q_addon_media_edition_intent",
+        "q_addon_media_bonus_importance",
+        "q_addon_media_multi_store_tolerance",
+        "q_addon_media_split_order_burden",
         "q_addon_common_priority",
         "q_addon_goods_compare",
         "q_addon_goods_portability",
@@ -1080,14 +1083,14 @@
         "decision": "THINK",
         "holdSubtype": "info_missing",
         "confidence": 40,
-        "score": 0.0363653846153847,
+        "score": 0.03861769230769235,
         "reasonCount": 5,
         "actionCount": 4
       }
     },
     {
       "id": "long_used_media",
-      "questionCount": 28,
+      "questionCount": 31,
       "shownQuestionIds": [
         "q_storage_fit",
         "q_storage_space",
@@ -1116,6 +1119,9 @@
         "q_addon_media_member_version",
         "q_addon_media_playback_space",
         "q_addon_media_limited_pressure",
+        "q_addon_media_bonus_importance",
+        "q_addon_media_multi_store_tolerance",
+        "q_addon_media_split_order_burden",
         "q_addon_media_random_goods_intent"
       ],
       "branchHits": [
@@ -1130,7 +1136,7 @@
         "decision": "THINK",
         "holdSubtype": "info_missing",
         "confidence": 40,
-        "score": 0.02887646153846157,
+        "score": 0.03513600000000006,
         "reasonCount": 5,
         "actionCount": 4
       }
@@ -1299,14 +1305,16 @@
     {
       "id": "one_oshi_budget_constrained_limited_temptation",
       "decision": "THINK",
-      "chosenPath": "buy_one_best_fit_edition",
+      "chosenPath": "choose_one_best_store",
       "clampReason": null,
       "budgetAlignment": "weak",
       "randomGoodsStopLineAddonInvoked": false,
       "reasons": [
         "単推しが強い時は、全版追いより「自分に合う1種」を選ぶ方が満足効率が高い。",
         "キャラ/IP motive が主なら、演者理由だけで版数を増やす必要は薄め。",
-        "予算の整合が弱い状態では、全版追いは満足より負担が前に出やすい。"
+        "1店舗で納得できる余地があるなら、全店 chase より「最も合う1店」を選ぶ方が後悔を減らしやすい。",
+        "split order の負担が高い時は、bonus 差より後悔や管理コストが前に出やすい。",
+        "商品本体への motive が残っているなら、bonus を全部追わなくても満足の芯を確保しやすい。"
       ]
     },
     {
@@ -1319,32 +1327,80 @@
       "reasons": [
         "箱・グループ支援が強い場合だけ、複数版の意味が出やすい。",
         "キャラ側と演者側の motive が混ざる時は、いちばん刺さる版を1つに絞ると後悔を減らしやすい。",
+        "1店舗で納得できる余地があるなら、全店 chase より「最も合う1店」を選ぶ方が後悔を減らしやすい。",
         "揃えたい気持ちが強いほど、総額と実際の満足差を意識して clamp した方が安全。"
       ]
     },
     {
       "id": "bonus_pressure_clamp",
       "decision": "THINK",
-      "chosenPath": "step_back_from_bonus_or_completion_pressure",
+      "chosenPath": "step_back_from_bonus_pressure",
       "clampReason": "bonus_pressure_exceeds_stated_need",
       "budgetAlignment": "medium",
       "randomGoodsStopLineAddonInvoked": false,
       "reasons": [
         "単推しが強い時は、全版追いより「自分に合う1種」を選ぶ方が満足効率が高い。",
         "キャラ/IP motive が主なら、演者理由だけで版数を増やす必要は薄め。",
-        "今の迷いは「本編を見たい」より bonus / 限定圧に押されている可能性が高い。"
+        "今の迷いは「本編を見たい」より bonus / 限定圧に押されている可能性が高い。",
+        "1店舗で納得できる余地があるなら、全店 chase より「最も合う1店」を選ぶ方が後悔を減らしやすい。",
+        "いまの判断は商品本体より店舗 bonus 比較に引っ張られている可能性がある。"
+      ]
+    },
+    {
+      "id": "store_bonus_choose_one_store",
+      "decision": "THINK",
+      "chosenPath": "choose_one_best_store",
+      "clampReason": null,
+      "budgetAlignment": "medium",
+      "randomGoodsStopLineAddonInvoked": false,
+      "reasons": [
+        "単推しが強い時は、全版追いより「自分に合う1種」を選ぶ方が満足効率が高い。",
+        "演者・キャスト motive が強い時は、出演差や映像特典つき版の relevance が上がりやすい。",
+        "店舗 bonus の重要度が高いほど、商品価値と bonus 価値を分けて考えないと chase が膨らみやすい。",
+        "1店舗で納得できる余地があるなら、全店 chase より「最も合う1店」を選ぶ方が後悔を減らしやすい。"
+      ]
+    },
+    {
+      "id": "split_orders_not_worth_it",
+      "decision": "THINK",
+      "chosenPath": "split_orders_are_not_worth_it",
+      "clampReason": "split_order_burden_outweighs_bonus_gain",
+      "budgetAlignment": "medium",
+      "randomGoodsStopLineAddonInvoked": false,
+      "reasons": [
+        "複数版メディアは motive が曖昧だと買い分けより惰性 chase になりやすい。",
+        "キャラ側と演者側の motive が混ざる時は、いちばん刺さる版を1つに絞ると後悔を減らしやすい。",
+        "今の迷いは「本編を見たい」より bonus / 限定圧に押されている可能性が高い。",
+        "店舗 bonus の重要度が高いほど、商品価値と bonus 価値を分けて考えないと chase が膨らみやすい。",
+        "複数店舗 chase は motive が強くても、送料・管理・発売日差の負担まで含めて正当化が必要。"
+      ]
+    },
+    {
+      "id": "buy_product_skip_all_bonuses",
+      "decision": "THINK",
+      "chosenPath": "buy_product_but_do_not_chase_all_bonuses",
+      "clampReason": null,
+      "budgetAlignment": "strong",
+      "randomGoodsStopLineAddonInvoked": false,
+      "reasons": [
+        "単推しが強い時は、全版追いより「自分に合う1種」を選ぶ方が満足効率が高い。",
+        "キャラ/IP motive が主なら、演者理由だけで版数を増やす必要は薄め。",
+        "1店舗で納得できる余地があるなら、全店 chase より「最も合う1店」を選ぶ方が後悔を減らしやすい。",
+        "商品本体への motive が残っているなら、bonus を全部追わなくても満足の芯を確保しやすい。"
       ]
     },
     {
       "id": "mixed_media_random_goods_addon",
       "decision": "THINK",
-      "chosenPath": "buy_one_best_fit_edition",
+      "chosenPath": "buy_product_but_do_not_chase_all_bonuses",
       "clampReason": null,
       "budgetAlignment": "medium",
       "randomGoodsStopLineAddonInvoked": true,
       "reasons": [
         "単推しが強い時は、全版追いより「自分に合う1種」を選ぶ方が満足効率が高い。",
-        "演者・キャスト motive が強い時は、出演差や映像特典つき版の relevance が上がりやすい。"
+        "演者・キャスト motive が強い時は、出演差や映像特典つき版の relevance が上がりやすい。",
+        "1店舗で納得できる余地があるなら、全店 chase より「最も合う1店」を選ぶ方が後悔を減らしやすい。",
+        "商品本体への motive が残っているなら、bonus を全部追わなくても満足の芯を確保しやすい。"
       ]
     }
   ],

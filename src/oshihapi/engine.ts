@@ -225,6 +225,41 @@ function resolveMediaBonusPressure(answers: Record<string, AnswerValue>): MediaE
   return 'unknown';
 }
 
+function resolveMediaBonusImportance(answers: Record<string, AnswerValue>): MediaEditionPlan['bonusImportance'] {
+  const answer = getSingleAnswer(answers, 'q_addon_media_bonus_importance');
+  if (answer === 'low' || answer === 'medium' || answer === 'high') return answer;
+  return 'unknown';
+}
+
+function resolveMediaStoreSplitPreference(answers: Record<string, AnswerValue>): MediaEditionPlan['storeSplitPreference'] {
+  const answer = getSingleAnswer(answers, 'q_addon_media_multi_store_tolerance');
+  if (answer === 'one_store_ok' || answer === 'compare_then_one' || answer === 'multi_store_considered' || answer === 'all_bonuses_or_bust') return answer;
+  return 'unknown';
+}
+
+function resolveMediaSplitOrderBurden(answers: Record<string, AnswerValue>): MediaEditionPlan['splitOrderBurden'] {
+  const answer = getSingleAnswer(answers, 'q_addon_media_split_order_burden');
+  if (answer === 'low' || answer === 'medium' || answer === 'high') return answer;
+  return 'unknown';
+}
+
+function resolveMediaProductVsBonusMotive(answers: Record<string, AnswerValue>, motives: string[]): MediaEditionPlan['productVsBonusMotive'] {
+  const bonusImportance = getSingleAnswer(answers, 'q_addon_media_bonus_importance');
+  const bonusPressure = getSingleAnswer(answers, 'q_addon_media_limited_pressure');
+  const productMotiveStrong = motives.some((motive) => ['content', 'archive', 'use', 'display'].includes(motive));
+  const bonusMotiveStrong = motives.includes('bonus') || bonusImportance === 'high' || bonusPressure === 'no';
+  if (bonusMotiveStrong && !productMotiveStrong) return 'bonus_driven';
+  if (productMotiveStrong && !bonusMotiveStrong) return 'product_core';
+  if (productMotiveStrong || bonusMotiveStrong || bonusImportance === 'medium' || bonusPressure === 'maybe') return 'balanced';
+  return 'unknown';
+}
+
+function resolveOverpayVsMissPreference(answers: Record<string, AnswerValue>): 'overpay_more' | 'miss_more' | 'balanced' | 'unknown' {
+  const answer = getSingleAnswer(answers, 'q_addon_goods_regret_axis');
+  if (answer === 'overpay_more' || answer === 'miss_more' || answer === 'balanced') return answer;
+  return 'unknown';
+}
+
 function resolveMediaMemberVersionPreference(answers: Record<string, AnswerValue>): MediaEditionPlan['memberVersionPreference'] {
   const answer = getSingleAnswer(answers, 'q_addon_media_member_version');
   if (answer === 'none' || answer === 'specific_version' || answer === 'multiple_versions') return answer;
@@ -249,6 +284,11 @@ function buildMediaEditionPlan(params: {
   const collectionCompleteness = resolveMediaCollectionCompleteness(params.answers);
   const editionAmbition = resolveMediaEditionAmbition(params.answers);
   const bonusPressure = resolveMediaBonusPressure(params.answers);
+  const bonusImportance = resolveMediaBonusImportance(params.answers);
+  const storeSplitPreference = resolveMediaStoreSplitPreference(params.answers);
+  const splitOrderBurden = resolveMediaSplitOrderBurden(params.answers);
+  const productVsBonusMotive = resolveMediaProductVsBonusMotive(params.answers, params.motives);
+  const overpayVsMissPreference = resolveOverpayVsMissPreference(params.answers);
   const memberVersionPreference = resolveMediaMemberVersionPreference(params.answers);
   const randomGoodsAddonIntent = resolveMediaRandomGoodsAddonIntent(params.answers);
   const playbackSpace = getSingleAnswer(params.answers, 'q_addon_media_playback_space');
@@ -269,12 +309,50 @@ function buildMediaEditionPlan(params: {
   const characterDriven = characterVsCast === 'character_ip';
   const playbackUnready = playbackSpace === 'not_ready';
   const softFomo = bonusPressure === 'medium' || params.motives.includes('fomo') || params.scores.impulse >= 66;
+  const storeBonusScenarioDetected =
+    bonusImportance === 'medium' ||
+    bonusImportance === 'high' ||
+    storeSplitPreference === 'compare_then_one' ||
+    storeSplitPreference === 'multi_store_considered' ||
+    storeSplitPreference === 'all_bonuses_or_bust' ||
+    bonusPressure === 'medium' ||
+    bonusPressure === 'high' ||
+    params.motives.includes('bonus') ||
+    Boolean(params.meta.parsedSearchClues?.bonusClues.length);
+  const oneStoreFriendly = storeSplitPreference === 'one_store_ok' || storeSplitPreference === 'compare_then_one';
+  const multiStoreIntent = storeSplitPreference === 'multi_store_considered' || storeSplitPreference === 'all_bonuses_or_bust';
+  const splitBurdenHigh = splitOrderBurden === 'high' || budgetAlignment === 'weak';
+  const splitBurdenLow = splitOrderBurden === 'low' && budgetAlignment !== 'weak';
+  const productCore = productVsBonusMotive === 'product_core';
+  const bonusDriven = productVsBonusMotive === 'bonus_driven';
+  const missSensitive = overpayVsMissPreference === 'miss_more';
 
   let chosenPath: MediaEditionPlannerPath = 'buy_one_best_fit_edition';
   let clampReason: string | undefined;
   const reasonFlags: string[] = [];
 
-  if (fullSetAmbition && (budgetAlignment === 'weak' || oneOshiFocused || playbackUnready)) {
+  if (storeBonusScenarioDetected && bonusDriven && bonusImportance === 'high' && splitBurdenHigh) {
+    chosenPath = 'split_orders_are_not_worth_it';
+    clampReason = 'split_order_burden_outweighs_bonus_gain';
+    reasonFlags.push(clampReason);
+  } else if (storeBonusScenarioDetected && bonusDriven && !productCore && bonusPressure === 'high' && budgetAlignment !== 'strong') {
+    chosenPath = 'step_back_from_bonus_pressure';
+    clampReason = 'bonus_pressure_exceeds_stated_need';
+    reasonFlags.push(clampReason);
+  } else if (storeBonusScenarioDetected && multiStoreIntent && splitBurdenLow && bonusImportance === 'high' && completeMotive && budgetAlignment === 'strong' && !oneOshiFocused) {
+    chosenPath = 'split_orders_are_justified';
+    reasonFlags.push('multi_store_chase_alignment_confirmed');
+  } else if (storeBonusScenarioDetected && multiStoreIntent && (splitBurdenHigh || overpayVsMissPreference === 'overpay_more')) {
+    chosenPath = 'split_orders_are_not_worth_it';
+    clampReason = splitBurdenHigh ? 'split_order_burden_outweighs_bonus_gain' : 'overpay_regret_outweighs_bonus_variants';
+    reasonFlags.push(clampReason);
+  } else if (storeBonusScenarioDetected && productCore && (bonusPressure === 'high' || bonusImportance === 'medium' || bonusImportance === 'high') && oneStoreFriendly) {
+    chosenPath = 'buy_product_but_do_not_chase_all_bonuses';
+    reasonFlags.push('product_value_outweighs_bonus_completion');
+  } else if (storeBonusScenarioDetected && (oneStoreFriendly || bonusImportance === 'medium' || bonusPressure === 'medium')) {
+    chosenPath = 'choose_one_best_store';
+    reasonFlags.push('one_store_optimization_preferred');
+  } else if (fullSetAmbition && (budgetAlignment === 'weak' || oneOshiFocused || playbackUnready)) {
     chosenPath = bonusPressure === 'high' || completeMotive
       ? 'step_back_from_bonus_or_completion_pressure'
       : 'avoid_full_set_chase';
@@ -302,13 +380,23 @@ function buildMediaEditionPlan(params: {
     chosenPath = 'avoid_full_set_chase';
     clampReason = budgetAlignment === 'medium' ? 'full_set_not_clearly_aligned' : 'full_set_pressure_without_clear_need';
     reasonFlags.push(clampReason);
-  } else if (editionAmbition === 'one_best_fit' || oneOshiFocused || bonusPressure === 'medium' || softFomo) {
+  } else if (editionAmbition === 'one_best_fit' || oneOshiFocused || softFomo) {
     chosenPath = 'buy_one_best_fit_edition';
     reasonFlags.push('single_best_fit_preferred');
   }
 
   const optimizingFor =
-    chosenPath === 'buy_standard_only'
+    chosenPath === 'choose_one_best_store'
+      ? 'bonus 圧を認めつつ、1店舗最適化で満足と負担を釣り合わせること'
+      : chosenPath === 'buy_product_but_do_not_chase_all_bonuses'
+        ? '商品価値は拾いながら、all-bonus chase に広げないこと'
+        : chosenPath === 'split_orders_are_not_worth_it'
+          ? 'split order の送料・管理負担が bonus 差を上回る時に止めること'
+          : chosenPath === 'split_orders_are_justified'
+            ? '複数店舗 chase をやるなら motive・予算・負担が揃う時だけにすること'
+            : chosenPath === 'step_back_from_bonus_pressure'
+              ? 'bonus/FOMO 圧が need を上回る時に一歩引くこと'
+              : chosenPath === 'buy_standard_only'
       ? '内容を押さえつつ、限定圧に引っ張られすぎないこと'
       : chosenPath === 'buy_limited_only'
         ? '限定版の relevance は拾いつつ、複数版 chase に広げないこと'
@@ -338,6 +426,13 @@ function buildMediaEditionPlan(params: {
         : 'キャラ側と演者側の motive が混ざる時は、いちばん刺さる版を1つに絞ると後悔を減らしやすい。'
   );
   if (bonusPressure === 'high') reasons.push('今の迷いは「本編を見たい」より bonus / 限定圧に押されている可能性が高い。');
+  if (bonusImportance === 'high') reasons.push('店舗 bonus の重要度が高いほど、商品価値と bonus 価値を分けて考えないと chase が膨らみやすい。');
+  if (oneStoreFriendly) reasons.push('1店舗で納得できる余地があるなら、全店 chase より「最も合う1店」を選ぶ方が後悔を減らしやすい。');
+  if (multiStoreIntent) reasons.push('複数店舗 chase は motive が強くても、送料・管理・発売日差の負担まで含めて正当化が必要。');
+  if (splitBurdenHigh) reasons.push('split order の負担が高い時は、bonus 差より後悔や管理コストが前に出やすい。');
+  if (productCore) reasons.push('商品本体への motive が残っているなら、bonus を全部追わなくても満足の芯を確保しやすい。');
+  if (bonusDriven) reasons.push('いまの判断は商品本体より店舗 bonus 比較に引っ張られている可能性がある。');
+  if (missSensitive && multiStoreIntent) reasons.push('「逃す後悔」が重い場合でも、全部追う前に本当に残したい bonus を絞る方が安定しやすい。');
   if (collectionCompleteness === 'complete') reasons.push('揃えたい気持ちが強いほど、総額と実際の満足差を意識して clamp した方が安全。');
   if (budgetAlignment === 'weak') reasons.push('予算の整合が弱い状態では、全版追いは満足より負担が前に出やすい。');
   if (playbackUnready) reasons.push('再生・保管準備が未整備なら、版数を増やす前に使える1枚/1本へ絞る方が安全。');
@@ -353,6 +448,11 @@ function buildMediaEditionPlan(params: {
     randomGoodsAddonIntent === 'present'
       ? 'ランダム特典/付随グッズは別の stop-line addon として重ねて判断します。'
       : '今回はメディア版違い判断を主軸にしています。'
+  );
+  assumptions.push(
+    storeBonusScenarioDetected
+      ? '店舗別 bonus は「全部同価値」とは置かず、1店舗最適化で満足できる余地を先に見ています。'
+      : '店舗別 bonus 圧は主軸前提には置いていません。'
   );
 
   return {
@@ -370,6 +470,12 @@ function buildMediaEditionPlan(params: {
     budgetAlignment,
     editionAmbition,
     bonusPressure,
+    bonusImportance,
+    storeSplitPreference,
+    splitOrderBurden,
+    productVsBonusMotive,
+    overpayVsMissPreference,
+    storeBonusScenarioDetected,
     memberVersionPreference,
     randomGoodsAddonIntent,
     chosenPath,
@@ -587,6 +693,12 @@ function resolveVenuePrimaryMotive(answers: Record<string, AnswerValue>): VenueL
   return 'unknown';
 }
 
+function resolveVenueLiveGoodsMotive(answers: Record<string, AnswerValue>): VenueLimitedGoodsPlan['liveGoodsMotive'] {
+  const answer = getSingleAnswer(answers, 'q_addon_goods_live_goods_motive');
+  if (answer === 'core_attachment' || answer === 'symbolic_value' || answer === 'event_atmosphere' || answer === 'mixed') return answer;
+  return 'unknown';
+}
+
 function resolveVenueRegretAxis(answers: Record<string, AnswerValue>): VenueLimitedGoodsPlan['regretAxis'] {
   const answer = getSingleAnswer(answers, 'q_addon_goods_regret_axis');
   if (answer === 'overpay_more' || answer === 'miss_more' || answer === 'balanced') return answer;
@@ -615,6 +727,7 @@ function buildVenueLimitedGoodsPlan(params: {
   const usedFallbackWillingness = resolveVenueUsedFallback(params.answers);
   const scarcityPressure = resolveVenueScarcityPressure(params.answers);
   const primaryMotive = resolveVenuePrimaryMotive(params.answers);
+  const liveGoodsMotive = resolveVenueLiveGoodsMotive(params.answers);
   const regretAxis = resolveVenueRegretAxis(params.answers);
 
   const pressureHigh = scarcityPressure === 'high' || params.factorBuckets.impulseVolatility >= 70 || params.motives.includes('fomo');
@@ -626,6 +739,12 @@ function buildVenueLimitedGoodsPlan(params: {
   const missSensitive = regretAxis === 'miss_more';
   const completionPressureHigh = primaryMotive === 'collection_completeness' || params.motives.includes('complete');
   const memoryDriven = primaryMotive === 'event_memory' || params.motives.includes('memory');
+  const coreLiveMotive =
+    liveGoodsMotive === 'core_attachment' ||
+    liveGoodsMotive === 'symbolic_value' ||
+    (liveGoodsMotive === 'mixed' && primaryMotive === 'practical_collecting');
+  const atmosphereDriven = liveGoodsMotive === 'event_atmosphere';
+  const mixedMediaLiveScenarioDetected = liveGoodsMotive !== 'unknown' || params.motives.includes('seiyuu_cast') || params.motives.includes('memory');
   const trueScarcityLikely =
     (venueContext === 'venue_limited' || venueContext === 'missed_onsite') &&
     recoveryPlausibility === 'low' &&
@@ -635,7 +754,17 @@ function buildVenueLimitedGoodsPlan(params: {
   let clampReason: string | undefined;
   const reasonFlags: string[] = [];
 
-  if (trueScarcityLikely && waitTolerance === 'low' && firstChanceTolerance === 'low' && (missSensitive || memoryDriven) && !overpaySensitive) {
+  if (mixedMediaLiveScenarioDetected && recoveryStrong && canWait && (atmosphereDriven || overpaySensitive)) {
+    chosenPath = 'wait_for_post_event_followup';
+    reasonFlags.push('followup_plausible_wait_preferred');
+  } else if (mixedMediaLiveScenarioDetected && atmosphereDriven && (pressureHigh || recoveryStrong || overpaySensitive)) {
+    chosenPath = 'skip_atmosphere_driven_goods_chase';
+    clampReason = recoveryStrong ? 'followup_plausible_atmosphere_driven' : 'atmosphere_pressure_outpaces_evidence';
+    reasonFlags.push(clampReason);
+  } else if (mixedMediaLiveScenarioDetected && coreLiveMotive && trueScarcityLikely && !overpaySensitive) {
+    chosenPath = 'buy_live_goods_now_if_it_matches_core_motive';
+    reasonFlags.push('core_live_motive_with_true_scarcity');
+  } else if (trueScarcityLikely && waitTolerance === 'low' && firstChanceTolerance === 'low' && (missSensitive || memoryDriven) && !overpaySensitive) {
     chosenPath = 'buy_now_if_it_is_truly_hard_to_recover';
     reasonFlags.push('true_scarcity_recovery_weak');
   } else if (venueContext === 'missed_onsite' && usedFallbackReady) {
@@ -664,7 +793,13 @@ function buildVenueLimitedGoodsPlan(params: {
   }
 
   const optimizingFor =
-    chosenPath === 'buy_now_if_it_is_truly_hard_to_recover'
+    chosenPath === 'buy_live_goods_now_if_it_matches_core_motive'
+      ? 'core motive に合う live goods だけ、回復経路が弱い時に優先すること'
+      : chosenPath === 'wait_for_post_event_followup'
+        ? 'follow-up plausibility がある時は、その場の勢いより後追い確認を優先すること'
+        : chosenPath === 'skip_atmosphere_driven_goods_chase'
+          ? 'event の空気だけで膨らむ chase を止め、あとから残る価値に戻すこと'
+          : chosenPath === 'buy_now_if_it_is_truly_hard_to_recover'
       ? '回復経路が弱い時だけ急ぐこと'
       : chosenPath === 'wait_for_post_event_mailorder'
         ? '事後通販や後日販売のシグナルを待って高値追いを避けること'
@@ -682,8 +817,11 @@ function buildVenueLimitedGoodsPlan(params: {
   if (overpaySensitive) reasons.push('「逃す後悔」より「高く掴む後悔」が重いので、焦って高値で取りに行かない方が安全。');
   if (completionPressureHigh) reasons.push('揃えたい圧が強い時ほど、限定感を scarcity の証拠と誤認しやすい。');
   if (memoryDriven) reasons.push('思い出価値は大事だが、回復経路が残るなら即断の根拠にはしすぎない。');
+  if (coreLiveMotive) reasons.push('live goods が core motive や象徴的な記念に結びつくなら、雰囲気買いより根拠のある確保になりやすい。');
+  if (atmosphereDriven) reasons.push('その場の空気が主役だと、イベント後に満足が縮むリスクが上がりやすい。');
   if (trueScarcityLikely) reasons.push('会場限定らしさが強く、回復経路の根拠が弱いので今回は本当の scarcity 寄り。');
   if (clampReason === 'atmosphere_pressure_outpaces_evidence') reasons.push('焦りの強さに対して、回復不能だという証拠はまだ十分ではない。');
+  if (clampReason === 'followup_plausible_atmosphere_driven') reasons.push('follow-up の見込みがあるため、今の熱量だけで chase する必要は薄め。');
   if (clampReason === 'recovery_plausible_not_true_scarcity') reasons.push('回復可能性が見えているため、限定感だけで urgent に寄せない。');
 
   assumptions.push(
@@ -713,12 +851,14 @@ function buildVenueLimitedGoodsPlan(params: {
     usedFallbackWillingness,
     scarcityPressure,
     primaryMotive,
+    liveGoodsMotive,
     regretAxis,
     chosenPath,
     optimizingFor,
     recoveryChangedRecommendation: recoveryStrong && chosenPath !== 'buy_now_if_it_is_truly_hard_to_recover',
     usedMarketPartOfSaferPath: chosenPath === 'fallback_to_used_market_if_missed' || chosenPath === 'skip_onsite_chase_and_check_later',
     trueScarcityLikely,
+    mixedMediaLiveScenarioDetected,
     clampReason,
     reasonFlags,
     reasons: [...new Set(reasons)].slice(0, 5),
@@ -899,6 +1039,9 @@ function resolveTrustGateOutcome(params: {
       mediaEditionPlan.oneOshiVsBox,
       mediaEditionPlan.collectionCompleteness,
       mediaEditionPlan.editionAmbition,
+      mediaEditionPlan.bonusImportance,
+      mediaEditionPlan.storeSplitPreference,
+      mediaEditionPlan.splitOrderBurden,
       mediaEditionPlan.memberVersionPreference,
     ]) + (mediaEditionPlan.randomGoodsAddonIntent === 'present' ? 0 : 0);
     const reliesOnUnknown =
@@ -927,6 +1070,7 @@ function resolveTrustGateOutcome(params: {
       venueLimitedGoodsPlan.recoveryPlausibility,
       venueLimitedGoodsPlan.waitTolerance,
       venueLimitedGoodsPlan.usedFallbackWillingness,
+      venueLimitedGoodsPlan.liveGoodsMotive,
       venueLimitedGoodsPlan.regretAxis,
     ]);
     const reliesOnUnknown =
@@ -1161,9 +1305,15 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
       `media_budget_alignment_${mediaEditionPlan.budgetAlignment}`,
       `media_edition_ambition_${mediaEditionPlan.editionAmbition}`,
       `media_bonus_pressure_${mediaEditionPlan.bonusPressure}`,
+      `media_bonus_importance_${mediaEditionPlan.bonusImportance}`,
+      `media_store_split_${mediaEditionPlan.storeSplitPreference}`,
+      `media_split_order_burden_${mediaEditionPlan.splitOrderBurden}`,
+      `media_product_vs_bonus_${mediaEditionPlan.productVsBonusMotive}`,
+      `media_overpay_vs_miss_${mediaEditionPlan.overpayVsMissPreference}`,
     );
     if (mediaEditionPlan.memberVersionPreference !== 'unknown') tags.push(`media_member_version_${mediaEditionPlan.memberVersionPreference}`);
     if (mediaEditionPlan.randomGoodsStopLineAddonInvoked) tags.push('media_random_goods_stopline_addon_invoked');
+    if (mediaEditionPlan.storeBonusScenarioDetected) tags.push('media_store_bonus_scenario_detected');
     if (mediaEditionPlan.clampReason) tags.push(`media_edition_clamp_${mediaEditionPlan.clampReason}`);
 
     if (mediaEditionPlan.chosenPath === 'full_set_is_justified') {
@@ -1191,17 +1341,25 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
       `venue_limited_pressure_${venueLimitedGoodsPlan.scarcityPressure}`,
       `venue_limited_regret_${venueLimitedGoodsPlan.regretAxis}`,
       `venue_limited_motive_${venueLimitedGoodsPlan.primaryMotive}`,
+      `venue_limited_live_goods_${venueLimitedGoodsPlan.liveGoodsMotive}`,
     );
     if (venueLimitedGoodsPlan.clampReason) tags.push(`venue_limited_clamp_${venueLimitedGoodsPlan.clampReason}`);
     if (venueLimitedGoodsPlan.recoveryChangedRecommendation) tags.push('venue_limited_recovery_changed_recommendation');
     if (venueLimitedGoodsPlan.usedMarketPartOfSaferPath) tags.push('venue_limited_used_market_safer_path');
     if (venueLimitedGoodsPlan.trueScarcityLikely) tags.push('venue_limited_true_scarcity_likely');
+    if (venueLimitedGoodsPlan.mixedMediaLiveScenarioDetected) tags.push('venue_limited_mixed_media_live_detected');
 
-    if (venueLimitedGoodsPlan.chosenPath === 'buy_now_if_it_is_truly_hard_to_recover') {
+    if (
+      venueLimitedGoodsPlan.chosenPath === 'buy_now_if_it_is_truly_hard_to_recover' ||
+      venueLimitedGoodsPlan.chosenPath === 'buy_live_goods_now_if_it_matches_core_motive'
+    ) {
       if (decision === 'SKIP' && factorBuckets.budgetPressure < 72) decision = 'THINK';
     } else {
       if (decision === 'BUY') decision = 'THINK';
-      if (venueLimitedGoodsPlan.chosenPath === 'step_back_from_fomo_pressure' && venueLimitedGoodsPlan.clampReason === 'atmosphere_pressure_outpaces_evidence') {
+      if (
+        (venueLimitedGoodsPlan.chosenPath === 'step_back_from_fomo_pressure' || venueLimitedGoodsPlan.chosenPath === 'skip_atmosphere_driven_goods_chase') &&
+        venueLimitedGoodsPlan.clampReason === 'atmosphere_pressure_outpaces_evidence'
+      ) {
         decision = factorBuckets.budgetPressure >= 68 || scores.impulse >= 72 ? 'SKIP' : 'THINK';
       }
     }
@@ -1286,6 +1444,11 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
       avoid_full_set_chase: '全版追いは今の motive / 予算整合だと広げすぎ。1種に絞る方が安全。',
       full_set_is_justified: '箱推し・ completeness・予算が揃っているため、今回は全版でも筋が通る。',
       step_back_from_bonus_or_completion_pressure: '今の迷いは必要性より bonus / completion 圧が前に出ているので、一歩引く方が安全。',
+      choose_one_best_store: '全店舗 chase ではなく、いちばん満足に近い 1店舗へ絞るのが合理的。',
+      buy_product_but_do_not_chase_all_bonuses: '商品は買ってよいが、店舗 bonus の総取りまでは広げない方が安全。',
+      split_orders_are_not_worth_it: '複数店舗 split は bonus 差より送料・管理負担の方が重くなりやすい。',
+      split_orders_are_justified: '複数店舗 split は motive・予算・管理負担が揃う今回は正当化できる。',
+      step_back_from_bonus_pressure: '今は商品価値より店舗 bonus 比較の圧が前に出ているので、一歩引く方が安全。',
     };
     extraReasons.unshift({
       id: `media_edition_${mediaEditionPlan.chosenPath}`,
@@ -1306,6 +1469,11 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
       avoid_full_set_chase: { id: 'media_avoid_full_set', text: '全版前提を外し、最推し・用途・予算に合う版だけ残す' },
       full_set_is_justified: { id: 'media_full_set_justified', text: '全版で行くなら総額上限を先に固定し、理由のある版差だけ確認する' },
       step_back_from_bonus_or_completion_pressure: { id: 'media_step_back_pressure', text: '今日は全版判断を保留し、bonus や comp 圧が引いてから再評価する' },
+      choose_one_best_store: { id: 'media_choose_one_store', text: '店舗特典は比較しても最終的には 1店舗に絞り、他店追いは止める' },
+      buy_product_but_do_not_chase_all_bonuses: { id: 'media_buy_product_skip_all_bonus_chase', text: '商品本体が欲しい店を1つ選び、all-bonus 回収は今回やらない' },
+      split_orders_are_not_worth_it: { id: 'media_skip_split_orders', text: 'split order は見送り、送料と管理負担が少ない 1店舗案に戻す' },
+      split_orders_are_justified: { id: 'media_split_orders_justified', text: 'split order をするなら対象店舗を最小限に固定し、総額上限を先に決める' },
+      step_back_from_bonus_pressure: { id: 'media_step_back_store_bonus', text: '今日は店舗 bonus 比較をいったん止め、商品本体の必要性だけ残して再評価する' },
     };
     extraActions.unshift(actionText[mediaEditionPlan.chosenPath]);
   }
@@ -1317,6 +1485,9 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
       skip_onsite_chase_and_check_later: '現地で追いかけ回すより、いったん離れて後で確認する方が合理的。',
       fallback_to_used_market_if_missed: '取り逃し後は panic-buy せず、中古・フリマ fallback を計画的に使う。',
       step_back_from_fomo_pressure: '今の圧は true scarcity より雰囲気要因が大きいので、一歩引く方が安全。',
+      wait_for_post_event_followup: 'follow-up の見込みがあるなら、live 直後の勢いより後追い確認を優先する方が安全。',
+      buy_live_goods_now_if_it_matches_core_motive: 'live goods が core motive に結びつき、回復経路も弱いなら今の確保は正当化できる。',
+      skip_atmosphere_driven_goods_chase: 'その場の空気で膨らむ goods chase は止めて、後から残る価値がある物だけに戻す方が安全。',
     };
     extraReasons.unshift({
       id: `venue_limited_${venueLimitedGoodsPlan.chosenPath}`,
@@ -1344,6 +1515,9 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
       skip_onsite_chase_and_check_later: { id: 'venue_limited_skip_onsite_chase', text: '現地で追いかけず、あとで公式告知と相場を見てから判断する' },
       fallback_to_used_market_if_missed: { id: 'venue_limited_used_fallback', text: '逃した後は Mercari / 駿河屋などの中古 fallback を前提に、送料込み総額で比較する' },
       step_back_from_fomo_pressure: { id: 'venue_limited_step_back', text: 'いったん離れて、限定表記・後日販売例・相場を確認してから戻る' },
+      wait_for_post_event_followup: { id: 'venue_limited_wait_followup', text: 'follow-up 告知や後日販売の有無を待ち、最初の窓だけで決めない' },
+      buy_live_goods_now_if_it_matches_core_motive: { id: 'venue_limited_buy_core_live_goods', text: '買うなら「後からも残したい 1点」に絞り、雰囲気買いの追加は止める' },
+      skip_atmosphere_driven_goods_chase: { id: 'venue_limited_skip_atmosphere_goods', text: 'その場の勢いで広げず、イベント後にも意味が残るかを基準に残す/外すを決める' },
     };
     extraActions.unshift(actionText[venueLimitedGoodsPlan.chosenPath]);
   }

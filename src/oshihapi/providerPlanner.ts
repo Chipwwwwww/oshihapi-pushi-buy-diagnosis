@@ -576,6 +576,12 @@ function evaluateCandidate(rawCandidate: RawProviderCandidate, input: PlannerInp
   const bonusSensitive = hasBonusSensitiveSignals(input);
   const smallCollectionFamily = isSmallCollectionFamily(input.goodsClass);
   const mediaPreorder = input.goodsClass === "media" && input.itemKind === "preorder";
+  const mediaChooseOneStorePath =
+    (input.resultTags ?? []).includes("media_edition_path_choose_one_best_store") ||
+    (input.resultTags ?? []).includes("media_edition_path_buy_product_but_do_not_chase_all_bonuses") ||
+    (input.resultTags ?? []).includes("media_edition_path_step_back_from_bonus_pressure");
+  const mediaSplitJustifiedPath = (input.resultTags ?? []).includes("media_edition_path_split_orders_are_justified");
+  const mediaSplitNotWorthItPath = (input.resultTags ?? []).includes("media_edition_path_split_orders_are_not_worth_it");
   const randomGoodsSinglesPath =
     (input.resultTags ?? []).includes("random_goods_path_stop_drawing_buy_singles") ||
     (input.resultTags ?? []).includes("random_goods_path_stop_drawing_check_used_market");
@@ -738,6 +744,49 @@ function evaluateCandidate(rawCandidate: RawProviderCandidate, input: PlannerInp
       demotionReasons.push("secondary_market_not_primary");
       rank += bonusSensitive ? 10 : 6;
       maxTier = tightenMaxTier(maxTier, "okay");
+    }
+  }
+
+  if (input.goodsClass === "media" && mediaChooseOneStorePath) {
+    if (rawCandidate.providerId === "hmv") rank -= 8;
+    if (rawCandidate.providerId === "gamers") rank -= 6;
+    if (rawCandidate.providerId === "amazon") {
+      demotionReasons.push("one_store_bonus_optimization_prefers_specialty");
+      rank += 8;
+      maxTier = tightenMaxTier(maxTier, "okay");
+    }
+    if (rawCandidate.providerId === "mercari" || rawCandidate.providerId === "surugaya") {
+      demotionReasons.push("post_followup_recovery_not_primary");
+      rank += 10;
+      maxTier = tightenMaxTier(maxTier, "okay");
+    }
+  }
+
+  if (input.goodsClass === "media" && mediaSplitNotWorthItPath) {
+    if (rawCandidate.providerId === "amazon" || rawCandidate.providerId === "rakuten") {
+      demotionReasons.push("split_order_burden_not_worth_it");
+      rank += 10;
+      maxTier = tightenMaxTier(maxTier, "lowProbability");
+    }
+    if (rawCandidate.providerId === "gamers") {
+      demotionReasons.push("secondary_bonus_split_not_worth_it");
+      rank += 6;
+      maxTier = tightenMaxTier(maxTier, "okay");
+    }
+  }
+
+  if (input.goodsClass === "media" && mediaSplitJustifiedPath) {
+    if (rawCandidate.providerId === "hmv") rank -= 6;
+    if (rawCandidate.providerId === "gamers") rank -= 8;
+    if (rawCandidate.providerId === "amazon") {
+      demotionReasons.push("not_multi_bonus_specialist");
+      rank += 8;
+      maxTier = tightenMaxTier(maxTier, "okay");
+    }
+    if (rawCandidate.providerId === "melonbooks" && !isBookOrComicContext(input)) {
+      demotionReasons.push("mainstream_media_not_bookstore_driven");
+      rank += 12;
+      maxTier = tightenMaxTier(maxTier, "lowProbability");
     }
   }
 
