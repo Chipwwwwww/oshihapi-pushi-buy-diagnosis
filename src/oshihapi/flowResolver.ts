@@ -7,6 +7,7 @@ import {
   ADDON_BY_GOODS_CLASS,
   ADDON_BY_ITEM_KIND,
   CORE_12_QUESTION_IDS,
+  MIXED_MEDIA_RANDOM_GOODS_QUESTION_IDS,
   QUICK_QUESTION_IDS,
   shouldAskStorage,
 } from "@/src/oshihapi/question_sets";
@@ -90,6 +91,14 @@ function resolveItemKindAddonIds(input: FlowResolverInput): string[] {
   return [...configured].slice(0, input.mode === "medium" ? 2 : undefined);
 }
 
+function shouldAskMixedMediaRandomGoodsAddon(input: FlowResolverInput): boolean {
+  return (
+    input.goodsClass === "media" &&
+    input.mode === "long" &&
+    input.answers.q_addon_media_random_goods_intent === "present"
+  );
+}
+
 export function resolveFlowQuestions(input: FlowResolverInput): FlowResolution {
   const coverage = getScenarioCoverageSummary({
     itemKind: input.itemKind,
@@ -159,6 +168,7 @@ export function resolveFlowQuestions(input: FlowResolverInput): FlowResolution {
   pushBranch("unknown_budget_or_short_or_lacks_meta", hasUnknownBudget || input.mode === "short" || lacksMeta, `unknownBudget=${String(hasUnknownBudget)},lacksMeta=${String(lacksMeta)}`);
   pushBranch("search_clue_media_resolved", hasResolvedMediaItemType(parsedSearchClues), `itemTypes=${parsedSearchClues?.itemTypeCandidates.join("|") ?? ""}`);
   pushBranch("search_clue_bonus_strong", hasStrongBonusSignal(parsedSearchClues), `bonus=${parsedSearchClues?.bonusClues.join("|") ?? ""},edition=${parsedSearchClues?.editionClues.join("|") ?? ""}`);
+  pushBranch("mixed_media_random_goods_addon", shouldAskMixedMediaRandomGoodsAddon(input), `intent=${String(input.answers.q_addon_media_random_goods_intent ?? "none")}`);
   pushBranch(
     "force_common_info",
     input.mode !== "long" || lacksMeta || input.itemKind === "preorder" || input.itemKind === "ticket" || input.itemKind === "used",
@@ -186,6 +196,11 @@ export function resolveFlowQuestions(input: FlowResolverInput): FlowResolution {
   }
   if (input.goodsClass === "media" && hasStrongBonusSignal(parsedSearchClues)) {
     moveQuestionBefore(ids, "q_addon_media_limited_pressure", "q_addon_common_priority");
+  }
+  if (shouldAskMixedMediaRandomGoodsAddon(input)) {
+    ids.push(...MIXED_MEDIA_RANDOM_GOODS_QUESTION_IDS);
+    moveQuestionBefore(ids, "q_addon_blind_draw_exit", "q_addon_common_priority");
+    moveQuestionBefore(ids, "q_addon_blind_draw_duplicate_tolerance", "q_addon_common_priority");
   }
 
   const deduped = Array.from(new Set(ids)).filter((id) => {
@@ -233,6 +248,7 @@ export function resolveFlowQuestions(input: FlowResolverInput): FlowResolution {
     ...CORE_12_QUESTION_IDS,
     ...Object.values(ADDON_BY_ITEM_KIND).flat(),
     ...Object.values(ADDON_BY_GOODS_CLASS).flat(),
+    ...MIXED_MEDIA_RANDOM_GOODS_QUESTION_IDS,
     ...VENUE_LIMITED_RECOVERY_QUESTION_IDS,
     "q_addon_goods_event_limit_context",
     "q_storage_space",

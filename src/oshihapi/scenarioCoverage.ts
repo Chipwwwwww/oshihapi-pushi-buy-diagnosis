@@ -10,6 +10,10 @@ export type ScenarioKey =
   | "exchange_path"
   | "random_goods_completion"
   | "media_purchase_decision"
+  | "multi_edition_media"
+  | "limited_vs_standard_media"
+  | "full_set_pressure"
+  | "mixed_media_random_goods"
   | "new_book_bonus_decision"
   | "collection_vs_budget"
   | "impulse_cooling"
@@ -194,6 +198,90 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     scopeDisclosure: "メディア購入判断は強めですが、配信サービス横断の完全比較まではしていません。",
     shortScopeDisclosure: "メディア購入は強め対応。配信横断の完全比較は対象外です。",
     diagnosticsTag: "coverage_media_strong",
+  },
+  multi_edition_media: {
+    key: "multi_edition_media",
+    itemKind: "goods",
+    goodsClass: "media",
+    supportLevel: "strong",
+    homepagePriority: "primary",
+    heroOrder: 4,
+    shopperIntent: "複数版のある CD / BD / 映像作品をどこまで買うか整理したい",
+    recommendedEntryLabel: "複数版メディアをどこまで買うか整理したい",
+    compactEntryHint: "1種で十分か、限定版が妥当か、全版追いかを分けます。",
+    providerEcologyHint: "複数版メディアは仕様差・限定版・推しバージョンの relevance を見つつ、一般ECと専門店の役割を分けます。",
+    resultExplanationHint: "版違いの価値とコンプ圧を切り分け、どこまで買うのが合理的か説明します。",
+    optimizationSummary: "複数版の価値とコンプ圧の切り分け",
+    questionHint: "このフローでは、キャラ/演者 motive、単推しか箱推しか、版違い ambition を確認します。",
+    flowHelperHint: "複数版の relevance と買い分けを整理中",
+    verificationHint: "収録差・封入差・店舗別特典・在庫は外部で最終確認してください。",
+    shortVerificationHint: "仕様差・特典差・在庫は外部で最終確認。",
+    scopeDisclosure: "複数版メディア判断は強め対応ですが、多店舗特典の完全回収計画までは対象外です。",
+    shortScopeDisclosure: "複数版メディア判断は強め対応。多店舗特典完走は対象外。",
+    diagnosticsTag: "coverage_multi_edition_media_strong",
+  },
+  limited_vs_standard_media: {
+    key: "limited_vs_standard_media",
+    itemKind: "goods",
+    goodsClass: "media",
+    supportLevel: "strong",
+    homepagePriority: "secondary",
+    heroOrder: 5,
+    shopperIntent: "通常版で十分か、限定版に意味があるかを整理したい",
+    recommendedEntryLabel: "通常版か限定版かを整理したい",
+    compactEntryHint: "限定版の relevance と bonus pressure を分けて見ます。",
+    providerEcologyHint: "限定版判断では HMV・Gamers などの specialty と Amazon の安定入手を使い分けます。",
+    resultExplanationHint: "限定版の必要性は認めつつ、何となくの版違い追いを抑える説明を優先します。",
+    optimizationSummary: "通常版と限定版の best fit を見つける",
+    questionHint: "このフローでは、限定版が必要な根拠と 1種で満足できるかを見ます。",
+    flowHelperHint: "通常版/限定版の best fit を整理中",
+    verificationHint: "限定版の中身差、封入物、店舗差、再入手性は外部で確認してください。",
+    shortVerificationHint: "限定版の中身差・店舗差は外部確認。",
+    scopeDisclosure: "限定版判断には対応しますが、全店舗 bonus の総当たり比較は対象外です。",
+    shortScopeDisclosure: "限定版判断に対応。全店舗 bonus 総当たりは対象外。",
+    diagnosticsTag: "coverage_limited_vs_standard_media_strong",
+  },
+  full_set_pressure: {
+    key: "full_set_pressure",
+    itemKind: "goods",
+    goodsClass: "media",
+    supportLevel: "strong",
+    homepagePriority: "secondary",
+    heroOrder: 6,
+    shopperIntent: "全版追いが本当に必要か、それともコンプ圧か整理したい",
+    recommendedEntryLabel: "全版追いが必要か整理したい",
+    compactEntryHint: "単推し・予算・ completeness motive の整合を見る診断です。",
+    providerEcologyHint: "ここでは provider 比較より、全版追いを正当化できる条件の見極めが中心です。",
+    resultExplanationHint: "全版追いが rational な条件と、 pressure を clamp した方がよい条件を分けます。",
+    optimizationSummary: "全版追いの妥当性と clamp 条件を見極める",
+    questionHint: "このフローでは、箱推しか、 completeness をどこまで優先するか、予算が追いつくかを見ます。",
+    flowHelperHint: "全版追いの妥当性を確認中",
+    verificationHint: "全版購入時の総額、収録差、特典差、後から満足できるかを外部情報込みで確認してください。",
+    shortVerificationHint: "総額・収録差・特典差は外部確認。",
+    scopeDisclosure: "全版追いの診断には対応しますが、中古 completion の本格最適化までは含みません。",
+    shortScopeDisclosure: "全版追い診断に対応。中古 completion 最適化は対象外。",
+    diagnosticsTag: "coverage_full_set_pressure_strong",
+  },
+  mixed_media_random_goods: {
+    key: "mixed_media_random_goods",
+    itemKind: "goods",
+    goodsClass: "media",
+    supportLevel: "strong",
+    homepagePriority: "secondary",
+    heroOrder: 7,
+    shopperIntent: "複数版メディア判断と一緒にランダム特典/付随グッズの止めどきも整理したい",
+    recommendedEntryLabel: "複数版メディア + ランダム特典の止めどきを整理したい",
+    compactEntryHint: "メディア診断に stop-line addon を重ねます。",
+    providerEcologyHint: "主軸はメディア provider のまま、ランダム要素は stop-line 診断として添える構成です。",
+    resultExplanationHint: "版違い判断を主軸にしつつ、ランダム特典側は既存の停止線ロジックで clamp します。",
+    optimizationSummary: "メディア判断を主軸にランダム stop-line を併設",
+    questionHint: "このフローでは、版違い判断に加えて、ランダム特典の撤退ラインも追加で確認します。",
+    flowHelperHint: "複数版メディアとランダム addon を整理中",
+    verificationHint: "ランダム特典の封入条件、上限、交換前提、相場は外部確認すると安定します。",
+    shortVerificationHint: "ランダム特典条件・上限・相場は外部確認。",
+    scopeDisclosure: "ランダム addon は既存の stop-line 整理を再利用します。イベント goods や中古 completion の本格拡張は対象外です。",
+    shortScopeDisclosure: "メディア+ランダム addon に対応。後続フェーズの拡張は対象外。",
+    diagnosticsTag: "coverage_mixed_media_random_goods_strong",
   },
   new_book_bonus_decision: {
     key: "new_book_bonus_decision",
@@ -443,6 +531,10 @@ const ENTRY_ORDER: ScenarioKey[] = [
   "used_market_check",
   "new_book_bonus_decision",
   "media_purchase_decision",
+  "multi_edition_media",
+  "limited_vs_standard_media",
+  "full_set_pressure",
+  "mixed_media_random_goods",
   "blind_draw_stopline",
   "exchange_path",
   "random_goods_completion",
@@ -481,6 +573,41 @@ function hasBonusSignals(parsedSearchClues?: ParsedSearchClues, searchClueRaw?: 
 
 function hasMediaSignals(parsedSearchClues?: ParsedSearchClues): boolean {
   return Boolean(parsedSearchClues?.itemTypeCandidates.some((candidate) => candidate === "CD" || candidate === "Blu-ray"));
+}
+
+function hasMediaEditionSignals(input: ScenarioResolutionInput): boolean {
+  return (
+    input.answers?.q_addon_media_edition_intent != null ||
+    input.answers?.q_addon_media_member_version != null ||
+    Boolean(input.parsedSearchClues?.editionClues.length)
+  );
+}
+
+function hasMixedMediaRandomGoodsSignals(input: ScenarioResolutionInput): boolean {
+  return input.answers?.q_addon_media_random_goods_intent === "present";
+}
+
+function hasFullSetPressureSignals(input: ScenarioResolutionInput): boolean {
+  const editionIntent = input.answers?.q_addon_media_edition_intent;
+  const supportScope = input.answers?.q_addon_media_support_scope;
+  const collectionBudget = input.answers?.q_addon_media_collection_budget;
+  const memberVersion = input.answers?.q_addon_media_member_version;
+  return (
+    editionIntent === "all_editions" ||
+    collectionBudget === "complete" ||
+    memberVersion === "multiple_versions" ||
+    (supportScope === "box_group" && editionIntent === "limited_preferred")
+  );
+}
+
+function hasLimitedVsStandardSignals(input: ScenarioResolutionInput): boolean {
+  const editionIntent = input.answers?.q_addon_media_edition_intent;
+  return (
+    editionIntent === "standard_only" ||
+    editionIntent === "limited_preferred" ||
+    editionIntent === "one_best_fit" ||
+    Boolean(input.parsedSearchClues?.editionClues.length)
+  );
 }
 
 function hasCollectionSignals(input: ScenarioResolutionInput): boolean {
@@ -585,7 +712,13 @@ export function resolveScenarioKey(input: ScenarioResolutionInput): ScenarioKey 
     return "new_book_bonus_decision";
   }
   if (input.itemKind === "preorder") return "preorder_decision";
-  if (input.goodsClass === "media" || hasMediaSignals(input.parsedSearchClues)) return "media_purchase_decision";
+  if (input.goodsClass === "media" || hasMediaSignals(input.parsedSearchClues)) {
+    if (hasMixedMediaRandomGoodsSignals(input)) return "mixed_media_random_goods";
+    if (hasFullSetPressureSignals(input)) return "full_set_pressure";
+    if (hasLimitedVsStandardSignals(input)) return "limited_vs_standard_media";
+    if (hasMediaEditionSignals(input)) return "multi_edition_media";
+    return "media_purchase_decision";
+  }
   if (hasCollectionSignals(input)) return "collection_vs_budget";
   if (hasImpulseSignals(input) || input.itemKind === "game_billing") return "impulse_cooling";
   return "collection_vs_budget";
@@ -632,6 +765,14 @@ export function getCoveragePreset(entryKey: ScenarioKey): Pick<InputMeta, "itemK
     return { itemKind: "goods", goodsClass: "paper" };
   }
   if (entry.key === "media_purchase_decision") {
+    return { itemKind: "goods", goodsClass: "media" };
+  }
+  if (
+    entry.key === "multi_edition_media" ||
+    entry.key === "limited_vs_standard_media" ||
+    entry.key === "full_set_pressure" ||
+    entry.key === "mixed_media_random_goods"
+  ) {
     return { itemKind: "goods", goodsClass: "media" };
   }
   if (

@@ -263,8 +263,13 @@
           "q_addon_goods_compare",
           "q_addon_goods_portability",
           "q_addon_media_motive",
+          "q_addon_media_support_scope",
+          "q_addon_media_collection_budget",
+          "q_addon_media_edition_intent",
+          "q_addon_media_member_version",
           "q_addon_media_playback_space",
-          "q_addon_media_limited_pressure"
+          "q_addon_media_limited_pressure",
+          "q_addon_media_random_goods_intent"
         ],
         "goods#gc=itabag_badge": [
           "q_storage_space",
@@ -460,8 +465,13 @@
           "q_addon_preorder_decay",
           "q_addon_preorder_compare_loss",
           "q_addon_media_motive",
+          "q_addon_media_support_scope",
+          "q_addon_media_collection_budget",
+          "q_addon_media_edition_intent",
+          "q_addon_media_member_version",
           "q_addon_media_playback_space",
-          "q_addon_media_limited_pressure"
+          "q_addon_media_limited_pressure",
+          "q_addon_media_random_goods_intent"
         ],
         "preorder#gc=itabag_badge": [
           "q_storage_space",
@@ -626,8 +636,13 @@
           "q_addon_used_authenticity",
           "q_addon_used_seller_trust",
           "q_addon_media_motive",
+          "q_addon_media_support_scope",
+          "q_addon_media_collection_budget",
+          "q_addon_media_edition_intent",
+          "q_addon_media_member_version",
           "q_addon_media_playback_space",
-          "q_addon_media_limited_pressure"
+          "q_addon_media_limited_pressure",
+          "q_addon_media_random_goods_intent"
         ],
         "used#gc=itabag_badge": [
           "q_storage_space",
@@ -5784,6 +5799,250 @@
     },
     {
       "useCase": "merch",
+      "questionId": "q_addon_media_collection_budget",
+      "questionType": "single",
+      "scoringRelevance": "delta",
+      "impactCategory": "score",
+      "behaviorRelevance": {
+        "affectsScore": true,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "score",
+      "mapTo": null,
+      "tags": [
+        "collection_pressure",
+        "unknown_info"
+      ],
+      "unknownTagHints": [
+        "unknown_info"
+      ],
+      "appearsInBranches": [
+        "merch/long/goods#gc=media",
+        "merch/long/preorder#gc=media",
+        "merch/long/used#gc=media"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": true,
+      "styles": {
+        "standard": "今回は「揃えたい気持ち」と「予算」のどちらを強く守りたい？",
+        "kawaii": "今回は「揃えたい気持ち」と「予算」のどちらを強く守りたい？",
+        "oshi": "今回は「揃えたい気持ち」と「予算」のどちらを強く守りたい？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "balanced",
+          "labels": {
+            "standard": "納得できる範囲なら少し広げてもいい",
+            "kawaii": "納得できる範囲なら少し広げてもいい",
+            "oshi": "納得できる範囲なら少し広げてもいい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "affordability": 58,
+            "desire": 58,
+            "regretRisk": 54
+          },
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "complete",
+          "labels": {
+            "standard": "多少負担があっても揃えたい気持ちが強い",
+            "kawaii": "多少負担があっても揃えたい気持ちが強い",
+            "oshi": "多少負担があっても揃えたい気持ちが強い"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "desire": 68,
+            "impulse": 62,
+            "opportunityCost": 68
+          },
+          "tags": [
+            "collection_pressure"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "efficient",
+          "labels": {
+            "standard": "予算優先で、効率よく1枚/1本に絞りたい",
+            "kawaii": "予算優先で、効率よく1枚/1本に絞りたい",
+            "oshi": "予算優先で、効率よく1枚/1本に絞りたい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "affordability": 68,
+            "opportunityCost": 42,
+            "impulse": 42
+          },
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "まだ整理中",
+            "kawaii": "まだ整理中",
+            "oshi": "まだ整理中"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 64,
+            "opportunityCost": 60
+          },
+          "tags": [
+            "unknown_info"
+          ],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_media_edition_intent",
+      "questionType": "single",
+      "scoringRelevance": "delta",
+      "impactCategory": "score",
+      "behaviorRelevance": {
+        "affectsScore": true,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "score",
+      "mapTo": null,
+      "tags": [
+        "collection_pressure",
+        "media_all_editions_ambition",
+        "media_limited_preferred",
+        "media_one_best_fit",
+        "unknown_info"
+      ],
+      "unknownTagHints": [
+        "unknown_info"
+      ],
+      "appearsInBranches": [
+        "merch/long/goods#gc=media",
+        "merch/long/preorder#gc=media",
+        "merch/long/used#gc=media"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": true,
+      "styles": {
+        "standard": "版違いがあるなら、今の気持ちにいちばん近いのは？",
+        "kawaii": "版違いがあるなら、今の気持ちにいちばん近いのは？",
+        "oshi": "版違いがあるなら、今の気持ちにいちばん近いのは？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "all_editions",
+          "labels": {
+            "standard": "版違いは基本全部追いたい",
+            "kawaii": "版違いは基本全部追いたい",
+            "oshi": "版違いは基本全部追いたい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "desire": 70,
+            "impulse": 68,
+            "opportunityCost": 74
+          },
+          "tags": [
+            "media_all_editions_ambition",
+            "collection_pressure"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "limited_preferred",
+          "labels": {
+            "standard": "初回/限定版が本命だが、1種で満足したい",
+            "kawaii": "初回/限定版が本命だが、1種で満足したい",
+            "oshi": "初回/限定版が本命だが、1種で満足したい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "desire": 64,
+            "impulse": 54,
+            "regretRisk": 52
+          },
+          "tags": [
+            "media_limited_preferred"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "one_best_fit",
+          "labels": {
+            "standard": "仕様を見て、自分向けの1種だけ選びたい",
+            "kawaii": "仕様を見て、自分向けの1種だけ選びたい",
+            "oshi": "仕様を見て、自分向けの1種だけ選びたい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "affordability": 62,
+            "opportunityCost": 46
+          },
+          "tags": [
+            "media_one_best_fit"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "standard_only",
+          "labels": {
+            "standard": "通常盤/通常版で十分",
+            "kawaii": "通常盤/通常版で十分",
+            "oshi": "通常盤/通常版で十分"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "affordability": 68,
+            "impulse": 42,
+            "regretRisk": 44
+          },
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "まだ決めていない",
+            "kawaii": "まだ決めていない",
+            "oshi": "まだ決めていない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 66,
+            "opportunityCost": 62
+          },
+          "tags": [
+            "unknown_info"
+          ],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
       "questionId": "q_addon_media_limited_pressure",
       "questionType": "single",
       "scoringRelevance": "delta",
@@ -5894,6 +6153,114 @@
     },
     {
       "useCase": "merch",
+      "questionId": "q_addon_media_member_version",
+      "questionType": "single",
+      "scoringRelevance": "delta",
+      "impactCategory": "score",
+      "behaviorRelevance": {
+        "affectsScore": true,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "score",
+      "mapTo": null,
+      "tags": [
+        "collection_pressure",
+        "unknown_info"
+      ],
+      "unknownTagHints": [
+        "unknown_info"
+      ],
+      "appearsInBranches": [
+        "merch/long/goods#gc=media",
+        "merch/long/preorder#gc=media",
+        "merch/long/used#gc=media"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": true,
+      "styles": {
+        "standard": "メンバー/キャラ別ジャケットやバージョン違いは、どのくらい重要？",
+        "kawaii": "メンバー/キャラ別ジャケットやバージョン違いは、どのくらい重要？",
+        "oshi": "メンバー/キャラ別ジャケットやバージョン違いは、どのくらい重要？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "multiple_versions",
+          "labels": {
+            "standard": "複数人/複数版を揃えたい",
+            "kawaii": "複数人/複数版を揃えたい",
+            "oshi": "複数人/複数版を揃えたい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "desire": 66,
+            "impulse": 62,
+            "opportunityCost": 70
+          },
+          "tags": [
+            "collection_pressure"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "none",
+          "labels": {
+            "standard": "特に気にしない",
+            "kawaii": "特に気にしない",
+            "oshi": "特に気にしない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "impulse": 44,
+            "opportunityCost": 44
+          },
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "specific_version",
+          "labels": {
+            "standard": "最推し分だけ合えばよい",
+            "kawaii": "最推し分だけ合えばよい",
+            "oshi": "最推し分だけ合えばよい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "desire": 60,
+            "opportunityCost": 52
+          },
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "まだ分からない",
+            "kawaii": "まだ分からない",
+            "oshi": "まだ分からない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 64,
+            "opportunityCost": 60
+          },
+          "tags": [
+            "unknown_info"
+          ],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
       "questionId": "q_addon_media_motive",
       "questionType": "single",
       "scoringRelevance": "delta",
@@ -5923,14 +6290,14 @@
       "isOrphan": false,
       "sameAsStandard": true,
       "styles": {
-        "standard": "このCDを買いたい主な理由は、内容ですか？ それとも推し声優の参加ですか？",
-        "kawaii": "このCDを買いたい主な理由は、内容ですか？ それとも推し声優の参加ですか？",
-        "oshi": "このCDを買いたい主な理由は、内容ですか？ それとも推し声優の参加ですか？"
+        "standard": "このメディアを欲しい主な理由は、キャラ/IP側ですか？ それとも演者・キャスト側ですか？",
+        "kawaii": "このメディアを欲しい主な理由は、キャラ/IP側ですか？ それとも演者・キャスト側ですか？",
+        "oshi": "このメディアを欲しい主な理由は、キャラ/IP側ですか？ それとも演者・キャスト側ですか？"
       },
       "scaleLabels": null,
       "options": [
         {
-          "optionId": "both",
+          "optionId": "balanced",
           "labels": {
             "standard": "両方同じくらい大事",
             "kawaii": "両方同じくらい大事",
@@ -5946,11 +6313,11 @@
           "buyStopDelta": null
         },
         {
-          "optionId": "cast_main",
+          "optionId": "cast_performer",
           "labels": {
-            "standard": "推し声優・演者の参加が主な理由",
-            "kawaii": "推し声優・演者の参加が主な理由",
-            "oshi": "推し声優・演者の参加が主な理由"
+            "standard": "推し声優・演者・キャスト参加が主な理由",
+            "kawaii": "推し声優・演者・キャスト参加が主な理由",
+            "oshi": "推し声優・演者・キャスト参加が主な理由"
           },
           "sameAsStandard": true,
           "mapTo": null,
@@ -5964,11 +6331,11 @@
           "buyStopDelta": null
         },
         {
-          "optionId": "content_main",
+          "optionId": "character_ip",
           "labels": {
-            "standard": "内容（楽曲・ドラマ・映像）が主な理由",
-            "kawaii": "内容（楽曲・ドラマ・映像）が主な理由",
-            "oshi": "内容（楽曲・ドラマ・映像）が主な理由"
+            "standard": "キャラ・作品・内容面が主な理由",
+            "kawaii": "キャラ・作品・内容面が主な理由",
+            "oshi": "キャラ・作品・内容面が主な理由"
           },
           "sameAsStandard": true,
           "mapTo": null,
@@ -6098,6 +6465,205 @@
           "delta": {
             "regretRisk": 68,
             "opportunityCost": 62
+          },
+          "tags": [
+            "unknown_info"
+          ],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_media_random_goods_intent",
+      "questionType": "single",
+      "scoringRelevance": "delta",
+      "impactCategory": "score",
+      "behaviorRelevance": {
+        "affectsScore": true,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "score",
+      "mapTo": null,
+      "tags": [
+        "mixed_media_random_goods",
+        "unknown_info"
+      ],
+      "unknownTagHints": [
+        "unknown_info"
+      ],
+      "appearsInBranches": [
+        "merch/long/goods#gc=media",
+        "merch/long/preorder#gc=media",
+        "merch/long/used#gc=media"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": true,
+      "styles": {
+        "standard": "このメディア判断と一緒に、ランダム/ブラインド特典や付随グッズの止めどきも整理したい？",
+        "kawaii": "このメディア判断と一緒に、ランダム/ブラインド特典や付随グッズの止めどきも整理したい？",
+        "oshi": "このメディア判断と一緒に、ランダム/ブラインド特典や付随グッズの止めどきも整理したい？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "none",
+          "labels": {
+            "standard": "今回はメディア版違いだけ整理したい",
+            "kawaii": "今回はメディア版違いだけ整理したい",
+            "oshi": "今回はメディア版違いだけ整理したい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "impulse": 44,
+            "opportunityCost": 46
+          },
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "present",
+          "labels": {
+            "standard": "ランダム特典/付随グッズの止めどきも一緒に見たい",
+            "kawaii": "ランダム特典/付随グッズの止めどきも一緒に見たい",
+            "oshi": "ランダム特典/付随グッズの止めどきも一緒に見たい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "impulse": 58,
+            "regretRisk": 58
+          },
+          "tags": [
+            "mixed_media_random_goods"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "まだ分からない",
+            "kawaii": "まだ分からない",
+            "oshi": "まだ分からない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 64,
+            "opportunityCost": 60
+          },
+          "tags": [
+            "unknown_info"
+          ],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_media_support_scope",
+      "questionType": "single",
+      "scoringRelevance": "delta",
+      "impactCategory": "score",
+      "behaviorRelevance": {
+        "affectsScore": true,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "score",
+      "mapTo": null,
+      "tags": [
+        "collection_pressure",
+        "unknown_info"
+      ],
+      "unknownTagHints": [
+        "unknown_info"
+      ],
+      "appearsInBranches": [
+        "merch/long/goods#gc=media",
+        "merch/long/preorder#gc=media",
+        "merch/long/used#gc=media"
+      ],
+      "isOrphan": false,
+      "sameAsStandard": true,
+      "styles": {
+        "standard": "回収したい気持ちは、最推し1人/1キャラ寄り？ それとも箱・グループ寄り？",
+        "kawaii": "回収したい気持ちは、最推し1人/1キャラ寄り？ それとも箱・グループ寄り？",
+        "oshi": "回収したい気持ちは、最推し1人/1キャラ寄り？ それとも箱・グループ寄り？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "balanced",
+          "labels": {
+            "standard": "どちらも少しある",
+            "kawaii": "どちらも少しある",
+            "oshi": "どちらも少しある"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "desire": 58,
+            "regretRisk": 54
+          },
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "box_group",
+          "labels": {
+            "standard": "箱・グループ全体を支えたい",
+            "kawaii": "箱・グループ全体を支えたい",
+            "oshi": "箱・グループ全体を支えたい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "desire": 68,
+            "impulse": 60,
+            "opportunityCost": 62
+          },
+          "tags": [
+            "collection_pressure"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "one_oshi",
+          "labels": {
+            "standard": "最推し1人/1キャラ中心",
+            "kawaii": "最推し1人/1キャラ中心",
+            "oshi": "最推し1人/1キャラ中心"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "opportunityCost": 46,
+            "regretRisk": 44
+          },
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unknown",
+          "labels": {
+            "standard": "まだ決めきれていない",
+            "kawaii": "まだ決めきれていない",
+            "oshi": "まだ決めきれていない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 64,
+            "opportunityCost": 60
           },
           "tags": [
             "unknown_info"
