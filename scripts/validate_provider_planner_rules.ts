@@ -195,6 +195,35 @@ async function main() {
     "unknown-heavy venue routing should not push generic retail before the recovery path is established",
   );
 
+  const mixedMediaFollowupWait = await scenario({
+    itemKind: "goods",
+    goodsClass: "small_collection",
+    confidence: 78,
+    resultTags: ["venue_limited_path_wait_for_post_event_followup", "venue_limited_followup_high"],
+    searchClues: {
+      raw: "会場限定 事後通販",
+      normalized: "会場限定 事後通販",
+      workCandidates: ["作品C"],
+      characterCandidates: [],
+      itemTypeCandidates: [],
+      editionClues: [],
+      bonusClues: [],
+      freeTextRemainder: [],
+      mode: "fuzzy",
+      confidence: "medium",
+    },
+  });
+  assert(
+    !mixedMediaFollowupWait.cards.some((card) => card.providerId === "amazon" && card.tier === "recommended"),
+    "wait_for_post_event_followup should keep generic retail from acting like the primary recommendation",
+  );
+  assert(
+    mixedMediaFollowupWait.diagnostics.candidateEvaluations.some(
+      (entry) => entry.providerId === "amazon" && entry.demotionReasons.includes("standard_retail_only_if_continuation_realistic"),
+    ),
+    "wait_for_post_event_followup should remain visible in provider diagnostics",
+  );
+
   const noRegression = await scenario({
     itemKind: "preorder",
     goodsClass: "small_collection",

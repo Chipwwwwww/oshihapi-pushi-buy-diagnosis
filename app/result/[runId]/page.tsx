@@ -810,6 +810,7 @@ export default function ResultPage() {
               <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
                 <li>現地文脈: {run.output.venueLimitedGoodsPlan.venueContext}</li>
                 <li>回復可能性: {run.output.venueLimitedGoodsPlan.recoveryPlausibility}</li>
+                <li>post-event follow-up plausibility: {run.output.venueLimitedGoodsPlan.postEventFollowupPlausibility}</li>
                 <li>待てる度合い: {run.output.venueLimitedGoodsPlan.waitTolerance}</li>
                 <li>初回機会を逃す耐性: {run.output.venueLimitedGoodsPlan.firstChanceTolerance}</li>
                 <li>中古 fallback 意欲: {run.output.venueLimitedGoodsPlan.usedFallbackWillingness}</li>
@@ -817,6 +818,7 @@ export default function ResultPage() {
                 <li>主 motive: {run.output.venueLimitedGoodsPlan.primaryMotive}</li>
                 <li>live-goods motive: {run.output.venueLimitedGoodsPlan.liveGoodsMotive}</li>
                 <li>後悔軸: {run.output.venueLimitedGoodsPlan.regretAxis}</li>
+                <li>scarcity assessment: {run.output.venueLimitedGoodsPlan.scarcityAssessment}</li>
               </ul>
             </div>
           </div>
@@ -835,6 +837,7 @@ export default function ResultPage() {
                   {run.output.venueLimitedGoodsPlan.assumptions.map((assumption) => <li key={assumption}>{assumption}</li>)}
                   {run.output.venueLimitedGoodsPlan.clampReason ? <li>clamp理由: {run.output.venueLimitedGoodsPlan.clampReason}</li> : null}
                   <li>回復可能性が結論を変えたか: {run.output.venueLimitedGoodsPlan.recoveryChangedRecommendation ? "はい" : "いいえ"}</li>
+                  <li>atmosphere / situational pressure が結論を変えたか: {run.output.venueLimitedGoodsPlan.atmospherePressureChangedRecommendation ? "はい" : "いいえ"}</li>
                   <li>中古 fallback が safer path に入るか: {run.output.venueLimitedGoodsPlan.usedMarketPartOfSaferPath ? "はい" : "いいえ"}</li>
                   <li>true scarcity 寄りか: {run.output.venueLimitedGoodsPlan.trueScarcityLikely ? "はい" : "いいえ"}</li>
                   <li>mixed-media live scenario detected: {run.output.venueLimitedGoodsPlan.mixedMediaLiveScenarioDetected ? "はい" : "いいえ"}</li>
@@ -891,6 +894,7 @@ export default function ResultPage() {
                 <li>edition ambition: {run.output.mediaEditionPlan.editionAmbition}</li>
                 <li>bonus pressure: {run.output.mediaEditionPlan.bonusPressure}</li>
                 <li>bonus importance: {run.output.mediaEditionPlan.bonusImportance}</li>
+                <li>bonus inflation risk: {run.output.mediaEditionPlan.bonusInflationRisk}</li>
                 <li>one-store vs multi-store: {run.output.mediaEditionPlan.storeSplitPreference}</li>
                 <li>split-order burden: {run.output.mediaEditionPlan.splitOrderBurden}</li>
                 <li>product vs bonus motive: {run.output.mediaEditionPlan.productVsBonusMotive}</li>
@@ -916,6 +920,8 @@ export default function ResultPage() {
                   {run.output.mediaEditionPlan.clampReason ? <li>clamp理由: {run.output.mediaEditionPlan.clampReason}</li> : null}
                   <li>selected planner path: {run.output.mediaEditionPlan.chosenPath}</li>
                   <li>store-bonus scenario detected: {run.output.mediaEditionPlan.storeBonusScenarioDetected ? "はい" : "いいえ"}</li>
+                  <li>bonus pressure が結論を変えたか: {run.output.mediaEditionPlan.bonusPressureChangedRecommendation ? "はい" : "いいえ"}</li>
+                  <li>split-order burden が結論を変えたか: {run.output.mediaEditionPlan.splitOrderBurdenChangedRecommendation ? "はい" : "いいえ"}</li>
                   <li>random-goods stop-line addon invoked: {run.output.mediaEditionPlan.randomGoodsStopLineAddonInvoked ? "はい" : "いいえ"}</li>
                 </ul>
               </div>

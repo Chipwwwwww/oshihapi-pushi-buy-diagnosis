@@ -326,6 +326,14 @@ function buildMediaEditionPlan(params: {
   const productCore = productVsBonusMotive === 'product_core';
   const bonusDriven = productVsBonusMotive === 'bonus_driven';
   const missSensitive = overpayVsMissPreference === 'miss_more';
+  const bonusInflationRisk: MediaEditionPlan['bonusInflationRisk'] =
+    bonusDriven && (bonusPressure === 'high' || bonusImportance === 'high')
+      ? 'high'
+      : storeBonusScenarioDetected && (bonusPressure === 'medium' || bonusImportance === 'medium' || multiStoreIntent)
+        ? 'medium'
+        : storeBonusScenarioDetected
+          ? 'low'
+          : 'unknown';
 
   let chosenPath: MediaEditionPlannerPath = 'buy_one_best_fit_edition';
   let clampReason: string | undefined;
@@ -455,6 +463,17 @@ function buildMediaEditionPlan(params: {
       : '店舗別 bonus 圧は主軸前提には置いていません。'
   );
 
+  const bonusPressureChangedRecommendation =
+    chosenPath === 'choose_one_best_store' ||
+    chosenPath === 'buy_product_but_do_not_chase_all_bonuses' ||
+    chosenPath === 'split_orders_are_not_worth_it' ||
+    chosenPath === 'split_orders_are_justified' ||
+    chosenPath === 'step_back_from_bonus_pressure';
+  const splitOrderBurdenChangedRecommendation =
+    chosenPath === 'split_orders_are_not_worth_it' ||
+    chosenPath === 'split_orders_are_justified' ||
+    clampReason === 'split_order_burden_outweighs_bonus_gain';
+
   return {
     detected: true,
     scenarioKey: resolveScenarioKey({
@@ -476,6 +495,9 @@ function buildMediaEditionPlan(params: {
     productVsBonusMotive,
     overpayVsMissPreference,
     storeBonusScenarioDetected,
+    bonusPressureChangedRecommendation,
+    splitOrderBurdenChangedRecommendation,
+    bonusInflationRisk,
     memberVersionPreference,
     randomGoodsAddonIntent,
     chosenPath,
@@ -749,6 +771,16 @@ function buildVenueLimitedGoodsPlan(params: {
     (venueContext === 'venue_limited' || venueContext === 'missed_onsite') &&
     recoveryPlausibility === 'low' &&
     !usedFallbackReady;
+  const scarcityAssessment: VenueLimitedGoodsPlan['scarcityAssessment'] =
+    trueScarcityLikely
+      ? 'true_scarcity'
+      : recoveryStrong && atmosphereDriven
+        ? 'followup_plausible'
+        : atmosphereDriven && pressureHigh
+          ? 'atmosphere_pressure'
+          : mixedMediaLiveScenarioDetected
+            ? 'mixed'
+            : 'unknown';
 
   let chosenPath: VenueLimitedPlannerPath = 'wait_for_post_event_mailorder';
   let clampReason: string | undefined;
@@ -834,6 +866,10 @@ function buildVenueLimitedGoodsPlan(params: {
       ? '中古 fallback は、状態差と送料込み総額を後から確認する前提です。'
       : '中古 fallback を主経路には置かず、別の回復経路を優先します。'
   );
+  const atmospherePressureChangedRecommendation =
+    chosenPath === 'wait_for_post_event_followup' ||
+    chosenPath === 'skip_atmosphere_driven_goods_chase' ||
+    chosenPath === 'step_back_from_fomo_pressure';
 
   return {
     detected: true,
@@ -853,6 +889,9 @@ function buildVenueLimitedGoodsPlan(params: {
     primaryMotive,
     liveGoodsMotive,
     regretAxis,
+    postEventFollowupPlausibility: recoveryPlausibility,
+    atmospherePressureChangedRecommendation,
+    scarcityAssessment,
     chosenPath,
     optimizingFor,
     recoveryChangedRecommendation: recoveryStrong && chosenPath !== 'buy_now_if_it_is_truly_hard_to_recover',
@@ -1310,10 +1349,13 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
       `media_split_order_burden_${mediaEditionPlan.splitOrderBurden}`,
       `media_product_vs_bonus_${mediaEditionPlan.productVsBonusMotive}`,
       `media_overpay_vs_miss_${mediaEditionPlan.overpayVsMissPreference}`,
+      `media_bonus_inflation_risk_${mediaEditionPlan.bonusInflationRisk}`,
     );
     if (mediaEditionPlan.memberVersionPreference !== 'unknown') tags.push(`media_member_version_${mediaEditionPlan.memberVersionPreference}`);
     if (mediaEditionPlan.randomGoodsStopLineAddonInvoked) tags.push('media_random_goods_stopline_addon_invoked');
     if (mediaEditionPlan.storeBonusScenarioDetected) tags.push('media_store_bonus_scenario_detected');
+    if (mediaEditionPlan.bonusPressureChangedRecommendation) tags.push('media_bonus_pressure_changed_recommendation');
+    if (mediaEditionPlan.splitOrderBurdenChangedRecommendation) tags.push('media_split_order_burden_changed_recommendation');
     if (mediaEditionPlan.clampReason) tags.push(`media_edition_clamp_${mediaEditionPlan.clampReason}`);
 
     if (mediaEditionPlan.chosenPath === 'full_set_is_justified') {
@@ -1342,12 +1384,15 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
       `venue_limited_regret_${venueLimitedGoodsPlan.regretAxis}`,
       `venue_limited_motive_${venueLimitedGoodsPlan.primaryMotive}`,
       `venue_limited_live_goods_${venueLimitedGoodsPlan.liveGoodsMotive}`,
+      `venue_limited_followup_${venueLimitedGoodsPlan.postEventFollowupPlausibility}`,
+      `venue_limited_scarcity_assessment_${venueLimitedGoodsPlan.scarcityAssessment}`,
     );
     if (venueLimitedGoodsPlan.clampReason) tags.push(`venue_limited_clamp_${venueLimitedGoodsPlan.clampReason}`);
     if (venueLimitedGoodsPlan.recoveryChangedRecommendation) tags.push('venue_limited_recovery_changed_recommendation');
     if (venueLimitedGoodsPlan.usedMarketPartOfSaferPath) tags.push('venue_limited_used_market_safer_path');
     if (venueLimitedGoodsPlan.trueScarcityLikely) tags.push('venue_limited_true_scarcity_likely');
     if (venueLimitedGoodsPlan.mixedMediaLiveScenarioDetected) tags.push('venue_limited_mixed_media_live_detected');
+    if (venueLimitedGoodsPlan.atmospherePressureChangedRecommendation) tags.push('venue_limited_atmosphere_pressure_changed_recommendation');
 
     if (
       venueLimitedGoodsPlan.chosenPath === 'buy_now_if_it_is_truly_hard_to_recover' ||

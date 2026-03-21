@@ -606,6 +606,9 @@ function runMediaEditionAcceptanceChecks() {
         const plan = output.mediaEditionPlan;
         if (!plan) throw new Error('store_bonus_choose_one_store: mediaEditionPlan missing');
         if (plan.chosenPath !== 'choose_one_best_store') throw new Error('store_bonus_choose_one_store: should optimize to one store');
+        if (!plan.bonusPressureChangedRecommendation || plan.bonusInflationRisk === 'unknown') {
+          throw new Error('store_bonus_choose_one_store: diagnostics should expose bonus-pressure impact and inflation risk');
+        }
       },
     },
     {
@@ -630,6 +633,7 @@ function runMediaEditionAcceptanceChecks() {
         const plan = output.mediaEditionPlan;
         if (!plan) throw new Error('split_orders_not_worth_it: mediaEditionPlan missing');
         if (plan.chosenPath !== 'split_orders_are_not_worth_it') throw new Error('split_orders_not_worth_it: should explicitly reject split orders');
+        if (!plan.splitOrderBurdenChangedRecommendation) throw new Error('split_orders_not_worth_it: diagnostics should expose split-order burden impact');
       },
     },
     {
@@ -1000,6 +1004,9 @@ const venueRecoveryWait = buildEvaluatedOutput('goods', {
 if (venueRecoveryWait.venueLimitedGoodsPlan?.chosenPath !== 'wait_for_post_event_followup') {
   throw new Error('venue_recovery_wait: venueLimitedGoodsPlan should prefer wait_for_post_event_followup');
 }
+if (venueRecoveryWait.venueLimitedGoodsPlan?.postEventFollowupPlausibility !== 'high' || venueRecoveryWait.venueLimitedGoodsPlan?.scarcityAssessment !== 'followup_plausible') {
+  throw new Error('venue_recovery_wait: diagnostics should expose follow-up plausibility and follow-up-driven scarcity assessment');
+}
 
 const venueUsedFallback = buildEvaluatedOutput('goods', {
   q_addon_goods_event_limit_context: 'missed_onsite',
@@ -1030,6 +1037,9 @@ const venueTrueScarcity = buildEvaluatedOutput('goods', {
 if (venueTrueScarcity.venueLimitedGoodsPlan?.chosenPath !== 'buy_live_goods_now_if_it_matches_core_motive') {
   throw new Error('venue_true_scarcity: venueLimitedGoodsPlan should allow buy_live_goods_now_if_it_matches_core_motive');
 }
+if (venueTrueScarcity.venueLimitedGoodsPlan?.scarcityAssessment !== 'true_scarcity') {
+  throw new Error('venue_true_scarcity: diagnostics should preserve true scarcity assessment');
+}
 
 const venueFomoClamp = buildEvaluatedOutput('goods', {
   q_addon_goods_event_limit_context: 'venue_limited',
@@ -1045,4 +1055,7 @@ const venueFomoClamp = buildEvaluatedOutput('goods', {
 });
 if (venueFomoClamp.venueLimitedGoodsPlan?.chosenPath !== 'wait_for_post_event_followup' && venueFomoClamp.venueLimitedGoodsPlan?.chosenPath !== 'skip_atmosphere_driven_goods_chase') {
   throw new Error('venue_fomo_clamp: venueLimitedGoodsPlan should clamp urgency when recovery is realistic');
+}
+if (!venueFomoClamp.venueLimitedGoodsPlan?.atmospherePressureChangedRecommendation) {
+  throw new Error('venue_fomo_clamp: diagnostics should show atmosphere pressure changing the recommendation');
 }
