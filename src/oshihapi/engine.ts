@@ -304,7 +304,6 @@ function buildMediaEditionPlan(params: {
   const oneOshiFocused = oneOshiVsBox === 'one_oshi';
   const boxSupportStrong = oneOshiVsBox === 'box_group';
   const fullSetAmbition = editionAmbition === 'all_editions' || memberVersionPreference === 'multiple_versions';
-  const completionPressureHigh = completeMotive || fullSetAmbition || bonusPressure === 'high';
   const castDriven = characterVsCast === 'cast_performer';
   const characterDriven = characterVsCast === 'character_ip';
   const playbackUnready = playbackSpace === 'not_ready';
