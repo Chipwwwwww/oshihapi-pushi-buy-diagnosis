@@ -28,6 +28,13 @@ export type RandomGoodsPlannerPath =
   | 'stop_drawing_buy_singles'
   | 'stop_drawing_check_used_market'
   | 'step_back_from_completion_pressure';
+export type MediaEditionPlannerPath =
+  | 'buy_standard_only'
+  | 'buy_limited_only'
+  | 'buy_one_best_fit_edition'
+  | 'avoid_full_set_chase'
+  | 'full_set_is_justified'
+  | 'step_back_from_bonus_or_completion_pressure';
 export type VenueLimitedPlannerPath =
   | 'buy_now_if_it_is_truly_hard_to_recover'
   | 'wait_for_post_event_mailorder'
@@ -168,6 +175,26 @@ export type RandomGoodsPlan = {
   assumptions: string[];
 };
 
+export type MediaEditionPlan = {
+  detected: boolean;
+  scenarioKey: ScenarioKey;
+  characterVsCast: 'character_ip' | 'balanced' | 'cast_performer' | 'unknown';
+  oneOshiVsBox: 'one_oshi' | 'box_group' | 'balanced' | 'unknown';
+  collectionCompleteness: 'efficient' | 'balanced' | 'complete' | 'unknown';
+  budgetAlignment: 'strong' | 'medium' | 'weak';
+  editionAmbition: 'standard_only' | 'limited_preferred' | 'all_editions' | 'one_best_fit' | 'unknown';
+  bonusPressure: 'low' | 'medium' | 'high' | 'unknown';
+  memberVersionPreference: 'none' | 'specific_version' | 'multiple_versions' | 'unknown';
+  randomGoodsAddonIntent: 'none' | 'present';
+  chosenPath: MediaEditionPlannerPath;
+  optimizingFor: string;
+  randomGoodsStopLineAddonInvoked: boolean;
+  clampReason?: string;
+  reasonFlags: string[];
+  reasons: string[];
+  assumptions: string[];
+};
+
 export type VenueLimitedGoodsPlan = {
   detected: boolean;
   scenarioKey: ScenarioKey;
@@ -204,6 +231,7 @@ export type DiagnosticTrace = {
   branchMisses: BranchTrace[];
   resultInputsSummary?: ResultInputsSummaryTrace;
   randomGoods?: RandomGoodsPlan;
+  mediaEdition?: MediaEditionPlan;
   venueLimitedGoods?: VenueLimitedGoodsPlan;
   searchClue?: SearchClueDiagnostics;
   persistence?: {
@@ -239,6 +267,7 @@ export type ActionItem = { id: string; text: string; linkOut?: { label: string; 
 export type DecisionOutput = {
   diagnosticTrace?: {
     resultInputsSummary: ResultInputsSummaryTrace;
+    mediaEditionPlan?: MediaEditionPlan;
     randomGoodsPlan?: RandomGoodsPlan;
     venueLimitedGoodsPlan?: VenueLimitedGoodsPlan;
   };
@@ -272,6 +301,7 @@ export type DecisionOutput = {
     itemKindRisk: number;
   };
   presentation?: DecisionPresentation;
+  mediaEditionPlan?: MediaEditionPlan;
   randomGoodsPlan?: RandomGoodsPlan;
   venueLimitedGoodsPlan?: VenueLimitedGoodsPlan;
 };

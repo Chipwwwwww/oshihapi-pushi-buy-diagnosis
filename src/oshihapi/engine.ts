@@ -8,6 +8,8 @@ import type {
   HoldSubtype,
   InputMeta,
   ItemKind,
+  MediaEditionPlan,
+  MediaEditionPlannerPath,
   Mode,
   RandomGoodsPlan,
   RandomGoodsPlannerPath,
@@ -191,6 +193,195 @@ function resolveRandomGoodsStopBudget(answers: Record<string, AnswerValue>): Ran
   return 'unknown';
 }
 
+function resolveMediaCharacterVsCast(answers: Record<string, AnswerValue>): MediaEditionPlan['characterVsCast'] {
+  const answer = getSingleAnswer(answers, 'q_addon_media_motive');
+  if (answer === 'character_ip' || answer === 'balanced' || answer === 'cast_performer') return answer;
+  return 'unknown';
+}
+
+function resolveMediaOneOshiVsBox(answers: Record<string, AnswerValue>): MediaEditionPlan['oneOshiVsBox'] {
+  const answer = getSingleAnswer(answers, 'q_addon_media_support_scope');
+  if (answer === 'one_oshi' || answer === 'balanced' || answer === 'box_group') return answer;
+  return 'unknown';
+}
+
+function resolveMediaCollectionCompleteness(answers: Record<string, AnswerValue>): MediaEditionPlan['collectionCompleteness'] {
+  const answer = getSingleAnswer(answers, 'q_addon_media_collection_budget');
+  if (answer === 'efficient' || answer === 'balanced' || answer === 'complete') return answer;
+  return 'unknown';
+}
+
+function resolveMediaEditionAmbition(answers: Record<string, AnswerValue>): MediaEditionPlan['editionAmbition'] {
+  const answer = getSingleAnswer(answers, 'q_addon_media_edition_intent');
+  if (answer === 'standard_only' || answer === 'limited_preferred' || answer === 'all_editions' || answer === 'one_best_fit') return answer;
+  return 'unknown';
+}
+
+function resolveMediaBonusPressure(answers: Record<string, AnswerValue>): MediaEditionPlan['bonusPressure'] {
+  const answer = getSingleAnswer(answers, 'q_addon_media_limited_pressure');
+  if (answer === 'yes') return 'low';
+  if (answer === 'maybe') return 'medium';
+  if (answer === 'no') return 'high';
+  return 'unknown';
+}
+
+function resolveMediaMemberVersionPreference(answers: Record<string, AnswerValue>): MediaEditionPlan['memberVersionPreference'] {
+  const answer = getSingleAnswer(answers, 'q_addon_media_member_version');
+  if (answer === 'none' || answer === 'specific_version' || answer === 'multiple_versions') return answer;
+  return 'unknown';
+}
+
+function resolveMediaRandomGoodsAddonIntent(answers: Record<string, AnswerValue>): MediaEditionPlan['randomGoodsAddonIntent'] {
+  return getSingleAnswer(answers, 'q_addon_media_random_goods_intent') === 'present' ? 'present' : 'none';
+}
+
+function buildMediaEditionPlan(params: {
+  meta: InputMeta;
+  answers: Record<string, AnswerValue>;
+  motives: string[];
+  scores: Record<ScoreDimension, number>;
+  factorBuckets: FactorBuckets;
+}): MediaEditionPlan | undefined {
+  if (params.meta.goodsClass !== 'media') return undefined;
+
+  const characterVsCast = resolveMediaCharacterVsCast(params.answers);
+  const oneOshiVsBox = resolveMediaOneOshiVsBox(params.answers);
+  const collectionCompleteness = resolveMediaCollectionCompleteness(params.answers);
+  const editionAmbition = resolveMediaEditionAmbition(params.answers);
+  const bonusPressure = resolveMediaBonusPressure(params.answers);
+  const memberVersionPreference = resolveMediaMemberVersionPreference(params.answers);
+  const randomGoodsAddonIntent = resolveMediaRandomGoodsAddonIntent(params.answers);
+  const playbackSpace = getSingleAnswer(params.answers, 'q_addon_media_playback_space');
+  const budgetPain = getSingleAnswer(params.answers, 'q_budget_pain');
+  const budgetAlignment: MediaEditionPlan['budgetAlignment'] =
+    budgetPain === 'force' || budgetPain === 'hard' || params.factorBuckets.budgetPressure >= 68
+      ? 'weak'
+      : budgetPain === 'some' || params.factorBuckets.budgetPressure >= 56
+        ? 'medium'
+        : 'strong';
+
+  const completeMotive = collectionCompleteness === 'complete' || params.motives.includes('complete');
+  const oneOshiFocused = oneOshiVsBox === 'one_oshi';
+  const boxSupportStrong = oneOshiVsBox === 'box_group';
+  const fullSetAmbition = editionAmbition === 'all_editions' || memberVersionPreference === 'multiple_versions';
+  const completionPressureHigh = completeMotive || fullSetAmbition || bonusPressure === 'high';
+  const castDriven = characterVsCast === 'cast_performer';
+  const characterDriven = characterVsCast === 'character_ip';
+  const playbackUnready = playbackSpace === 'not_ready';
+  const softFomo = bonusPressure === 'medium' || params.motives.includes('fomo') || params.scores.impulse >= 66;
+
+  let chosenPath: MediaEditionPlannerPath = 'buy_one_best_fit_edition';
+  let clampReason: string | undefined;
+  const reasonFlags: string[] = [];
+
+  if (fullSetAmbition && (budgetAlignment === 'weak' || oneOshiFocused || playbackUnready)) {
+    chosenPath = bonusPressure === 'high' || completeMotive
+      ? 'step_back_from_bonus_or_completion_pressure'
+      : 'avoid_full_set_chase';
+    clampReason =
+      budgetAlignment === 'weak'
+        ? 'completion_pressure_budget_misaligned'
+        : oneOshiFocused
+          ? 'full_set_outpaces_one_oshi_need'
+          : 'edition_usage_not_ready';
+    reasonFlags.push(clampReason);
+  } else if (bonusPressure === 'high' && !fullSetAmbition && budgetAlignment !== 'strong') {
+    chosenPath = 'step_back_from_bonus_or_completion_pressure';
+    clampReason = 'bonus_pressure_exceeds_stated_need';
+    reasonFlags.push('bonus_pressure_exceeds_stated_need');
+  } else if (editionAmbition === 'standard_only') {
+    chosenPath = 'buy_standard_only';
+    reasonFlags.push('standard_only_sufficient');
+  } else if (editionAmbition === 'limited_preferred' && budgetAlignment !== 'weak') {
+    chosenPath = 'buy_limited_only';
+    reasonFlags.push('limited_relevance_supported');
+  } else if (fullSetAmbition && boxSupportStrong && completeMotive && budgetAlignment === 'strong') {
+    chosenPath = 'full_set_is_justified';
+    reasonFlags.push('full_set_alignment_confirmed');
+  } else if (fullSetAmbition) {
+    chosenPath = 'avoid_full_set_chase';
+    clampReason = budgetAlignment === 'medium' ? 'full_set_not_clearly_aligned' : 'full_set_pressure_without_clear_need';
+    reasonFlags.push(clampReason);
+  } else if (editionAmbition === 'one_best_fit' || oneOshiFocused || bonusPressure === 'medium' || softFomo) {
+    chosenPath = 'buy_one_best_fit_edition';
+    reasonFlags.push('single_best_fit_preferred');
+  }
+
+  const optimizingFor =
+    chosenPath === 'buy_standard_only'
+      ? '内容を押さえつつ、限定圧に引っ張られすぎないこと'
+      : chosenPath === 'buy_limited_only'
+        ? '限定版の relevance は拾いつつ、複数版 chase に広げないこと'
+        : chosenPath === 'buy_one_best_fit_edition'
+          ? '自分の motive に最も合う 1種だけを選ぶこと'
+          : chosenPath === 'avoid_full_set_chase'
+            ? '全版追いの総額と満足差が見合う時だけ広げること'
+            : chosenPath === 'full_set_is_justified'
+              ? '箱推し・ completeness・予算が揃う時だけ全版を正当化すること'
+              : 'bonus / completion 圧が need を上回る時に一歩引くこと';
+
+  const reasons: string[] = [];
+  const assumptions: string[] = [];
+
+  reasons.push(
+    oneOshiFocused
+      ? '単推しが強い時は、全版追いより「自分に合う1種」を選ぶ方が満足効率が高い。'
+      : boxSupportStrong
+        ? '箱・グループ支援が強い場合だけ、複数版の意味が出やすい。'
+        : '複数版メディアは motive が曖昧だと買い分けより惰性 chase になりやすい。'
+  );
+  reasons.push(
+    characterDriven
+      ? 'キャラ/IP motive が主なら、演者理由だけで版数を増やす必要は薄め。'
+      : castDriven
+        ? '演者・キャスト motive が強い時は、出演差や映像特典つき版の relevance が上がりやすい。'
+        : 'キャラ側と演者側の motive が混ざる時は、いちばん刺さる版を1つに絞ると後悔を減らしやすい。'
+  );
+  if (bonusPressure === 'high') reasons.push('今の迷いは「本編を見たい」より bonus / 限定圧に押されている可能性が高い。');
+  if (collectionCompleteness === 'complete') reasons.push('揃えたい気持ちが強いほど、総額と実際の満足差を意識して clamp した方が安全。');
+  if (budgetAlignment === 'weak') reasons.push('予算の整合が弱い状態では、全版追いは満足より負担が前に出やすい。');
+  if (playbackUnready) reasons.push('再生・保管準備が未整備なら、版数を増やす前に使える1枚/1本へ絞る方が安全。');
+
+  assumptions.push(
+    memberVersionPreference === 'specific_version'
+      ? 'メンバー/キャラ別は「最推し分だけ relevance が高い」前提で見ています。'
+      : memberVersionPreference === 'multiple_versions'
+        ? '複数バージョン回収欲は completeness 圧として扱っています。'
+        : 'メンバー別差は強い購入根拠としては置いていません。'
+  );
+  assumptions.push(
+    randomGoodsAddonIntent === 'present'
+      ? 'ランダム特典/付随グッズは別の stop-line addon として重ねて判断します。'
+      : '今回はメディア版違い判断を主軸にしています。'
+  );
+
+  return {
+    detected: true,
+    scenarioKey: resolveScenarioKey({
+      itemKind: params.meta.itemKind,
+      goodsClass: params.meta.goodsClass,
+      parsedSearchClues: params.meta.parsedSearchClues,
+      searchClueRaw: params.meta.searchClueRaw,
+      answers: params.answers,
+    }),
+    characterVsCast,
+    oneOshiVsBox,
+    collectionCompleteness,
+    budgetAlignment,
+    editionAmbition,
+    bonusPressure,
+    memberVersionPreference,
+    randomGoodsAddonIntent,
+    chosenPath,
+    optimizingFor,
+    randomGoodsStopLineAddonInvoked: false,
+    clampReason,
+    reasonFlags,
+    reasons: [...new Set(reasons)].slice(0, 5),
+    assumptions: [...new Set(assumptions)].slice(0, 3),
+  };
+}
+
 function buildRandomGoodsPlan(params: {
   meta: InputMeta;
   answers: Record<string, AnswerValue>;
@@ -198,7 +389,8 @@ function buildRandomGoodsPlan(params: {
   scores: Record<ScoreDimension, number>;
   factorBuckets: FactorBuckets;
 }): RandomGoodsPlan | undefined {
-  if (params.meta.itemKind !== 'blind_draw') return undefined;
+  const mixedMediaAddon = params.meta.goodsClass === 'media' && getSingleAnswer(params.answers, 'q_addon_media_random_goods_intent') === 'present';
+  if (params.meta.itemKind !== 'blind_draw' && !mixedMediaAddon) return undefined;
 
   const targetStyle = resolveRandomGoodsTargetStyle(params.answers);
   const duplicateTolerance = resolveRandomGoodsDuplicateTolerance(params.answers);
@@ -757,6 +949,13 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
 
   const itemKindRisk = computeItemKindRisk(itemKind, input.answers, tags);
   const factorBuckets = computeFactorBuckets(scores, unknownCount, itemKindRisk);
+  const mediaEditionPlanBase = buildMediaEditionPlan({
+    meta: input.meta,
+    answers: input.answers,
+    motives,
+    scores,
+    factorBuckets,
+  });
   const randomGoodsPlan = buildRandomGoodsPlan({
     meta: input.meta,
     answers: input.answers,
@@ -764,6 +963,9 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     scores,
     factorBuckets,
   });
+  const mediaEditionPlan = mediaEditionPlanBase
+    ? { ...mediaEditionPlanBase, randomGoodsStopLineAddonInvoked: Boolean(randomGoodsPlan) }
+    : undefined;
   const venueLimitedGoodsPlan = buildVenueLimitedGoodsPlan({
     meta: input.meta,
     answers: input.answers,
@@ -836,6 +1038,35 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
       if (randomGoodsPlan.clampReason === 'stop_budget_over_limit' || randomGoodsPlan.clampReason === 'impulse_high_low_progress') {
         decision = 'SKIP';
       }
+    }
+  }
+
+  if (mediaEditionPlan) {
+    tags.push(
+      `media_edition_path_${mediaEditionPlan.chosenPath}`,
+      `media_character_vs_cast_${mediaEditionPlan.characterVsCast}`,
+      `media_one_oshi_vs_box_${mediaEditionPlan.oneOshiVsBox}`,
+      `media_collection_completeness_${mediaEditionPlan.collectionCompleteness}`,
+      `media_budget_alignment_${mediaEditionPlan.budgetAlignment}`,
+      `media_edition_ambition_${mediaEditionPlan.editionAmbition}`,
+      `media_bonus_pressure_${mediaEditionPlan.bonusPressure}`,
+    );
+    if (mediaEditionPlan.memberVersionPreference !== 'unknown') tags.push(`media_member_version_${mediaEditionPlan.memberVersionPreference}`);
+    if (mediaEditionPlan.randomGoodsStopLineAddonInvoked) tags.push('media_random_goods_stopline_addon_invoked');
+    if (mediaEditionPlan.clampReason) tags.push(`media_edition_clamp_${mediaEditionPlan.clampReason}`);
+
+    if (mediaEditionPlan.chosenPath === 'full_set_is_justified') {
+      if (decision === 'SKIP' && mediaEditionPlan.budgetAlignment !== 'weak') decision = 'THINK';
+    } else if (
+      mediaEditionPlan.chosenPath === 'avoid_full_set_chase' ||
+      mediaEditionPlan.chosenPath === 'step_back_from_bonus_or_completion_pressure'
+    ) {
+      if (decision === 'BUY') decision = 'THINK';
+      if (mediaEditionPlan.budgetAlignment === 'weak' && mediaEditionPlan.chosenPath === 'step_back_from_bonus_or_completion_pressure') {
+        decision = 'SKIP';
+      }
+    } else if (decision === 'BUY' && mediaEditionPlan.budgetAlignment === 'weak') {
+      decision = 'THINK';
     }
   }
 
@@ -936,6 +1167,38 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     extraActions.unshift(actionText[randomGoodsPlan.chosenPath]);
   }
 
+  if (mediaEditionPlan) {
+    const pathText: Record<MediaEditionPlannerPath, string> = {
+      buy_standard_only: '今回は通常版だけで十分。限定圧で版数を増やさなくてよい。',
+      buy_limited_only: '限定版に意味はあるが、複数版 chase までは広げない方がよい。',
+      buy_one_best_fit_edition: 'いちばん motive に合う 1種だけを選ぶのが合理的。',
+      avoid_full_set_chase: '全版追いは今の motive / 予算整合だと広げすぎ。1種に絞る方が安全。',
+      full_set_is_justified: '箱推し・ completeness・予算が揃っているため、今回は全版でも筋が通る。',
+      step_back_from_bonus_or_completion_pressure: '今の迷いは必要性より bonus / completion 圧が前に出ているので、一歩引く方が安全。',
+    };
+    extraReasons.unshift({
+      id: `media_edition_${mediaEditionPlan.chosenPath}`,
+      severity: mediaEditionPlan.chosenPath === 'full_set_is_justified' ? 'info' : 'strong',
+      text: pathText[mediaEditionPlan.chosenPath],
+    });
+    if (mediaEditionPlan.clampReason === 'bonus_pressure_exceeds_stated_need') {
+      extraReasons.push({
+        id: 'media_bonus_pressure_clamp',
+        severity: 'warn',
+        text: '限定感や bonus の圧はあるが、必要性としては版数を増やす根拠がまだ弱め。',
+      });
+    }
+    const actionText: Record<MediaEditionPlannerPath, ActionItem> = {
+      buy_standard_only: { id: 'media_standard_only', text: '通常版だけに固定し、限定版比較は今日は打ち切る' },
+      buy_limited_only: { id: 'media_limited_only', text: '限定版を1種だけ確保して、他版の追い買いはしない' },
+      buy_one_best_fit_edition: { id: 'media_one_best_fit', text: '収録差・封入差を確認して、自分向けの1種だけ選ぶ' },
+      avoid_full_set_chase: { id: 'media_avoid_full_set', text: '全版前提を外し、最推し・用途・予算に合う版だけ残す' },
+      full_set_is_justified: { id: 'media_full_set_justified', text: '全版で行くなら総額上限を先に固定し、理由のある版差だけ確認する' },
+      step_back_from_bonus_or_completion_pressure: { id: 'media_step_back_pressure', text: '今日は全版判断を保留し、bonus や comp 圧が引いてから再評価する' },
+    };
+    extraActions.unshift(actionText[mediaEditionPlan.chosenPath]);
+  }
+
   if (venueLimitedGoodsPlan) {
     const pathText: Record<VenueLimitedPlannerPath, string> = {
       buy_now_if_it_is_truly_hard_to_recover: '回復経路が弱い根拠がある時だけ、今の確保を優先してよい。',
@@ -1008,6 +1271,10 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     downgradeFlags.push(`random_goods_path_${randomGoodsPlan.chosenPath}`);
     if (randomGoodsPlan.clampReason) downgradeFlags.push(`random_goods_clamp_${randomGoodsPlan.clampReason}`);
   }
+  if (mediaEditionPlan) {
+    downgradeFlags.push(`media_edition_path_${mediaEditionPlan.chosenPath}`);
+    if (mediaEditionPlan.clampReason) downgradeFlags.push(`media_edition_clamp_${mediaEditionPlan.clampReason}`);
+  }
   if (venueLimitedGoodsPlan) {
     downgradeFlags.push(`venue_limited_path_${venueLimitedGoodsPlan.chosenPath}`);
     if (venueLimitedGoodsPlan.clampReason) downgradeFlags.push(`venue_limited_clamp_${venueLimitedGoodsPlan.clampReason}`);
@@ -1043,6 +1310,7 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     whyNotSkipYet: explain.whyNotSkipYet,
     factorBuckets,
     presentation,
+    mediaEditionPlan,
     randomGoodsPlan,
     venueLimitedGoodsPlan,
     diagnosticTrace: {
@@ -1053,6 +1321,7 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
         futureUseFlag,
         downgradeFlags,
       },
+      mediaEditionPlan,
       randomGoodsPlan,
       venueLimitedGoodsPlan,
     },

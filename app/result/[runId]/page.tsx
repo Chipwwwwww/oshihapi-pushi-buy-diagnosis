@@ -813,10 +813,70 @@ export default function ResultPage() {
         </Card>
       ) : null}
 
+      {run.output.mediaEditionPlan ? (
+        <Card className="space-y-4 border border-fuchsia-200 bg-fuchsia-50 text-fuchsia-950 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className={sectionTitleClass}>複数版メディアの診断</h2>
+            <Badge variant="outline">{run.output.mediaEditionPlan.chosenPath}</Badge>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-fuchsia-200/70 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
+              <p className="text-sm font-semibold">今回の推奨ルート</p>
+              <p className="mt-2 text-sm">
+                {run.output.mediaEditionPlan.chosenPath === "buy_standard_only"
+                  ? "今回は通常版だけで十分。限定圧で版数を増やさなくてよい。"
+                  : run.output.mediaEditionPlan.chosenPath === "buy_limited_only"
+                    ? "限定版に意味はあるが、複数版 chase までは広げない。"
+                    : run.output.mediaEditionPlan.chosenPath === "buy_one_best_fit_edition"
+                      ? "自分の motive に合う 1種だけを選ぶのが最適。"
+                      : run.output.mediaEditionPlan.chosenPath === "full_set_is_justified"
+                        ? "今回は全版でも筋が通る。ただし motive と予算の整合が前提。"
+                        : run.output.mediaEditionPlan.chosenPath === "step_back_from_bonus_or_completion_pressure"
+                          ? "必要性よりも bonus / comp 圧が前に出ているため、一歩引く。"
+                          : "全版 chase は広げすぎ。いったん 1種基準に戻す。"}
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                最適化対象: {run.output.mediaEditionPlan.optimizingFor}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-fuchsia-200/70 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
+              <p className="text-sm font-semibold">前提がどう効いたか</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                <li>character vs cast: {run.output.mediaEditionPlan.characterVsCast}</li>
+                <li>one-oshi vs box: {run.output.mediaEditionPlan.oneOshiVsBox}</li>
+                <li>completeness axis: {run.output.mediaEditionPlan.collectionCompleteness}</li>
+                <li>budget alignment: {run.output.mediaEditionPlan.budgetAlignment}</li>
+                <li>edition ambition: {run.output.mediaEditionPlan.editionAmbition}</li>
+                <li>bonus pressure: {run.output.mediaEditionPlan.bonusPressure}</li>
+                <li>member/version preference: {run.output.mediaEditionPlan.memberVersionPreference}</li>
+                <li>random-goods addon: {run.output.mediaEditionPlan.randomGoodsStopLineAddonInvoked ? "invoked" : run.output.mediaEditionPlan.randomGoodsAddonIntent}</li>
+              </ul>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-fuchsia-200/70 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
+              <p className="text-sm font-semibold">なぜこの diagnosis か</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                {run.output.mediaEditionPlan.reasons.map((reason) => <li key={reason}>{reason}</li>)}
+              </ul>
+            </div>
+            <div className="rounded-2xl border border-fuchsia-200/70 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
+              <p className="text-sm font-semibold">診断 trace</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                {run.output.mediaEditionPlan.assumptions.map((assumption) => <li key={assumption}>{assumption}</li>)}
+                {run.output.mediaEditionPlan.clampReason ? <li>clamp理由: {run.output.mediaEditionPlan.clampReason}</li> : null}
+                <li>selected planner path: {run.output.mediaEditionPlan.chosenPath}</li>
+                <li>random-goods stop-line addon invoked: {run.output.mediaEditionPlan.randomGoodsStopLineAddonInvoked ? "はい" : "いいえ"}</li>
+              </ul>
+            </div>
+          </div>
+        </Card>
+      ) : null}
+
       {run.output.randomGoodsPlan ? (
         <Card className="space-y-4 border border-sky-200 bg-sky-50 text-sky-950 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className={sectionTitleClass}>ランダムグッズの止めどき診断</h2>
+            <h2 className={sectionTitleClass}>{run.output.mediaEditionPlan?.randomGoodsStopLineAddonInvoked ? "ランダム特典 / 付随グッズの止めどき診断" : "ランダムグッズの止めどき診断"}</h2>
             <Badge variant="outline">{run.output.randomGoodsPlan.chosenPath}</Badge>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">

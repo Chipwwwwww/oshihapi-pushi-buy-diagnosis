@@ -58,13 +58,33 @@ export function shouldAskStorage(itemKind?: ItemKind, goodsSubtype?: GoodsSubtyp
 }
 
 
+export const MIXED_MEDIA_RANDOM_GOODS_QUESTION_IDS = [
+  "q_addon_blind_draw_cap",
+  "q_addon_blind_draw_exit",
+  "q_addon_blind_draw_duplicate_tolerance",
+  "q_addon_blind_draw_trade_intent",
+  "q_addon_blind_draw_exchange_friction",
+  "q_addon_blind_draw_single_fallback",
+  "q_addon_blind_draw_stop_budget",
+  "q_addon_blind_draw_miss_pain",
+] as const;
+
 export const ADDON_BY_GOODS_CLASS: Record<GoodsClass, readonly string[]> = {
   small_collection: ["q_addon_goods_collection_goal", "q_addon_goods_trade_intent"],
   paper: ["q_addon_goods_paper_care", "q_addon_goods_paper_view_freq"],
   wearable: ["q_addon_goods_wear_freq", "q_addon_goods_wear_fit", "q_addon_goods_wear_scene"],
   display_large: ["q_addon_goods_display_space_plan", "q_addon_goods_display_move_risk"],
   tech: ["q_addon_goods_tech_compat", "q_addon_goods_tech_after_use"],
-  media: ["q_addon_media_motive", "q_addon_media_playback_space", "q_addon_media_limited_pressure"],
+  media: [
+    "q_addon_media_motive",
+    "q_addon_media_support_scope",
+    "q_addon_media_collection_budget",
+    "q_addon_media_edition_intent",
+    "q_addon_media_member_version",
+    "q_addon_media_playback_space",
+    "q_addon_media_limited_pressure",
+    "q_addon_media_random_goods_intent",
+  ],
   itabag_badge: ["q_addon_goods_itabag_target", "q_addon_goods_itabag_usage"],
 };
 

@@ -501,6 +501,139 @@ function runBlindDrawAcceptanceChecks() {
   });
 }
 
+function runMediaEditionAcceptanceChecks() {
+  const cases = [
+    {
+      id: 'one_oshi_budget_constrained_limited_temptation',
+      output: buildEvaluatedOutput('goods', {
+        q_goal: 'single',
+        q_motives_multi: ['content'],
+        q_budget_pain: 'hard',
+        q_addon_media_motive: 'character_ip',
+        q_addon_media_support_scope: 'one_oshi',
+        q_addon_media_collection_budget: 'efficient',
+        q_addon_media_edition_intent: 'limited_preferred',
+        q_addon_media_member_version: 'specific_version',
+        q_addon_media_playback_space: 'ready',
+        q_addon_media_limited_pressure: 'maybe',
+        q_addon_media_random_goods_intent: 'none',
+      }, 'media'),
+      assert(output: DecisionOutput) {
+        const plan = output.mediaEditionPlan;
+        if (!plan) throw new Error('one_oshi_budget_constrained_limited_temptation: mediaEditionPlan missing');
+        if (!['buy_one_best_fit_edition', 'buy_limited_only'].includes(plan.chosenPath)) throw new Error('one_oshi_budget_constrained_limited_temptation: should avoid all-edition chase');
+        if (plan.oneOshiVsBox !== 'one_oshi' || plan.budgetAlignment !== 'weak') throw new Error('one_oshi_budget_constrained_limited_temptation: core axes not captured');
+      },
+    },
+    {
+      id: 'box_group_high_completeness_healthy_budget',
+      output: buildEvaluatedOutput('goods', {
+        q_goal: 'set',
+        q_motives_multi: ['support', 'complete'],
+        q_budget_pain: 'ok',
+        q_addon_media_motive: 'balanced',
+        q_addon_media_support_scope: 'box_group',
+        q_addon_media_collection_budget: 'complete',
+        q_addon_media_edition_intent: 'all_editions',
+        q_addon_media_member_version: 'multiple_versions',
+        q_addon_media_playback_space: 'ready',
+        q_addon_media_limited_pressure: 'yes',
+        q_addon_media_random_goods_intent: 'none',
+      }, 'media'),
+      assert(output: DecisionOutput) {
+        const plan = output.mediaEditionPlan;
+        if (!plan) throw new Error('box_group_high_completeness_healthy_budget: mediaEditionPlan missing');
+        if (plan.chosenPath !== 'full_set_is_justified') throw new Error('box_group_high_completeness_healthy_budget: aligned box-support case should justify full set');
+      },
+    },
+    {
+      id: 'bonus_pressure_clamp',
+      output: buildEvaluatedOutput('goods', {
+        q_goal: 'single',
+        q_motives_multi: ['fomo'],
+        q_budget_pain: 'some',
+        q_addon_media_motive: 'character_ip',
+        q_addon_media_support_scope: 'one_oshi',
+        q_addon_media_collection_budget: 'balanced',
+        q_addon_media_edition_intent: 'limited_preferred',
+        q_addon_media_member_version: 'none',
+        q_addon_media_playback_space: 'ready',
+        q_addon_media_limited_pressure: 'no',
+        q_addon_media_random_goods_intent: 'none',
+      }, 'media'),
+      assert(output: DecisionOutput) {
+        const plan = output.mediaEditionPlan;
+        if (!plan) throw new Error('bonus_pressure_clamp: mediaEditionPlan missing');
+        if (plan.chosenPath !== 'step_back_from_bonus_or_completion_pressure' || plan.clampReason !== 'bonus_pressure_exceeds_stated_need') {
+          throw new Error('bonus_pressure_clamp: bonus/FOMO-heavy case should clamp back');
+        }
+      },
+    },
+    {
+      id: 'mixed_media_random_goods_addon',
+      output: buildEvaluatedOutput('goods', {
+        q_goal: 'single',
+        q_motives_multi: ['content'],
+        q_budget_pain: 'some',
+        q_addon_media_motive: 'cast_performer',
+        q_addon_media_support_scope: 'one_oshi',
+        q_addon_media_collection_budget: 'balanced',
+        q_addon_media_edition_intent: 'one_best_fit',
+        q_addon_media_member_version: 'specific_version',
+        q_addon_media_playback_space: 'ready',
+        q_addon_media_limited_pressure: 'maybe',
+        q_addon_media_random_goods_intent: 'present',
+        q_addon_blind_draw_cap: 'used_to_it',
+        q_addon_blind_draw_exit: 'oshi_only',
+        q_addon_blind_draw_duplicate_tolerance: 'low',
+        q_addon_blind_draw_trade_intent: 'no',
+        q_addon_blind_draw_exchange_friction: 'medium',
+        q_addon_blind_draw_single_fallback: 'after_stop',
+        q_addon_blind_draw_stop_budget: 'soft',
+        q_addon_blind_draw_miss_pain: 'high',
+      }, 'media'),
+      assert(output: DecisionOutput) {
+        const mediaPlan = output.mediaEditionPlan;
+        const randomPlan = output.randomGoodsPlan;
+        if (!mediaPlan || !randomPlan) throw new Error('mixed_media_random_goods_addon: both mediaEditionPlan and randomGoodsPlan should exist');
+        if (!mediaPlan.randomGoodsStopLineAddonInvoked) throw new Error('mixed_media_random_goods_addon: media diagnostics should record addon invocation');
+        if (randomPlan.chosenPath !== 'stop_drawing_check_used_market') throw new Error('mixed_media_random_goods_addon: should reuse stop-line logic, not invent a new path');
+      },
+    },
+  ];
+
+  return cases.map((entry) => {
+    entry.assert(entry.output);
+    const plan = entry.output.mediaEditionPlan!;
+    return {
+      id: entry.id,
+      decision: entry.output.decision,
+      chosenPath: plan.chosenPath,
+      clampReason: plan.clampReason ?? null,
+      budgetAlignment: plan.budgetAlignment,
+      randomGoodsStopLineAddonInvoked: plan.randomGoodsStopLineAddonInvoked,
+      reasons: plan.reasons,
+    };
+  });
+}
+
+function runMixedMediaFlowCheck() {
+  const flow = resolveFlowQuestions({
+    mode: "long",
+    itemKind: "goods",
+    goodsClass: "media",
+    goodsSubtype: "general",
+    useCase: "merch",
+    answers: { q_addon_media_random_goods_intent: "present" },
+    meta: { itemKind: "goods", goodsClass: "media", itemName: "検証", priceYen: 4000 },
+    styleMode: "standard",
+  });
+  const questionIds = flow.questions.map((question) => question.id);
+  if (!questionIds.includes("q_addon_blind_draw_exit") || !questionIds.includes("q_addon_blind_draw_stop_budget")) {
+    throw new Error("mixed_media_flow: random-goods addon should inject existing blind-draw questions");
+  }
+}
+
 
 function runHomepageFunnelChecks() {
   if (!isGoodsClassApplicable("goods") || !isGoodsClassApplicable("used") || !isGoodsClassApplicable("preorder")) {
@@ -601,6 +734,8 @@ runBackChangeCheck();
 runStyleInvariantCheck();
 runScoringSeparationChecks();
 const blindDrawAcceptanceCases = runBlindDrawAcceptanceChecks();
+const mediaEditionAcceptanceCases = runMediaEditionAcceptanceChecks();
+runMixedMediaFlowCheck();
 runHomepageFunnelChecks();
 runDraftInvalidationCheck();
 runReplaySeedCheck();
@@ -612,6 +747,7 @@ assertUniqueQuestion(results, "long_goods_wearable", "q_addon_goods_wear_fit");
 assertUniqueQuestion(results, "long_goods_display_large", "q_addon_goods_display_space_plan");
 assertUniqueQuestion(results, "long_goods_tech", "q_addon_goods_tech_compat");
 assertUniqueQuestion(results, "long_goods_media", "q_addon_media_motive");
+assertUniqueQuestion(results, "long_goods_media", "q_addon_media_edition_intent");
 assertUniqueQuestion(results, "long_goods_itabag_badge", "q_addon_goods_itabag_target");
 assertUniqueQuestion(results, "long_blind_draw", "q_addon_blind_draw_miss_pain");
 assertUniqueQuestion(results, "long_blind_draw", "q_addon_blind_draw_duplicate_tolerance");
@@ -642,11 +778,14 @@ const report = {
     styleInvariant: "pass",
     scoringSeparation: "pass",
     blindDrawAcceptance: "pass",
+    mediaEditionAcceptance: "pass",
+    mixedMediaFlow: "pass",
     homepageFunnel: "pass",
     draftInvalidation: "pass",
     replaySeed: "pass",
   },
   blindDrawAcceptanceCases,
+  mediaEditionAcceptanceCases,
   uniquePathGaps,
 };
 

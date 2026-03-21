@@ -21,14 +21,14 @@
 - itemKind=blind_draw#gc=N/A: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_blind_draw_cap -> q_addon_blind_draw_exit -> q_addon_blind_draw_duplicate_tolerance -> q_addon_blind_draw_trade_intent -> q_addon_blind_draw_exchange_friction -> q_addon_blind_draw_single_fallback -> q_addon_blind_draw_stop_budget -> q_addon_blind_draw_miss_pain
 - itemKind=goods#gc=display_large: q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_goods_event_limit_context -> q_addon_common_info -> q_addon_common_priority -> q_addon_goods_compare -> q_addon_goods_portability -> q_addon_goods_display_space_plan -> q_addon_goods_display_move_risk
 - itemKind=goods#gc=itabag_badge: q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_goods_event_limit_context -> q_addon_common_info -> q_addon_common_priority -> q_addon_goods_compare -> q_addon_goods_portability -> q_addon_goods_itabag_target -> q_addon_goods_itabag_usage
-- itemKind=goods#gc=media: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_goods_event_limit_context -> q_addon_common_info -> q_addon_common_priority -> q_addon_goods_compare -> q_addon_goods_portability -> q_addon_media_motive -> q_addon_media_playback_space -> q_addon_media_limited_pressure
+- itemKind=goods#gc=media: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_goods_event_limit_context -> q_addon_common_info -> q_addon_common_priority -> q_addon_goods_compare -> q_addon_goods_portability -> q_addon_media_motive -> q_addon_media_support_scope -> q_addon_media_collection_budget -> q_addon_media_edition_intent -> q_addon_media_member_version -> q_addon_media_playback_space -> q_addon_media_limited_pressure -> q_addon_media_random_goods_intent
 - itemKind=goods#gc=paper: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_goods_event_limit_context -> q_addon_common_info -> q_addon_common_priority -> q_addon_goods_compare -> q_addon_goods_portability -> q_addon_goods_paper_care -> q_addon_goods_paper_view_freq
 - itemKind=goods#gc=small_collection: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_goods_event_limit_context -> q_addon_common_info -> q_addon_common_priority -> q_addon_goods_compare -> q_addon_goods_portability -> q_addon_goods_collection_goal -> q_addon_goods_trade_intent
 - itemKind=goods#gc=tech: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_goods_event_limit_context -> q_addon_common_info -> q_addon_common_priority -> q_addon_goods_compare -> q_addon_goods_portability -> q_addon_goods_tech_compat -> q_addon_goods_tech_after_use
 - itemKind=goods#gc=wearable: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_goods_event_limit_context -> q_addon_common_info -> q_addon_common_priority -> q_addon_goods_compare -> q_addon_goods_portability -> q_addon_goods_wear_freq -> q_addon_goods_wear_fit -> q_addon_goods_wear_scene
 - itemKind=preorder#gc=display_large: q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_preorder_timeline -> q_addon_preorder_decay -> q_addon_preorder_compare_loss -> q_addon_goods_display_space_plan -> q_addon_goods_display_move_risk
 - itemKind=preorder#gc=itabag_badge: q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_preorder_timeline -> q_addon_preorder_decay -> q_addon_preorder_compare_loss -> q_addon_goods_itabag_target -> q_addon_goods_itabag_usage
-- itemKind=preorder#gc=media: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_preorder_timeline -> q_addon_preorder_decay -> q_addon_preorder_compare_loss -> q_addon_media_motive -> q_addon_media_playback_space -> q_addon_media_limited_pressure
+- itemKind=preorder#gc=media: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_preorder_timeline -> q_addon_preorder_decay -> q_addon_preorder_compare_loss -> q_addon_media_motive -> q_addon_media_support_scope -> q_addon_media_collection_budget -> q_addon_media_edition_intent -> q_addon_media_member_version -> q_addon_media_playback_space -> q_addon_media_limited_pressure -> q_addon_media_random_goods_intent
 - itemKind=preorder#gc=paper: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_preorder_timeline -> q_addon_preorder_decay -> q_addon_preorder_compare_loss -> q_addon_goods_paper_care -> q_addon_goods_paper_view_freq
 - itemKind=preorder#gc=small_collection: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_preorder_timeline -> q_addon_preorder_decay -> q_addon_preorder_compare_loss -> q_addon_goods_collection_goal -> q_addon_goods_trade_intent
 - itemKind=preorder#gc=tech: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_preorder_timeline -> q_addon_preorder_decay -> q_addon_preorder_compare_loss -> q_addon_goods_tech_compat -> q_addon_goods_tech_after_use
@@ -36,7 +36,7 @@
 - itemKind=ticket#gc=N/A: q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_ticket_schedule -> q_addon_ticket_resale_rule -> q_addon_ticket_trip_load -> q_addon_ticket_next_chance
 - itemKind=used#gc=display_large: q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_used_condition -> q_addon_used_price_gap -> q_addon_used_defect_return -> q_addon_used_authenticity -> q_addon_used_seller_trust -> q_addon_goods_display_space_plan -> q_addon_goods_display_move_risk
 - itemKind=used#gc=itabag_badge: q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_used_condition -> q_addon_used_price_gap -> q_addon_used_defect_return -> q_addon_used_authenticity -> q_addon_used_seller_trust -> q_addon_goods_itabag_target -> q_addon_goods_itabag_usage
-- itemKind=used#gc=media: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_used_condition -> q_addon_used_price_gap -> q_addon_used_defect_return -> q_addon_used_authenticity -> q_addon_used_seller_trust -> q_addon_media_motive -> q_addon_media_playback_space -> q_addon_media_limited_pressure
+- itemKind=used#gc=media: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_used_condition -> q_addon_used_price_gap -> q_addon_used_defect_return -> q_addon_used_authenticity -> q_addon_used_seller_trust -> q_addon_media_motive -> q_addon_media_support_scope -> q_addon_media_collection_budget -> q_addon_media_edition_intent -> q_addon_media_member_version -> q_addon_media_playback_space -> q_addon_media_limited_pressure -> q_addon_media_random_goods_intent
 - itemKind=used#gc=paper: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_used_condition -> q_addon_used_price_gap -> q_addon_used_defect_return -> q_addon_used_authenticity -> q_addon_used_seller_trust -> q_addon_goods_paper_care -> q_addon_goods_paper_view_freq
 - itemKind=used#gc=small_collection: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_used_condition -> q_addon_used_price_gap -> q_addon_used_defect_return -> q_addon_used_authenticity -> q_addon_used_seller_trust -> q_addon_goods_collection_goal -> q_addon_goods_trade_intent
 - itemKind=used#gc=tech: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_used_condition -> q_addon_used_price_gap -> q_addon_used_defect_return -> q_addon_used_authenticity -> q_addon_used_seller_trust -> q_addon_goods_tech_compat -> q_addon_goods_tech_after_use
@@ -1571,6 +1571,63 @@
 
 </details>
 
+### q_addon_media_collection_budget
+- useCase: merch
+- type: single
+- scoring relevance: delta
+- impactCategory: score
+- relevanceSummary: score
+- behaviorRelevance: {"affectsScore":true,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/goods#gc=media | merch/long/preorder#gc=media | merch/long/used#gc=media
+- isOrphan: false
+- mapTo: 
+- tags: collection_pressure, unknown_info
+- unknown tags hints: unknown_info
+- text_standard: 今回は「揃えたい気持ち」と「予算」のどちらを強く守りたい？
+- text_kawaii: 今回は「揃えたい気持ち」と「予算」のどちらを強く守りたい？
+- text_oshi: 今回は「揃えたい気持ち」と「予算」のどちらを強く守りたい？
+- sameAsStandard: true
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| balanced | 納得できる範囲なら少し広げてもいい | 納得できる範囲なら少し広げてもいい | 納得できる範囲なら少し広げてもいい | true |  | affordability:58;desire:58;regretRisk:54 |  |  |  |
+| complete | 多少負担があっても揃えたい気持ちが強い | 多少負担があっても揃えたい気持ちが強い | 多少負担があっても揃えたい気持ちが強い | true | collection_pressure | desire:68;impulse:62;opportunityCost:68 |  |  |  |
+| efficient | 予算優先で、効率よく1枚/1本に絞りたい | 予算優先で、効率よく1枚/1本に絞りたい | 予算優先で、効率よく1枚/1本に絞りたい | true |  | affordability:68;impulse:42;opportunityCost:42 |  |  |  |
+| unknown | まだ整理中 | まだ整理中 | まだ整理中 | true | unknown_info | opportunityCost:60;regretRisk:64 |  |  |  |
+
+</details>
+
+### q_addon_media_edition_intent
+- useCase: merch
+- type: single
+- scoring relevance: delta
+- impactCategory: score
+- relevanceSummary: score
+- behaviorRelevance: {"affectsScore":true,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/goods#gc=media | merch/long/preorder#gc=media | merch/long/used#gc=media
+- isOrphan: false
+- mapTo: 
+- tags: collection_pressure, media_all_editions_ambition, media_limited_preferred, media_one_best_fit, unknown_info
+- unknown tags hints: unknown_info
+- text_standard: 版違いがあるなら、今の気持ちにいちばん近いのは？
+- text_kawaii: 版違いがあるなら、今の気持ちにいちばん近いのは？
+- text_oshi: 版違いがあるなら、今の気持ちにいちばん近いのは？
+- sameAsStandard: true
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| all_editions | 版違いは基本全部追いたい | 版違いは基本全部追いたい | 版違いは基本全部追いたい | true | media_all_editions_ambition;collection_pressure | desire:70;impulse:68;opportunityCost:74 |  |  |  |
+| limited_preferred | 初回/限定版が本命だが、1種で満足したい | 初回/限定版が本命だが、1種で満足したい | 初回/限定版が本命だが、1種で満足したい | true | media_limited_preferred | desire:64;impulse:54;regretRisk:52 |  |  |  |
+| one_best_fit | 仕様を見て、自分向けの1種だけ選びたい | 仕様を見て、自分向けの1種だけ選びたい | 仕様を見て、自分向けの1種だけ選びたい | true | media_one_best_fit | affordability:62;opportunityCost:46 |  |  |  |
+| standard_only | 通常盤/通常版で十分 | 通常盤/通常版で十分 | 通常盤/通常版で十分 | true |  | affordability:68;impulse:42;regretRisk:44 |  |  |  |
+| unknown | まだ決めていない | まだ決めていない | まだ決めていない | true | unknown_info | opportunityCost:62;regretRisk:66 |  |  |  |
+
+</details>
+
 ### q_addon_media_limited_pressure
 - useCase: merch
 - type: single
@@ -1599,6 +1656,34 @@
 
 </details>
 
+### q_addon_media_member_version
+- useCase: merch
+- type: single
+- scoring relevance: delta
+- impactCategory: score
+- relevanceSummary: score
+- behaviorRelevance: {"affectsScore":true,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/goods#gc=media | merch/long/preorder#gc=media | merch/long/used#gc=media
+- isOrphan: false
+- mapTo: 
+- tags: collection_pressure, unknown_info
+- unknown tags hints: unknown_info
+- text_standard: メンバー/キャラ別ジャケットやバージョン違いは、どのくらい重要？
+- text_kawaii: メンバー/キャラ別ジャケットやバージョン違いは、どのくらい重要？
+- text_oshi: メンバー/キャラ別ジャケットやバージョン違いは、どのくらい重要？
+- sameAsStandard: true
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| multiple_versions | 複数人/複数版を揃えたい | 複数人/複数版を揃えたい | 複数人/複数版を揃えたい | true | collection_pressure | desire:66;impulse:62;opportunityCost:70 |  |  |  |
+| none | 特に気にしない | 特に気にしない | 特に気にしない | true |  | impulse:44;opportunityCost:44 |  |  |  |
+| specific_version | 最推し分だけ合えばよい | 最推し分だけ合えばよい | 最推し分だけ合えばよい | true |  | desire:60;opportunityCost:52 |  |  |  |
+| unknown | まだ分からない | まだ分からない | まだ分からない | true | unknown_info | opportunityCost:60;regretRisk:64 |  |  |  |
+
+</details>
+
 ### q_addon_media_motive
 - useCase: merch
 - type: single
@@ -1611,18 +1696,18 @@
 - mapTo: 
 - tags: actor_fan_primary, unknown_info
 - unknown tags hints: unknown_info
-- text_standard: このCDを買いたい主な理由は、内容ですか？ それとも推し声優の参加ですか？
-- text_kawaii: このCDを買いたい主な理由は、内容ですか？ それとも推し声優の参加ですか？
-- text_oshi: このCDを買いたい主な理由は、内容ですか？ それとも推し声優の参加ですか？
+- text_standard: このメディアを欲しい主な理由は、キャラ/IP側ですか？ それとも演者・キャスト側ですか？
+- text_kawaii: このメディアを欲しい主な理由は、キャラ/IP側ですか？ それとも演者・キャスト側ですか？
+- text_oshi: このメディアを欲しい主な理由は、キャラ/IP側ですか？ それとも演者・キャスト側ですか？
 - sameAsStandard: true
 <details>
 <summary>Options</summary>
 
 | optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
 |---|---|---|---|---|---|---|---|---|---|
-| both | 両方同じくらい大事 | 両方同じくらい大事 | 両方同じくらい大事 | true |  | desire:62;regretRisk:56 |  |  |  |
-| cast_main | 推し声優・演者の参加が主な理由 | 推し声優・演者の参加が主な理由 | 推し声優・演者の参加が主な理由 | true | actor_fan_primary | impulse:68;regretRisk:70 |  |  |  |
-| content_main | 内容（楽曲・ドラマ・映像）が主な理由 | 内容（楽曲・ドラマ・映像）が主な理由 | 内容（楽曲・ドラマ・映像）が主な理由 | true |  | desire:66;regretRisk:45 |  |  |  |
+| balanced | 両方同じくらい大事 | 両方同じくらい大事 | 両方同じくらい大事 | true |  | desire:62;regretRisk:56 |  |  |  |
+| cast_performer | 推し声優・演者・キャスト参加が主な理由 | 推し声優・演者・キャスト参加が主な理由 | 推し声優・演者・キャスト参加が主な理由 | true | actor_fan_primary | impulse:68;regretRisk:70 |  |  |  |
+| character_ip | キャラ・作品・内容面が主な理由 | キャラ・作品・内容面が主な理由 | キャラ・作品・内容面が主な理由 | true |  | desire:66;regretRisk:45 |  |  |  |
 | unknown | まだ言語化できていない | まだ言語化できていない | まだ言語化できていない | true | unknown_info | opportunityCost:60;regretRisk:65 |  |  |  |
 
 </details>
@@ -1652,6 +1737,61 @@
 | partial | どちらかは整っている | どちらかは整っている | どちらかは整っている | true |  | opportunityCost:56;regretRisk:54 |  |  |  |
 | ready | 再生環境・保管ともに問題ない | 再生環境・保管ともに問題ない | 再生環境・保管ともに問題ない | true |  | opportunityCost:40;regretRisk:38 |  |  |  |
 | unknown | まだ確認できていない | まだ確認できていない | まだ確認できていない | true | unknown_info | opportunityCost:62;regretRisk:68 |  |  |  |
+
+</details>
+
+### q_addon_media_random_goods_intent
+- useCase: merch
+- type: single
+- scoring relevance: delta
+- impactCategory: score
+- relevanceSummary: score
+- behaviorRelevance: {"affectsScore":true,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/goods#gc=media | merch/long/preorder#gc=media | merch/long/used#gc=media
+- isOrphan: false
+- mapTo: 
+- tags: mixed_media_random_goods, unknown_info
+- unknown tags hints: unknown_info
+- text_standard: このメディア判断と一緒に、ランダム/ブラインド特典や付随グッズの止めどきも整理したい？
+- text_kawaii: このメディア判断と一緒に、ランダム/ブラインド特典や付随グッズの止めどきも整理したい？
+- text_oshi: このメディア判断と一緒に、ランダム/ブラインド特典や付随グッズの止めどきも整理したい？
+- sameAsStandard: true
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| none | 今回はメディア版違いだけ整理したい | 今回はメディア版違いだけ整理したい | 今回はメディア版違いだけ整理したい | true |  | impulse:44;opportunityCost:46 |  |  |  |
+| present | ランダム特典/付随グッズの止めどきも一緒に見たい | ランダム特典/付随グッズの止めどきも一緒に見たい | ランダム特典/付随グッズの止めどきも一緒に見たい | true | mixed_media_random_goods | impulse:58;regretRisk:58 |  |  |  |
+| unknown | まだ分からない | まだ分からない | まだ分からない | true | unknown_info | opportunityCost:60;regretRisk:64 |  |  |  |
+
+</details>
+
+### q_addon_media_support_scope
+- useCase: merch
+- type: single
+- scoring relevance: delta
+- impactCategory: score
+- relevanceSummary: score
+- behaviorRelevance: {"affectsScore":true,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/goods#gc=media | merch/long/preorder#gc=media | merch/long/used#gc=media
+- isOrphan: false
+- mapTo: 
+- tags: collection_pressure, unknown_info
+- unknown tags hints: unknown_info
+- text_standard: 回収したい気持ちは、最推し1人/1キャラ寄り？ それとも箱・グループ寄り？
+- text_kawaii: 回収したい気持ちは、最推し1人/1キャラ寄り？ それとも箱・グループ寄り？
+- text_oshi: 回収したい気持ちは、最推し1人/1キャラ寄り？ それとも箱・グループ寄り？
+- sameAsStandard: true
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| balanced | どちらも少しある | どちらも少しある | どちらも少しある | true |  | desire:58;regretRisk:54 |  |  |  |
+| box_group | 箱・グループ全体を支えたい | 箱・グループ全体を支えたい | 箱・グループ全体を支えたい | true | collection_pressure | desire:68;impulse:60;opportunityCost:62 |  |  |  |
+| one_oshi | 最推し1人/1キャラ中心 | 最推し1人/1キャラ中心 | 最推し1人/1キャラ中心 | true |  | opportunityCost:46;regretRisk:44 |  |  |  |
+| unknown | まだ決めきれていない | まだ決めきれていない | まだ決めきれていない | true | unknown_info | opportunityCost:60;regretRisk:64 |  |  |  |
 
 </details>
 
