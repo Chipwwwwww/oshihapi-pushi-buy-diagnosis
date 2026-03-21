@@ -717,28 +717,40 @@ export default function ResultPage() {
       {scenarioCoverage ? (
         <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className={sectionTitleClass}>この結果が前提にしている守備範囲</h2>
+            <h2 className={sectionTitleClass}>この結果の前提</h2>
             <Badge variant="outline">{getSupportLevelBadgeLabel(scenarioCoverage.supportLevel)}</Badge>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
             <div className="rounded-2xl border border-border p-4">
-              <p className="text-sm font-semibold">判定しているシナリオ</p>
-              <p className="mt-2 text-sm text-muted-foreground">{scenarioCoverage.recommendedEntryLabel}</p>
-              <p className="mt-2 text-sm text-muted-foreground">{scenarioCoverage.resultExplanationHint}</p>
+              <p className="text-sm font-semibold">判定シナリオ</p>
+              <p className="mt-2 text-sm text-slate-900 dark:text-zinc-100">{scenarioCoverage.recommendedEntryLabel}</p>
+              <p className="mt-2 text-sm text-muted-foreground">この結果は「{scenarioCoverage.optimizationSummary}」を優先して整理しています。</p>
             </div>
             <div className="rounded-2xl border border-border p-4">
-              <p className="text-sm font-semibold">なぜこの provider / 理由が出るか</p>
-              <p className="mt-2 text-sm text-muted-foreground">{scenarioCoverage.providerEcologyHint}</p>
-            </div>
-            <div className="rounded-2xl border border-border p-4">
-              <p className="text-sm font-semibold">外で確認すると安全な点</p>
-              <p className="mt-2 text-sm text-muted-foreground">{scenarioCoverage.verificationHint}</p>
-            </div>
-            <div className="rounded-2xl border border-border p-4">
-              <p className="text-sm font-semibold">サポート境界</p>
-              <p className="mt-2 text-sm text-muted-foreground">{scenarioCoverage.scopeDisclosure}</p>
+              <p className="text-sm font-semibold">確認しておくと安心な点</p>
+              <p className="mt-2 text-sm text-muted-foreground">{scenarioCoverage.shortVerificationHint}</p>
+              <p className="mt-2 text-xs text-muted-foreground">{scenarioCoverage.shortScopeDisclosure}</p>
             </div>
           </div>
+          <details className="rounded-2xl border border-border px-4 py-3">
+            <summary className="cursor-pointer text-sm font-medium text-slate-700 marker:text-slate-400 dark:text-zinc-200">
+              詳細な守備範囲と provider の前提を見る
+            </summary>
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border border-border p-3">
+                <p className="text-sm font-semibold">最適化の考え方</p>
+                <p className="mt-2 text-sm text-muted-foreground">{scenarioCoverage.resultExplanationHint}</p>
+              </div>
+              <div className="rounded-2xl border border-border p-3">
+                <p className="text-sm font-semibold">provider / 理由の前提</p>
+                <p className="mt-2 text-sm text-muted-foreground">{scenarioCoverage.providerEcologyHint}</p>
+              </div>
+              <div className="rounded-2xl border border-border p-3">
+                <p className="text-sm font-semibold">サポート境界</p>
+                <p className="mt-2 text-sm text-muted-foreground">{scenarioCoverage.scopeDisclosure}</p>
+              </div>
+            </div>
+          </details>
         </Card>
       ) : null}
 

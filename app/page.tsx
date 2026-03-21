@@ -162,13 +162,13 @@ export default function Home() {
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className={sectionTitleClass}>この診断が得意な判断シナリオ</h2>
-            <Badge variant="accent">scenario-first</Badge>
+            <Badge variant="accent">top scenarios first</Badge>
           </div>
           <p className="text-sm text-slate-600 dark:text-zinc-300">
-            まずは「どんな判断で迷っているか」から入れます。強めに対応しているシナリオを先に並べ、部分対応と対象外は同列に見せないようにしています。
+            迷い方が強く定まっている判断を先頭に置いています。まずは上の強め対応から選び、必要なら下の補助シナリオを見る形です。
           </p>
         </div>
-        <div className="grid gap-3">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {coverageGroups.strong.map((entry) => (
             <button
               key={entry.key}
@@ -181,43 +181,51 @@ export default function Home() {
                   : "border-slate-200 bg-white hover:border-accent/40 dark:border-white/10 dark:bg-white/4 dark:hover:border-accent/40",
               ].join(" ")}
             >
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-start justify-between gap-3">
                 <p className="text-sm font-semibold text-slate-900 dark:text-zinc-50">{entry.recommendedEntryLabel}</p>
                 <Badge variant="outline">{getSupportLevelBadgeLabel(entry.supportLevel)}</Badge>
               </div>
-              <p className="mt-2 text-sm text-slate-600 dark:text-zinc-300">{entry.shopperIntent}</p>
+              <p className="mt-2 text-sm text-slate-600 dark:text-zinc-300">{entry.compactEntryHint}</p>
             </button>
           ))}
         </div>
-        <div className="grid gap-3 md:grid-cols-2">
-          {coverageGroups.partial.map((entry) => (
-            <button
-              key={entry.key}
-              type="button"
-              onClick={() => handleScenarioSelect(entry.key)}
-              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-left transition hover:border-slate-300 dark:border-white/10 dark:bg-white/4"
-            >
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-sm font-semibold text-slate-900 dark:text-zinc-50">{entry.recommendedEntryLabel}</p>
-                <Badge variant="outline">{getSupportLevelBadgeLabel(entry.supportLevel)}</Badge>
-              </div>
-              <p className="mt-2 text-sm text-slate-600 dark:text-zinc-300">{entry.scopeDisclosure}</p>
-            </button>
-          ))}
+        <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-3 dark:border-white/10 dark:bg-white/4">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm font-semibold text-slate-900 dark:text-zinc-50">補助シナリオ</p>
+            <span className="text-xs text-slate-500 dark:text-zinc-400">一部対応のみを低ノイズで表示</span>
+          </div>
+          <div className="mt-3 grid gap-2 md:grid-cols-2">
+            {coverageGroups.partial.map((entry) => (
+              <button
+                key={entry.key}
+                type="button"
+                onClick={() => handleScenarioSelect(entry.key)}
+                className="rounded-xl border border-slate-200 bg-white/80 px-3 py-3 text-left transition hover:border-slate-300 dark:border-white/10 dark:bg-white/5"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-medium text-slate-900 dark:text-zinc-50">{entry.recommendedEntryLabel}</p>
+                  <span className="text-xs text-slate-500 dark:text-zinc-400">{getSupportLevelBadgeLabel(entry.supportLevel)}</span>
+                </div>
+                <p className="mt-1 text-xs text-slate-600 dark:text-zinc-300">{entry.shortScopeDisclosure}</p>
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 dark:border-white/10 dark:bg-white/4">
-          <p className="text-sm font-semibold text-slate-900 dark:text-zinc-50">今は対象外として明示している領域</p>
+        <details className="rounded-2xl border border-slate-200/70 bg-slate-50/70 px-4 py-3 text-slate-600 dark:border-white/10 dark:bg-white/3 dark:text-zinc-300">
+          <summary className="cursor-pointer text-sm font-medium text-slate-700 marker:text-slate-400 dark:text-zinc-200">
+            今は対象外として静かに明示している領域
+          </summary>
           <div className="mt-3 flex flex-wrap gap-2">
             {coverageGroups.notNow.map((entry) => (
-              <span key={entry.key} className="rounded-full border border-slate-300 px-3 py-1 text-xs text-slate-600 dark:border-white/15 dark:text-zinc-300">
+              <span key={entry.key} className="rounded-full border border-slate-300/80 px-3 py-1 text-xs text-slate-500 dark:border-white/15 dark:text-zinc-400">
                 {entry.recommendedEntryLabel}
               </span>
             ))}
           </div>
-          <p className="mt-3 text-sm text-slate-600 dark:text-zinc-300">
-            チケット、遠征、3D idol、K-pop、provider fit が薄い niche 店舗は「忘れている」のではなく、いまは守備範囲外として静かに明示しています。
+          <p className="mt-3 text-xs text-slate-500 dark:text-zinc-400">
+            チケット、遠征、3D idol、K-pop、provider fit が薄い niche 店舗は、対応を広げずに現時点の守備範囲として明示しています。
           </p>
-        </div>
+        </details>
       </Card>
 
       <Card className="space-y-3 border border-accent/20 bg-accent/5 text-slate-900 dark:border-accent/25 dark:bg-accent/10 dark:text-zinc-50">
@@ -225,9 +233,9 @@ export default function Home() {
           <h2 className={sectionTitleClass}>現在の選択シナリオ</h2>
           <Badge variant="accent">{getSupportLevelBadgeLabel(selectedCoverage.supportLevel)}</Badge>
         </div>
-        <p className="text-sm text-slate-700 dark:text-zinc-200">{selectedCoverage.recommendedEntryLabel}</p>
-        <p className="text-sm text-slate-600 dark:text-zinc-300">{selectedCoverage.questionHint}</p>
-        <p className="text-xs text-slate-500 dark:text-zinc-400">{selectedCoverage.scopeDisclosure}</p>
+        <p className="text-sm font-semibold text-slate-800 dark:text-zinc-100">{selectedCoverage.recommendedEntryLabel}</p>
+        <p className="text-sm text-slate-700 dark:text-zinc-200">最適化: {selectedCoverage.optimizationSummary}</p>
+        <p className="text-xs text-slate-500 dark:text-zinc-400">{selectedCoverage.shortScopeDisclosure}</p>
       </Card>
 
       <Card className="space-y-4 border border-accent/25 bg-white text-slate-900 shadow-sm shadow-accent/5 dark:border-accent/30 dark:bg-white/6 dark:text-zinc-50">
