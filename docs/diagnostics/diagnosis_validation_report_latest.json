@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-21T11:07:00.448Z",
+  "generatedAt": "2026-03-21T11:51:39.288Z",
   "scenarioCount": 32,
   "scenarios": [
     {
@@ -1210,9 +1210,67 @@
     "backThenChangeAnswer": "pass",
     "styleInvariant": "pass",
     "scoringSeparation": "pass",
+    "blindDrawAcceptance": "pass",
     "homepageFunnel": "pass",
     "draftInvalidation": "pass",
     "replaySeed": "pass"
   },
+  "blindDrawAcceptanceCases": [
+    {
+      "id": "one_oshi_low_duplicate_low_exchange",
+      "decision": "THINK",
+      "chosenPath": "stop_drawing_check_used_market",
+      "clampReason": "single_target_duplicate_risk",
+      "continuingJustified": false,
+      "exchangeAssumptionChangedRecommendation": false,
+      "usedMarketRecommended": true,
+      "reasons": [
+        "本命少数狙いでは、被りが増えるほど盲抽の効率が落ちやすい。",
+        "被り許容が低いので、追加で引くほど後悔リスクが上がりやすい。",
+        "単品/中古に逃げられるなら、盲抽を延ばすより損失を固定しやすい。"
+      ]
+    },
+    {
+      "id": "one_oshi_exchange_high_friction",
+      "decision": "THINK",
+      "chosenPath": "stop_drawing_check_used_market",
+      "clampReason": null,
+      "continuingJustified": false,
+      "exchangeAssumptionChangedRecommendation": false,
+      "usedMarketRecommended": true,
+      "reasons": [
+        "本命少数狙いでは、被りが増えるほど盲抽の効率が落ちやすい。",
+        "交換意欲はあっても、連絡・梱包・待機の負担が高いなら万能ではない。",
+        "単品/中古に逃げられるなら、盲抽を延ばすより損失を固定しやすい。"
+      ]
+    },
+    {
+      "id": "fun_casual_high_duplicate_loose_budget",
+      "decision": "THINK",
+      "chosenPath": "continue_a_little_more",
+      "clampReason": null,
+      "continuingJustified": true,
+      "exchangeAssumptionChangedRecommendation": false,
+      "usedMarketRecommended": false,
+      "reasons": [
+        "楽しみ目的なら、撤退線さえ守れば少量継続の納得感を残しやすい。",
+        "単品/中古に逃げられるなら、盲抽を延ばすより損失を固定しやすい。"
+      ]
+    },
+    {
+      "id": "full_set_tight_budget_completion_fallback",
+      "decision": "THINK",
+      "chosenPath": "stop_drawing_buy_singles",
+      "clampReason": "full_set_budget_unfavorable",
+      "continuingJustified": false,
+      "exchangeAssumptionChangedRecommendation": false,
+      "usedMarketRecommended": true,
+      "reasons": [
+        "コンプ寄りの回収だと、ランダム継続のコストが急に重くなりやすい。",
+        "交換前提は有効だが、「すぐ成立する」とはみなさず負担込みで見る。",
+        "単品/中古に逃げられるなら、盲抽を延ばすより損失を固定しやすい。"
+      ]
+    }
+  ],
   "uniquePathGaps": []
 }
