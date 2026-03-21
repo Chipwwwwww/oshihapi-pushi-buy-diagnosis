@@ -785,7 +785,13 @@ export default function ResultPage() {
             <div className="rounded-2xl border border-violet-200/70 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
               <p className="text-sm font-semibold">今回の推奨ルート</p>
               <p className="mt-2 text-sm">
-                {run.output.venueLimitedGoodsPlan.chosenPath === "buy_now_if_it_is_truly_hard_to_recover"
+                {run.output.venueLimitedGoodsPlan.chosenPath === "buy_live_goods_now_if_it_matches_core_motive"
+                  ? "live goods が core motive に刺さり、回復経路も弱めなので今回は今の確保が正当化できる。"
+                  : run.output.venueLimitedGoodsPlan.chosenPath === "wait_for_post_event_followup"
+                    ? "今は焦って広げず、post-event の follow-up や後日販売の確認を優先。"
+                    : run.output.venueLimitedGoodsPlan.chosenPath === "skip_atmosphere_driven_goods_chase"
+                      ? "今回の欲しさは event atmosphere 寄りなので、goods chase を広げず一歩引く。"
+                      : run.output.venueLimitedGoodsPlan.chosenPath === "buy_now_if_it_is_truly_hard_to_recover"
                   ? "回復経路が本当に弱い時だけ、今の確保を優先してよい。"
                   : run.output.venueLimitedGoodsPlan.chosenPath === "wait_for_post_event_mailorder"
                     ? "今は追い込みすぎず、事後通販や後日販売のシグナル待ちを優先。"
@@ -809,6 +815,7 @@ export default function ResultPage() {
                 <li>中古 fallback 意欲: {run.output.venueLimitedGoodsPlan.usedFallbackWillingness}</li>
                 <li>scarcity 圧: {run.output.venueLimitedGoodsPlan.scarcityPressure}</li>
                 <li>主 motive: {run.output.venueLimitedGoodsPlan.primaryMotive}</li>
+                <li>live-goods motive: {run.output.venueLimitedGoodsPlan.liveGoodsMotive}</li>
                 <li>後悔軸: {run.output.venueLimitedGoodsPlan.regretAxis}</li>
               </ul>
             </div>
@@ -830,6 +837,7 @@ export default function ResultPage() {
                   <li>回復可能性が結論を変えたか: {run.output.venueLimitedGoodsPlan.recoveryChangedRecommendation ? "はい" : "いいえ"}</li>
                   <li>中古 fallback が safer path に入るか: {run.output.venueLimitedGoodsPlan.usedMarketPartOfSaferPath ? "はい" : "いいえ"}</li>
                   <li>true scarcity 寄りか: {run.output.venueLimitedGoodsPlan.trueScarcityLikely ? "はい" : "いいえ"}</li>
+                  <li>mixed-media live scenario detected: {run.output.venueLimitedGoodsPlan.mixedMediaLiveScenarioDetected ? "はい" : "いいえ"}</li>
                 </ul>
               </div>
             </div>
@@ -847,7 +855,17 @@ export default function ResultPage() {
             <div className="rounded-2xl border border-fuchsia-200/70 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
               <p className="text-sm font-semibold">今回の推奨ルート</p>
               <p className="mt-2 text-sm">
-                {run.output.mediaEditionPlan.chosenPath === "buy_standard_only"
+                {run.output.mediaEditionPlan.chosenPath === "choose_one_best_store"
+                  ? "全店舗 chase はせず、bonus と満足のバランスが最もよい 1店舗に絞る。"
+                  : run.output.mediaEditionPlan.chosenPath === "buy_product_but_do_not_chase_all_bonuses"
+                    ? "商品本体は買ってよいが、all-bonus 回収までは広げない。"
+                    : run.output.mediaEditionPlan.chosenPath === "split_orders_are_not_worth_it"
+                      ? "複数店舗 split は bonus 差より送料・管理負担が重いので非推奨。"
+                      : run.output.mediaEditionPlan.chosenPath === "split_orders_are_justified"
+                        ? "今回は複数店舗 split に筋が通るが、対象店舗は最小限に固定する。"
+                        : run.output.mediaEditionPlan.chosenPath === "step_back_from_bonus_pressure"
+                          ? "商品価値より store-bonus 比較の圧が前に出ているため、一歩引く。"
+                          : run.output.mediaEditionPlan.chosenPath === "buy_standard_only"
                   ? "今回は通常版だけで十分。限定圧で版数を増やさなくてよい。"
                   : run.output.mediaEditionPlan.chosenPath === "buy_limited_only"
                     ? "限定版に意味はあるが、複数版 chase までは広げない。"
@@ -872,6 +890,11 @@ export default function ResultPage() {
                 <li>budget alignment: {run.output.mediaEditionPlan.budgetAlignment}</li>
                 <li>edition ambition: {run.output.mediaEditionPlan.editionAmbition}</li>
                 <li>bonus pressure: {run.output.mediaEditionPlan.bonusPressure}</li>
+                <li>bonus importance: {run.output.mediaEditionPlan.bonusImportance}</li>
+                <li>one-store vs multi-store: {run.output.mediaEditionPlan.storeSplitPreference}</li>
+                <li>split-order burden: {run.output.mediaEditionPlan.splitOrderBurden}</li>
+                <li>product vs bonus motive: {run.output.mediaEditionPlan.productVsBonusMotive}</li>
+                <li>overpay-vs-miss: {run.output.mediaEditionPlan.overpayVsMissPreference}</li>
                 <li>member/version preference: {run.output.mediaEditionPlan.memberVersionPreference}</li>
                 <li>random-goods addon: {run.output.mediaEditionPlan.randomGoodsStopLineAddonInvoked ? "invoked" : run.output.mediaEditionPlan.randomGoodsAddonIntent}</li>
               </ul>
@@ -892,6 +915,7 @@ export default function ResultPage() {
                   {run.output.mediaEditionPlan.assumptions.map((assumption) => <li key={assumption}>{assumption}</li>)}
                   {run.output.mediaEditionPlan.clampReason ? <li>clamp理由: {run.output.mediaEditionPlan.clampReason}</li> : null}
                   <li>selected planner path: {run.output.mediaEditionPlan.chosenPath}</li>
+                  <li>store-bonus scenario detected: {run.output.mediaEditionPlan.storeBonusScenarioDetected ? "はい" : "いいえ"}</li>
                   <li>random-goods stop-line addon invoked: {run.output.mediaEditionPlan.randomGoodsStopLineAddonInvoked ? "はい" : "いいえ"}</li>
                 </ul>
               </div>
