@@ -24,11 +24,16 @@ export type ScenarioCoverageEntry = {
   supportLevel: ScenarioSupportLevel;
   shopperIntent: string;
   recommendedEntryLabel: string;
+  compactEntryHint: string;
   providerEcologyHint: string;
   resultExplanationHint: string;
+  optimizationSummary: string;
   questionHint: string;
+  flowHelperHint: string;
   verificationHint: string;
+  shortVerificationHint: string;
   scopeDisclosure: string;
+  shortScopeDisclosure: string;
   diagnosticsTag?: string;
 };
 
@@ -45,11 +50,16 @@ export type ScenarioCoverageSummary = {
   supportLevel: ScenarioSupportLevel;
   recommendedEntryLabel: string;
   shopperIntent: string;
+  compactEntryHint: string;
   providerEcologyHint: string;
   resultExplanationHint: string;
+  optimizationSummary: string;
   questionHint: string;
+  flowHelperHint: string;
   verificationHint: string;
+  shortVerificationHint: string;
   scopeDisclosure: string;
+  shortScopeDisclosure: string;
   diagnosticsTag?: string;
 };
 
@@ -60,11 +70,16 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     supportLevel: "strong",
     shopperIntent: "予約を今入れるか、締切前に整理したい判断",
     recommendedEntryLabel: "予約を今入れるか迷っている",
+    compactEntryHint: "締切・再販・待てる余地を短く整理できます。",
     providerEcologyHint: "予約系は公式・大手EC・特典差の比較が中心です。再販余地や締切の確度も重視します。",
     resultExplanationHint: "予約の待機コスト、締切圧、後から比較できる余地を優先して整理します。",
+    optimizationSummary: "締切圧と待てる余地のバランス",
     questionHint: "このフローでは、締切の確度・再販見込み・待っても困らないかを先に確認します。",
+    flowHelperHint: "締切・再販・今決める必要を確認中",
     verificationHint: "締切日時、予約特典、キャンセル条件は外部ページで最終確認すると安全です。",
+    shortVerificationHint: "締切・特典・キャンセル条件は外部で最終確認。",
     scopeDisclosure: "予約判断は強めに対応していますが、遠征やイベント日程まで絡む判断は別扱いです。",
+    shortScopeDisclosure: "予約判断は強め対応。遠征や日程調整は別扱いです。",
     diagnosticsTag: "coverage_preorder_strong",
   },
   used_market_check: {
@@ -73,11 +88,16 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     supportLevel: "strong",
     shopperIntent: "中古・再販市場の相場とリスクを見て買うか決めたい",
     recommendedEntryLabel: "中古の相場を見て判断したい",
+    compactEntryHint: "相場差・状態・返品条件を中心に見ます。",
     providerEcologyHint: "中古系は相場差、状態、返品条件、出品者/店舗信頼性の確認を優先します。",
     resultExplanationHint: "新品の勢いではなく、相場差とリスク差を見て判断しやすい形に寄せます。",
+    optimizationSummary: "相場差と中古リスクの見極め",
     questionHint: "このフローでは、相場差・状態差・返品可否が判断材料の中心になります。",
+    flowHelperHint: "相場・状態・返品条件を確認中",
     verificationHint: "状態説明、付属品、真贋不安、返品条件は外部で再確認してください。",
+    shortVerificationHint: "状態・付属品・返品条件は外部で再確認。",
     scopeDisclosure: "中古・相場チェックは強めですが、希少市場全体の完全追跡までは対象外です。",
+    shortScopeDisclosure: "中古判断は強め対応。市場全体の完全追跡は対象外です。",
     diagnosticsTag: "coverage_used_strong",
   },
   blind_draw_stopline: {
@@ -86,11 +106,16 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     supportLevel: "strong",
     shopperIntent: "くじやブラインド商品をどこで止めるか決めたい",
     recommendedEntryLabel: "くじ/ブラインド商品をどこで止めるか決めたい",
+    compactEntryHint: "被りと上限を崩さない撤退ライン向けです。",
     providerEcologyHint: "ランダム商材は上限、被り、交換前提、中古移行ラインの整理が重要です。",
     resultExplanationHint: "楽しさを否定せず、被りと予算崩壊を防ぐ stopping-line 設計を優先します。",
+    optimizationSummary: "被りと予算崩壊を防ぐ止めどき",
     questionHint: "このフローでは、上限回数・被り許容・撤退ラインを先に固めます。",
+    flowHelperHint: "上限回数と撤退ラインを確認中",
     verificationHint: "BOX仕様、封入率、交換先の有無は外部で確認すると判断が安定します。",
+    shortVerificationHint: "封入仕様・交換先の有無は外部で確認。",
     scopeDisclosure: "ランダム商品の上限整理は強めですが、イベント運営ルールまで含む判断は対象外です。",
+    shortScopeDisclosure: "止めどき整理は強め対応。運営ルール判断は対象外です。",
     diagnosticsTag: "coverage_blind_draw_strong",
   },
   media_purchase_decision: {
@@ -100,11 +125,16 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     supportLevel: "strong",
     shopperIntent: "CD・映像・書籍を今買うか、比較して決めたい",
     recommendedEntryLabel: "CD・映像・書籍を買うべきか迷う",
+    compactEntryHint: "仕様差・特典差・再生環境を比較できます。",
     providerEcologyHint: "メディア系は再生/閲覧環境、特典差、限定版、再入手性の比較が中心です。",
     resultExplanationHint: "保存・視聴・特典のバランスを見て、どこに価値があるかを説明します。",
+    optimizationSummary: "仕様差・特典差・使い道のバランス",
     questionHint: "このフローでは、視聴環境・限定版圧・中身目的か特典目的かをはっきりさせます。",
+    flowHelperHint: "仕様差と特典の優先度を確認中",
     verificationHint: "仕様違い、店舗別特典、視聴環境、在庫状況は外部で最終確認してください。",
+    shortVerificationHint: "仕様差・店舗特典・在庫は外部で最終確認。",
     scopeDisclosure: "メディア購入判断は強めですが、配信サービス横断の完全比較まではしていません。",
+    shortScopeDisclosure: "メディア購入は強め対応。配信横断の完全比較は対象外です。",
     diagnosticsTag: "coverage_media_strong",
   },
   new_book_bonus_decision: {
@@ -114,11 +144,16 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     supportLevel: "strong",
     shopperIntent: "新刊・新譜・店舗別特典をどこまで追うか整理したい",
     recommendedEntryLabel: "特典つき新刊をどこまで追うか迷う",
+    compactEntryHint: "店舗特典の優先度と複数買いを整理できます。",
     providerEcologyHint: "特典系は店舗差、取りこぼし不安、複数買い圧、書店/専門店の相性を重視します。",
     resultExplanationHint: "特典回収の優先度と予算圧のバランスを取る前提で説明します。",
+    optimizationSummary: "特典優先度と複数買い圧のバランス",
     questionHint: "このフローでは、特典が本体なのか・複数店舗を追う価値があるかを見ます。",
+    flowHelperHint: "特典優先度と追い方を確認中",
     verificationHint: "特典絵柄、配布条件、対象店舗、発売日周辺の在庫は外部で確認してください。",
+    shortVerificationHint: "特典条件・対象店舗・在庫は外部確認。",
     scopeDisclosure: "新刊+特典判断は強めですが、作品ごとの全店舗網羅や niche 店舗の完全対応はまだしていません。",
+    shortScopeDisclosure: "新刊+特典は強め対応。全店舗網羅まではしていません。",
     diagnosticsTag: "coverage_new_book_bonus_strong",
   },
   collection_vs_budget: {
@@ -127,11 +162,16 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     supportLevel: "partial",
     shopperIntent: "コレクション優先か予算優先か整理したい",
     recommendedEntryLabel: "コレクション優先か予算優先か整理したい",
+    compactEntryHint: "本命優先か量優先かを先に整える向けです。",
     providerEcologyHint: "この領域は買い方整理が中心で、具体的な回収経路はケース差が大きめです。",
     resultExplanationHint: "コンプ欲と予算圧の整理を優先し、完全な回収戦略より先に軸を整えます。",
+    optimizationSummary: "コンプ欲と予算上限の整理",
     questionHint: "このフローでは、本命優先か、量を取りに行くか、今月の上限を中心に整理します。",
+    flowHelperHint: "本命優先か予算優先かを整理中",
     verificationHint: "回収候補の全量チェックや長期相場の追跡は外部メモと併用すると安心です。",
+    shortVerificationHint: "全量チェックや長期相場は外部メモ併用が安心。",
     scopeDisclosure: "コレクション整理は部分対応です。全回収計画の最適化まではまだ対象外です。",
+    shortScopeDisclosure: "整理は一部対応。全回収計画の最適化は対象外です。",
     diagnosticsTag: "coverage_collection_partial",
   },
   impulse_cooling: {
@@ -140,11 +180,16 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     supportLevel: "partial",
     shopperIntent: "勢いで買いそうな時に冷やして後悔を減らしたい",
     recommendedEntryLabel: "勢い買いを少し冷やして考えたい",
+    compactEntryHint: "FOMO や疲れで押される時の停止線向けです。",
     providerEcologyHint: "ここは店舗比較よりも判断停止線の設計が中心で、商材差は二段目で見ます。",
     resultExplanationHint: "勢いを否定せず、いま決めるべきか・少し待つべきかの安全線を説明します。",
+    optimizationSummary: "勢いを冷やしつつ後悔を減らす停止線",
     questionHint: "このフローでは、疲れ・焦り・FOMO が判断を押していないかを見ます。",
+    flowHelperHint: "勢いに押されていないかを確認中",
     verificationHint: "期限や在庫が本当に切迫しているかは外部で確かめると過熱を抑えやすいです。",
+    shortVerificationHint: "期限や在庫の切迫度は外部で再確認。",
     scopeDisclosure: "衝動クールダウンは部分対応です。感情ケア全般や継続的な消費管理までは扱っていません。",
+    shortScopeDisclosure: "冷却整理は一部対応。継続的な消費管理までは扱いません。",
     diagnosticsTag: "coverage_impulse_partial",
   },
   not_now_ticket: {
@@ -153,11 +198,16 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     supportLevel: "not_now",
     shopperIntent: "チケット取得や日程判断をしたい",
     recommendedEntryLabel: "チケット取得を判断したい",
+    compactEntryHint: "今は強い対応対象ではない領域です。",
     providerEcologyHint: "チケットは座席、同行、規約、移動、代替公演が絡み、現行ロジックの守備範囲外です。",
     resultExplanationHint: "このプロダクトはチケット判断を現在の主戦場にしていません。",
+    optimizationSummary: "物販系判断を優先した設計",
     questionHint: "現状の質問はチケット専用に最適化されていないため、参考度は低めです。",
+    flowHelperHint: "チケット専用設計ではありません",
     verificationHint: "規約、リセール可否、同行条件、日程負荷は必ず別途確認してください。",
+    shortVerificationHint: "規約・リセール・同行条件は別途確認。",
     scopeDisclosure: "チケット判断は not now 扱いです。誤って強対応に見せないよう明示しています。",
+    shortScopeDisclosure: "チケット判断は今は対象外です。",
     diagnosticsTag: "coverage_ticket_not_now",
   },
   not_now_travel: {
@@ -165,11 +215,16 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     supportLevel: "not_now",
     shopperIntent: "遠征・宿・交通を含めて判断したい",
     recommendedEntryLabel: "遠征・旅行ごと判断したい",
+    compactEntryHint: "物販判断とは別系統として扱っています。",
     providerEcologyHint: "遠征は物販判断より不確実性の種類が違うため、別系統の設計が必要です。",
     resultExplanationHint: "遠征判断は今の結果ロジックの対象外として扱います。",
+    optimizationSummary: "物販系の判断軸を優先",
     questionHint: "移動・宿泊・複数イベント調整までは現行フローでは見ません。",
+    flowHelperHint: "遠征判断は現行フロー外です",
     verificationHint: "交通費、宿泊費、キャンセル条件、体力負荷は専用に整理してください。",
+    shortVerificationHint: "交通費・宿泊費・体力負荷は別整理を推奨。",
     scopeDisclosure: "遠征/旅行判断は今は対象外です。",
+    shortScopeDisclosure: "遠征/旅行判断は今は対象外です。",
     diagnosticsTag: "coverage_travel_not_now",
   },
   not_now_3d_idol: {
@@ -177,11 +232,16 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     supportLevel: "not_now",
     shopperIntent: "3D idol 文脈に特化した購買判断をしたい",
     recommendedEntryLabel: "3D idol 文脈で判断したい",
+    compactEntryHint: "現在の最適化対象外です。",
     providerEcologyHint: "現行の provider/flow は 2D・ACG 系 merch 想定が主で、文脈差を十分に吸収できません。",
     resultExplanationHint: "3D idol 特有の商流・イベント性は現在の最適化対象外です。",
+    optimizationSummary: "現行の 2D・ACG 系物販判断を優先",
     questionHint: "現行フローは 3D idol 向けに明示最適化されていません。",
+    flowHelperHint: "3D idol 専用最適化は未対応です",
     verificationHint: "特典商流や販売チャネル差は個別確認が必要です。",
+    shortVerificationHint: "特典商流や販路差は個別確認が必要です。",
     scopeDisclosure: "3D idol 文脈は not now 扱いです。",
+    shortScopeDisclosure: "3D idol 文脈は今は対象外です。",
     diagnosticsTag: "coverage_3d_idol_not_now",
   },
   not_now_kpop: {
@@ -189,11 +249,16 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     supportLevel: "not_now",
     shopperIntent: "K-pop 文脈で特典・輸入・共同購入を判断したい",
     recommendedEntryLabel: "K-pop 文脈で判断したい",
+    compactEntryHint: "共同購入や輸入前提の判断は未対応です。",
     providerEcologyHint: "輸入、共同購入、特典商流の差が大きく、現行ロジックでは誤案内リスクがあります。",
     resultExplanationHint: "K-pop 特有の購入動線は今の重点対応外です。",
+    optimizationSummary: "現行の国内物販寄り判断を優先",
     questionHint: "共同購入や輸入前提の判断は現行フローに含まれていません。",
+    flowHelperHint: "共同購入や輸入前提は未対応です",
     verificationHint: "共同購入条件、輸入費、特典付与条件は必ず外部確認してください。",
+    shortVerificationHint: "共同購入条件・輸入費は外部確認が必要です。",
     scopeDisclosure: "K-pop 文脈は now focus 外です。",
+    shortScopeDisclosure: "K-pop 文脈は今は対象外です。",
     diagnosticsTag: "coverage_kpop_not_now",
   },
   not_now_niche_merchants: {
@@ -201,11 +266,16 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     supportLevel: "not_now",
     shopperIntent: "対応外の niche 店舗まで含めて最適ルートを知りたい",
     recommendedEntryLabel: "対応外店舗まで含めて判断したい",
+    compactEntryHint: "provider fit が見える店舗を優先しています。",
     providerEcologyHint: "プロダクト適合が薄い niche merchant は現状の provider 生態系に入れていません。",
     resultExplanationHint: "対応外店舗は、無理に推薦せず対象外として扱う方針です。",
+    optimizationSummary: "provider fit が見える販路を優先",
     questionHint: "現行フローは provider fit が見える店舗を優先します。",
+    flowHelperHint: "対応範囲の販路を優先しています",
     verificationHint: "専門店・個店は在庫・条件・送料を個別確認してください。",
+    shortVerificationHint: "専門店・個店は条件を個別確認してください。",
     scopeDisclosure: "merchant fit が薄い領域は intentionally out of scope です。",
+    shortScopeDisclosure: "provider fit が薄い販路は対象外です。",
     diagnosticsTag: "coverage_niche_not_now",
   },
 };
@@ -270,11 +340,16 @@ export function getScenarioCoverageSummary(input: ScenarioResolutionInput): Scen
     supportLevel: entry.supportLevel,
     recommendedEntryLabel: entry.recommendedEntryLabel,
     shopperIntent: entry.shopperIntent,
+    compactEntryHint: entry.compactEntryHint,
     providerEcologyHint: entry.providerEcologyHint,
     resultExplanationHint: entry.resultExplanationHint,
+    optimizationSummary: entry.optimizationSummary,
     questionHint: entry.questionHint,
+    flowHelperHint: entry.flowHelperHint,
     verificationHint: entry.verificationHint,
+    shortVerificationHint: entry.shortVerificationHint,
     scopeDisclosure: entry.scopeDisclosure,
+    shortScopeDisclosure: entry.shortScopeDisclosure,
     diagnosticsTag: entry.diagnosticsTag,
   };
 }
