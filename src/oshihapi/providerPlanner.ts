@@ -327,6 +327,14 @@ function buildShortReason(providerId: ProviderId, input: Pick<PlannerInput, "ite
     if (providerId === "towerRecords") return "媒体特化の補助候補";
     if (providerId === "melonbooks") return "書籍系特典の参考先";
     if (providerId === "amazon") return "一般流通の比較先";
+    if ((input.resultTags ?? []).includes("media_edition_path_wait_and_patch_holes_later")) {
+      if (providerId === "mercari") return "欠けを後追いで埋める相場確認";
+      if (providerId === "surugaya") return "欠けた版・特典の中古在庫確認";
+    }
+    if ((input.resultTags ?? []).includes("media_edition_path_use_secondary_market_for_missing_items")) {
+      if (providerId === "mercari") return "missing item recovery の候補";
+      if (providerId === "surugaya") return "欠け回収の中古補助";
+    }
     if (providerId === "mercari") return "中古相場の保険先";
     if (providerId === "surugaya") return "中古在庫の保険先";
   }
@@ -582,6 +590,10 @@ function evaluateCandidate(rawCandidate: RawProviderCandidate, input: PlannerInp
     (input.resultTags ?? []).includes("media_edition_path_step_back_from_bonus_pressure");
   const mediaSplitJustifiedPath = (input.resultTags ?? []).includes("media_edition_path_split_orders_are_justified");
   const mediaSplitNotWorthItPath = (input.resultTags ?? []).includes("media_edition_path_split_orders_are_not_worth_it");
+  const mediaSecondaryMarketPath =
+    (input.resultTags ?? []).includes("media_edition_path_wait_and_patch_holes_later") ||
+    (input.resultTags ?? []).includes("media_edition_path_use_secondary_market_for_missing_items");
+  const mediaSecondaryMarketReferenceOnly = (input.resultTags ?? []).includes("media_used_market_comfort_reference_only");
   const randomGoodsSinglesPath =
     (input.resultTags ?? []).includes("random_goods_path_stop_drawing_buy_singles") ||
     (input.resultTags ?? []).includes("random_goods_path_stop_drawing_check_used_market");
@@ -794,6 +806,26 @@ function evaluateCandidate(rawCandidate: RawProviderCandidate, input: PlannerInp
     }
   }
 
+  if (input.goodsClass === "media" && mediaSecondaryMarketPath) {
+    if (rawCandidate.providerId === "mercari") rank -= 18;
+    if (rawCandidate.providerId === "surugaya") rank -= 16;
+    if (rawCandidate.providerId === "amazon" || rawCandidate.providerId === "rakuten" || rawCandidate.providerId === "yahooShopping") {
+      demotionReasons.push("secondary_market_completion_preferred");
+      rank += 22;
+      maxTier = tightenMaxTier(maxTier, "lowProbability");
+    }
+    if (rawCandidate.providerId === "hmv" || rawCandidate.providerId === "towerRecords" || rawCandidate.providerId === "gamers") {
+      demotionReasons.push("new_media_not_primary_for_hole_filling");
+      rank += rawCandidate.providerId === "hmv" ? 28 : 14;
+      maxTier = tightenMaxTier(maxTier, mediaSecondaryMarketReferenceOnly ? "okay" : "lowProbability");
+    }
+    if (mediaSecondaryMarketReferenceOnly && (rawCandidate.providerId === "mercari" || rawCandidate.providerId === "surugaya")) {
+      demotionReasons.push("secondary_market_reference_only");
+      rank += 6;
+      maxTier = tightenMaxTier(maxTier, "okay");
+    }
+  }
+
   if (input.goodsClass === "media" && mediaUnknownHeavy) {
     if (rawCandidate.providerId === "melonbooks" && !isBookOrComicContext(input)) {
       demotionReasons.push("mainstream_media_not_bookstore_driven");
@@ -822,6 +854,7 @@ function evaluateCandidate(rawCandidate: RawProviderCandidate, input: PlannerInp
 
   if (input.itemKind === "used") {
     if (config.usedMarketCheck) rank -= 10;
+    if (input.goodsClass === "media" && rawCandidate.providerId === "surugaya") rank -= 14;
     if (config.officialInfoCheck) {
       demotionReasons.push("secondary_market_alive");
       rank += input.goodsClass === "media" ? 24 : 10;

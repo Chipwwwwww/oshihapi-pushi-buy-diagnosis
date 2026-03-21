@@ -13,6 +13,11 @@ export type ScenarioKey =
   | "multi_edition_media"
   | "limited_vs_standard_media"
   | "full_set_pressure"
+  | "used_market_completion"
+  | "single_vs_set_decision"
+  | "completion_pressure_refinement"
+  | "missed_item_hole_filling"
+  | "motive_refined_explanation"
   | "mixed_media_random_goods"
   | "store_bonus_collection"
   | "multi_store_bonus_split"
@@ -266,6 +271,111 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     scopeDisclosure: "全版追いの診断には対応しますが、中古 completion の本格最適化までは含みません。",
     shortScopeDisclosure: "全版追い診断に対応。中古 completion 最適化は対象外。",
     diagnosticsTag: "coverage_full_set_pressure_strong",
+  },
+  used_market_completion: {
+    key: "used_market_completion",
+    itemKind: "goods",
+    goodsClass: "media",
+    supportLevel: "strong",
+    homepagePriority: "secondary",
+    heroOrder: 6,
+    shopperIntent: "初動で抱え込まず、後から中古・二次流通で欠けを埋めるか整理したい",
+    recommendedEntryLabel: "あとで穴埋め回収する前提で整理したい",
+    compactEntryHint: "今すぐ抱え込むか、後から穴埋めするかを分けます。",
+    providerEcologyHint: "Mercari・駿河屋は穴埋め recovery の補助先として扱い、新品導線を置き換える前提にはしません。",
+    resultExplanationHint: "後追い recovery を使うなら、価格・状態・在庫の不確実さも含めて慎重に説明します。",
+    optimizationSummary: "初動の抱え込みを減らし、後追い recovery を慎重に使う",
+    questionHint: "このフローでは、後から埋める意思と二次流通への抵抗感を先に確認します。",
+    flowHelperHint: "後追い穴埋めが本当に合うかを確認中",
+    verificationHint: "中古価格、状態、送料込み総額、出品説明は外部で最終確認してください。",
+    shortVerificationHint: "中古価格・状態・送料込み総額は外部確認。",
+    scopeDisclosure: "中古穴埋めの判断整理は強め対応ですが、真贋や適正価格の保証はしません。",
+    shortScopeDisclosure: "中古穴埋め整理は強め対応。真贋/価格保証はしません。",
+    diagnosticsTag: "coverage_used_market_completion_strong",
+  },
+  single_vs_set_decision: {
+    key: "single_vs_set_decision",
+    itemKind: "goods",
+    goodsClass: "media",
+    supportLevel: "strong",
+    homepagePriority: "secondary",
+    heroOrder: 6,
+    shopperIntent: "1点で止めるか、選抜回収か、セットに行くかを整理したい",
+    recommendedEntryLabel: "1点/選抜回収/フルセットを整理したい",
+    compactEntryHint: "single と set の満足線を分けて見ます。",
+    providerEcologyHint: "provider より先に、1点で十分か、選抜回収が妥当か、フルセット reward があるかを見ます。",
+    resultExplanationHint: "何を最適化して 1点/選抜/フルセットを勧めるかを明示します。",
+    optimizationSummary: "single と set の満足差を整理する",
+    questionHint: "このフローでは、1点で止まれるか、全部そろわなくても満足できるかを確認します。",
+    flowHelperHint: "single と set の満足線を整理中",
+    verificationHint: "版差、セット報酬、収納特典、総額差は外部で最終確認してください。",
+    shortVerificationHint: "版差・セット報酬・総額差は外部確認。",
+    scopeDisclosure: "single/set 判断は強め対応ですが、新カテゴリの収集文化までは広げません。",
+    shortScopeDisclosure: "single/set 判断は強め対応。新カテゴリ拡張はしません。",
+    diagnosticsTag: "coverage_single_vs_set_strong",
+  },
+  completion_pressure_refinement: {
+    key: "completion_pressure_refinement",
+    itemKind: "goods",
+    goodsClass: "media",
+    supportLevel: "strong",
+    homepagePriority: "secondary",
+    heroOrder: 7,
+    shopperIntent: "揃えたい圧が価値由来か anxiety 由来かを整理したい",
+    recommendedEntryLabel: "コンプ圧の正体を整理したい",
+    compactEntryHint: "completion burden と reward の差を見ます。",
+    providerEcologyHint: "provider 比較より、completion pressure を clamp する根拠を優先します。",
+    resultExplanationHint: "コンプ圧が意味のある回収か、 anxiety 寄りかを分けて説明します。",
+    optimizationSummary: "completion anxiety と実利を切り分ける",
+    questionHint: "このフローでは、揃えたい圧の正体とセット報酬の実体を確認します。",
+    flowHelperHint: "completion pressure の根拠を確認中",
+    verificationHint: "セット報酬の有無、版差、総額、保存負担は外部で最終確認してください。",
+    shortVerificationHint: "セット報酬・版差・総額は外部確認。",
+    scopeDisclosure: "コンプ圧整理は強め対応ですが、心理評価を万能診断として扱うものではありません。",
+    shortScopeDisclosure: "コンプ圧整理は強め対応。万能心理診断ではありません。",
+    diagnosticsTag: "coverage_completion_pressure_refinement_strong",
+  },
+  missed_item_hole_filling: {
+    key: "missed_item_hole_filling",
+    itemKind: "goods",
+    goodsClass: "media",
+    supportLevel: "strong",
+    homepagePriority: "secondary",
+    heroOrder: 7,
+    shopperIntent: "取り逃しや欠けを、あとで安全寄りに埋めるか整理したい",
+    recommendedEntryLabel: "取り逃し/欠けをあとで埋めるか整理したい",
+    compactEntryHint: "初動 overspend ではなく穴埋め戦略を出します。",
+    providerEcologyHint: "Mercari・駿河屋は missing-item recovery の補助線として上がりますが、保証つき主導線としては扱いません。",
+    resultExplanationHint: "いま無理に抱えず、後から穴埋めする方がよい時を説明します。",
+    optimizationSummary: "missing-item recovery を慎重に使う",
+    questionHint: "このフローでは、後追い回収 willingness と二次流通の許容度を確認します。",
+    flowHelperHint: "missing-item recovery の筋を確認中",
+    verificationHint: "相場、送料、状態差、説明文は外部で最終確認してください。",
+    shortVerificationHint: "相場・送料・状態差は外部確認。",
+    scopeDisclosure: "穴埋め回収には強め対応ですが、公平価格や真贋の保証は対象外です。",
+    shortScopeDisclosure: "穴埋め回収は強め対応。価格/真贋保証は対象外。",
+    diagnosticsTag: "coverage_missed_item_hole_filling_strong",
+  },
+  motive_refined_explanation: {
+    key: "motive_refined_explanation",
+    itemKind: "goods",
+    goodsClass: "media",
+    supportLevel: "strong",
+    homepagePriority: "secondary",
+    heroOrder: 8,
+    shopperIntent: "キャラ寄り/演者寄り、単推し/箱推しの違いを説明に反映したい",
+    recommendedEntryLabel: "推し方の違いを説明に反映して整理したい",
+    compactEntryHint: "character vs cast と one-oshi vs box を説明軸に使います。",
+    providerEcologyHint: "provider routing の主軸ではなく、なぜ single/set が合うかの説明精度を上げるための軸です。",
+    resultExplanationHint: "character vs cast、one-oshi vs box を hard rule にしすぎず説明へ反映します。",
+    optimizationSummary: "motive explanation の精度を上げる",
+    questionHint: "このフローでは、キャラ/演者 motive と単推し/箱推しの向きを確認します。",
+    flowHelperHint: "motive explanation の軸を整理中",
+    verificationHint: "版差・出演差・推し分だけで満足できるかは外部情報とあわせて確認してください。",
+    shortVerificationHint: "版差・出演差・推し分満足線は外部確認。",
+    scopeDisclosure: "motive 軸は説明補助です。 universal law として固定するものではありません。",
+    shortScopeDisclosure: "motive 軸は説明補助。 universal law ではありません。",
+    diagnosticsTag: "coverage_motive_refined_explanation_strong",
   },
   mixed_media_random_goods: {
     key: "mixed_media_random_goods",
@@ -644,6 +754,11 @@ const ENTRY_ORDER: ScenarioKey[] = [
   "multi_edition_media",
   "limited_vs_standard_media",
   "full_set_pressure",
+  "used_market_completion",
+  "single_vs_set_decision",
+  "completion_pressure_refinement",
+  "missed_item_hole_filling",
+  "motive_refined_explanation",
   "mixed_media_random_goods",
   "store_bonus_collection",
   "multi_store_bonus_split",
@@ -693,11 +808,35 @@ function hasMediaSignals(parsedSearchClues?: ParsedSearchClues): boolean {
 function hasMediaEditionSignals(input: ScenarioResolutionInput): boolean {
   return (
     input.answers?.q_addon_media_edition_intent != null ||
+    input.answers?.q_addon_media_single_vs_set_intent != null ||
+    input.answers?.q_addon_media_completion_satisfaction != null ||
     input.answers?.q_addon_media_member_version != null ||
     input.answers?.q_addon_media_bonus_importance != null ||
     input.answers?.q_addon_media_multi_store_tolerance != null ||
     Boolean(input.parsedSearchClues?.editionClues.length)
   );
+}
+
+function hasUsedMarketCompletionSignals(input: ScenarioResolutionInput): boolean {
+  const recovery = input.answers?.q_addon_media_used_market_recovery;
+  const comfort = input.answers?.q_addon_media_used_market_comfort;
+  return recovery === "wait_and_patch" || recovery === "reference_only" || comfort === "high" || comfort === "medium" || comfort === "reference_only";
+}
+
+function hasSingleVsSetSignals(input: ScenarioResolutionInput): boolean {
+  const intent = input.answers?.q_addon_media_single_vs_set_intent;
+  const satisfaction = input.answers?.q_addon_media_completion_satisfaction;
+  return intent != null || satisfaction != null;
+}
+
+function hasCompletionPressureRefinementSignals(input: ScenarioResolutionInput): boolean {
+  const pressureType = input.answers?.q_addon_media_completion_pressure_type;
+  const rewardStrength = input.answers?.q_addon_media_set_reward_strength;
+  return pressureType != null || rewardStrength != null;
+}
+
+function hasMotiveRefinedExplanationSignals(input: ScenarioResolutionInput): boolean {
+  return input.answers?.q_addon_media_motive != null || input.answers?.q_addon_media_support_scope != null;
 }
 
 function hasStoreBonusCollectionSignals(input: ScenarioResolutionInput): boolean {
@@ -865,8 +1004,13 @@ export function resolveScenarioKey(input: ScenarioResolutionInput): ScenarioKey 
     if (hasMixedMediaRandomGoodsSignals(input)) return "mixed_media_random_goods";
     if (hasMultiStoreSplitSignals(input)) return "multi_store_bonus_split";
     if (hasStoreBonusCollectionSignals(input)) return "store_bonus_collection";
+    if (input.answers?.q_addon_media_used_market_recovery === "wait_and_patch") return "missed_item_hole_filling";
+    if (hasUsedMarketCompletionSignals(input)) return "used_market_completion";
+    if (hasSingleVsSetSignals(input)) return "single_vs_set_decision";
     if (hasFullSetPressureSignals(input)) return "full_set_pressure";
+    if (hasCompletionPressureRefinementSignals(input)) return "completion_pressure_refinement";
     if (hasLimitedVsStandardSignals(input)) return "limited_vs_standard_media";
+    if (hasMotiveRefinedExplanationSignals(input)) return "motive_refined_explanation";
     if (hasMediaEditionSignals(input)) return "multi_edition_media";
     return "media_purchase_decision";
   }

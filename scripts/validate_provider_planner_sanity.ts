@@ -299,6 +299,39 @@ const SCENARIOS: ScenarioSpec[] = [
     },
   },
   {
+    id: "media_patch_holes_later",
+    rawClue: "うたプリ 特典 CD",
+    itemKind: "goods",
+    goodsClass: "media",
+    confidence: 77,
+    resultTags: [
+      "media_edition_path_wait_and_patch_holes_later",
+      "media_used_market_completion_detected",
+      "media_secondary_market_fallback_changed_recommendation",
+      "media_used_market_comfort_high",
+      "media_recovery_preference_wait_and_patch",
+    ],
+    expected: [
+      "Patch-holes-later media cases should elevate Mercari/Surugaya.",
+      "New-media and generic retail should be demoted when the diagnosis prefers later recovery.",
+      "Diagnostics should expose that secondary-market completion is preferred.",
+    ],
+    improvedVsOldLogic: "Media completion cases that explicitly prefer later hole-filling now surface used-market specialists instead of leaving HMV/Amazon in the lead by default.",
+    assertions: (result) => {
+      const ids = topIds(result);
+      assert(ids[0] === "mercari" && ids[1] === "surugaya", "media_patch_holes_later: Mercari and Surugaya should lead patch-holes-later guidance");
+      assert(!ids.includes("amazon"), "media_patch_holes_later: Amazon should stay out of visible results");
+      assert(
+        findEvaluation(result.diagnostics, "hmv")?.demotionReasons.includes("new_media_not_primary_for_hole_filling"),
+        "media_patch_holes_later: diagnostics should demote HMV for hole-filling path",
+      );
+      assert(
+        findEvaluation(result.diagnostics, "amazon")?.demotionReasons.includes("secondary_market_completion_preferred"),
+        "media_patch_holes_later: diagnostics should explain generic-retail demotion",
+      );
+    },
+  },
+  {
     id: "official_sold_out_secondary_alive",
     rawClue: "うたプリ 特典付きCD",
     itemKind: "used",

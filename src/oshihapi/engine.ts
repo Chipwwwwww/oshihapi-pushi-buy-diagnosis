@@ -217,6 +217,18 @@ function resolveMediaEditionAmbition(answers: Record<string, AnswerValue>): Medi
   return 'unknown';
 }
 
+function resolveMediaSingleVsSetIntent(answers: Record<string, AnswerValue>): MediaEditionPlan['singleVsSetIntent'] {
+  const answer = getSingleAnswer(answers, 'q_addon_media_single_vs_set_intent');
+  if (answer === 'one_symbolic_item' || answer === 'one_best_fit_version' || answer === 'selective_subset' || answer === 'full_set_bundle') return answer;
+  return 'unknown';
+}
+
+function resolveMediaCompletionSatisfaction(answers: Record<string, AnswerValue>): MediaEditionPlan['satisfactionWithoutFullCompletion'] {
+  const answer = getSingleAnswer(answers, 'q_addon_media_completion_satisfaction');
+  if (answer === 'high' || answer === 'medium' || answer === 'low') return answer;
+  return 'unknown';
+}
+
 function resolveMediaBonusPressure(answers: Record<string, AnswerValue>): MediaEditionPlan['bonusPressure'] {
   const answer = getSingleAnswer(answers, 'q_addon_media_limited_pressure');
   if (answer === 'yes') return 'low';
@@ -260,6 +272,30 @@ function resolveOverpayVsMissPreference(answers: Record<string, AnswerValue>): '
   return 'unknown';
 }
 
+function resolveMediaRecoveryPreference(answers: Record<string, AnswerValue>): MediaEditionPlan['recoveryPreference'] {
+  const answer = getSingleAnswer(answers, 'q_addon_media_used_market_recovery');
+  if (answer === 'buy_now_primary' || answer === 'wait_and_patch' || answer === 'reference_only' || answer === 'avoid_used_market') return answer;
+  return 'unknown';
+}
+
+function resolveMediaUsedMarketComfort(answers: Record<string, AnswerValue>): MediaEditionPlan['usedMarketComfort'] {
+  const answer = getSingleAnswer(answers, 'q_addon_media_used_market_comfort');
+  if (answer === 'high' || answer === 'medium' || answer === 'low' || answer === 'reference_only') return answer;
+  return 'unknown';
+}
+
+function resolveMediaCompletionPressureType(answers: Record<string, AnswerValue>): MediaEditionPlan['completionPressureType'] {
+  const answer = getSingleAnswer(answers, 'q_addon_media_completion_pressure_type');
+  if (answer === 'personal_standard' || answer === 'box_group_desire' || answer === 'bonus_store_pressure' || answer === 'complete_collection_image' || answer === 'mixed') return answer;
+  return 'unknown';
+}
+
+function resolveMediaSetRewardStrength(answers: Record<string, AnswerValue>): MediaEditionPlan['setRewardStrength'] {
+  const answer = getSingleAnswer(answers, 'q_addon_media_set_reward_strength');
+  if (answer === 'strong' || answer === 'medium' || answer === 'weak') return answer;
+  return 'unknown';
+}
+
 function resolveMediaMemberVersionPreference(answers: Record<string, AnswerValue>): MediaEditionPlan['memberVersionPreference'] {
   const answer = getSingleAnswer(answers, 'q_addon_media_member_version');
   if (answer === 'none' || answer === 'specific_version' || answer === 'multiple_versions') return answer;
@@ -281,6 +317,8 @@ function buildMediaEditionPlan(params: {
 
   const characterVsCast = resolveMediaCharacterVsCast(params.answers);
   const oneOshiVsBox = resolveMediaOneOshiVsBox(params.answers);
+  const singleVsSetIntent = resolveMediaSingleVsSetIntent(params.answers);
+  const satisfactionWithoutFullCompletion = resolveMediaCompletionSatisfaction(params.answers);
   const collectionCompleteness = resolveMediaCollectionCompleteness(params.answers);
   const editionAmbition = resolveMediaEditionAmbition(params.answers);
   const bonusPressure = resolveMediaBonusPressure(params.answers);
@@ -289,6 +327,10 @@ function buildMediaEditionPlan(params: {
   const splitOrderBurden = resolveMediaSplitOrderBurden(params.answers);
   const productVsBonusMotive = resolveMediaProductVsBonusMotive(params.answers, params.motives);
   const overpayVsMissPreference = resolveOverpayVsMissPreference(params.answers);
+  const recoveryPreference = resolveMediaRecoveryPreference(params.answers);
+  const usedMarketComfort = resolveMediaUsedMarketComfort(params.answers);
+  const completionPressureType = resolveMediaCompletionPressureType(params.answers);
+  const setRewardStrength = resolveMediaSetRewardStrength(params.answers);
   const memberVersionPreference = resolveMediaMemberVersionPreference(params.answers);
   const randomGoodsAddonIntent = resolveMediaRandomGoodsAddonIntent(params.answers);
   const playbackSpace = getSingleAnswer(params.answers, 'q_addon_media_playback_space');
@@ -306,6 +348,39 @@ function buildMediaEditionPlan(params: {
   const fullSetAmbition = editionAmbition === 'all_editions' || memberVersionPreference === 'multiple_versions';
   const castDriven = characterVsCast === 'cast_performer';
   const characterDriven = characterVsCast === 'character_ip';
+  const selectiveIntent = singleVsSetIntent === 'selective_subset';
+  const singleItemIntent = singleVsSetIntent === 'one_symbolic_item' || singleVsSetIntent === 'one_best_fit_version';
+  const canStopSatisfied =
+    satisfactionWithoutFullCompletion === 'high' ||
+    (satisfactionWithoutFullCompletion === 'medium' && singleVsSetIntent !== 'full_set_bundle');
+  const wantsFullSetBundle = singleVsSetIntent === 'full_set_bundle' || fullSetAmbition;
+  const usedMarketActionable = usedMarketComfort === 'high' || usedMarketComfort === 'medium';
+  const usedMarketReferenceOnly = usedMarketComfort === 'reference_only' || recoveryPreference === 'reference_only';
+  const usedMarketAvoided = usedMarketComfort === 'low' || recoveryPreference === 'avoid_used_market';
+  const usedMarketCompletionScenarioDetected =
+    recoveryPreference === 'wait_and_patch' ||
+    recoveryPreference === 'reference_only' ||
+    usedMarketComfort === 'high' ||
+    usedMarketComfort === 'medium' ||
+    usedMarketComfort === 'reference_only';
+  const completionImagePressure = completionPressureType === 'complete_collection_image';
+  const boxPressure = completionPressureType === 'box_group_desire';
+  const bonusPressureType = completionPressureType === 'bonus_store_pressure';
+  const personalCompletionStandard = completionPressureType === 'personal_standard';
+  const setRewardStrong = setRewardStrength === 'strong';
+  const setRewardWeak = setRewardStrength === 'weak';
+  const motiveRefinementAxis: MediaEditionPlan['motiveRefinementAxis'] =
+    characterDriven && oneOshiFocused
+      ? 'character_one_oshi'
+      : characterDriven && boxSupportStrong
+        ? 'character_box_group'
+        : castDriven && oneOshiFocused
+          ? 'cast_one_oshi'
+          : castDriven && boxSupportStrong
+            ? 'cast_box_group'
+            : characterVsCast === 'balanced' || oneOshiVsBox === 'balanced'
+              ? 'balanced'
+              : 'unknown';
   const playbackUnready = playbackSpace === 'not_ready';
   const softFomo = bonusPressure === 'medium' || params.motives.includes('fomo') || params.scores.impulse >= 66;
   const storeBonusScenarioDetected =
@@ -325,6 +400,13 @@ function buildMediaEditionPlan(params: {
   const productCore = productVsBonusMotive === 'product_core';
   const bonusDriven = productVsBonusMotive === 'bonus_driven';
   const missSensitive = overpayVsMissPreference === 'miss_more';
+  const overpaySensitive = overpayVsMissPreference === 'overpay_more';
+  const diffuseUnderlyingMotive =
+    productVsBonusMotive !== 'product_core' &&
+    !boxSupportStrong &&
+    collectionCompleteness !== 'complete' &&
+    characterVsCast === 'balanced' &&
+    oneOshiVsBox === 'balanced';
   const bonusInflationRisk: MediaEditionPlan['bonusInflationRisk'] =
     bonusDriven && (bonusPressure === 'high' || bonusImportance === 'high')
       ? 'high'
@@ -356,9 +438,41 @@ function buildMediaEditionPlan(params: {
   } else if (storeBonusScenarioDetected && productCore && (bonusPressure === 'high' || bonusImportance === 'medium' || bonusImportance === 'high') && oneStoreFriendly) {
     chosenPath = 'buy_product_but_do_not_chase_all_bonuses';
     reasonFlags.push('product_value_outweighs_bonus_completion');
-  } else if (storeBonusScenarioDetected && (oneStoreFriendly || bonusImportance === 'medium' || bonusPressure === 'medium')) {
+  } else if (storeBonusScenarioDetected && !completionImagePressure && (oneStoreFriendly || bonusImportance === 'medium' || bonusPressure === 'medium')) {
     chosenPath = 'choose_one_best_store';
     reasonFlags.push('one_store_optimization_preferred');
+  } else if (completionImagePressure && diffuseUnderlyingMotive && budgetAlignment !== 'strong') {
+    chosenPath = 'do_not_force_completion';
+    clampReason = 'completion_image_pressure_without_core_motive';
+    reasonFlags.push(clampReason);
+  } else if (usedMarketCompletionScenarioDetected && recoveryPreference === 'wait_and_patch' && usedMarketActionable && (overpaySensitive || selectiveIntent || singleItemIntent || setRewardWeak || canStopSatisfied)) {
+    chosenPath = 'wait_and_patch_holes_later';
+    reasonFlags.push('secondary_market_patch_strategy_preferred');
+  } else if (usedMarketCompletionScenarioDetected && recoveryPreference === 'wait_and_patch' && (usedMarketActionable || usedMarketReferenceOnly) && (selectiveIntent || singleItemIntent || !wantsFullSetBundle)) {
+    chosenPath = 'use_secondary_market_for_missing_items';
+    reasonFlags.push(usedMarketReferenceOnly ? 'secondary_market_reference_only_fallback' : 'secondary_market_missing_item_recovery');
+  } else if (singleItemIntent && canStopSatisfied && (oneOshiFocused || characterDriven || motiveRefinementAxis === 'character_one_oshi' || motiveRefinementAxis === 'cast_one_oshi')) {
+    chosenPath = 'buy_one_only_and_stop';
+    reasonFlags.push('single_item_satisfaction_supported');
+  } else if ((selectiveIntent || (singleItemIntent && !canStopSatisfied)) && (setRewardWeak || oneOshiFocused || characterDriven || canStopSatisfied)) {
+    chosenPath = 'buy_selective_subset';
+    reasonFlags.push('selective_subset_beats_full_completion');
+  } else if (wantsFullSetBundle && boxSupportStrong && completeMotive && budgetAlignment === 'strong' && setRewardStrong && !completionImagePressure) {
+    chosenPath = 'full_set_is_justified';
+    reasonFlags.push('full_set_alignment_confirmed');
+  } else if (wantsFullSetBundle && (setRewardWeak || diffuseUnderlyingMotive || (!boxSupportStrong && !boxPressure) || budgetAlignment !== 'strong')) {
+    chosenPath = 'full_set_is_not_worth_it';
+    clampReason =
+      budgetAlignment !== 'strong'
+        ? 'full_set_burden_outweighs_reward'
+        : setRewardWeak
+          ? 'full_set_reward_too_weak'
+          : 'full_set_motive_not_strong_enough';
+    reasonFlags.push(clampReason);
+  } else if ((completionImagePressure || (completeMotive && diffuseUnderlyingMotive) || (bonusPressureType && budgetAlignment !== 'strong')) && params.scores.impulse >= 62) {
+    chosenPath = 'step_back_from_completion_pressure';
+    clampReason = completionImagePressure ? 'completion_pressure_anxiety_dominant' : 'completion_pressure_needs_recheck';
+    reasonFlags.push(clampReason);
   } else if (fullSetAmbition && (budgetAlignment === 'weak' || oneOshiFocused || playbackUnready)) {
     chosenPath = bonusPressure === 'high' || completeMotive
       ? 'step_back_from_bonus_or_completion_pressure'
@@ -409,10 +523,24 @@ function buildMediaEditionPlan(params: {
         ? '限定版の relevance は拾いつつ、複数版 chase に広げないこと'
         : chosenPath === 'buy_one_best_fit_edition'
           ? '自分の motive に最も合う 1種だけを選ぶこと'
+          : chosenPath === 'buy_one_only_and_stop'
+            ? '象徴になる 1点で満足を回収し、そこから増やさないこと'
+            : chosenPath === 'buy_selective_subset'
+              ? '必要な版・メンバー・絵柄だけに絞って負担を増やしすぎないこと'
           : chosenPath === 'avoid_full_set_chase'
             ? '全版追いの総額と満足差が見合う時だけ広げること'
+            : chosenPath === 'full_set_is_not_worth_it'
+              ? '全版 reward が弱い時は comp anxiety より選抜回収を優先すること'
             : chosenPath === 'full_set_is_justified'
               ? '箱推し・ completeness・予算が揃う時だけ全版を正当化すること'
+              : chosenPath === 'wait_and_patch_holes_later'
+                ? '初動で抱え込みすぎず、欠けだけ後から埋めること'
+                : chosenPath === 'use_secondary_market_for_missing_items'
+                  ? '新品 chase を広げず、欠けた分だけ慎重に二次流通で補うこと'
+                  : chosenPath === 'do_not_force_completion'
+                    ? '不安を下げるためだけの全回収を避けること'
+                    : chosenPath === 'step_back_from_completion_pressure'
+                      ? 'completion anxiety が価値判断を押しのけている時に一歩引くこと'
               : 'bonus / completion 圧が need を上回る時に一歩引くこと';
 
   const reasons: string[] = [];
@@ -426,12 +554,27 @@ function buildMediaEditionPlan(params: {
         : '複数版メディアは motive が曖昧だと買い分けより惰性 chase になりやすい。'
   );
   reasons.push(
-    characterDriven
-      ? 'キャラ/IP motive が主なら、演者理由だけで版数を増やす必要は薄め。'
-      : castDriven
-        ? '演者・キャスト motive が強い時は、出演差や映像特典つき版の relevance が上がりやすい。'
-        : 'キャラ側と演者側の motive が混ざる時は、いちばん刺さる版を1つに絞ると後悔を減らしやすい。'
+    motiveRefinementAxis === 'character_one_oshi'
+      ? 'キャラ寄り × 単推し寄りなので、象徴になる1点や最推し版だけで満足を作りやすい。'
+      : motiveRefinementAxis === 'character_box_group'
+        ? 'キャラ寄りでも箱で揃える意味があるなら、版差や全員分の relevance を個別に見た方がよい。'
+        : motiveRefinementAxis === 'cast_one_oshi'
+          ? '演者寄り × 単推し寄りでは、出演差・映像特典つきの「最適1種」を選ぶ方が筋が通りやすい。'
+          : motiveRefinementAxis === 'cast_box_group'
+            ? '演者寄り × 箱寄りなら、全体支援として複数版の意味が出るが、負担との整合は別途必要。'
+            : 'キャラ側と演者側の motive が混ざる時は、いちばん刺さる版を1つに絞ると後悔を減らしやすい。'
   );
+  if (singleItemIntent) reasons.push('今回の intent 自体が「全部」より1点/1種寄りなので、セット圧をそのまま採用しない方がブレにくい。');
+  if (selectiveIntent) reasons.push('選抜回収で満足できるなら、全部そろえるより満足差の大きい部分だけ拾う方が効率がよい。');
+  if (satisfactionWithoutFullCompletion === 'low') reasons.push('途中で止まりにくい自覚があるので、最初に full set を正当化できる根拠があるかを厳しめに見ています。');
+  if (usedMarketCompletionScenarioDetected) reasons.push('欠けを後から埋める余地があるなら、初動で過剰回収するより穴埋め前提の方が安全なことがある。');
+  if (usedMarketReferenceOnly) reasons.push('中古・二次流通は参考相場としては useful だが、価格・状態・真贋の読み切りは前提にしていない。');
+  if (usedMarketAvoided) reasons.push('二次流通を避けたいなら、「後から埋めればいい」と軽く言いすぎず、新品側で満足線を先に固める必要がある。');
+  if (completionImagePressure) reasons.push('「全部持っている状態」にしたい不安は、実際の版差や使用価値より強く見えてしまうことがある。');
+  if (boxPressure) reasons.push('箱・グループで揃える意味が本当にあるかは、セット報酬や版差の実体があるかで見分ける。');
+  if (bonusPressureType) reasons.push('completion の圧が店舗 bonus 起点なら、全回収より1店舗最適化や選抜回収の方が崩れにくい。');
+  if (setRewardWeak) reasons.push('全版/全員分で得られる reward が弱いなら、総額だけ増えて満足差が小さくなりやすい。');
+  if (setRewardStrong) reasons.push('連動特典や収納などセット reward が強い場合だけ、全回収の justification が立ちやすい。');
   if (bonusPressure === 'high') reasons.push('今の迷いは「本編を見たい」より bonus / 限定圧に押されている可能性が高い。');
   if (bonusImportance === 'high') reasons.push('店舗 bonus の重要度が高いほど、商品価値と bonus 価値を分けて考えないと chase が膨らみやすい。');
   if (oneStoreFriendly) reasons.push('1店舗で納得できる余地があるなら、全店 chase より「最も合う1店」を選ぶ方が後悔を減らしやすい。');
@@ -461,6 +604,13 @@ function buildMediaEditionPlan(params: {
       ? '店舗別 bonus は「全部同価値」とは置かず、1店舗最適化で満足できる余地を先に見ています。'
       : '店舗別 bonus 圧は主軸前提には置いていません。'
   );
+  assumptions.push(
+    usedMarketCompletionScenarioDetected
+      ? usedMarketReferenceOnly
+        ? '二次流通は参考・補助導線として扱い、価格・状態・真贋の保証は置いていません。'
+        : '二次流通は穴埋めの backup/主導線になり得ますが、価格・状態・在庫は不確実だと置いています。'
+      : '今回は新品/公式側の版違い整理を主軸にし、二次流通は前提に置いていません。'
+  );
 
   const bonusPressureChangedRecommendation =
     chosenPath === 'choose_one_best_store' ||
@@ -472,6 +622,9 @@ function buildMediaEditionPlan(params: {
     chosenPath === 'split_orders_are_not_worth_it' ||
     chosenPath === 'split_orders_are_justified' ||
     clampReason === 'split_order_burden_outweighs_bonus_gain';
+  const secondaryMarketFallbackChangedRecommendation =
+    chosenPath === 'wait_and_patch_holes_later' ||
+    chosenPath === 'use_secondary_market_for_missing_items';
 
   return {
     detected: true,
@@ -484,6 +637,8 @@ function buildMediaEditionPlan(params: {
     }),
     characterVsCast,
     oneOshiVsBox,
+    singleVsSetIntent,
+    satisfactionWithoutFullCompletion,
     collectionCompleteness,
     budgetAlignment,
     editionAmbition,
@@ -493,9 +648,16 @@ function buildMediaEditionPlan(params: {
     splitOrderBurden,
     productVsBonusMotive,
     overpayVsMissPreference,
+    recoveryPreference,
+    usedMarketComfort,
+    completionPressureType,
+    motiveRefinementAxis,
+    setRewardStrength,
     storeBonusScenarioDetected,
     bonusPressureChangedRecommendation,
     splitOrderBurdenChangedRecommendation,
+    usedMarketCompletionScenarioDetected,
+    secondaryMarketFallbackChangedRecommendation,
     bonusInflationRisk,
     memberVersionPreference,
     randomGoodsAddonIntent,
@@ -505,7 +667,7 @@ function buildMediaEditionPlan(params: {
     clampReason,
     reasonFlags,
     reasons: [...new Set(reasons)].slice(0, 5),
-    assumptions: [...new Set(assumptions)].slice(0, 3),
+    assumptions: [...new Set(assumptions)].slice(0, 4),
   };
 }
 
@@ -1075,18 +1237,26 @@ function resolveTrustGateOutcome(params: {
     const criticalUnknownCount = countUnknownValues([
       mediaEditionPlan.characterVsCast,
       mediaEditionPlan.oneOshiVsBox,
+      mediaEditionPlan.singleVsSetIntent,
+      mediaEditionPlan.satisfactionWithoutFullCompletion,
       mediaEditionPlan.collectionCompleteness,
       mediaEditionPlan.editionAmbition,
+      mediaEditionPlan.recoveryPreference,
+      mediaEditionPlan.usedMarketComfort,
+      mediaEditionPlan.completionPressureType,
+      mediaEditionPlan.setRewardStrength,
       mediaEditionPlan.bonusImportance,
       mediaEditionPlan.storeSplitPreference,
       mediaEditionPlan.splitOrderBurden,
       mediaEditionPlan.memberVersionPreference,
     ]) + (mediaEditionPlan.randomGoodsAddonIntent === 'present' ? 0 : 0);
     const reliesOnUnknown =
-      ((mediaEditionPlan.chosenPath === 'buy_one_best_fit_edition' || mediaEditionPlan.chosenPath === 'buy_limited_only') &&
+      ((mediaEditionPlan.chosenPath === 'buy_one_best_fit_edition' || mediaEditionPlan.chosenPath === 'buy_limited_only' || mediaEditionPlan.chosenPath === 'buy_one_only_and_stop' || mediaEditionPlan.chosenPath === 'buy_selective_subset') &&
         (mediaEditionPlan.editionAmbition === 'unknown' || mediaEditionPlan.characterVsCast === 'unknown')) ||
-      (mediaEditionPlan.chosenPath === 'full_set_is_justified' &&
-        (mediaEditionPlan.oneOshiVsBox === 'unknown' || mediaEditionPlan.collectionCompleteness === 'unknown' || mediaEditionPlan.editionAmbition === 'unknown'));
+      ((mediaEditionPlan.chosenPath === 'full_set_is_justified' || mediaEditionPlan.chosenPath === 'full_set_is_not_worth_it') &&
+        (mediaEditionPlan.oneOshiVsBox === 'unknown' || mediaEditionPlan.collectionCompleteness === 'unknown' || mediaEditionPlan.editionAmbition === 'unknown' || mediaEditionPlan.setRewardStrength === 'unknown')) ||
+      ((mediaEditionPlan.chosenPath === 'wait_and_patch_holes_later' || mediaEditionPlan.chosenPath === 'use_secondary_market_for_missing_items') &&
+        (mediaEditionPlan.recoveryPreference === 'unknown' || mediaEditionPlan.usedMarketComfort === 'unknown'));
 
     if (criticalUnknownCount >= 2 || reliesOnUnknown) {
       return {
@@ -1339,6 +1509,8 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
       `media_edition_path_${mediaEditionPlan.chosenPath}`,
       `media_character_vs_cast_${mediaEditionPlan.characterVsCast}`,
       `media_one_oshi_vs_box_${mediaEditionPlan.oneOshiVsBox}`,
+      `media_single_vs_set_intent_${mediaEditionPlan.singleVsSetIntent}`,
+      `media_satisfaction_without_full_completion_${mediaEditionPlan.satisfactionWithoutFullCompletion}`,
       `media_collection_completeness_${mediaEditionPlan.collectionCompleteness}`,
       `media_budget_alignment_${mediaEditionPlan.budgetAlignment}`,
       `media_edition_ambition_${mediaEditionPlan.editionAmbition}`,
@@ -1348,6 +1520,11 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
       `media_split_order_burden_${mediaEditionPlan.splitOrderBurden}`,
       `media_product_vs_bonus_${mediaEditionPlan.productVsBonusMotive}`,
       `media_overpay_vs_miss_${mediaEditionPlan.overpayVsMissPreference}`,
+      `media_recovery_preference_${mediaEditionPlan.recoveryPreference}`,
+      `media_used_market_comfort_${mediaEditionPlan.usedMarketComfort}`,
+      `media_completion_pressure_type_${mediaEditionPlan.completionPressureType}`,
+      `media_motive_refinement_axis_${mediaEditionPlan.motiveRefinementAxis}`,
+      `media_set_reward_strength_${mediaEditionPlan.setRewardStrength}`,
       `media_bonus_inflation_risk_${mediaEditionPlan.bonusInflationRisk}`,
     );
     if (mediaEditionPlan.memberVersionPreference !== 'unknown') tags.push(`media_member_version_${mediaEditionPlan.memberVersionPreference}`);
@@ -1355,18 +1532,30 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     if (mediaEditionPlan.storeBonusScenarioDetected) tags.push('media_store_bonus_scenario_detected');
     if (mediaEditionPlan.bonusPressureChangedRecommendation) tags.push('media_bonus_pressure_changed_recommendation');
     if (mediaEditionPlan.splitOrderBurdenChangedRecommendation) tags.push('media_split_order_burden_changed_recommendation');
+    if (mediaEditionPlan.usedMarketCompletionScenarioDetected) tags.push('media_used_market_completion_detected');
+    if (mediaEditionPlan.secondaryMarketFallbackChangedRecommendation) tags.push('media_secondary_market_fallback_changed_recommendation');
     if (mediaEditionPlan.clampReason) tags.push(`media_edition_clamp_${mediaEditionPlan.clampReason}`);
 
     if (mediaEditionPlan.chosenPath === 'full_set_is_justified') {
       if (decision === 'SKIP' && mediaEditionPlan.budgetAlignment !== 'weak') decision = 'THINK';
     } else if (
       mediaEditionPlan.chosenPath === 'avoid_full_set_chase' ||
+      mediaEditionPlan.chosenPath === 'full_set_is_not_worth_it' ||
+      mediaEditionPlan.chosenPath === 'do_not_force_completion' ||
+      mediaEditionPlan.chosenPath === 'step_back_from_completion_pressure' ||
       mediaEditionPlan.chosenPath === 'step_back_from_bonus_or_completion_pressure'
     ) {
       if (decision === 'BUY') decision = 'THINK';
       if (mediaEditionPlan.budgetAlignment === 'weak' && mediaEditionPlan.chosenPath === 'step_back_from_bonus_or_completion_pressure') {
         decision = 'SKIP';
       }
+    } else if (
+      mediaEditionPlan.chosenPath === 'wait_and_patch_holes_later' ||
+      mediaEditionPlan.chosenPath === 'use_secondary_market_for_missing_items' ||
+      mediaEditionPlan.chosenPath === 'buy_selective_subset' ||
+      mediaEditionPlan.chosenPath === 'buy_one_only_and_stop'
+    ) {
+      if (decision === 'BUY') decision = 'THINK';
     } else if (decision === 'BUY' && mediaEditionPlan.budgetAlignment === 'weak') {
       decision = 'THINK';
     }
@@ -1485,8 +1674,15 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
       buy_standard_only: '今回は通常版だけで十分。限定圧で版数を増やさなくてよい。',
       buy_limited_only: '限定版に意味はあるが、複数版 chase までは広げない方がよい。',
       buy_one_best_fit_edition: 'いちばん motive に合う 1種だけを選ぶのが合理的。',
+      buy_one_only_and_stop: '象徴になる 1点で満足線が作れるなら、そこで止める方が comp 圧に振り回されにくい。',
+      buy_selective_subset: '全部ではなく、刺さる版・最推し分・必要な差分だけ拾う方が満足効率がよい。',
       avoid_full_set_chase: '全版追いは今の motive / 予算整合だと広げすぎ。1種に絞る方が安全。',
+      full_set_is_not_worth_it: '今の full set は reward より burden が勝ちやすいので、選抜回収へ戻す方が安全。',
       full_set_is_justified: '箱推し・ completeness・予算が揃っているため、今回は全版でも筋が通る。',
+      wait_and_patch_holes_later: '初動で抱え込みすぎず、欠けた分だけ後から埋める方が損失を抑えやすい。',
+      use_secondary_market_for_missing_items: '新品 chase を広げるより、欠けた分だけ中古・二次流通で補う方が合理的。',
+      do_not_force_completion: '今の全回収欲は価値より anxiety を下げるために強まっている可能性がある。',
+      step_back_from_completion_pressure: 'いまは comp 圧が実利を押しのけているので、一歩引いてから再評価する方が安全。',
       step_back_from_bonus_or_completion_pressure: '今の迷いは必要性より bonus / completion 圧が前に出ているので、一歩引く方が安全。',
       choose_one_best_store: '全店舗 chase ではなく、いちばん満足に近い 1店舗へ絞るのが合理的。',
       buy_product_but_do_not_chase_all_bonuses: '商品は買ってよいが、店舗 bonus の総取りまでは広げない方が安全。',
@@ -1510,8 +1706,15 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
       buy_standard_only: { id: 'media_standard_only', text: '通常版だけに固定し、限定版比較は今日は打ち切る' },
       buy_limited_only: { id: 'media_limited_only', text: '限定版を1種だけ確保して、他版の追い買いはしない' },
       buy_one_best_fit_edition: { id: 'media_one_best_fit', text: '収録差・封入差を確認して、自分向けの1種だけ選ぶ' },
+      buy_one_only_and_stop: { id: 'media_buy_one_and_stop', text: '象徴になる1点だけ選び、「追加で揃えるか」は今回は保留せず終了する' },
+      buy_selective_subset: { id: 'media_selective_subset', text: '最推し分・必要差分・強い版だけ残し、フルセット前提は外す' },
       avoid_full_set_chase: { id: 'media_avoid_full_set', text: '全版前提を外し、最推し・用途・予算に合う版だけ残す' },
+      full_set_is_not_worth_it: { id: 'media_full_set_not_worth_it', text: 'フルセット前提を外し、セット reward が強い物だけ残して他は切る' },
       full_set_is_justified: { id: 'media_full_set_justified', text: '全版で行くなら総額上限を先に固定し、理由のある版差だけ確認する' },
+      wait_and_patch_holes_later: { id: 'media_wait_patch_holes', text: '今は全部抱えず、欠けた分だけ後日相場と状態を見て埋める前提に切り替える' },
+      use_secondary_market_for_missing_items: { id: 'media_secondary_market_missing', text: '欠けた分は Mercari / 駿河屋などで送料込み総額と状態を確認して補う' },
+      do_not_force_completion: { id: 'media_do_not_force_completion', text: '「全部持っていない不安」を下げるためだけの追加購入は今日はしない' },
+      step_back_from_completion_pressure: { id: 'media_step_back_completion_pressure', text: 'コンプ圧が下がるまで全版判断を止め、明日あらためて必要差分だけ見直す' },
       step_back_from_bonus_or_completion_pressure: { id: 'media_step_back_pressure', text: '今日は全版判断を保留し、bonus や comp 圧が引いてから再評価する' },
       choose_one_best_store: { id: 'media_choose_one_store', text: '店舗特典は比較しても最終的には 1店舗に絞り、他店追いは止める' },
       buy_product_but_do_not_chase_all_bonuses: { id: 'media_buy_product_skip_all_bonus_chase', text: '商品本体が欲しい店を1つ選び、all-bonus 回収は今回やらない' },

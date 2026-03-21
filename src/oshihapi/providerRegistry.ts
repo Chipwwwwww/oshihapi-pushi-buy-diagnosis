@@ -91,11 +91,11 @@ const PROVIDER_REGISTRY: Record<ProviderId, ProviderRegistryEntry> = {
     allowlistedDomains: ["jp.mercari.com"],
     defaultRank: 20,
     supportedItemKinds: ["goods", "used", "blind_draw"],
-    supportedGoodsClasses: ["paper", "itabag_badge", "small_collection"],
+    supportedGoodsClasses: ["paper", "itabag_badge", "small_collection", "media"],
     supportsBuilder: true,
     builderMode: "precision",
     builderItemKinds: ["goods", "used", "blind_draw"],
-    builderGoodsClasses: ["paper", "itabag_badge", "small_collection"],
+    builderGoodsClasses: ["paper", "itabag_badge", "small_collection", "media"],
     usedMarketCheck: true,
   },
   surugaya: {

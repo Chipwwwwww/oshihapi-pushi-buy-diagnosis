@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-21T17:30:51.675Z",
+  "generatedAt": "2026-03-21T17:55:14.022Z",
   "scenarioCount": 32,
   "scenarios": [
     {
@@ -1040,7 +1040,7 @@
     },
     {
       "id": "long_goods_media",
-      "questionCount": 29,
+      "questionCount": 35,
       "shownQuestionIds": [
         "q_storage_fit",
         "q_storage_space",
@@ -1061,12 +1061,18 @@
         "q_addon_media_support_scope",
         "q_addon_media_collection_budget",
         "q_addon_media_edition_intent",
+        "q_addon_media_single_vs_set_intent",
+        "q_addon_media_completion_satisfaction",
+        "q_addon_media_used_market_recovery",
+        "q_addon_media_used_market_comfort",
+        "q_addon_media_completion_pressure_type",
         "q_addon_media_bonus_importance",
         "q_addon_media_multi_store_tolerance",
         "q_addon_media_split_order_burden",
         "q_addon_common_priority",
         "q_addon_goods_compare",
         "q_addon_goods_portability",
+        "q_addon_media_set_reward_strength",
         "q_addon_media_member_version",
         "q_addon_media_playback_space",
         "q_addon_media_limited_pressure",
@@ -1083,14 +1089,14 @@
         "decision": "THINK",
         "holdSubtype": "info_missing",
         "confidence": 40,
-        "score": 0.03861769230769235,
+        "score": 0.05811892307692309,
         "reasonCount": 5,
         "actionCount": 4
       }
     },
     {
       "id": "long_used_media",
-      "questionCount": 31,
+      "questionCount": 37,
       "shownQuestionIds": [
         "q_storage_fit",
         "q_storage_space",
@@ -1116,6 +1122,12 @@
         "q_addon_media_support_scope",
         "q_addon_media_collection_budget",
         "q_addon_media_edition_intent",
+        "q_addon_media_single_vs_set_intent",
+        "q_addon_media_completion_satisfaction",
+        "q_addon_media_used_market_recovery",
+        "q_addon_media_used_market_comfort",
+        "q_addon_media_completion_pressure_type",
+        "q_addon_media_set_reward_strength",
         "q_addon_media_member_version",
         "q_addon_media_playback_space",
         "q_addon_media_limited_pressure",
@@ -1136,7 +1148,7 @@
         "decision": "THINK",
         "holdSubtype": "info_missing",
         "confidence": 40,
-        "score": 0.03513600000000006,
+        "score": 0.04469892307692305,
         "reasonCount": 5,
         "actionCount": 4
       }
@@ -1311,10 +1323,10 @@
       "randomGoodsStopLineAddonInvoked": false,
       "reasons": [
         "単推しが強い時は、全版追いより「自分に合う1種」を選ぶ方が満足効率が高い。",
-        "キャラ/IP motive が主なら、演者理由だけで版数を増やす必要は薄め。",
-        "1店舗で納得できる余地があるなら、全店 chase より「最も合う1店」を選ぶ方が後悔を減らしやすい。",
-        "split order の負担が高い時は、bonus 差より後悔や管理コストが前に出やすい。",
-        "商品本体への motive が残っているなら、bonus を全部追わなくても満足の芯を確保しやすい。"
+        "キャラ寄り × 単推し寄りなので、象徴になる1点や最推し版だけで満足を作りやすい。",
+        "今回の intent 自体が「全部」より1点/1種寄りなので、セット圧をそのまま採用しない方がブレにくい。",
+        "欠けを後から埋める余地があるなら、初動で過剰回収するより穴埋め前提の方が安全なことがある。",
+        "1店舗で納得できる余地があるなら、全店 chase より「最も合う1店」を選ぶ方が後悔を減らしやすい。"
       ]
     },
     {
@@ -1327,8 +1339,54 @@
       "reasons": [
         "箱・グループ支援が強い場合だけ、複数版の意味が出やすい。",
         "キャラ側と演者側の motive が混ざる時は、いちばん刺さる版を1つに絞ると後悔を減らしやすい。",
-        "1店舗で納得できる余地があるなら、全店 chase より「最も合う1店」を選ぶ方が後悔を減らしやすい。",
-        "揃えたい気持ちが強いほど、総額と実際の満足差を意識して clamp した方が安全。"
+        "途中で止まりにくい自覚があるので、最初に full set を正当化できる根拠があるかを厳しめに見ています。",
+        "二次流通を避けたいなら、「後から埋めればいい」と軽く言いすぎず、新品側で満足線を先に固める必要がある。",
+        "箱・グループで揃える意味が本当にあるかは、セット報酬や版差の実体があるかで見分ける。"
+      ]
+    },
+    {
+      "id": "one_oshi_selective_satisfaction",
+      "decision": "THINK",
+      "chosenPath": "buy_one_only_and_stop",
+      "clampReason": null,
+      "budgetAlignment": "medium",
+      "randomGoodsStopLineAddonInvoked": false,
+      "reasons": [
+        "単推しが強い時は、全版追いより「自分に合う1種」を選ぶ方が満足効率が高い。",
+        "キャラ寄り × 単推し寄りなので、象徴になる1点や最推し版だけで満足を作りやすい。",
+        "今回の intent 自体が「全部」より1点/1種寄りなので、セット圧をそのまま採用しない方がブレにくい。",
+        "二次流通を避けたいなら、「後から埋めればいい」と軽く言いすぎず、新品側で満足線を先に固める必要がある。",
+        "全版/全員分で得られる reward が弱いなら、総額だけ増えて満足差が小さくなりやすい。"
+      ]
+    },
+    {
+      "id": "completion_anxiety_weak_motive",
+      "decision": "THINK",
+      "chosenPath": "do_not_force_completion",
+      "clampReason": "completion_image_pressure_without_core_motive",
+      "budgetAlignment": "medium",
+      "randomGoodsStopLineAddonInvoked": false,
+      "reasons": [
+        "複数版メディアは motive が曖昧だと買い分けより惰性 chase になりやすい。",
+        "キャラ側と演者側の motive が混ざる時は、いちばん刺さる版を1つに絞ると後悔を減らしやすい。",
+        "途中で止まりにくい自覚があるので、最初に full set を正当化できる根拠があるかを厳しめに見ています。",
+        "二次流通を避けたいなら、「後から埋めればいい」と軽く言いすぎず、新品側で満足線を先に固める必要がある。",
+        "「全部持っている状態」にしたい不安は、実際の版差や使用価値より強く見えてしまうことがある。"
+      ]
+    },
+    {
+      "id": "missed_item_wait_and_patch",
+      "decision": "THINK",
+      "chosenPath": "wait_and_patch_holes_later",
+      "clampReason": null,
+      "budgetAlignment": "medium",
+      "randomGoodsStopLineAddonInvoked": false,
+      "reasons": [
+        "単推しが強い時は、全版追いより「自分に合う1種」を選ぶ方が満足効率が高い。",
+        "演者寄り × 単推し寄りでは、出演差・映像特典つきの「最適1種」を選ぶ方が筋が通りやすい。",
+        "選抜回収で満足できるなら、全部そろえるより満足差の大きい部分だけ拾う方が効率がよい。",
+        "欠けを後から埋める余地があるなら、初動で過剰回収するより穴埋め前提の方が安全なことがある。",
+        "全版/全員分で得られる reward が弱いなら、総額だけ増えて満足差が小さくなりやすい。"
       ]
     },
     {
@@ -1340,10 +1398,10 @@
       "randomGoodsStopLineAddonInvoked": false,
       "reasons": [
         "単推しが強い時は、全版追いより「自分に合う1種」を選ぶ方が満足効率が高い。",
-        "キャラ/IP motive が主なら、演者理由だけで版数を増やす必要は薄め。",
-        "今の迷いは「本編を見たい」より bonus / 限定圧に押されている可能性が高い。",
-        "1店舗で納得できる余地があるなら、全店 chase より「最も合う1店」を選ぶ方が後悔を減らしやすい。",
-        "いまの判断は商品本体より店舗 bonus 比較に引っ張られている可能性がある。"
+        "キャラ寄り × 単推し寄りなので、象徴になる1点や最推し版だけで満足を作りやすい。",
+        "今回の intent 自体が「全部」より1点/1種寄りなので、セット圧をそのまま採用しない方がブレにくい。",
+        "二次流通を避けたいなら、「後から埋めればいい」と軽く言いすぎず、新品側で満足線を先に固める必要がある。",
+        "completion の圧が店舗 bonus 起点なら、全回収より1店舗最適化や選抜回収の方が崩れにくい。"
       ]
     },
     {
@@ -1355,9 +1413,10 @@
       "randomGoodsStopLineAddonInvoked": false,
       "reasons": [
         "単推しが強い時は、全版追いより「自分に合う1種」を選ぶ方が満足効率が高い。",
-        "演者・キャスト motive が強い時は、出演差や映像特典つき版の relevance が上がりやすい。",
-        "店舗 bonus の重要度が高いほど、商品価値と bonus 価値を分けて考えないと chase が膨らみやすい。",
-        "1店舗で納得できる余地があるなら、全店 chase より「最も合う1店」を選ぶ方が後悔を減らしやすい。"
+        "演者寄り × 単推し寄りでは、出演差・映像特典つきの「最適1種」を選ぶ方が筋が通りやすい。",
+        "今回の intent 自体が「全部」より1点/1種寄りなので、セット圧をそのまま採用しない方がブレにくい。",
+        "欠けを後から埋める余地があるなら、初動で過剰回収するより穴埋め前提の方が安全なことがある。",
+        "completion の圧が店舗 bonus 起点なら、全回収より1店舗最適化や選抜回収の方が崩れにくい。"
       ]
     },
     {
@@ -1370,9 +1429,9 @@
       "reasons": [
         "複数版メディアは motive が曖昧だと買い分けより惰性 chase になりやすい。",
         "キャラ側と演者側の motive が混ざる時は、いちばん刺さる版を1つに絞ると後悔を減らしやすい。",
-        "今の迷いは「本編を見たい」より bonus / 限定圧に押されている可能性が高い。",
-        "店舗 bonus の重要度が高いほど、商品価値と bonus 価値を分けて考えないと chase が膨らみやすい。",
-        "複数店舗 chase は motive が強くても、送料・管理・発売日差の負担まで含めて正当化が必要。"
+        "選抜回収で満足できるなら、全部そろえるより満足差の大きい部分だけ拾う方が効率がよい。",
+        "欠けを後から埋める余地があるなら、初動で過剰回収するより穴埋め前提の方が安全なことがある。",
+        "completion の圧が店舗 bonus 起点なら、全回収より1店舗最適化や選抜回収の方が崩れにくい。"
       ]
     },
     {
@@ -1384,9 +1443,10 @@
       "randomGoodsStopLineAddonInvoked": false,
       "reasons": [
         "単推しが強い時は、全版追いより「自分に合う1種」を選ぶ方が満足効率が高い。",
-        "キャラ/IP motive が主なら、演者理由だけで版数を増やす必要は薄め。",
-        "1店舗で納得できる余地があるなら、全店 chase より「最も合う1店」を選ぶ方が後悔を減らしやすい。",
-        "商品本体への motive が残っているなら、bonus を全部追わなくても満足の芯を確保しやすい。"
+        "キャラ寄り × 単推し寄りなので、象徴になる1点や最推し版だけで満足を作りやすい。",
+        "今回の intent 自体が「全部」より1点/1種寄りなので、セット圧をそのまま採用しない方がブレにくい。",
+        "欠けを後から埋める余地があるなら、初動で過剰回収するより穴埋め前提の方が安全なことがある。",
+        "1店舗で納得できる余地があるなら、全店 chase より「最も合う1店」を選ぶ方が後悔を減らしやすい。"
       ]
     },
     {
@@ -1398,9 +1458,10 @@
       "randomGoodsStopLineAddonInvoked": true,
       "reasons": [
         "単推しが強い時は、全版追いより「自分に合う1種」を選ぶ方が満足効率が高い。",
-        "演者・キャスト motive が強い時は、出演差や映像特典つき版の relevance が上がりやすい。",
-        "1店舗で納得できる余地があるなら、全店 chase より「最も合う1店」を選ぶ方が後悔を減らしやすい。",
-        "商品本体への motive が残っているなら、bonus を全部追わなくても満足の芯を確保しやすい。"
+        "演者寄り × 単推し寄りでは、出演差・映像特典つきの「最適1種」を選ぶ方が筋が通りやすい。",
+        "今回の intent 自体が「全部」より1点/1種寄りなので、セット圧をそのまま採用しない方がブレにくい。",
+        "欠けを後から埋める余地があるなら、初動で過剰回収するより穴埋め前提の方が安全なことがある。",
+        "1店舗で納得できる余地があるなら、全店 chase より「最も合う1店」を選ぶ方が後悔を減らしやすい。"
       ]
     }
   ],

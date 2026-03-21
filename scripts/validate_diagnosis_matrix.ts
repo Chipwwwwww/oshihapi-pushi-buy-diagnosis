@@ -62,6 +62,12 @@ function defaultAnswer(questionId: string): AnswerValue {
   if (questionId === "q_impulse_axis_short") return 3;
   if (questionId === "q_desire") return 3;
   if (questionId.includes("blind_draw")) return "maybe";
+  if (questionId === "q_addon_media_single_vs_set_intent") return "one_best_fit_version";
+  if (questionId === "q_addon_media_completion_satisfaction") return "medium";
+  if (questionId === "q_addon_media_used_market_recovery") return "buy_now_primary";
+  if (questionId === "q_addon_media_used_market_comfort") return "medium";
+  if (questionId === "q_addon_media_completion_pressure_type") return "personal_standard";
+  if (questionId === "q_addon_media_set_reward_strength") return "medium";
   if (questionId === "q_addon_media_bonus_importance") return "medium";
   if (questionId === "q_addon_media_multi_store_tolerance") return "compare_then_one";
   if (questionId === "q_addon_media_split_order_burden") return "medium";
@@ -544,6 +550,12 @@ function runMediaEditionAcceptanceChecks() {
         q_addon_media_support_scope: 'box_group',
         q_addon_media_collection_budget: 'complete',
         q_addon_media_edition_intent: 'all_editions',
+        q_addon_media_single_vs_set_intent: 'full_set_bundle',
+        q_addon_media_completion_satisfaction: 'low',
+        q_addon_media_used_market_recovery: 'buy_now_primary',
+        q_addon_media_used_market_comfort: 'low',
+        q_addon_media_completion_pressure_type: 'box_group_desire',
+        q_addon_media_set_reward_strength: 'strong',
         q_addon_media_member_version: 'multiple_versions',
         q_addon_media_playback_space: 'ready',
         q_addon_media_limited_pressure: 'yes',
@@ -559,6 +571,106 @@ function runMediaEditionAcceptanceChecks() {
       },
     },
     {
+      id: 'one_oshi_selective_satisfaction',
+      output: buildEvaluatedOutput('goods', {
+        q_goal: 'single',
+        q_motives_multi: ['content'],
+        q_budget_pain: 'some',
+        q_addon_media_motive: 'character_ip',
+        q_addon_media_support_scope: 'one_oshi',
+        q_addon_media_collection_budget: 'efficient',
+        q_addon_media_edition_intent: 'one_best_fit',
+        q_addon_media_single_vs_set_intent: 'one_symbolic_item',
+        q_addon_media_completion_satisfaction: 'high',
+        q_addon_media_used_market_recovery: 'buy_now_primary',
+        q_addon_media_used_market_comfort: 'low',
+        q_addon_media_completion_pressure_type: 'personal_standard',
+        q_addon_media_set_reward_strength: 'weak',
+        q_addon_media_member_version: 'specific_version',
+        q_addon_media_playback_space: 'ready',
+        q_addon_media_limited_pressure: 'yes',
+        q_addon_media_bonus_importance: 'low',
+        q_addon_media_multi_store_tolerance: 'one_store_ok',
+        q_addon_media_split_order_burden: 'medium',
+        q_addon_media_random_goods_intent: 'none',
+      }, 'media'),
+      assert(output: DecisionOutput) {
+        const plan = output.mediaEditionPlan;
+        if (!plan) throw new Error('one_oshi_selective_satisfaction: mediaEditionPlan missing');
+        if (plan.chosenPath !== 'buy_one_only_and_stop') throw new Error('one_oshi_selective_satisfaction: should stop at one meaningful item');
+        if (plan.motiveRefinementAxis !== 'character_one_oshi') throw new Error('one_oshi_selective_satisfaction: motive refinement axis should capture character x one-oshi');
+      },
+    },
+    {
+      id: 'completion_anxiety_weak_motive',
+      output: buildEvaluatedOutput('goods', {
+        q_goal: 'set',
+        q_motives_multi: ['fomo'],
+        q_budget_pain: 'some',
+        q_addon_media_motive: 'balanced',
+        q_addon_media_support_scope: 'balanced',
+        q_addon_media_collection_budget: 'balanced',
+        q_addon_media_edition_intent: 'all_editions',
+        q_addon_media_single_vs_set_intent: 'full_set_bundle',
+        q_addon_media_completion_satisfaction: 'low',
+        q_addon_media_used_market_recovery: 'buy_now_primary',
+        q_addon_media_used_market_comfort: 'low',
+        q_addon_media_completion_pressure_type: 'complete_collection_image',
+        q_addon_media_set_reward_strength: 'weak',
+        q_addon_media_member_version: 'none',
+        q_addon_media_playback_space: 'ready',
+        q_addon_media_limited_pressure: 'maybe',
+        q_addon_media_bonus_importance: 'low',
+        q_addon_media_multi_store_tolerance: 'one_store_ok',
+        q_addon_media_split_order_burden: 'medium',
+        q_addon_media_random_goods_intent: 'none',
+      }, 'media'),
+      assert(output: DecisionOutput) {
+        const plan = output.mediaEditionPlan;
+        if (!plan) throw new Error('completion_anxiety_weak_motive: mediaEditionPlan missing');
+        if (!['do_not_force_completion', 'step_back_from_completion_pressure', 'full_set_is_not_worth_it'].includes(plan.chosenPath)) {
+          throw new Error('completion_anxiety_weak_motive: should clamp anxiety-driven completion');
+        }
+        if (plan.completionPressureType !== 'complete_collection_image') throw new Error('completion_anxiety_weak_motive: diagnostics should expose pressure type');
+      },
+    },
+    {
+      id: 'missed_item_wait_and_patch',
+      output: buildEvaluatedOutput('goods', {
+        q_goal: 'single',
+        q_motives_multi: ['content'],
+        q_budget_pain: 'some',
+        q_addon_media_motive: 'cast_performer',
+        q_addon_media_support_scope: 'one_oshi',
+        q_addon_media_collection_budget: 'balanced',
+        q_addon_media_edition_intent: 'one_best_fit',
+        q_addon_media_single_vs_set_intent: 'selective_subset',
+        q_addon_media_completion_satisfaction: 'high',
+        q_addon_media_used_market_recovery: 'wait_and_patch',
+        q_addon_media_used_market_comfort: 'high',
+        q_addon_media_completion_pressure_type: 'personal_standard',
+        q_addon_media_set_reward_strength: 'weak',
+        q_addon_media_member_version: 'specific_version',
+        q_addon_media_playback_space: 'ready',
+        q_addon_media_limited_pressure: 'yes',
+        q_addon_media_bonus_importance: 'low',
+        q_addon_media_multi_store_tolerance: 'one_store_ok',
+        q_addon_media_split_order_burden: 'medium',
+        q_addon_media_random_goods_intent: 'none',
+        q_addon_goods_regret_axis: 'overpay_more',
+      }, 'media'),
+      assert(output: DecisionOutput) {
+        const plan = output.mediaEditionPlan;
+        if (!plan) throw new Error('missed_item_wait_and_patch: mediaEditionPlan missing');
+        if (!['wait_and_patch_holes_later', 'use_secondary_market_for_missing_items'].includes(plan.chosenPath)) {
+          throw new Error('missed_item_wait_and_patch: should prefer patch-holes-later guidance');
+        }
+        if (!plan.usedMarketCompletionScenarioDetected || !plan.secondaryMarketFallbackChangedRecommendation) {
+          throw new Error('missed_item_wait_and_patch: diagnostics should expose secondary-market completion impact');
+        }
+      },
+    },
+    {
       id: 'bonus_pressure_clamp',
       output: buildEvaluatedOutput('goods', {
         q_goal: 'single',
@@ -568,6 +680,12 @@ function runMediaEditionAcceptanceChecks() {
         q_addon_media_support_scope: 'one_oshi',
         q_addon_media_collection_budget: 'balanced',
         q_addon_media_edition_intent: 'limited_preferred',
+        q_addon_media_single_vs_set_intent: 'one_best_fit_version',
+        q_addon_media_completion_satisfaction: 'medium',
+        q_addon_media_used_market_recovery: 'buy_now_primary',
+        q_addon_media_used_market_comfort: 'low',
+        q_addon_media_completion_pressure_type: 'bonus_store_pressure',
+        q_addon_media_set_reward_strength: 'medium',
         q_addon_media_member_version: 'none',
         q_addon_media_playback_space: 'ready',
         q_addon_media_limited_pressure: 'no',
@@ -594,6 +712,12 @@ function runMediaEditionAcceptanceChecks() {
         q_addon_media_support_scope: 'one_oshi',
         q_addon_media_collection_budget: 'balanced',
         q_addon_media_edition_intent: 'one_best_fit',
+        q_addon_media_single_vs_set_intent: 'one_best_fit_version',
+        q_addon_media_completion_satisfaction: 'medium',
+        q_addon_media_used_market_recovery: 'buy_now_primary',
+        q_addon_media_used_market_comfort: 'medium',
+        q_addon_media_completion_pressure_type: 'bonus_store_pressure',
+        q_addon_media_set_reward_strength: 'medium',
         q_addon_media_member_version: 'specific_version',
         q_addon_media_playback_space: 'ready',
         q_addon_media_limited_pressure: 'maybe',
@@ -621,6 +745,12 @@ function runMediaEditionAcceptanceChecks() {
         q_addon_media_support_scope: 'balanced',
         q_addon_media_collection_budget: 'balanced',
         q_addon_media_edition_intent: 'limited_preferred',
+        q_addon_media_single_vs_set_intent: 'selective_subset',
+        q_addon_media_completion_satisfaction: 'medium',
+        q_addon_media_used_market_recovery: 'buy_now_primary',
+        q_addon_media_used_market_comfort: 'medium',
+        q_addon_media_completion_pressure_type: 'bonus_store_pressure',
+        q_addon_media_set_reward_strength: 'medium',
         q_addon_media_member_version: 'none',
         q_addon_media_playback_space: 'ready',
         q_addon_media_limited_pressure: 'no',
@@ -646,6 +776,12 @@ function runMediaEditionAcceptanceChecks() {
         q_addon_media_support_scope: 'one_oshi',
         q_addon_media_collection_budget: 'efficient',
         q_addon_media_edition_intent: 'limited_preferred',
+        q_addon_media_single_vs_set_intent: 'one_best_fit_version',
+        q_addon_media_completion_satisfaction: 'high',
+        q_addon_media_used_market_recovery: 'buy_now_primary',
+        q_addon_media_used_market_comfort: 'medium',
+        q_addon_media_completion_pressure_type: 'personal_standard',
+        q_addon_media_set_reward_strength: 'medium',
         q_addon_media_member_version: 'specific_version',
         q_addon_media_playback_space: 'ready',
         q_addon_media_limited_pressure: 'maybe',
@@ -670,6 +806,12 @@ function runMediaEditionAcceptanceChecks() {
         q_addon_media_support_scope: 'one_oshi',
         q_addon_media_collection_budget: 'balanced',
         q_addon_media_edition_intent: 'one_best_fit',
+        q_addon_media_single_vs_set_intent: 'one_best_fit_version',
+        q_addon_media_completion_satisfaction: 'medium',
+        q_addon_media_used_market_recovery: 'buy_now_primary',
+        q_addon_media_used_market_comfort: 'medium',
+        q_addon_media_completion_pressure_type: 'personal_standard',
+        q_addon_media_set_reward_strength: 'medium',
         q_addon_media_member_version: 'specific_version',
         q_addon_media_playback_space: 'ready',
         q_addon_media_limited_pressure: 'maybe',

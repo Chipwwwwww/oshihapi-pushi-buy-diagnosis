@@ -32,8 +32,15 @@ export type MediaEditionPlannerPath =
   | 'buy_standard_only'
   | 'buy_limited_only'
   | 'buy_one_best_fit_edition'
+  | 'buy_one_only_and_stop'
+  | 'buy_selective_subset'
   | 'avoid_full_set_chase'
+  | 'full_set_is_not_worth_it'
   | 'full_set_is_justified'
+  | 'wait_and_patch_holes_later'
+  | 'use_secondary_market_for_missing_items'
+  | 'do_not_force_completion'
+  | 'step_back_from_completion_pressure'
   | 'step_back_from_bonus_or_completion_pressure'
   | 'choose_one_best_store'
   | 'buy_product_but_do_not_chase_all_bonuses'
@@ -188,6 +195,8 @@ export type MediaEditionPlan = {
   scenarioKey: ScenarioKey;
   characterVsCast: 'character_ip' | 'balanced' | 'cast_performer' | 'unknown';
   oneOshiVsBox: 'one_oshi' | 'box_group' | 'balanced' | 'unknown';
+  singleVsSetIntent: 'one_symbolic_item' | 'one_best_fit_version' | 'selective_subset' | 'full_set_bundle' | 'unknown';
+  satisfactionWithoutFullCompletion: 'high' | 'medium' | 'low' | 'unknown';
   collectionCompleteness: 'efficient' | 'balanced' | 'complete' | 'unknown';
   budgetAlignment: 'strong' | 'medium' | 'weak';
   editionAmbition: 'standard_only' | 'limited_preferred' | 'all_editions' | 'one_best_fit' | 'unknown';
@@ -197,9 +206,16 @@ export type MediaEditionPlan = {
   splitOrderBurden: 'low' | 'medium' | 'high' | 'unknown';
   productVsBonusMotive: 'product_core' | 'balanced' | 'bonus_driven' | 'unknown';
   overpayVsMissPreference: 'overpay_more' | 'miss_more' | 'balanced' | 'unknown';
+  recoveryPreference: 'buy_now_primary' | 'wait_and_patch' | 'reference_only' | 'avoid_used_market' | 'unknown';
+  usedMarketComfort: 'high' | 'medium' | 'low' | 'reference_only' | 'unknown';
+  completionPressureType: 'personal_standard' | 'box_group_desire' | 'bonus_store_pressure' | 'complete_collection_image' | 'mixed' | 'unknown';
+  motiveRefinementAxis: 'character_one_oshi' | 'character_box_group' | 'cast_one_oshi' | 'cast_box_group' | 'balanced' | 'unknown';
+  setRewardStrength: 'strong' | 'medium' | 'weak' | 'unknown';
   storeBonusScenarioDetected: boolean;
   bonusPressureChangedRecommendation: boolean;
   splitOrderBurdenChangedRecommendation: boolean;
+  usedMarketCompletionScenarioDetected: boolean;
+  secondaryMarketFallbackChangedRecommendation: boolean;
   bonusInflationRisk: 'low' | 'medium' | 'high' | 'unknown';
   memberVersionPreference: 'none' | 'specific_version' | 'multiple_versions' | 'unknown';
   randomGoodsAddonIntent: 'none' | 'present';
