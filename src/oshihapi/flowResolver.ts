@@ -7,6 +7,7 @@ import {
   ADDON_BY_GOODS_CLASS,
   ADDON_BY_ITEM_KIND,
   CORE_12_QUESTION_IDS,
+  MEDIA_P3B_QUESTION_IDS,
   MEDIA_CORE_QUESTION_IDS,
   MIXED_MEDIA_RANDOM_GOODS_QUESTION_IDS,
   QUICK_QUESTION_IDS,
@@ -67,6 +68,7 @@ const VENUE_LIMITED_RECOVERY_QUESTION_IDS = [
   "q_addon_goods_used_fallback",
   "q_addon_goods_scarcity_pressure",
   "q_addon_goods_venue_motive",
+  "q_addon_goods_live_goods_motive",
   "q_addon_goods_regret_axis",
 ] as const;
 
@@ -203,6 +205,7 @@ export function resolveFlowQuestions(input: FlowResolverInput): FlowResolution {
     moveQuestionBefore(ids, "q_addon_media_support_scope", "q_addon_common_priority");
     moveQuestionBefore(ids, "q_addon_media_collection_budget", "q_addon_common_priority");
     moveQuestionBefore(ids, "q_addon_media_edition_intent", "q_addon_common_priority");
+    for (const questionId of MEDIA_P3B_QUESTION_IDS) moveQuestionBefore(ids, questionId, "q_addon_common_priority");
   } else {
     pushBranch("force_media_core_questions", false, `goodsClass=${input.goodsClass},mode=${input.mode}`);
   }
@@ -265,6 +268,7 @@ export function resolveFlowQuestions(input: FlowResolverInput): FlowResolution {
     ...Object.values(ADDON_BY_ITEM_KIND).flat(),
     ...Object.values(ADDON_BY_GOODS_CLASS).flat(),
     ...MEDIA_CORE_QUESTION_IDS,
+    ...MEDIA_P3B_QUESTION_IDS,
     ...MIXED_MEDIA_RANDOM_GOODS_QUESTION_IDS,
     ...VENUE_LIMITED_RECOVERY_QUESTION_IDS,
     "q_addon_goods_event_limit_context",

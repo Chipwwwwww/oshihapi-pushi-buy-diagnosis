@@ -51,6 +51,7 @@ function defaultAnswer(questionId: string): AnswerValue {
   if (questionId === "q_addon_goods_used_fallback") return "medium";
   if (questionId === "q_addon_goods_scarcity_pressure") return "medium";
   if (questionId === "q_addon_goods_venue_motive") return "practical_collecting";
+  if (questionId === "q_addon_goods_live_goods_motive") return "mixed";
   if (questionId === "q_addon_goods_regret_axis") return "balanced";
   if (questionId === "q_hot_cold") return "normal";
   if (questionId === "q_price_feel") return "normal";
@@ -61,6 +62,9 @@ function defaultAnswer(questionId: string): AnswerValue {
   if (questionId === "q_impulse_axis_short") return 3;
   if (questionId === "q_desire") return 3;
   if (questionId.includes("blind_draw")) return "maybe";
+  if (questionId === "q_addon_media_bonus_importance") return "medium";
+  if (questionId === "q_addon_media_multi_store_tolerance") return "compare_then_one";
+  if (questionId === "q_addon_media_split_order_burden") return "medium";
   if (questionId.includes("ticket")) return "partly";
   if (questionId.includes("preorder")) return "unknown";
   if (questionId.includes("used")) return "careful";
@@ -516,12 +520,17 @@ function runMediaEditionAcceptanceChecks() {
         q_addon_media_member_version: 'specific_version',
         q_addon_media_playback_space: 'ready',
         q_addon_media_limited_pressure: 'maybe',
+        q_addon_media_bonus_importance: 'low',
+        q_addon_media_multi_store_tolerance: 'one_store_ok',
+        q_addon_media_split_order_burden: 'medium',
         q_addon_media_random_goods_intent: 'none',
       }, 'media'),
       assert(output: DecisionOutput) {
         const plan = output.mediaEditionPlan;
         if (!plan) throw new Error('one_oshi_budget_constrained_limited_temptation: mediaEditionPlan missing');
-        if (!['buy_one_best_fit_edition', 'buy_limited_only'].includes(plan.chosenPath)) throw new Error('one_oshi_budget_constrained_limited_temptation: should avoid all-edition chase');
+        if (!['buy_one_best_fit_edition', 'buy_limited_only', 'choose_one_best_store', 'buy_product_but_do_not_chase_all_bonuses'].includes(plan.chosenPath)) {
+          throw new Error('one_oshi_budget_constrained_limited_temptation: should avoid all-edition chase');
+        }
         if (plan.oneOshiVsBox !== 'one_oshi' || plan.budgetAlignment !== 'weak') throw new Error('one_oshi_budget_constrained_limited_temptation: core axes not captured');
       },
     },
@@ -538,6 +547,9 @@ function runMediaEditionAcceptanceChecks() {
         q_addon_media_member_version: 'multiple_versions',
         q_addon_media_playback_space: 'ready',
         q_addon_media_limited_pressure: 'yes',
+        q_addon_media_bonus_importance: 'low',
+        q_addon_media_multi_store_tolerance: 'one_store_ok',
+        q_addon_media_split_order_burden: 'low',
         q_addon_media_random_goods_intent: 'none',
       }, 'media'),
       assert(output: DecisionOutput) {
@@ -559,14 +571,89 @@ function runMediaEditionAcceptanceChecks() {
         q_addon_media_member_version: 'none',
         q_addon_media_playback_space: 'ready',
         q_addon_media_limited_pressure: 'no',
+        q_addon_media_bonus_importance: 'low',
+        q_addon_media_multi_store_tolerance: 'one_store_ok',
+        q_addon_media_split_order_burden: 'medium',
         q_addon_media_random_goods_intent: 'none',
       }, 'media'),
       assert(output: DecisionOutput) {
         const plan = output.mediaEditionPlan;
         if (!plan) throw new Error('bonus_pressure_clamp: mediaEditionPlan missing');
-        if (plan.chosenPath !== 'step_back_from_bonus_or_completion_pressure' || plan.clampReason !== 'bonus_pressure_exceeds_stated_need') {
+        if (!['step_back_from_bonus_or_completion_pressure', 'step_back_from_bonus_pressure'].includes(plan.chosenPath) || plan.clampReason !== 'bonus_pressure_exceeds_stated_need') {
           throw new Error('bonus_pressure_clamp: bonus/FOMO-heavy case should clamp back');
         }
+      },
+    },
+    {
+      id: 'store_bonus_choose_one_store',
+      output: buildEvaluatedOutput('goods', {
+        q_goal: 'single',
+        q_motives_multi: ['content', 'bonus'],
+        q_budget_pain: 'some',
+        q_addon_media_motive: 'cast_performer',
+        q_addon_media_support_scope: 'one_oshi',
+        q_addon_media_collection_budget: 'balanced',
+        q_addon_media_edition_intent: 'one_best_fit',
+        q_addon_media_member_version: 'specific_version',
+        q_addon_media_playback_space: 'ready',
+        q_addon_media_limited_pressure: 'maybe',
+        q_addon_media_bonus_importance: 'high',
+        q_addon_media_multi_store_tolerance: 'compare_then_one',
+        q_addon_media_split_order_burden: 'medium',
+        q_addon_media_random_goods_intent: 'none',
+      }, 'media'),
+      assert(output: DecisionOutput) {
+        const plan = output.mediaEditionPlan;
+        if (!plan) throw new Error('store_bonus_choose_one_store: mediaEditionPlan missing');
+        if (plan.chosenPath !== 'choose_one_best_store') throw new Error('store_bonus_choose_one_store: should optimize to one store');
+      },
+    },
+    {
+      id: 'split_orders_not_worth_it',
+      output: buildEvaluatedOutput('goods', {
+        q_goal: 'set',
+        q_motives_multi: ['bonus', 'fomo'],
+        q_budget_pain: 'some',
+        q_addon_media_motive: 'balanced',
+        q_addon_media_support_scope: 'balanced',
+        q_addon_media_collection_budget: 'balanced',
+        q_addon_media_edition_intent: 'limited_preferred',
+        q_addon_media_member_version: 'none',
+        q_addon_media_playback_space: 'ready',
+        q_addon_media_limited_pressure: 'no',
+        q_addon_media_bonus_importance: 'high',
+        q_addon_media_multi_store_tolerance: 'all_bonuses_or_bust',
+        q_addon_media_split_order_burden: 'high',
+        q_addon_media_random_goods_intent: 'none',
+      }, 'media'),
+      assert(output: DecisionOutput) {
+        const plan = output.mediaEditionPlan;
+        if (!plan) throw new Error('split_orders_not_worth_it: mediaEditionPlan missing');
+        if (plan.chosenPath !== 'split_orders_are_not_worth_it') throw new Error('split_orders_not_worth_it: should explicitly reject split orders');
+      },
+    },
+    {
+      id: 'buy_product_skip_all_bonuses',
+      output: buildEvaluatedOutput('goods', {
+        q_goal: 'single',
+        q_motives_multi: ['content'],
+        q_budget_pain: 'ok',
+        q_addon_media_motive: 'character_ip',
+        q_addon_media_support_scope: 'one_oshi',
+        q_addon_media_collection_budget: 'efficient',
+        q_addon_media_edition_intent: 'limited_preferred',
+        q_addon_media_member_version: 'specific_version',
+        q_addon_media_playback_space: 'ready',
+        q_addon_media_limited_pressure: 'maybe',
+        q_addon_media_bonus_importance: 'medium',
+        q_addon_media_multi_store_tolerance: 'one_store_ok',
+        q_addon_media_split_order_burden: 'medium',
+        q_addon_media_random_goods_intent: 'none',
+      }, 'media'),
+      assert(output: DecisionOutput) {
+        const plan = output.mediaEditionPlan;
+        if (!plan) throw new Error('buy_product_skip_all_bonuses: mediaEditionPlan missing');
+        if (plan.chosenPath !== 'buy_product_but_do_not_chase_all_bonuses') throw new Error('buy_product_skip_all_bonuses: product value should survive without all-bonus chase');
       },
     },
     {
@@ -661,6 +748,7 @@ function runTrustRepairAcceptanceChecks() {
     q_addon_goods_used_fallback: 'unknown',
     q_addon_goods_scarcity_pressure: 'medium',
     q_addon_goods_venue_motive: 'mixed',
+    q_addon_goods_live_goods_motive: 'unknown',
     q_addon_goods_regret_axis: 'unknown',
     q_regret_impulse: 'calm',
   }, 'small_collection');
@@ -681,6 +769,9 @@ function runTrustRepairAcceptanceChecks() {
     q_addon_media_member_version: 'unknown',
     q_addon_media_playback_space: 'ready',
     q_addon_media_limited_pressure: 'unknown',
+    q_addon_media_bonus_importance: 'unknown',
+    q_addon_media_multi_store_tolerance: 'unknown',
+    q_addon_media_split_order_burden: 'unknown',
     q_addon_media_random_goods_intent: 'present',
     q_addon_blind_draw_cap: 'unknown',
     q_addon_blind_draw_exit: 'unknown',
@@ -715,6 +806,9 @@ function runMediumMediaCoverageCheck() {
     "q_addon_media_support_scope",
     "q_addon_media_collection_budget",
     "q_addon_media_edition_intent",
+    "q_addon_media_bonus_importance",
+    "q_addon_media_multi_store_tolerance",
+    "q_addon_media_split_order_burden",
     "q_addon_media_random_goods_intent",
   ]) {
     if (!questionIds.includes(required)) {
@@ -899,11 +993,12 @@ const venueRecoveryWait = buildEvaluatedOutput('goods', {
   q_addon_goods_used_fallback: 'medium',
   q_addon_goods_scarcity_pressure: 'high',
   q_addon_goods_venue_motive: 'event_memory',
+  q_addon_goods_live_goods_motive: 'event_atmosphere',
   q_addon_goods_regret_axis: 'overpay_more',
   q_regret_impulse: 'fomo',
 });
-if (venueRecoveryWait.venueLimitedGoodsPlan?.chosenPath !== 'wait_for_post_event_mailorder') {
-  throw new Error('venue_recovery_wait: venueLimitedGoodsPlan should prefer wait_for_post_event_mailorder');
+if (venueRecoveryWait.venueLimitedGoodsPlan?.chosenPath !== 'wait_for_post_event_followup') {
+  throw new Error('venue_recovery_wait: venueLimitedGoodsPlan should prefer wait_for_post_event_followup');
 }
 
 const venueUsedFallback = buildEvaluatedOutput('goods', {
@@ -914,10 +1009,11 @@ const venueUsedFallback = buildEvaluatedOutput('goods', {
   q_addon_goods_used_fallback: 'high',
   q_addon_goods_scarcity_pressure: 'medium',
   q_addon_goods_venue_motive: 'practical_collecting',
+  q_addon_goods_live_goods_motive: 'symbolic_value',
   q_addon_goods_regret_axis: 'overpay_more',
 });
-if (venueUsedFallback.venueLimitedGoodsPlan?.chosenPath !== 'fallback_to_used_market_if_missed') {
-  throw new Error('venue_used_fallback: venueLimitedGoodsPlan should prefer fallback_to_used_market_if_missed');
+if (venueUsedFallback.venueLimitedGoodsPlan?.chosenPath !== 'wait_for_post_event_followup') {
+  throw new Error('venue_used_fallback: venueLimitedGoodsPlan should prefer wait_for_post_event_followup when follow-up is plausible');
 }
 
 const venueTrueScarcity = buildEvaluatedOutput('goods', {
@@ -928,10 +1024,11 @@ const venueTrueScarcity = buildEvaluatedOutput('goods', {
   q_addon_goods_used_fallback: 'low',
   q_addon_goods_scarcity_pressure: 'high',
   q_addon_goods_venue_motive: 'event_memory',
+  q_addon_goods_live_goods_motive: 'core_attachment',
   q_addon_goods_regret_axis: 'miss_more',
 });
-if (venueTrueScarcity.venueLimitedGoodsPlan?.chosenPath !== 'buy_now_if_it_is_truly_hard_to_recover') {
-  throw new Error('venue_true_scarcity: venueLimitedGoodsPlan should allow buy_now_if_it_is_truly_hard_to_recover');
+if (venueTrueScarcity.venueLimitedGoodsPlan?.chosenPath !== 'buy_live_goods_now_if_it_matches_core_motive') {
+  throw new Error('venue_true_scarcity: venueLimitedGoodsPlan should allow buy_live_goods_now_if_it_matches_core_motive');
 }
 
 const venueFomoClamp = buildEvaluatedOutput('goods', {
@@ -942,9 +1039,10 @@ const venueFomoClamp = buildEvaluatedOutput('goods', {
   q_addon_goods_used_fallback: 'medium',
   q_addon_goods_scarcity_pressure: 'high',
   q_addon_goods_venue_motive: 'collection_completeness',
+  q_addon_goods_live_goods_motive: 'event_atmosphere',
   q_addon_goods_regret_axis: 'overpay_more',
   q_regret_impulse: 'fomo',
 });
-if (venueFomoClamp.venueLimitedGoodsPlan?.chosenPath !== 'wait_for_post_event_mailorder' && venueFomoClamp.venueLimitedGoodsPlan?.chosenPath !== 'step_back_from_fomo_pressure') {
+if (venueFomoClamp.venueLimitedGoodsPlan?.chosenPath !== 'wait_for_post_event_followup' && venueFomoClamp.venueLimitedGoodsPlan?.chosenPath !== 'skip_atmosphere_driven_goods_chase') {
   throw new Error('venue_fomo_clamp: venueLimitedGoodsPlan should clamp urgency when recovery is realistic');
 }

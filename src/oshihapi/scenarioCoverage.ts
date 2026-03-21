@@ -14,6 +14,8 @@ export type ScenarioKey =
   | "limited_vs_standard_media"
   | "full_set_pressure"
   | "mixed_media_random_goods"
+  | "store_bonus_collection"
+  | "multi_store_bonus_split"
   | "new_book_bonus_decision"
   | "collection_vs_budget"
   | "impulse_cooling"
@@ -21,6 +23,9 @@ export type ScenarioKey =
   | "post_event_mailorder"
   | "missed_onsite_recovery"
   | "limited_goods_fomo"
+  | "mixed_media_live_goods"
+  | "cast_live_goods_followup"
+  | "bonus_pressure_followup"
   | "not_now_ticket"
   | "not_now_travel"
   | "not_now_3d_idol"
@@ -283,6 +288,48 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     shortScopeDisclosure: "メディア+ランダム addon に対応。後続フェーズの拡張は対象外。",
     diagnosticsTag: "coverage_mixed_media_random_goods_strong",
   },
+  store_bonus_collection: {
+    key: "store_bonus_collection",
+    itemKind: "goods",
+    goodsClass: "media",
+    supportLevel: "strong",
+    homepagePriority: "secondary",
+    heroOrder: 8,
+    shopperIntent: "店舗別 bonus の圧で複数店舗を追うべきか整理したい",
+    recommendedEntryLabel: "店舗別 bonus をどこまで追うか整理したい",
+    compactEntryHint: "1店舗最適化と all-bonus 圧を分けて見ます。",
+    providerEcologyHint: "HMV・Gamers などの specialty を軸にしつつ、bonus の重要度が弱い時は 1店舗最適化へ寄せます。",
+    resultExplanationHint: "商品価値と店舗 bonus 圧を切り分けて、1店舗で十分かどうかを説明します。",
+    optimizationSummary: "商品価値を残しつつ店舗 bonus 圧を整理",
+    questionHint: "このフローでは、bonus が本体か・1店舗で満足できるか・比較疲れしそうかを見ます。",
+    flowHelperHint: "店舗別 bonus 圧と 1店舗最適化を整理中",
+    verificationHint: "各店舗の bonus 条件、対象版、送料、締切は外部で最終確認してください。",
+    shortVerificationHint: "店舗 bonus 条件・送料・締切は外部確認。",
+    scopeDisclosure: "mixed-media の店舗別 bonus 圧には強め対応しますが、全店舗完全回収の最適化は対象外です。",
+    shortScopeDisclosure: "店舗別 bonus 圧には強め対応。全店舗完走最適化は対象外。",
+    diagnosticsTag: "coverage_store_bonus_collection_strong",
+  },
+  multi_store_bonus_split: {
+    key: "multi_store_bonus_split",
+    itemKind: "goods",
+    goodsClass: "media",
+    supportLevel: "strong",
+    homepagePriority: "secondary",
+    heroOrder: 9,
+    shopperIntent: "複数店舗 split order が本当に見合うか整理したい",
+    recommendedEntryLabel: "複数店舗 split order が見合うか整理したい",
+    compactEntryHint: "送料・管理負担・後悔を込みで multi-store chase を見ます。",
+    providerEcologyHint: "bonus specialty は残しつつ、split order の負担が高い時は 1店舗に clamp します。",
+    resultExplanationHint: "bonus 差より split order burden が重い時は、明示的に multi-store chase を弱めます。",
+    optimizationSummary: "multi-store chase と split order burden のバランス",
+    questionHint: "このフローでは、複数注文の許容度・送料増・取りこぼしストレスを確認します。",
+    flowHelperHint: "multi-store split の妥当性を確認中",
+    verificationHint: "各店舗の同梱条件、送料、発売日差、注文管理負担は外部で再確認してください。",
+    shortVerificationHint: "同梱条件・送料・発売日差は外部確認。",
+    scopeDisclosure: "複数店舗 split の妥当性には対応しますが、実際の在庫取り回し最適化まではしません。",
+    shortScopeDisclosure: "split 判断に対応。在庫取り回し最適化は対象外。",
+    diagnosticsTag: "coverage_multi_store_bonus_split_strong",
+  },
   new_book_bonus_decision: {
     key: "new_book_bonus_decision",
     itemKind: "goods",
@@ -407,6 +454,69 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     scopeDisclosure: "FOMO の整理には対応しますが、感情ケア全般や参加スケジュール判断は扱いません。",
     shortScopeDisclosure: "FOMO 整理には対応。参加スケジュールは対象外。",
     diagnosticsTag: "coverage_limited_goods_fomo_strong",
+  },
+  mixed_media_live_goods: {
+    key: "mixed_media_live_goods",
+    itemKind: "goods",
+    goodsClass: "small_collection",
+    supportLevel: "strong",
+    homepagePriority: "secondary",
+    heroOrder: 12,
+    shopperIntent: "mixed-media の live / venue goods を今買うべきか整理したい",
+    recommendedEntryLabel: "mixed-media の live / 会場グッズを今買うか整理したい",
+    compactEntryHint: "core motive と event atmosphere を分けて見ます。",
+    providerEcologyHint: "live goods はまず motive と follow-up plausibility を見て、一般ECを急がせすぎない方針です。",
+    resultExplanationHint: "event の空気だけでなく、後から残る価値と follow-up 余地を分けて説明します。",
+    optimizationSummary: "live goods の durable value と event pressure の切り分け",
+    questionHint: "このフローでは、後からも意味が残る品か・待てるか・取り逃しと overpay のどちらが重いかを見ます。",
+    flowHelperHint: "live goods の motive と follow-up 余地を整理中",
+    verificationHint: "公式 follow-up 告知、販売条件、購入制限、後日通販例は外部で確認してください。",
+    shortVerificationHint: "follow-up 告知・販売条件は外部確認。",
+    scopeDisclosure: "mixed-media の live goods 判断には対応しますが、参加・遠征・チケット判断は対象外です。",
+    shortScopeDisclosure: "live goods 判断に対応。参加/遠征/チケットは対象外。",
+    diagnosticsTag: "coverage_mixed_media_live_goods_strong",
+  },
+  cast_live_goods_followup: {
+    key: "cast_live_goods_followup",
+    itemKind: "goods",
+    goodsClass: "small_collection",
+    supportLevel: "strong",
+    homepagePriority: "secondary",
+    heroOrder: 13,
+    shopperIntent: "キャスト/音楽文脈の live goods を follow-up 待ちできるか整理したい",
+    recommendedEntryLabel: "cast-live goods の follow-up を待つべきか整理したい",
+    compactEntryHint: "cast attachment は尊重しつつ、follow-up plausibility を強めに見ます。",
+    providerEcologyHint: "follow-up 待ちが plausible な時は公式寄り確認を優先し、中古 fallback の出しすぎを避けます。",
+    resultExplanationHint: "キャスト愛着がある場合でも、follow-up の見込みがあるなら urgency を下げて説明します。",
+    optimizationSummary: "cast attachment を残しつつ follow-up 余地を評価",
+    questionHint: "このフローでは、キャスト愛着の強さと、最初の窓を逃しても平気かを確認します。",
+    flowHelperHint: "cast-live goods の follow-up 可否を確認中",
+    verificationHint: "follow-up 告知の有無、例年傾向、売り切れ後の再案内は外部で確認してください。",
+    shortVerificationHint: "follow-up 告知・例年傾向は外部確認。",
+    scopeDisclosure: "cast-live goods の follow-up 判断に対応しますが、参加/整理券計画は対象外です。",
+    shortScopeDisclosure: "cast-live follow-up 判断に対応。参加計画は対象外。",
+    diagnosticsTag: "coverage_cast_live_goods_followup_strong",
+  },
+  bonus_pressure_followup: {
+    key: "bonus_pressure_followup",
+    itemKind: "goods",
+    goodsClass: "small_collection",
+    supportLevel: "strong",
+    homepagePriority: "secondary",
+    heroOrder: 14,
+    shopperIntent: "live 後の bonus / FOMO 圧から一歩引くべきか整理したい",
+    recommendedEntryLabel: "bonus / FOMO 圧から一歩引くべきか整理したい",
+    compactEntryHint: "本当の scarcity と bonus inflation を分けます。",
+    providerEcologyHint: "ここでは販売先の多さより、follow-up plausibility と mood-driven pressure の切り分けを優先します。",
+    resultExplanationHint: "限定感や bonus 圧が recommendation をどの程度歪めているかを説明します。",
+    optimizationSummary: "bonus inflation と true scarcity の識別",
+    questionHint: "このフローでは、あとからも欲しいか・待てるか・その場の空気に押されていないかを見ます。",
+    flowHelperHint: "bonus/FOMO 圧の根拠を確認中",
+    verificationHint: "限定表記、follow-up 告知、販売条件、相場の急騰根拠は外部で確認してください。",
+    shortVerificationHint: "限定表記・follow-up 告知は外部確認。",
+    scopeDisclosure: "bonus/FOMO の整理には対応しますが、used-market 完全最適化は対象外です。",
+    shortScopeDisclosure: "bonus/FOMO 整理に対応。used-market 最適化は対象外。",
+    diagnosticsTag: "coverage_bonus_pressure_followup_strong",
   },
   impulse_cooling: {
     key: "impulse_cooling",
@@ -535,6 +645,8 @@ const ENTRY_ORDER: ScenarioKey[] = [
   "limited_vs_standard_media",
   "full_set_pressure",
   "mixed_media_random_goods",
+  "store_bonus_collection",
+  "multi_store_bonus_split",
   "blind_draw_stopline",
   "exchange_path",
   "random_goods_completion",
@@ -544,6 +656,9 @@ const ENTRY_ORDER: ScenarioKey[] = [
   "post_event_mailorder",
   "missed_onsite_recovery",
   "limited_goods_fomo",
+  "mixed_media_live_goods",
+  "cast_live_goods_followup",
+  "bonus_pressure_followup",
   "not_now_ticket",
   "not_now_travel",
   "not_now_3d_idol",
@@ -579,7 +694,35 @@ function hasMediaEditionSignals(input: ScenarioResolutionInput): boolean {
   return (
     input.answers?.q_addon_media_edition_intent != null ||
     input.answers?.q_addon_media_member_version != null ||
+    input.answers?.q_addon_media_bonus_importance != null ||
+    input.answers?.q_addon_media_multi_store_tolerance != null ||
     Boolean(input.parsedSearchClues?.editionClues.length)
+  );
+}
+
+function hasStoreBonusCollectionSignals(input: ScenarioResolutionInput): boolean {
+  const bonusImportance = input.answers?.q_addon_media_bonus_importance;
+  const storeTolerance = input.answers?.q_addon_media_multi_store_tolerance;
+  return (
+    input.goodsClass === "media" &&
+    (bonusImportance === "medium" ||
+      bonusImportance === "high" ||
+      storeTolerance === "compare_then_one" ||
+      storeTolerance === "multi_store_considered" ||
+      storeTolerance === "all_bonuses_or_bust" ||
+      hasBonusSignals(input.parsedSearchClues, input.searchClueRaw))
+  );
+}
+
+function hasMultiStoreSplitSignals(input: ScenarioResolutionInput): boolean {
+  const storeTolerance = input.answers?.q_addon_media_multi_store_tolerance;
+  const splitBurden = input.answers?.q_addon_media_split_order_burden;
+  return (
+    input.goodsClass === "media" &&
+    (storeTolerance === "multi_store_considered" ||
+      storeTolerance === "all_bonuses_or_bust" ||
+      splitBurden === "high" ||
+      splitBurden === "medium")
   );
 }
 
@@ -683,6 +826,12 @@ function hasFomoClampSignals(input: ScenarioResolutionInput): boolean {
   return hasVenueLimitedSignals(input) && (scarcity === "high" || motives.includes("fomo") || regretAxis === "overpay_more");
 }
 
+function hasMixedMediaLiveGoodsSignals(input: ScenarioResolutionInput): boolean {
+  const liveGoodsMotive = input.answers?.q_addon_goods_live_goods_motive;
+  const motives = Array.isArray(input.answers?.q_motives_multi) ? input.answers?.q_motives_multi : [];
+  return hasVenueLimitedSignals(input) && (liveGoodsMotive != null || motives.includes("seiyuu_cast") || motives.includes("memory"));
+}
+
 function hasImpulseSignals(input: ScenarioResolutionInput): boolean {
   const state = input.answers?.q_regret_impulse;
   return state === "excited" || state === "tired" || state === "fomo";
@@ -714,10 +863,21 @@ export function resolveScenarioKey(input: ScenarioResolutionInput): ScenarioKey 
   if (input.itemKind === "preorder") return "preorder_decision";
   if (input.goodsClass === "media" || hasMediaSignals(input.parsedSearchClues)) {
     if (hasMixedMediaRandomGoodsSignals(input)) return "mixed_media_random_goods";
+    if (hasMultiStoreSplitSignals(input)) return "multi_store_bonus_split";
+    if (hasStoreBonusCollectionSignals(input)) return "store_bonus_collection";
     if (hasFullSetPressureSignals(input)) return "full_set_pressure";
     if (hasLimitedVsStandardSignals(input)) return "limited_vs_standard_media";
     if (hasMediaEditionSignals(input)) return "multi_edition_media";
     return "media_purchase_decision";
+  }
+  if (hasMixedMediaLiveGoodsSignals(input)) {
+    if (input.answers?.q_addon_goods_post_event_mailorder === "likely" || input.answers?.q_addon_goods_post_event_mailorder === "maybe") {
+      return "cast_live_goods_followup";
+    }
+    if (input.answers?.q_addon_goods_live_goods_motive === "event_atmosphere" || hasFomoClampSignals(input)) {
+      return "bonus_pressure_followup";
+    }
+    return "mixed_media_live_goods";
   }
   if (hasCollectionSignals(input)) return "collection_vs_budget";
   if (hasImpulseSignals(input) || input.itemKind === "game_billing") return "impulse_cooling";
@@ -771,7 +931,9 @@ export function getCoveragePreset(entryKey: ScenarioKey): Pick<InputMeta, "itemK
     entry.key === "multi_edition_media" ||
     entry.key === "limited_vs_standard_media" ||
     entry.key === "full_set_pressure" ||
-    entry.key === "mixed_media_random_goods"
+    entry.key === "mixed_media_random_goods" ||
+    entry.key === "store_bonus_collection" ||
+    entry.key === "multi_store_bonus_split"
   ) {
     return { itemKind: "goods", goodsClass: "media" };
   }
@@ -781,7 +943,10 @@ export function getCoveragePreset(entryKey: ScenarioKey): Pick<InputMeta, "itemK
     entry.key === "venue_limited_goods" ||
     entry.key === "post_event_mailorder" ||
     entry.key === "missed_onsite_recovery" ||
-    entry.key === "limited_goods_fomo"
+    entry.key === "limited_goods_fomo" ||
+    entry.key === "mixed_media_live_goods" ||
+    entry.key === "cast_live_goods_followup" ||
+    entry.key === "bonus_pressure_followup"
   ) {
     return { itemKind: "goods", goodsClass: "small_collection" };
   }

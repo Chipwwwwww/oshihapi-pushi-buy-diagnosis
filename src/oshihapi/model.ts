@@ -34,13 +34,21 @@ export type MediaEditionPlannerPath =
   | 'buy_one_best_fit_edition'
   | 'avoid_full_set_chase'
   | 'full_set_is_justified'
-  | 'step_back_from_bonus_or_completion_pressure';
+  | 'step_back_from_bonus_or_completion_pressure'
+  | 'choose_one_best_store'
+  | 'buy_product_but_do_not_chase_all_bonuses'
+  | 'split_orders_are_not_worth_it'
+  | 'split_orders_are_justified'
+  | 'step_back_from_bonus_pressure';
 export type VenueLimitedPlannerPath =
   | 'buy_now_if_it_is_truly_hard_to_recover'
   | 'wait_for_post_event_mailorder'
   | 'skip_onsite_chase_and_check_later'
   | 'fallback_to_used_market_if_missed'
-  | 'step_back_from_fomo_pressure';
+  | 'step_back_from_fomo_pressure'
+  | 'wait_for_post_event_followup'
+  | 'buy_live_goods_now_if_it_matches_core_motive'
+  | 'skip_atmosphere_driven_goods_chase';
 export type HoldSubtype =
   | 'info_missing'
   | 'budget_pain'
@@ -184,6 +192,12 @@ export type MediaEditionPlan = {
   budgetAlignment: 'strong' | 'medium' | 'weak';
   editionAmbition: 'standard_only' | 'limited_preferred' | 'all_editions' | 'one_best_fit' | 'unknown';
   bonusPressure: 'low' | 'medium' | 'high' | 'unknown';
+  bonusImportance: 'low' | 'medium' | 'high' | 'unknown';
+  storeSplitPreference: 'one_store_ok' | 'compare_then_one' | 'multi_store_considered' | 'all_bonuses_or_bust' | 'unknown';
+  splitOrderBurden: 'low' | 'medium' | 'high' | 'unknown';
+  productVsBonusMotive: 'product_core' | 'balanced' | 'bonus_driven' | 'unknown';
+  overpayVsMissPreference: 'overpay_more' | 'miss_more' | 'balanced' | 'unknown';
+  storeBonusScenarioDetected: boolean;
   memberVersionPreference: 'none' | 'specific_version' | 'multiple_versions' | 'unknown';
   randomGoodsAddonIntent: 'none' | 'present';
   chosenPath: MediaEditionPlannerPath;
@@ -205,12 +219,14 @@ export type VenueLimitedGoodsPlan = {
   usedFallbackWillingness: 'high' | 'medium' | 'low' | 'unknown';
   scarcityPressure: 'high' | 'medium' | 'low' | 'unknown';
   primaryMotive: 'collection_completeness' | 'event_memory' | 'practical_collecting' | 'mixed' | 'unknown';
+  liveGoodsMotive: 'core_attachment' | 'symbolic_value' | 'event_atmosphere' | 'mixed' | 'unknown';
   regretAxis: 'overpay_more' | 'miss_more' | 'balanced' | 'unknown';
   chosenPath: VenueLimitedPlannerPath;
   optimizingFor: string;
   recoveryChangedRecommendation: boolean;
   usedMarketPartOfSaferPath: boolean;
   trueScarcityLikely: boolean;
+  mixedMediaLiveScenarioDetected: boolean;
   clampReason?: string;
   reasonFlags: string[];
   reasons: string[];

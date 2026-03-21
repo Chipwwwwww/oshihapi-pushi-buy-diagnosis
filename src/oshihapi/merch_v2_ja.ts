@@ -303,6 +303,19 @@ export const merch_v2_ja: QuestionSet = {
       ],
     },
     {
+      id: 'q_addon_goods_live_goods_motive',
+      type: 'single',
+      title: 'この live / 会場グッズ、イベントの空気だけでなく後からも意味が残りそう？',
+      required: true,
+      options: [
+        { id: 'core_attachment', label: 'キャスト/作品への愛着が強く、後から見ても意味がある', delta: { desire: 68, regretRisk: 46 } },
+        { id: 'symbolic_value', label: '1点だけなら記念品として納得できる', delta: { desire: 58, regretRisk: 50 } },
+        { id: 'event_atmosphere', label: 'その場の空気で欲しくなっている面が大きい', tags: ['live_goods_atmosphere_pressure'], delta: { impulse: 70, regretRisk: 72 } },
+        { id: 'mixed', label: '両方ある', delta: { desire: 60, regretRisk: 58 } },
+        { id: 'unknown', label: 'まだ整理できていない', tags: ['unknown_info'], delta: { regretRisk: 64, opportunityCost: 60 } },
+      ],
+    },
+    {
       id: 'q_addon_goods_regret_axis',
       type: 'single',
       title: 'どちらの後悔がより重い？',
@@ -597,6 +610,43 @@ export const merch_v2_ja: QuestionSet = {
         { id: 'maybe', label: '特典が弱いと迷う', tags: ['bonus_pressure_mid'], delta: { impulse: 58, regretRisk: 60 } },
         { id: 'no', label: '特典・限定が主目的になっている', tags: ['bonus_pressure_high'], delta: { impulse: 72, regretRisk: 75 } },
         { id: 'unknown', label: 'まだ整理できていない', tags: ['unknown_info'], delta: { regretRisk: 65, opportunityCost: 60 } },
+      ],
+    },
+    {
+      id: 'q_addon_media_bonus_importance',
+      type: 'single',
+      title: '店舗別 bonus は、今回どのくらい本体に近い？',
+      required: true,
+      options: [
+        { id: 'low', label: 'bonus はあれば嬉しいが、商品本体が主役', delta: { impulse: 42, regretRisk: 42 } },
+        { id: 'medium', label: '良い bonus がある店を1つ選びたい', tags: ['store_bonus_compare_interest'], delta: { desire: 58, regretRisk: 54 } },
+        { id: 'high', label: 'bonus がかなり重要で、弱いと満足しにくい', tags: ['store_bonus_collection_pressure'], delta: { impulse: 68, regretRisk: 70 } },
+        { id: 'unknown', label: 'まだ整理できていない', tags: ['unknown_info'], delta: { regretRisk: 64, opportunityCost: 60 } },
+      ],
+    },
+    {
+      id: 'q_addon_media_multi_store_tolerance',
+      type: 'single',
+      title: '複数店舗の bonus を追うなら、どこまで許容できますか？',
+      required: true,
+      options: [
+        { id: 'one_store_ok', label: '1店舗に絞れれば十分', delta: { opportunityCost: 40, regretRisk: 42 } },
+        { id: 'compare_then_one', label: '比較はしたいが、最終的には1店舗に絞りたい', tags: ['store_bonus_compare_interest'], delta: { opportunityCost: 52, regretRisk: 50 } },
+        { id: 'multi_store_considered', label: '本当に刺さるなら2店舗くらいは検討できる', tags: ['multi_store_bonus_interest'], delta: { desire: 62, opportunityCost: 62 } },
+        { id: 'all_bonuses_or_bust', label: '取りこぼしがあるとかなりしんどい', tags: ['multi_store_bonus_pressure'], delta: { impulse: 70, regretRisk: 74, opportunityCost: 74 } },
+        { id: 'unknown', label: 'まだ分からない', tags: ['unknown_info'], delta: { regretRisk: 64, opportunityCost: 60 } },
+      ],
+    },
+    {
+      id: 'q_addon_media_split_order_burden',
+      type: 'single',
+      title: '複数注文・送料増・管理の手間はどのくらい平気？',
+      required: true,
+      options: [
+        { id: 'low', label: 'それ込みでも回せる', delta: { opportunityCost: 42, regretRisk: 46 } },
+        { id: 'medium', label: '少しなら許容できる', delta: { opportunityCost: 58, regretRisk: 56 } },
+        { id: 'high', label: 'かなり負担で、後悔しやすい', tags: ['split_order_burden_high'], delta: { opportunityCost: 78, regretRisk: 76, impulse: 60 } },
+        { id: 'unknown', label: 'まだ想像できていない', tags: ['unknown_info'], delta: { regretRisk: 64, opportunityCost: 60 } },
       ],
     },
     {
