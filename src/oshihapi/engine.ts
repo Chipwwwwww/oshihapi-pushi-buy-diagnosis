@@ -24,6 +24,7 @@ import { engineConfig as defaultConfig, normalize01ToSigned, clamp } from './eng
 import { pickReasons, pickActions, buildShareText, getStorageGuidance } from './reasonRules';
 import { decideMerchMethod } from './merchMethod';
 import { buildPresentation } from './decisionPresentation';
+import { computeResultBandTrace } from './bandNarrowing';
 import { shouldAskStorage } from './storageGate';
 import { resolveScenarioKey } from './scenarioCoverage';
 
@@ -1854,6 +1855,49 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
   const explain = buildExplanations({ decision, holdSubtype, buckets: factorBuckets, unknownCount, itemKind });
   const shareText = buildShareText(decisionJa, reasons);
   const presentation = buildPresentation({ decision, actions, reasons });
+  const bandTrace = computeResultBandTrace({
+    questionSet: input.questionSet,
+    answers: input.answers,
+    output: {
+      decision,
+      holdSubtype,
+      confidence,
+      score: clamp(-1, 1, scoreSigned),
+      scoreSummary: scores,
+      reasons,
+      actions,
+      merchMethod: {
+        method: method.method,
+        blindDrawCap,
+        note: input.useCase === 'game_billing' ? 'ゲーム課金（共通ロジック）' : method.note,
+      },
+      shareText: '',
+      positiveFactors: [],
+      negativeFactors: [],
+      blockingFactors: explain.blockingFactors,
+      recommendationReasons: explain.recommendationReasons,
+      subtypeReason,
+      whyNotBuyYet: explain.whyNotBuyYet,
+      whyNotSkipYet: explain.whyNotSkipYet,
+      factorBuckets,
+      presentation,
+      mediaEditionPlan,
+      randomGoodsPlan,
+      venueLimitedGoodsPlan,
+      diagnosticTrace: {
+        resultInputsSummary: {
+          tags: [...tags],
+          unknownCount,
+          impulseFlag,
+          futureUseFlag,
+          downgradeFlags,
+        },
+        mediaEditionPlan,
+        randomGoodsPlan,
+        venueLimitedGoodsPlan,
+      },
+    },
+  });
 
   return {
     decision,
@@ -1868,6 +1912,7 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
       blindDrawCap,
       note: input.useCase === 'game_billing' ? 'ゲーム課金（共通ロジック）' : method.note,
     },
+    bandTrace,
     shareText,
     positiveFactors,
     negativeFactors,
@@ -1888,6 +1933,7 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
         impulseFlag,
         futureUseFlag,
         downgradeFlags,
+        bandTrace,
       },
       mediaEditionPlan,
       randomGoodsPlan,
