@@ -557,6 +557,7 @@ export default function FlowPage() {
         ...flowResolution.diagnosticTrace,
         resultInputsSummary: output.diagnosticTrace?.resultInputsSummary,
         randomGoods: output.diagnosticTrace?.randomGoodsPlan,
+        venueLimitedGoods: output.diagnosticTrace?.venueLimitedGoodsPlan,
         searchClue: toSearchClueDiagnostics(parsedSearchClues, {
           clarificationShown: Boolean(baseParsedSearchClues.raw.trim() && clarificationPrompt),
           clarificationResolved: Boolean(searchClueClarification),

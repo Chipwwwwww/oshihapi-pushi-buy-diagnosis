@@ -29,7 +29,7 @@ export const CORE_12_QUESTION_IDS = [
 ] as const;
 
 export const ADDON_BY_ITEM_KIND: Partial<Record<ItemKind, readonly string[]>> = {
-  goods: ["q_addon_common_info", "q_addon_common_priority", "q_addon_goods_compare", "q_addon_goods_portability"],
+  goods: ["q_addon_goods_event_limit_context", "q_addon_common_info", "q_addon_common_priority", "q_addon_goods_compare", "q_addon_goods_portability"],
   blind_draw: [
     "q_addon_blind_draw_cap",
     "q_addon_blind_draw_exit",

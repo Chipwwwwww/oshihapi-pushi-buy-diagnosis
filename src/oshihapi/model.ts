@@ -28,6 +28,12 @@ export type RandomGoodsPlannerPath =
   | 'stop_drawing_buy_singles'
   | 'stop_drawing_check_used_market'
   | 'step_back_from_completion_pressure';
+export type VenueLimitedPlannerPath =
+  | 'buy_now_if_it_is_truly_hard_to_recover'
+  | 'wait_for_post_event_mailorder'
+  | 'skip_onsite_chase_and_check_later'
+  | 'fallback_to_used_market_if_missed'
+  | 'step_back_from_fomo_pressure';
 export type HoldSubtype =
   | 'info_missing'
   | 'budget_pain'
@@ -162,6 +168,28 @@ export type RandomGoodsPlan = {
   assumptions: string[];
 };
 
+export type VenueLimitedGoodsPlan = {
+  detected: boolean;
+  scenarioKey: ScenarioKey;
+  venueContext: 'venue_limited' | 'event_limited' | 'missed_onsite' | 'other' | 'unknown';
+  recoveryPlausibility: 'high' | 'medium' | 'low' | 'unknown';
+  waitTolerance: 'high' | 'medium' | 'low' | 'unknown';
+  firstChanceTolerance: 'high' | 'medium' | 'low' | 'unknown';
+  usedFallbackWillingness: 'high' | 'medium' | 'low' | 'unknown';
+  scarcityPressure: 'high' | 'medium' | 'low' | 'unknown';
+  primaryMotive: 'collection_completeness' | 'event_memory' | 'practical_collecting' | 'mixed' | 'unknown';
+  regretAxis: 'overpay_more' | 'miss_more' | 'balanced' | 'unknown';
+  chosenPath: VenueLimitedPlannerPath;
+  optimizingFor: string;
+  recoveryChangedRecommendation: boolean;
+  usedMarketPartOfSaferPath: boolean;
+  trueScarcityLikely: boolean;
+  clampReason?: string;
+  reasonFlags: string[];
+  reasons: string[];
+  assumptions: string[];
+};
+
 export type DiagnosticTrace = {
   runContext: RunContextTrace;
   scenario?: {
@@ -176,6 +204,7 @@ export type DiagnosticTrace = {
   branchMisses: BranchTrace[];
   resultInputsSummary?: ResultInputsSummaryTrace;
   randomGoods?: RandomGoodsPlan;
+  venueLimitedGoods?: VenueLimitedGoodsPlan;
   searchClue?: SearchClueDiagnostics;
   persistence?: {
     state: "fresh" | "restored" | "invalidated" | "replaySeeded";
@@ -211,6 +240,7 @@ export type DecisionOutput = {
   diagnosticTrace?: {
     resultInputsSummary: ResultInputsSummaryTrace;
     randomGoodsPlan?: RandomGoodsPlan;
+    venueLimitedGoodsPlan?: VenueLimitedGoodsPlan;
   };
   decision: Decision;
   holdSubtype?: HoldSubtype;
@@ -243,6 +273,7 @@ export type DecisionOutput = {
   };
   presentation?: DecisionPresentation;
   randomGoodsPlan?: RandomGoodsPlan;
+  venueLimitedGoodsPlan?: VenueLimitedGoodsPlan;
 };
 
 

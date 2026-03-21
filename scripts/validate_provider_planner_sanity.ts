@@ -250,6 +250,33 @@ const SCENARIOS: ScenarioSpec[] = [
     },
   },
   {
+    id: "venue_limited_used_fallback",
+    rawClue: "イベント限定 アクスタ",
+    itemKind: "goods",
+    goodsClass: "small_collection",
+    confidence: 79,
+    resultTags: [
+      "venue_limited_path_fallback_to_used_market_if_missed",
+      "venue_limited_used_market_safer_path",
+      "venue_limited_recovery_medium",
+    ],
+    expected: [
+      "Missed-onsite recovery should elevate Mercari/Surugaya above generic retail.",
+      "Generic retail should be demoted when the safer path is later used-market recovery.",
+      "Diagnostics should explain the used-market preference clearly.",
+    ],
+    improvedVsOldLogic: "Venue-limited recovery now routes later-check states toward Mercari/Surugaya instead of letting generic retail dominate a FOMO-heavy context.",
+    assertions: (result) => {
+      const ids = topIds(result);
+      assert(ids[0] === "mercari" && ids[1] === "surugaya", "venue_limited_used_fallback: Mercari and Surugaya should lead venue-limited recovery");
+      assert(!ids.includes("amazon") && !ids.includes("rakuten"), "venue_limited_used_fallback: generic retail should stay hidden");
+      assert(
+        findEvaluation(result.diagnostics, "amazon")?.demotionReasons.includes("post_event_used_market_preferred"),
+        "venue_limited_used_fallback: diagnostics should explain used-market preference",
+      );
+    },
+  },
+  {
     id: "official_sold_out_secondary_alive",
     rawClue: "うたプリ 特典付きCD",
     itemKind: "used",

@@ -13,6 +13,10 @@ export type ScenarioKey =
   | "new_book_bonus_decision"
   | "collection_vs_budget"
   | "impulse_cooling"
+  | "venue_limited_goods"
+  | "post_event_mailorder"
+  | "missed_onsite_recovery"
+  | "limited_goods_fomo"
   | "not_now_ticket"
   | "not_now_travel"
   | "not_now_3d_idol"
@@ -232,6 +236,90 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     shortScopeDisclosure: "整理は一部対応。全回収計画の最適化は対象外です。",
     diagnosticsTag: "coverage_collection_partial",
   },
+  venue_limited_goods: {
+    key: "venue_limited_goods",
+    itemKind: "goods",
+    goodsClass: "small_collection",
+    supportLevel: "strong",
+    homepagePriority: "secondary",
+    heroOrder: 8,
+    shopperIntent: "会場限定・イベント限定グッズを今追うか整理したい",
+    recommendedEntryLabel: "会場限定グッズを今追うか迷っている",
+    compactEntryHint: "本当の希少性か、一時的な現地圧かを分けて見ます。",
+    providerEcologyHint: "現地限定系は、後日通販の可能性と中古回復の相性を優先し、一般ECは継続販売の根拠がある時だけ重く見ます。",
+    resultExplanationHint: "現地の熱量ではなく、回復経路の強さと待てる余地を診断軸にします。",
+    optimizationSummary: "本当の希少性と回復可能性の切り分け",
+    questionHint: "このフローでは、会場限定かどうか・後日通販の見込み・待てるかを先に確認します。",
+    flowHelperHint: "現地圧と回復経路を確認中",
+    verificationHint: "公式告知、事後通販案内、購入制限、完売後の再案内は外部で最終確認してください。",
+    shortVerificationHint: "公式告知・事後通販案内・購入制限は外部で最終確認。",
+    scopeDisclosure: "会場限定グッズの購入判断には対応しますが、チケット・遠征・参加計画は対象外です。",
+    shortScopeDisclosure: "会場限定グッズ判断は対応。参加計画や遠征は対象外。",
+    diagnosticsTag: "coverage_venue_limited_goods_strong",
+  },
+  post_event_mailorder: {
+    key: "post_event_mailorder",
+    itemKind: "goods",
+    goodsClass: "small_collection",
+    supportLevel: "strong",
+    homepagePriority: "secondary",
+    heroOrder: 9,
+    shopperIntent: "事後通販がありそうなら待つべきか整理したい",
+    recommendedEntryLabel: "事後通販を待つべきか整理したい",
+    compactEntryHint: "『今しかない』圧より、後日回復の見込みを優先して見ます。",
+    providerEcologyHint: "公式の後日通販は保証せず、待ち判断と中古 fallback の両方を控えめに整理します。",
+    resultExplanationHint: "後日通販が plausible なら、現地での追い買いを急がない診断に寄せます。",
+    optimizationSummary: "後日通販待ちで後悔を減らす",
+    questionHint: "このフローでは、公式の後日販売らしさと、待っても大丈夫かを確認します。",
+    flowHelperHint: "事後通販待ちが安全か確認中",
+    verificationHint: "事後通販は保証扱いにせず、告知の有無・例年傾向・完売後の案内を外部確認してください。",
+    shortVerificationHint: "事後通販の告知有無・例年傾向は外部確認。",
+    scopeDisclosure: "事後通販の可能性整理に対応しますが、参加判断や整理券の攻略は対象外です。",
+    shortScopeDisclosure: "事後通販の可能性整理に対応。参加攻略は対象外。",
+    diagnosticsTag: "coverage_post_event_mailorder_strong",
+  },
+  missed_onsite_recovery: {
+    key: "missed_onsite_recovery",
+    itemKind: "goods",
+    goodsClass: "small_collection",
+    supportLevel: "strong",
+    homepagePriority: "secondary",
+    heroOrder: 10,
+    shopperIntent: "現地で逃した後の回復ルートを冷静に整理したい",
+    recommendedEntryLabel: "現地で逃したグッズの回復ルートを整理したい",
+    compactEntryHint: "中古 fallback と後日確認の優先順を診断します。",
+    providerEcologyHint: "取り逃し後は Mercari・駿河屋などの中古回復を主軸にし、一般ECは継続販売の根拠がある時だけ補助的に扱います。",
+    resultExplanationHint: "逃した直後の焦りではなく、後から取り戻せる現実的なルートを優先して説明します。",
+    optimizationSummary: "取り逃し後の回復ルートを冷静に選ぶ",
+    questionHint: "このフローでは、待てるか・中古 fallback を使うか・初回機会への執着度を確認します。",
+    flowHelperHint: "取り逃し後の回復ルートを整理中",
+    verificationHint: "相場の跳ね方、在庫の戻り、再販告知、送料込み総額は外部で最終確認してください。",
+    shortVerificationHint: "相場・再販告知・送料込み総額は外部確認。",
+    scopeDisclosure: "取り逃し後のグッズ回復判断には対応しますが、現地再入場や参加方法の案内はしません。",
+    shortScopeDisclosure: "取り逃し後の判断に対応。再入場や参加方法は対象外。",
+    diagnosticsTag: "coverage_missed_onsite_recovery_strong",
+  },
+  limited_goods_fomo: {
+    key: "limited_goods_fomo",
+    itemKind: "goods",
+    goodsClass: "small_collection",
+    supportLevel: "strong",
+    homepagePriority: "secondary",
+    heroOrder: 11,
+    shopperIntent: "限定グッズの FOMO 圧が本当に根拠あるか整理したい",
+    recommendedEntryLabel: "限定グッズの FOMO 圧を整理したい",
+    compactEntryHint: "雰囲気の焦りと、本当に回復しにくい scarcity を分けます。",
+    providerEcologyHint: "ここは店舗比較より、FOMO を冷やして回復可能性を見る診断が主です。",
+    resultExplanationHint: "限定感そのものではなく、根拠の薄い焦りを clamp できるかを見ます。",
+    optimizationSummary: "根拠薄い scarcity 圧を冷やす",
+    questionHint: "このフローでは、希少性の根拠・待てるか・高値後悔と取り逃し後悔のどちらが重いかを見ます。",
+    flowHelperHint: "FOMO 圧の根拠を確認中",
+    verificationHint: "限定表記、販売数、購入制限、後日販売例は外部で確かめると判断が安定します。",
+    shortVerificationHint: "限定表記・販売数・後日販売例は外部確認。",
+    scopeDisclosure: "FOMO の整理には対応しますが、感情ケア全般や参加スケジュール判断は扱いません。",
+    shortScopeDisclosure: "FOMO 整理には対応。参加スケジュールは対象外。",
+    diagnosticsTag: "coverage_limited_goods_fomo_strong",
+  },
   impulse_cooling: {
     key: "impulse_cooling",
     itemKind: "goods",
@@ -360,6 +448,10 @@ const ENTRY_ORDER: ScenarioKey[] = [
   "random_goods_completion",
   "collection_vs_budget",
   "impulse_cooling",
+  "venue_limited_goods",
+  "post_event_mailorder",
+  "missed_onsite_recovery",
+  "limited_goods_fomo",
   "not_now_ticket",
   "not_now_travel",
   "not_now_3d_idol",
@@ -434,6 +526,36 @@ function hasRandomGoodsCompletionSignals(input: ScenarioResolutionInput): boolea
   );
 }
 
+
+function hasVenueKeyword(raw?: string): boolean {
+  if (!raw) return false;
+  return ["会場限定", "イベント限定", "会場先行", "現地限定", "現地販売", "会場物販", "会場グッズ", "事後通販", "事後受注"].some((keyword) => raw.includes(keyword));
+}
+
+function getVenueContextAnswer(input: ScenarioResolutionInput): string | undefined {
+  const value = input.answers?.q_addon_goods_event_limit_context;
+  return typeof value === "string" ? value : undefined;
+}
+
+function hasVenueLimitedSignals(input: ScenarioResolutionInput): boolean {
+  const answer = getVenueContextAnswer(input);
+  if (answer && answer !== "none" && answer !== "unknown") return true;
+  return hasVenueKeyword(input.parsedSearchClues?.raw) || hasVenueKeyword(input.parsedSearchClues?.normalized) || hasVenueKeyword(input.searchClueRaw);
+}
+
+function hasRecoverySignals(input: ScenarioResolutionInput): boolean {
+  const answer = getVenueContextAnswer(input);
+  if (answer === "missed_onsite") return true;
+  return [input.answers?.q_addon_goods_post_event_mailorder, input.answers?.q_addon_goods_used_fallback].some((value) => typeof value === "string" && value !== "unknown");
+}
+
+function hasFomoClampSignals(input: ScenarioResolutionInput): boolean {
+  const scarcity = input.answers?.q_addon_goods_scarcity_pressure;
+  const regretAxis = input.answers?.q_addon_goods_regret_axis;
+  const motives = Array.isArray(input.answers?.q_motives_multi) ? input.answers?.q_motives_multi : [];
+  return hasVenueLimitedSignals(input) && (scarcity === "high" || motives.includes("fomo") || regretAxis === "overpay_more");
+}
+
 function hasImpulseSignals(input: ScenarioResolutionInput): boolean {
   const state = input.answers?.q_regret_impulse;
   return state === "excited" || state === "tired" || state === "fomo";
@@ -447,6 +569,15 @@ export function resolveScenarioKey(input: ScenarioResolutionInput): ScenarioKey 
     if (hasRandomGoodsCompletionSignals(input)) return "random_goods_completion";
     return "blind_draw_stopline";
   }
+  if (hasVenueLimitedSignals(input)) {
+    if (getVenueContextAnswer(input) === "missed_onsite") return "missed_onsite_recovery";
+    if (input.answers?.q_addon_goods_post_event_mailorder === "likely" || input.answers?.q_addon_goods_post_event_mailorder === "maybe") {
+      return "post_event_mailorder";
+    }
+    if (hasFomoClampSignals(input)) return "limited_goods_fomo";
+    return "venue_limited_goods";
+  }
+  if (hasRecoverySignals(input)) return "missed_onsite_recovery";
   if (
     input.goodsClass === "paper" &&
     (input.itemKind === "preorder" || input.itemKind === "goods" || hasBonusSignals(input.parsedSearchClues, input.searchClueRaw))
@@ -503,7 +634,14 @@ export function getCoveragePreset(entryKey: ScenarioKey): Pick<InputMeta, "itemK
   if (entry.key === "media_purchase_decision") {
     return { itemKind: "goods", goodsClass: "media" };
   }
-  if (entry.key === "collection_vs_budget" || entry.key === "impulse_cooling") {
+  if (
+    entry.key === "collection_vs_budget" ||
+    entry.key === "impulse_cooling" ||
+    entry.key === "venue_limited_goods" ||
+    entry.key === "post_event_mailorder" ||
+    entry.key === "missed_onsite_recovery" ||
+    entry.key === "limited_goods_fomo"
+  ) {
     return { itemKind: "goods", goodsClass: "small_collection" };
   }
   if (entry.key === "exchange_path" || entry.key === "random_goods_completion") {

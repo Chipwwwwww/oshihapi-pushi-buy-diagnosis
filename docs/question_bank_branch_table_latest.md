@@ -19,13 +19,13 @@
 
 #### mode=long
 - itemKind=blind_draw#gc=N/A: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_blind_draw_cap -> q_addon_blind_draw_exit -> q_addon_blind_draw_duplicate_tolerance -> q_addon_blind_draw_trade_intent -> q_addon_blind_draw_exchange_friction -> q_addon_blind_draw_single_fallback -> q_addon_blind_draw_stop_budget -> q_addon_blind_draw_miss_pain
-- itemKind=goods#gc=display_large: q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_goods_compare -> q_addon_goods_portability -> q_addon_goods_display_space_plan -> q_addon_goods_display_move_risk
-- itemKind=goods#gc=itabag_badge: q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_goods_compare -> q_addon_goods_portability -> q_addon_goods_itabag_target -> q_addon_goods_itabag_usage
-- itemKind=goods#gc=media: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_goods_compare -> q_addon_goods_portability -> q_addon_media_motive -> q_addon_media_playback_space -> q_addon_media_limited_pressure
-- itemKind=goods#gc=paper: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_goods_compare -> q_addon_goods_portability -> q_addon_goods_paper_care -> q_addon_goods_paper_view_freq
-- itemKind=goods#gc=small_collection: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_goods_compare -> q_addon_goods_portability -> q_addon_goods_collection_goal -> q_addon_goods_trade_intent
-- itemKind=goods#gc=tech: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_goods_compare -> q_addon_goods_portability -> q_addon_goods_tech_compat -> q_addon_goods_tech_after_use
-- itemKind=goods#gc=wearable: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_goods_compare -> q_addon_goods_portability -> q_addon_goods_wear_freq -> q_addon_goods_wear_fit -> q_addon_goods_wear_scene
+- itemKind=goods#gc=display_large: q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_goods_event_limit_context -> q_addon_common_info -> q_addon_common_priority -> q_addon_goods_compare -> q_addon_goods_portability -> q_addon_goods_display_space_plan -> q_addon_goods_display_move_risk
+- itemKind=goods#gc=itabag_badge: q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_goods_event_limit_context -> q_addon_common_info -> q_addon_common_priority -> q_addon_goods_compare -> q_addon_goods_portability -> q_addon_goods_itabag_target -> q_addon_goods_itabag_usage
+- itemKind=goods#gc=media: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_goods_event_limit_context -> q_addon_common_info -> q_addon_common_priority -> q_addon_goods_compare -> q_addon_goods_portability -> q_addon_media_motive -> q_addon_media_playback_space -> q_addon_media_limited_pressure
+- itemKind=goods#gc=paper: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_goods_event_limit_context -> q_addon_common_info -> q_addon_common_priority -> q_addon_goods_compare -> q_addon_goods_portability -> q_addon_goods_paper_care -> q_addon_goods_paper_view_freq
+- itemKind=goods#gc=small_collection: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_goods_event_limit_context -> q_addon_common_info -> q_addon_common_priority -> q_addon_goods_compare -> q_addon_goods_portability -> q_addon_goods_collection_goal -> q_addon_goods_trade_intent
+- itemKind=goods#gc=tech: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_goods_event_limit_context -> q_addon_common_info -> q_addon_common_priority -> q_addon_goods_compare -> q_addon_goods_portability -> q_addon_goods_tech_compat -> q_addon_goods_tech_after_use
+- itemKind=goods#gc=wearable: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_goods_event_limit_context -> q_addon_common_info -> q_addon_common_priority -> q_addon_goods_compare -> q_addon_goods_portability -> q_addon_goods_wear_freq -> q_addon_goods_wear_fit -> q_addon_goods_wear_scene
 - itemKind=preorder#gc=display_large: q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_preorder_timeline -> q_addon_preorder_decay -> q_addon_preorder_compare_loss -> q_addon_goods_display_space_plan -> q_addon_goods_display_move_risk
 - itemKind=preorder#gc=itabag_badge: q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_preorder_timeline -> q_addon_preorder_decay -> q_addon_preorder_compare_loss -> q_addon_goods_itabag_target -> q_addon_goods_itabag_usage
 - itemKind=preorder#gc=media: q_storage_fit -> q_storage_space -> q_desire -> q_goal -> q_urgency -> q_rarity_restock -> q_budget_pain -> q_price_feel -> q_motives_multi -> q_hot_cold -> q_regret_impulse -> q_impulse_axis_short -> q_alternative_plan -> q_addon_common_info -> q_addon_common_priority -> q_addon_preorder_timeline -> q_addon_preorder_decay -> q_addon_preorder_compare_loss -> q_addon_media_motive -> q_addon_media_playback_space -> q_addon_media_limited_pressure
@@ -53,7 +53,7 @@
 
 ## B. Orphan Questions
 
-- q_addon_preorder_restock, q_long_note
+- q_addon_goods_first_chance_tolerance, q_addon_goods_post_event_mailorder, q_addon_goods_regret_axis, q_addon_goods_scarcity_pressure, q_addon_goods_used_fallback, q_addon_goods_venue_motive, q_addon_goods_wait_tolerance, q_addon_preorder_restock, q_long_note
 
 ## C. Question Catalog Detail
 
@@ -1045,6 +1045,62 @@
 
 </details>
 
+### q_addon_goods_event_limit_context
+- useCase: merch
+- type: single
+- scoring relevance: delta
+- impactCategory: score
+- relevanceSummary: score
+- behaviorRelevance: {"affectsScore":true,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: merch/long/goods#gc=display_large | merch/long/goods#gc=itabag_badge | merch/long/goods#gc=media | merch/long/goods#gc=paper | merch/long/goods#gc=small_collection | merch/long/goods#gc=tech | merch/long/goods#gc=wearable
+- isOrphan: false
+- mapTo: 
+- tags: event_limited_goods, missed_onsite_goods, unknown_event_limit, venue_limited_goods
+- unknown tags hints: unknown_event_limit
+- text_standard: 今回の迷い、会場限定・イベント限定グッズの文脈に近い？
+- text_kawaii: 今回の迷い、会場限定・イベント限定グッズの文脈に近い？
+- text_oshi: 今回の迷い、会場限定・イベント限定グッズの文脈に近い？
+- sameAsStandard: true
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| event_limited | イベント限定寄りだが、後日販売の可能性もありそう | イベント限定寄りだが、後日販売の可能性もありそう | イベント限定寄りだが、後日販売の可能性もありそう | true | event_limited_goods | rarity:58;restockChance:44;urgency:62 |  |  |  |
+| missed_onsite | 現地では逃した/買えなかったので回復策を考えたい | 現地では逃した/買えなかったので回復策を考えたい | 現地では逃した/買えなかったので回復策を考えたい | true | missed_onsite_goods | rarity:60;restockChance:46;urgency:58 |  |  |  |
+| none | この文脈ではない | この文脈ではない | この文脈ではない | true |  | rarity:45;restockChance:55;urgency:45 |  |  |  |
+| unknown | まだわからない | まだわからない | まだわからない | true | unknown_event_limit | rarity:52;restockChance:50;urgency:52 |  |  |  |
+| venue_limited | 会場限定っぽく、今その場で迷っている | 会場限定っぽく、今その場で迷っている | 会場限定っぽく、今その場で迷っている | true | venue_limited_goods | rarity:72;restockChance:30;urgency:74 |  |  |  |
+
+</details>
+
+### q_addon_goods_first_chance_tolerance
+- useCase: merch
+- type: single
+- scoring relevance: delta
+- impactCategory: score
+- relevanceSummary: score
+- behaviorRelevance: {"affectsScore":true,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: 
+- isOrphan: true
+- mapTo: 
+- tags: first_chance_tolerance_high, first_chance_tolerance_low, first_chance_tolerance_mid
+- unknown tags hints: 
+- text_standard: 「最初のチャンス」を逃すことへの耐性は？
+- text_kawaii: 「最初のチャンス」を逃すことへの耐性は？
+- text_oshi: 「最初のチャンス」を逃すことへの耐性は？
+- sameAsStandard: true
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| high | 逃してもあとで整えば大丈夫 | 逃してもあとで整えば大丈夫 | 逃してもあとで整えば大丈夫 | true | first_chance_tolerance_high | regretRisk:42;urgency:36 |  |  |  |
+| low | 最初の機会を逃すのはかなりつらい | 最初の機会を逃すのはかなりつらい | 最初の機会を逃すのはかなりつらい | true | first_chance_tolerance_low | regretRisk:68;urgency:72 |  |  |  |
+| medium | 少し惜しいが許容できる | 少し惜しいが許容できる | 少し惜しいが許容できる | true | first_chance_tolerance_mid | regretRisk:52;urgency:50 |  |  |  |
+
+</details>
+
 ### q_addon_goods_itabag_target
 - useCase: merch
 - type: single
@@ -1183,6 +1239,88 @@
 
 </details>
 
+### q_addon_goods_post_event_mailorder
+- useCase: merch
+- type: single
+- scoring relevance: delta
+- impactCategory: score
+- relevanceSummary: score
+- behaviorRelevance: {"affectsScore":true,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: 
+- isOrphan: true
+- mapTo: 
+- tags: post_event_recovery_high, post_event_recovery_low, post_event_recovery_mid, unknown_post_event_recovery
+- unknown tags hints: unknown_post_event_recovery
+- text_standard: 事後通販・後日オンライン販売はありそう？
+- text_kawaii: 事後通販・後日オンライン販売はありそう？
+- text_oshi: 事後通販・後日オンライン販売はありそう？
+- sameAsStandard: true
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| likely | ありそう/例年ある/告知が近そう | ありそう/例年ある/告知が近そう | ありそう/例年ある/告知が近そう | true | post_event_recovery_high | rarity:34;restockChance:82;urgency:34 |  |  |  |
+| maybe | あるかも/まだ断言できない | あるかも/まだ断言できない | あるかも/まだ断言できない | true | post_event_recovery_mid | rarity:46;restockChance:62;urgency:46 |  |  |  |
+| unknown | わからない | わからない | わからない | true | unknown_post_event_recovery | rarity:50;restockChance:50 |  |  |  |
+| unlikely | なさそう/根拠が弱い | なさそう/根拠が弱い | なさそう/根拠が弱い | true | post_event_recovery_low | rarity:74;restockChance:24;urgency:70 |  |  |  |
+
+</details>
+
+### q_addon_goods_regret_axis
+- useCase: merch
+- type: single
+- scoring relevance: delta
+- impactCategory: score
+- relevanceSummary: score
+- behaviorRelevance: {"affectsScore":true,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: 
+- isOrphan: true
+- mapTo: 
+- tags: regret_balanced, regret_miss_more, regret_overpay_more
+- unknown tags hints: 
+- text_standard: どちらの後悔がより重い？
+- text_kawaii: どちらの後悔がより重い？
+- text_oshi: どちらの後悔がより重い？
+- sameAsStandard: true
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| balanced | どちらも同じくらい | どちらも同じくらい | どちらも同じくらい | true | regret_balanced | regretRisk:56 |  |  |  |
+| miss_more | 逃して二度と回収できない後悔の方が重い | 逃して二度と回収できない後悔の方が重い | 逃して二度と回収できない後悔の方が重い | true | regret_miss_more | rarity:64;regretRisk:62;urgency:68 |  |  |  |
+| overpay_more | 高く掴む/焦って買う後悔の方が重い | 高く掴む/焦って買う後悔の方が重い | 高く掴む/焦って買う後悔の方が重い | true | regret_overpay_more | impulse:42;opportunityCost:68;regretRisk:66 |  |  |  |
+
+</details>
+
+### q_addon_goods_scarcity_pressure
+- useCase: merch
+- type: single
+- scoring relevance: delta
+- impactCategory: score
+- relevanceSummary: score
+- behaviorRelevance: {"affectsScore":true,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: 
+- isOrphan: true
+- mapTo: 
+- tags: scarcity_pressure_high, scarcity_pressure_low, scarcity_pressure_mid
+- unknown tags hints: 
+- text_standard: 今の scarcity 圧、どれくらい強い？
+- text_kawaii: 今の scarcity 圧、どれくらい強い？
+- text_oshi: 今の scarcity 圧、どれくらい強い？
+- sameAsStandard: true
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| high | かなり強い/FOMO が大きい | かなり強い/FOMO が大きい | かなり強い/FOMO が大きい | true | scarcity_pressure_high | impulse:78;regretRisk:66;urgency:76 |  |  |  |
+| low | そこまで強くない | そこまで強くない | そこまで強くない | true | scarcity_pressure_low | impulse:36;urgency:40 |  |  |  |
+| medium | やや強い | やや強い | やや強い | true | scarcity_pressure_mid | impulse:54;urgency:56 |  |  |  |
+
+</details>
+
 ### q_addon_goods_tech_after_use
 - useCase: merch
 - type: single
@@ -1264,6 +1402,88 @@
 | maybe | 条件が合えば交換したい | 条件が合えば交換したい | 条件が合えば交換したい | true |  |  |  |  |  |
 | no | 交換はしない予定 | 交換はしない予定 | 交換はしない予定 | true |  |  |  |  |  |
 | unknown | まだわからない | まだわからない | まだわからない | true | unknown_info | opportunityCost:60;regretRisk:65 |  |  |  |
+
+</details>
+
+### q_addon_goods_used_fallback
+- useCase: merch
+- type: single
+- scoring relevance: delta
+- impactCategory: score
+- relevanceSummary: score
+- behaviorRelevance: {"affectsScore":true,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: 
+- isOrphan: true
+- mapTo: 
+- tags: used_fallback_high, used_fallback_low, used_fallback_mid
+- unknown tags hints: 
+- text_standard: もし逃したら、あとで中古・フリマで回復するのはあり？
+- text_kawaii: もし逃したら、あとで中古・フリマで回復するのはあり？
+- text_oshi: もし逃したら、あとで中古・フリマで回復するのはあり？
+- sameAsStandard: true
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| high | 積極的にあり | 積極的にあり | 積極的にあり | true | used_fallback_high | rarity:38;regretRisk:46;restockChance:70 |  |  |  |
+| low | できれば避けたい | できれば避けたい | できれば避けたい | true | used_fallback_low | rarity:66;regretRisk:60;restockChance:34 |  |  |  |
+| medium | 条件次第であり | 条件次第であり | 条件次第であり | true | used_fallback_mid | rarity:48;regretRisk:52;restockChance:60 |  |  |  |
+
+</details>
+
+### q_addon_goods_venue_motive
+- useCase: merch
+- type: single
+- scoring relevance: delta
+- impactCategory: score
+- relevanceSummary: score
+- behaviorRelevance: {"affectsScore":true,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: 
+- isOrphan: true
+- mapTo: 
+- tags: collection_pressure, event_memory_motive, practical_collecting_motive
+- unknown tags hints: 
+- text_standard: このアイテムが欲しい理由、いちばん近いのは？
+- text_kawaii: このアイテムが欲しい理由、いちばん近いのは？
+- text_oshi: このアイテムが欲しい理由、いちばん近いのは？
+- sameAsStandard: true
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| collection_completeness | コレクションの穴を埋めたい/揃えたい | コレクションの穴を埋めたい/揃えたい | コレクションの穴を埋めたい/揃えたい | true | collection_pressure | desire:66;impulse:68;opportunityCost:62 |  |  |  |
+| event_memory | そのイベントの記念・思い出として残したい | そのイベントの記念・思い出として残したい | そのイベントの記念・思い出として残したい | true | event_memory_motive | desire:72;regretRisk:58 |  |  |  |
+| mixed | どれも少しずつある | どれも少しずつある | どれも少しずつある | true |  | desire:60;impulse:56;regretRisk:54 |  |  |  |
+| practical_collecting | 普通に手元に欲しい/飾りたい | 普通に手元に欲しい/飾りたい | 普通に手元に欲しい/飾りたい | true | practical_collecting_motive | desire:64;regretRisk:46 |  |  |  |
+
+</details>
+
+### q_addon_goods_wait_tolerance
+- useCase: merch
+- type: single
+- scoring relevance: delta
+- impactCategory: score
+- relevanceSummary: score
+- behaviorRelevance: {"affectsScore":true,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: 
+- isOrphan: true
+- mapTo: 
+- tags: wait_tolerance_high, wait_tolerance_low, wait_tolerance_mid
+- unknown tags hints: 
+- text_standard: 後日回復を待つのはどれくらい平気？
+- text_kawaii: 後日回復を待つのはどれくらい平気？
+- text_oshi: 後日回復を待つのはどれくらい平気？
+- sameAsStandard: true
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| high | かなり待てる | かなり待てる | かなり待てる | true | wait_tolerance_high | impulse:34;regretRisk:42;urgency:34 |  |  |  |
+| low | 待つのはかなりつらい | 待つのはかなりつらい | 待つのはかなりつらい | true | wait_tolerance_low | impulse:66;regretRisk:62;urgency:68 |  |  |  |
+| medium | 少しなら待てる | 少しなら待てる | 少しなら待てる | true | wait_tolerance_mid | impulse:46;regretRisk:50;urgency:46 |  |  |  |
 
 </details>
 
