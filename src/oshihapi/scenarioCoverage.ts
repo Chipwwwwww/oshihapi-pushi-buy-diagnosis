@@ -17,11 +17,15 @@ export type ScenarioKey =
   | "not_now_kpop"
   | "not_now_niche_merchants";
 
+export type HomepagePriority = "primary" | "secondary" | "partial" | "not_now";
+
 export type ScenarioCoverageEntry = {
   key: ScenarioKey;
   itemKind?: ItemKind;
   goodsClass?: GoodsClass;
   supportLevel: ScenarioSupportLevel;
+  homepagePriority: HomepagePriority;
+  heroOrder: number;
   shopperIntent: string;
   recommendedEntryLabel: string;
   compactEntryHint: string;
@@ -68,6 +72,8 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     key: "preorder_decision",
     itemKind: "preorder",
     supportLevel: "strong",
+    homepagePriority: "primary",
+    heroOrder: 1,
     shopperIntent: "予約を今入れるか、締切前に整理したい判断",
     recommendedEntryLabel: "予約を今入れるか迷っている",
     compactEntryHint: "締切・再販・待てる余地を短く整理できます。",
@@ -86,6 +92,8 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     key: "used_market_check",
     itemKind: "used",
     supportLevel: "strong",
+    homepagePriority: "primary",
+    heroOrder: 2,
     shopperIntent: "中古・再販市場の相場とリスクを見て買うか決めたい",
     recommendedEntryLabel: "中古の相場を見て判断したい",
     compactEntryHint: "相場差・状態・返品条件を中心に見ます。",
@@ -104,6 +112,8 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     key: "blind_draw_stopline",
     itemKind: "blind_draw",
     supportLevel: "strong",
+    homepagePriority: "secondary",
+    heroOrder: 5,
     shopperIntent: "くじやブラインド商品をどこで止めるか決めたい",
     recommendedEntryLabel: "くじ/ブラインド商品をどこで止めるか決めたい",
     compactEntryHint: "被りと上限を崩さない撤退ライン向けです。",
@@ -123,6 +133,8 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     itemKind: "goods",
     goodsClass: "media",
     supportLevel: "strong",
+    homepagePriority: "primary",
+    heroOrder: 4,
     shopperIntent: "CD・映像・書籍を今買うか、比較して決めたい",
     recommendedEntryLabel: "CD・映像・書籍を買うべきか迷う",
     compactEntryHint: "仕様差・特典差・再生環境を比較できます。",
@@ -142,6 +154,8 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     itemKind: "goods",
     goodsClass: "paper",
     supportLevel: "strong",
+    homepagePriority: "primary",
+    heroOrder: 3,
     shopperIntent: "新刊・新譜・店舗別特典をどこまで追うか整理したい",
     recommendedEntryLabel: "特典つき新刊をどこまで追うか迷う",
     compactEntryHint: "店舗特典の優先度と複数買いを整理できます。",
@@ -160,6 +174,8 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     key: "collection_vs_budget",
     itemKind: "goods",
     supportLevel: "partial",
+    homepagePriority: "secondary",
+    heroOrder: 6,
     shopperIntent: "コレクション優先か予算優先か整理したい",
     recommendedEntryLabel: "コレクション優先か予算優先か整理したい",
     compactEntryHint: "本命優先か量優先かを先に整える向けです。",
@@ -178,6 +194,8 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     key: "impulse_cooling",
     itemKind: "goods",
     supportLevel: "partial",
+    homepagePriority: "secondary",
+    heroOrder: 7,
     shopperIntent: "勢いで買いそうな時に冷やして後悔を減らしたい",
     recommendedEntryLabel: "勢い買いを少し冷やして考えたい",
     compactEntryHint: "FOMO や疲れで押される時の停止線向けです。",
@@ -196,6 +214,8 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     key: "not_now_ticket",
     itemKind: "ticket",
     supportLevel: "not_now",
+    homepagePriority: "not_now",
+    heroOrder: 1,
     shopperIntent: "チケット取得や日程判断をしたい",
     recommendedEntryLabel: "チケット取得を判断したい",
     compactEntryHint: "今は強い対応対象ではない領域です。",
@@ -213,6 +233,8 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
   not_now_travel: {
     key: "not_now_travel",
     supportLevel: "not_now",
+    homepagePriority: "not_now",
+    heroOrder: 2,
     shopperIntent: "遠征・宿・交通を含めて判断したい",
     recommendedEntryLabel: "遠征・旅行ごと判断したい",
     compactEntryHint: "物販判断とは別系統として扱っています。",
@@ -230,6 +252,8 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
   not_now_3d_idol: {
     key: "not_now_3d_idol",
     supportLevel: "not_now",
+    homepagePriority: "not_now",
+    heroOrder: 3,
     shopperIntent: "3D idol 文脈に特化した購買判断をしたい",
     recommendedEntryLabel: "3D idol 文脈で判断したい",
     compactEntryHint: "現在の最適化対象外です。",
@@ -247,6 +271,8 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
   not_now_kpop: {
     key: "not_now_kpop",
     supportLevel: "not_now",
+    homepagePriority: "not_now",
+    heroOrder: 4,
     shopperIntent: "K-pop 文脈で特典・輸入・共同購入を判断したい",
     recommendedEntryLabel: "K-pop 文脈で判断したい",
     compactEntryHint: "共同購入や輸入前提の判断は未対応です。",
@@ -264,6 +290,8 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
   not_now_niche_merchants: {
     key: "not_now_niche_merchants",
     supportLevel: "not_now",
+    homepagePriority: "not_now",
+    heroOrder: 5,
     shopperIntent: "対応外の niche 店舗まで含めて最適ルートを知りたい",
     recommendedEntryLabel: "対応外店舗まで含めて判断したい",
     compactEntryHint: "provider fit が見える店舗を優先しています。",
@@ -280,16 +308,34 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
   },
 };
 
-const STRONG_ENTRY_ORDER: ScenarioKey[] = [
+const ENTRY_ORDER: ScenarioKey[] = [
   "preorder_decision",
   "used_market_check",
   "new_book_bonus_decision",
   "media_purchase_decision",
   "blind_draw_stopline",
+  "collection_vs_budget",
+  "impulse_cooling",
+  "not_now_ticket",
+  "not_now_travel",
+  "not_now_3d_idol",
+  "not_now_kpop",
+  "not_now_niche_merchants",
 ];
 
-const PARTIAL_ENTRY_ORDER: ScenarioKey[] = ["collection_vs_budget", "impulse_cooling"];
-const NOT_NOW_ORDER: ScenarioKey[] = ["not_now_ticket", "not_now_travel", "not_now_3d_idol", "not_now_kpop", "not_now_niche_merchants"];
+export type EntryCoverageGroups = {
+  primaryStrong: ScenarioCoverageEntry[];
+  secondaryStrong: ScenarioCoverageEntry[];
+  partial: ScenarioCoverageEntry[];
+  notNow: ScenarioCoverageEntry[];
+};
+
+function getOrderedCoverageEntries(): ScenarioCoverageEntry[] {
+  return ENTRY_ORDER.map(getScenarioCoverageEntry).sort((left, right) => {
+    if (left.heroOrder !== right.heroOrder) return left.heroOrder - right.heroOrder;
+    return ENTRY_ORDER.indexOf(left.key) - ENTRY_ORDER.indexOf(right.key);
+  });
+}
 
 function hasBonusSignals(parsedSearchClues?: ParsedSearchClues, searchClueRaw?: string): boolean {
   if (parsedSearchClues?.bonusClues.length || parsedSearchClues?.editionClues.length) return true;
@@ -354,11 +400,13 @@ export function getScenarioCoverageSummary(input: ScenarioResolutionInput): Scen
   };
 }
 
-export function getEntryCoverageGroups() {
+export function getEntryCoverageGroups(): EntryCoverageGroups {
+  const entries = getOrderedCoverageEntries();
   return {
-    strong: STRONG_ENTRY_ORDER.map(getScenarioCoverageEntry),
-    partial: PARTIAL_ENTRY_ORDER.map(getScenarioCoverageEntry),
-    notNow: NOT_NOW_ORDER.map(getScenarioCoverageEntry),
+    primaryStrong: entries.filter((entry) => entry.homepagePriority === "primary"),
+    secondaryStrong: entries.filter((entry) => entry.homepagePriority === "secondary"),
+    partial: entries.filter((entry) => entry.homepagePriority === "partial"),
+    notNow: entries.filter((entry) => entry.homepagePriority === "not_now"),
   };
 }
 

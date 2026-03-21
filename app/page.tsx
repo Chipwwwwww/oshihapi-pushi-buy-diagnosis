@@ -94,6 +94,10 @@ export default function Home() {
     [goodsClass, itemKind, searchClue],
   );
   const coverageGroups = useMemo(() => getEntryCoverageGroups(), []);
+  const supportingCoverageGroups = useMemo(
+    () => [...coverageGroups.secondaryStrong, ...coverageGroups.partial],
+    [coverageGroups],
+  );
 
   const buildFlowParams = () => {
     const params = new URLSearchParams();
@@ -158,18 +162,19 @@ export default function Home() {
         <p className="text-xs text-slate-500 dark:text-zinc-400">※ まとめ買い（β）は検証中です <Link href="/basket" className="underline underline-offset-2">βページを見る</Link></p>
       </header>
 
-      <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
+      <Card className="space-y-5 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className={sectionTitleClass}>この診断が得意な判断シナリオ</h2>
+            <h2 className={sectionTitleClass}>この診断がいま強い判断</h2>
             <Badge variant="accent">top scenarios first</Badge>
           </div>
           <p className="text-sm text-slate-600 dark:text-zinc-300">
-            迷い方が強く定まっている判断を先頭に置いています。まずは上の強め対応から選び、必要なら下の補助シナリオを見る形です。
+            最初に見るべき4つの判断だけを上段に集約しています。ほかの対応シナリオは下で静かに確認できます。
           </p>
         </div>
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {coverageGroups.strong.map((entry) => (
+
+        <div className="grid gap-3 md:grid-cols-2">
+          {coverageGroups.primaryStrong.map((entry) => (
             <button
               key={entry.key}
               type="button"
@@ -189,28 +194,60 @@ export default function Home() {
             </button>
           ))}
         </div>
+
         <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-3 dark:border-white/10 dark:bg-white/4">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-semibold text-slate-900 dark:text-zinc-50">補助シナリオ</p>
-            <span className="text-xs text-slate-500 dark:text-zinc-400">一部対応のみを低ノイズで表示</span>
+            <p className="text-sm font-semibold text-slate-900 dark:text-zinc-50">ほかに対応している判断</p>
+            <span className="text-xs text-slate-500 dark:text-zinc-400">主役の4件より低い階層で表示</span>
           </div>
-          <div className="mt-3 grid gap-2 md:grid-cols-2">
-            {coverageGroups.partial.map((entry) => (
+          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+            {supportingCoverageGroups.map((entry) => (
               <button
                 key={entry.key}
                 type="button"
                 onClick={() => handleScenarioSelect(entry.key)}
-                className="rounded-xl border border-slate-200 bg-white/80 px-3 py-3 text-left transition hover:border-slate-300 dark:border-white/10 dark:bg-white/5"
+                className={[
+                  "rounded-xl border px-3 py-3 text-left transition",
+                  selectedCoverage.key === entry.key
+                    ? "border-accent/50 bg-accent/5"
+                    : "border-slate-200 bg-white/80 hover:border-slate-300 dark:border-white/10 dark:bg-white/5",
+                ].join(" ")}
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-sm font-medium text-slate-900 dark:text-zinc-50">{entry.recommendedEntryLabel}</p>
                   <span className="text-xs text-slate-500 dark:text-zinc-400">{getSupportLevelBadgeLabel(entry.supportLevel)}</span>
                 </div>
-                <p className="mt-1 text-xs text-slate-600 dark:text-zinc-300">{entry.shortScopeDisclosure}</p>
+                <p className="mt-1 text-xs text-slate-600 dark:text-zinc-300">{entry.compactEntryHint}</p>
               </button>
             ))}
           </div>
         </div>
+
+        {coverageGroups.partial.length > 0 ? (
+          <div className="rounded-2xl border border-slate-200/70 bg-slate-50/60 px-4 py-3 dark:border-white/10 dark:bg-white/3">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm font-semibold text-slate-900 dark:text-zinc-50">一部対応の判断</p>
+              <span className="text-xs text-slate-500 dark:text-zinc-400">守備範囲を広げすぎずに開示</span>
+            </div>
+            <div className="mt-3 grid gap-2 md:grid-cols-2">
+              {coverageGroups.partial.map((entry) => (
+                <button
+                  key={entry.key}
+                  type="button"
+                  onClick={() => handleScenarioSelect(entry.key)}
+                  className="rounded-xl border border-slate-200 bg-white/70 px-3 py-3 text-left transition hover:border-slate-300 dark:border-white/10 dark:bg-white/5"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-medium text-slate-900 dark:text-zinc-50">{entry.recommendedEntryLabel}</p>
+                    <span className="text-xs text-slate-500 dark:text-zinc-400">{getSupportLevelBadgeLabel(entry.supportLevel)}</span>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-600 dark:text-zinc-300">{entry.shortScopeDisclosure}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         <details className="rounded-2xl border border-slate-200/70 bg-slate-50/70 px-4 py-3 text-slate-600 dark:border-white/10 dark:bg-white/3 dark:text-zinc-300">
           <summary className="cursor-pointer text-sm font-medium text-slate-700 marker:text-slate-400 dark:text-zinc-200">
             今は対象外として静かに明示している領域
