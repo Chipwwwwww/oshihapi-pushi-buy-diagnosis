@@ -19,6 +19,7 @@ import { pickReasons, pickActions, buildShareText, getStorageGuidance } from './
 import { decideMerchMethod } from './merchMethod';
 import { buildPresentation } from './decisionPresentation';
 import { shouldAskStorage } from './storageGate';
+import { analyzeBlindDrawStopline } from './blindDrawStopline';
 
 type EvaluateInput = {
   config?: EngineConfig;
@@ -456,6 +457,33 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
   if (impulseFlag) downgradeFlags.push('impulse_nudge_applied');
   if (holdSubtype) downgradeFlags.push(`hold_subtype_${holdSubtype}`);
 
+  const blindDrawStopline =
+    itemKind === 'blind_draw'
+      ? analyzeBlindDrawStopline({
+          answers: input.answers,
+          output: {
+            decision,
+            holdSubtype,
+            confidence,
+            score: clamp(-1, 1, scoreSigned),
+            scoreSummary: scores,
+            reasons,
+            actions,
+            merchMethod: {
+              method: method.method,
+              blindDrawCap,
+              note: input.useCase === 'game_billing' ? 'ゲーム課金（共通ロジック）' : method.note,
+            },
+            shareText: '',
+          } as DecisionOutput,
+        })
+      : undefined;
+  if (blindDrawStopline) {
+    downgradeFlags.push(`blind_draw_planner_path_${blindDrawStopline.plannerPath}`);
+  }
+
+  const traceTags = blindDrawStopline ? [...tags, ...blindDrawStopline.acceptanceTags] : [...tags];
+
   const decisionJa = decision === 'BUY' ? '買う' : decision === 'SKIP' ? 'やめる' : '保留';
   const positiveFactors = getTopFactors(scores, 'positive');
   const negativeFactors = getTopFactors(scores, 'negative');
@@ -488,11 +516,12 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     presentation,
     diagnosticTrace: {
       resultInputsSummary: {
-        tags: [...tags],
+        tags: traceTags,
         unknownCount,
         impulseFlag,
         futureUseFlag,
         downgradeFlags,
+        blindDrawStopline,
       },
     },
   };

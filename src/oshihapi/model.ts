@@ -133,6 +133,42 @@ export type ResultInputsSummaryTrace = {
   impulseFlag: boolean;
   futureUseFlag: boolean;
   downgradeFlags: string[];
+  blindDrawStopline?: BlindDrawStoplineTrace;
+};
+
+export type BlindDrawPlannerPath =
+  | "continue_a_little_more"
+  | "stop_now"
+  | "switch_to_exchange_path"
+  | "stop_drawing_buy_singles"
+  | "stop_drawing_check_used_market"
+  | "step_back_from_completion_pressure";
+
+export type BlindDrawSignalLevel = "low" | "medium" | "high";
+export type BlindDrawStopSignal = "soft" | "visible" | "hard";
+
+export type BlindDrawStoplineTrace = {
+  detectedScenario: string;
+  duplicateTolerance: BlindDrawSignalLevel;
+  exchangeWillingness: BlindDrawSignalLevel;
+  exchangeFriction: BlindDrawSignalLevel;
+  singlesFallbackPreference: BlindDrawSignalLevel;
+  stopLineSignal: BlindDrawStopSignal;
+  stopBudgetSignal: BlindDrawStopSignal;
+  plannerPath: BlindDrawPlannerPath;
+  clampReason: string;
+  optimizationTarget: string;
+  changedAssumption: string;
+  exchangeCondition: string;
+  providerRoutingHint: "favor_secondary_market" | "conditional_exchange" | "deprioritize_new_draws";
+  acceptanceTags: string[];
+  card: {
+    title: string;
+    summary: string;
+    optimizationNote: string;
+    assumptionChange: string;
+    exchangeGuardrail: string;
+  };
 };
 
 export type DiagnosticTrace = {

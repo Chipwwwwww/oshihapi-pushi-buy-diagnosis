@@ -227,6 +227,72 @@ const SCENARIOS: ScenarioSpec[] = [
       assert(!ids.includes("amazon") && !ids.includes("amiami"), "used_market_heavy: fallback and hobby providers should stay out");
     },
   },
+  {
+    id: "blind_draw_buy_singles_path",
+    rawClue: "ブラインド アクキー 単品回収",
+    itemKind: "blind_draw",
+    goodsClass: "small_collection",
+    confidence: 84,
+    resultTags: [
+      "blind_draw_planner_path_stop_drawing_buy_singles",
+      "blind_draw_duplicate_tolerance_low",
+      "blind_draw_exchange_willingness_low",
+      "blind_draw_exchange_friction_high",
+      "blind_draw_singles_fallback_high",
+      "blind_draw_stop_line_hard",
+      "blind_draw_stop_budget_visible",
+      "blind_draw_clamp_single_target_duplicate_risk",
+    ],
+    expected: [
+      "Single-target blind draw fallback should favor Mercari and Surugaya.",
+      "Generic retail should not dominate when the stop-line resolves to buy singles.",
+      "Diagnostics should explain that secondary-market fallback was preferred.",
+    ],
+    improvedVsOldLogic: "When the blind-draw stop-line resolves to buying singles, the provider plan now deterministically shifts toward Mercari/Surugaya instead of generic new-retail recovery paths.",
+    assertions: (result) => {
+      const ids = topIds(result);
+      assert(ids[0] === "mercari", "blind_draw_buy_singles_path: Mercari should lead buy-singles fallback");
+      assert(ids.includes("surugaya"), "blind_draw_buy_singles_path: Surugaya should stay visible for buy-singles fallback");
+      assert(!result.cards.some((card) => (card.providerId === "amazon" || card.providerId === "rakuten") && card.tier === "recommended"), "blind_draw_buy_singles_path: generic retail must not dominate");
+      assert(
+        findEvaluation(result.diagnostics, "amazon")?.demotionReasons.includes("blind_draw_secondary_market_preferred"),
+        "blind_draw_buy_singles_path: diagnostics should show secondary-market preference",
+      );
+    },
+  },
+  {
+    id: "blind_draw_used_market_path",
+    rawClue: "ブラインド 缶バッジ コンプ 厳しめ",
+    itemKind: "blind_draw",
+    goodsClass: "small_collection",
+    confidence: 79,
+    resultTags: [
+      "blind_draw_planner_path_stop_drawing_check_used_market",
+      "blind_draw_duplicate_tolerance_medium",
+      "blind_draw_exchange_willingness_medium",
+      "blind_draw_exchange_friction_high",
+      "blind_draw_singles_fallback_high",
+      "blind_draw_stop_line_visible",
+      "blind_draw_stop_budget_hard",
+      "blind_draw_clamp_secondary_market_completion_is_safer",
+    ],
+    expected: [
+      "Completion fallback scenarios should still route to Mercari/Surugaya first.",
+      "Used-market completion should outrank generic retail in strong duplicate-risk states.",
+      "Diagnostics should preserve the stop-line fallback demotion reason.",
+    ],
+    improvedVsOldLogic: "Completion-heavy blind-draw fallback now keeps secondary-market completion routes in front of generic retail, making the acceptance path easy to verify.",
+    assertions: (result) => {
+      const ids = topIds(result);
+      assert(ids[0] === "mercari" || ids[0] === "surugaya", "blind_draw_used_market_path: used-market fallback should lead");
+      assert(ids.includes("mercari") && ids.includes("surugaya"), "blind_draw_used_market_path: Mercari and Surugaya should both be visible");
+      assert(!result.cards.some((card) => (card.providerId === "amazon" || card.providerId === "rakuten") && card.tier === "recommended"), "blind_draw_used_market_path: generic retail must stay below fallback specialists");
+      assert(
+        findEvaluation(result.diagnostics, "rakuten")?.demotionReasons.includes("blind_draw_secondary_market_preferred"),
+        "blind_draw_used_market_path: diagnostics should retain fallback demotion reason",
+      );
+    },
+  },
 ];
 
 async function main() {

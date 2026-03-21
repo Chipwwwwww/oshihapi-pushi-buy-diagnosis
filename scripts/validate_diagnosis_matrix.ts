@@ -12,7 +12,7 @@ import {
   clearCompatibleDrafts,
   createReplayDraft,
 } from "@/src/store/diagnosisStore";
-import type { AnswerValue, DecisionOutput, GoodsClass, ItemKind, Mode } from "@/src/oshihapi/model";
+import type { AnswerValue, BlindDrawPlannerPath, DecisionOutput, GoodsClass, ItemKind, Mode } from "@/src/oshihapi/model";
 
 type Scenario = {
   id: string;
@@ -349,6 +349,290 @@ function runScoringSeparationChecks() {
   }
 }
 
+type BlindDrawAcceptanceCase = {
+  id: string;
+  answers: Record<string, AnswerValue>;
+  expectedPlannerPath: BlindDrawPlannerPath;
+  assert: (output: DecisionOutput) => void;
+};
+
+function evaluateBlindDrawAcceptanceCase(id: string, answers: Record<string, AnswerValue>) {
+  const flow = resolveFlowQuestions({
+    mode: "long",
+    itemKind: "blind_draw",
+    goodsClass: "small_collection",
+    goodsSubtype: "general",
+    useCase: "merch",
+    answers,
+    meta: { itemKind: "blind_draw", goodsClass: "small_collection" },
+    styleMode: "standard",
+  });
+
+  const answerMap: Record<string, AnswerValue> = {};
+  for (const q of flow.questions) {
+    answerMap[q.id] = answers[q.id] ?? defaultAnswer(q.id);
+  }
+
+  const output = evaluate({
+    questionSet: { id: `blind_draw_${id}`, locale: "ja", category: "merch", version: 1, questions: flow.questions },
+    meta: { itemKind: "blind_draw", goodsClass: "small_collection" },
+    answers: answerMap,
+    mode: "long",
+    useCase: "merch",
+  });
+
+  const trace = output.diagnosticTrace?.resultInputsSummary?.blindDrawStopline;
+  if (!trace) {
+    throw new Error(`${id}: blind_draw stopline diagnostics missing`);
+  }
+
+  return { output, trace };
+}
+
+function runBlindDrawAcceptanceChecks() {
+  const cases: BlindDrawAcceptanceCase[] = [
+    {
+      id: "single_low_duplicate_low_exchange",
+      answers: {
+        q_goal: "single",
+        q_budget_pain: "hard",
+        q_addon_blind_draw_cap: "not_good",
+        q_addon_blind_draw_exit: "oshi_only",
+        q_addon_blind_draw_trade_intent: "no",
+        q_addon_blind_draw_miss_pain: "high",
+        q_motives_multi: ["use"],
+      },
+      expectedPlannerPath: "stop_drawing_buy_singles",
+      assert: (output) => {
+        if (output.merchMethod.method === "BLIND_DRAW") {
+          throw new Error("single_low_duplicate_low_exchange: should not bias toward continuing blind draw");
+        }
+      },
+    },
+    {
+      id: "single_exchange_high_friction",
+      answers: {
+        q_goal: "single",
+        q_budget_pain: "some",
+        q_addon_blind_draw_cap: "neutral",
+        q_addon_blind_draw_exit: "oshi_only",
+        q_addon_blind_draw_trade_intent: "yes",
+        q_addon_blind_draw_miss_pain: "high",
+        q_motives_multi: ["use"],
+      },
+      expectedPlannerPath: "switch_to_exchange_path",
+      assert: (output) => {
+        const trace = output.diagnosticTrace?.resultInputsSummary?.blindDrawStopline;
+        if (!trace?.exchangeCondition.includes("条件付き")) {
+          throw new Error("single_exchange_high_friction: exchange path must stay conditional");
+        }
+      },
+    },
+    {
+      id: "casual_fun_continue_with_soft_stopline",
+      answers: {
+        q_goal: "fun",
+        q_budget_pain: "light",
+        q_addon_blind_draw_cap: "used_to_it",
+        q_addon_blind_draw_exit: "complete",
+        q_addon_blind_draw_trade_intent: "maybe",
+        q_addon_blind_draw_miss_pain: "low",
+        q_motives_multi: ["use"],
+      },
+      expectedPlannerPath: "continue_a_little_more",
+      assert: (output) => {
+        if (output.merchMethod.method !== "BLIND_DRAW") {
+          throw new Error("casual_fun_continue_with_soft_stopline: should preserve controlled continue path");
+        }
+      },
+    },
+    {
+      id: "full_set_tight_budget_step_back",
+      answers: {
+        q_goal: "set",
+        q_budget_pain: "hard",
+        q_addon_blind_draw_cap: "not_good",
+        q_addon_blind_draw_exit: "complete",
+        q_addon_blind_draw_trade_intent: "maybe",
+        q_addon_blind_draw_miss_pain: "mid",
+        q_motives_multi: ["complete"],
+      },
+      expectedPlannerPath: "step_back_from_completion_pressure",
+      assert: (output) => {
+        const trace = output.diagnosticTrace?.resultInputsSummary?.blindDrawStopline;
+        if (trace?.providerRoutingHint !== "favor_secondary_market") {
+          throw new Error("full_set_tight_budget_step_back: fallback routing should point away from continued draws");
+        }
+      },
+    },
+  ];
+
+  const summaries = cases.map((entry) => {
+    const { output, trace } = evaluateBlindDrawAcceptanceCase(entry.id, entry.answers);
+    if (trace.plannerPath !== entry.expectedPlannerPath) {
+      throw new Error(`${entry.id}: expected plannerPath=${entry.expectedPlannerPath}, got ${trace.plannerPath}`);
+    }
+    const acceptanceTags = trace.acceptanceTags;
+    const requiredTags = [
+      `blind_draw_planner_path_${trace.plannerPath}`,
+      `blind_draw_duplicate_tolerance_${trace.duplicateTolerance}`,
+      `blind_draw_exchange_willingness_${trace.exchangeWillingness}`,
+      `blind_draw_exchange_friction_${trace.exchangeFriction}`,
+      `blind_draw_singles_fallback_${trace.singlesFallbackPreference}`,
+      `blind_draw_stop_budget_${trace.stopBudgetSignal}`,
+      `blind_draw_clamp_${trace.clampReason}`,
+    ];
+    for (const tag of requiredTags) {
+      if (!acceptanceTags.includes(tag) || !output.diagnosticTrace?.resultInputsSummary?.tags.includes(tag)) {
+        throw new Error(`${entry.id}: diagnostics tag missing ${tag}`);
+      }
+    }
+    if (!trace.detectedScenario || !trace.optimizationTarget || !trace.changedAssumption) {
+      throw new Error(`${entry.id}: diagnostics transparency fields must stay visible`);
+    }
+    if (!trace.card.title || !trace.card.summary || !trace.card.optimizationNote || !trace.card.assumptionChange || !trace.card.exchangeGuardrail) {
+      throw new Error(`${entry.id}: result-card acceptance copy missing`);
+    }
+    entry.assert(output);
+    return {
+      id: entry.id,
+      plannerPath: trace.plannerPath,
+      duplicateTolerance: trace.duplicateTolerance,
+      exchangeWillingness: trace.exchangeWillingness,
+      exchangeFriction: trace.exchangeFriction,
+      stopLineSignal: trace.stopLineSignal,
+      clampReason: trace.clampReason,
+    };
+  });
+
+  const resultCardFixtures: Array<{ id: string; answers: Record<string, AnswerValue>; expectedPlannerPath: BlindDrawPlannerPath }> = [
+    {
+      id: "card_continue",
+      answers: {
+        q_goal: "fun",
+        q_budget_pain: "light",
+        q_addon_blind_draw_cap: "used_to_it",
+        q_addon_blind_draw_exit: "mixed",
+        q_addon_blind_draw_trade_intent: "maybe",
+        q_addon_blind_draw_miss_pain: "low",
+      },
+      expectedPlannerPath: "continue_a_little_more",
+    },
+    {
+      id: "card_stop_now",
+      answers: {
+        q_goal: "unknown",
+        q_budget_pain: "hard",
+        q_addon_blind_draw_cap: "not_good",
+        q_addon_blind_draw_exit: "mixed",
+        q_addon_blind_draw_trade_intent: "no",
+        q_addon_blind_draw_miss_pain: "high",
+      },
+      expectedPlannerPath: "stop_now",
+    },
+    {
+      id: "card_exchange",
+      answers: {
+        q_goal: "single",
+        q_budget_pain: "some",
+        q_addon_blind_draw_cap: "neutral",
+        q_addon_blind_draw_exit: "oshi_only",
+        q_addon_blind_draw_trade_intent: "yes",
+        q_addon_blind_draw_miss_pain: "high",
+      },
+      expectedPlannerPath: "switch_to_exchange_path",
+    },
+    {
+      id: "card_singles",
+      answers: {
+        q_goal: "single",
+        q_budget_pain: "hard",
+        q_addon_blind_draw_cap: "not_good",
+        q_addon_blind_draw_exit: "oshi_only",
+        q_addon_blind_draw_trade_intent: "no",
+        q_addon_blind_draw_miss_pain: "high",
+      },
+      expectedPlannerPath: "stop_drawing_buy_singles",
+    },
+    {
+      id: "card_used_market",
+      answers: {
+        q_goal: "set",
+        q_budget_pain: "some",
+        q_addon_blind_draw_cap: "neutral",
+        q_addon_blind_draw_exit: "complete",
+        q_addon_blind_draw_trade_intent: "maybe",
+        q_addon_blind_draw_miss_pain: "mid",
+        q_motives_multi: ["complete"],
+      },
+      expectedPlannerPath: "stop_drawing_check_used_market",
+    },
+    {
+      id: "card_step_back",
+      answers: {
+        q_goal: "set",
+        q_budget_pain: "hard",
+        q_addon_blind_draw_cap: "not_good",
+        q_addon_blind_draw_exit: "complete",
+        q_addon_blind_draw_trade_intent: "maybe",
+        q_addon_blind_draw_miss_pain: "mid",
+        q_motives_multi: ["complete"],
+      },
+      expectedPlannerPath: "step_back_from_completion_pressure",
+    },
+  ];
+
+  for (const fixture of resultCardFixtures) {
+    const { trace } = evaluateBlindDrawAcceptanceCase(fixture.id, fixture.answers);
+    if (trace.plannerPath !== fixture.expectedPlannerPath) {
+      throw new Error(`${fixture.id}: expected result-card plannerPath=${fixture.expectedPlannerPath}, got ${trace.plannerPath}`);
+    }
+    if (!trace.card.optimizationNote.includes("最適化対象") || !trace.card.assumptionChange.includes("前提が変わる点")) {
+      throw new Error(`${fixture.id}: result-card copy must explain optimization and assumption change`);
+    }
+    if (fixture.expectedPlannerPath === "switch_to_exchange_path" && !trace.card.exchangeGuardrail.includes("条件付き")) {
+      throw new Error(`${fixture.id}: exchange path card must describe conditional exchange`);
+    }
+  }
+
+  return summaries;
+}
+
+function runBlindDrawFlowStateSmoke() {
+  const store = new Map<string, string>();
+  (globalThis as any).window = {
+    localStorage: {
+      getItem: (k: string) => (store.has(k) ? store.get(k)! : null),
+      setItem: (k: string, v: string) => store.set(k, v),
+      removeItem: (k: string) => store.delete(k),
+    },
+  };
+
+  saveDiagnosisState({
+    answers: {
+      q_goal: "single",
+      q_addon_blind_draw_cap: "neutral",
+      q_addon_blind_draw_exit: "oshi_only",
+      q_addon_blind_draw_trade_intent: "yes",
+      q_addon_blind_draw_miss_pain: "mid",
+    },
+    currentQuestionIndex: 2,
+    mode: "long",
+    itemKind: "blind_draw",
+    goodsClass: "small_collection",
+    decisiveness: "standard",
+    styleMode: "standard",
+    meta: { itemKind: "blind_draw", goodsClass: "small_collection", searchClueRaw: "blind test" },
+  });
+  const loaded = loadDiagnosisState();
+  if (!loaded || loaded.itemKind !== "blind_draw" || loaded.goodsClass !== "small_collection") {
+    throw new Error("blind_draw_flow_state: blind_draw draft did not restore");
+  }
+  if (loaded.answers.q_addon_blind_draw_trade_intent !== "yes") {
+    throw new Error("blind_draw_flow_state: blind_draw answers did not round-trip");
+  }
+}
+
 
 function runHomepageFunnelChecks() {
   if (!isGoodsClassApplicable("goods") || !isGoodsClassApplicable("used") || !isGoodsClassApplicable("preorder")) {
@@ -451,6 +735,8 @@ runScoringSeparationChecks();
 runHomepageFunnelChecks();
 runDraftInvalidationCheck();
 runReplaySeedCheck();
+const blindDrawAcceptance = runBlindDrawAcceptanceChecks();
+runBlindDrawFlowStateSmoke();
 
 assertUniqueQuestion(results, "long_used_small_collection", "q_addon_used_authenticity");
 assertUniqueQuestion(results, "long_goods_small_collection", "q_addon_goods_collection_goal");
@@ -490,7 +776,10 @@ const report = {
     homepageFunnel: "pass",
     draftInvalidation: "pass",
     replaySeed: "pass",
+    blindDrawAcceptance: "pass",
+    blindDrawFlowState: "pass",
   },
+  blindDrawAcceptance,
   uniquePathGaps,
 };
 

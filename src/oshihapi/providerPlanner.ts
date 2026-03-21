@@ -143,6 +143,14 @@ type SpecialtyScenario =
   | "doujin_bonus_extreme"
   | "generic";
 
+type BlindDrawPlannerPath =
+  | "continue_a_little_more"
+  | "stop_now"
+  | "switch_to_exchange_path"
+  | "stop_drawing_buy_singles"
+  | "stop_drawing_check_used_market"
+  | "step_back_from_completion_pressure";
+
 function buildOutHref(params: Record<string, string | undefined>): string {
   const query = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
@@ -242,9 +250,16 @@ function getScenarioOrderWeight(providerId: ProviderId, input: Pick<PlannerInput
   return -28 + index * 8;
 }
 
+function getBlindDrawPlannerPath(tags?: string[]): BlindDrawPlannerPath | null {
+  const tag = (tags ?? []).find((entry) => entry.startsWith("blind_draw_planner_path_"));
+  if (!tag) return null;
+  return tag.replace("blind_draw_planner_path_", "") as BlindDrawPlannerPath;
+}
+
 function getScenarioRankDelta(providerId: ProviderId, input: Pick<PlannerInput, "itemKind" | "goodsClass" | "searchClues" | "resultTags">): number {
   const { itemKind, goodsClass, searchClues } = input;
   let delta = 0;
+  const blindDrawPlannerPath = getBlindDrawPlannerPath(input.resultTags);
 
   const hasBonusClue = Boolean(searchClues?.bonusClues.length);
   const hasMediaClue = Boolean(searchClues?.itemTypeCandidates.some((candidate) => candidate === "Blu-ray" || candidate === "CD"));
@@ -287,6 +302,25 @@ function getScenarioRankDelta(providerId: ProviderId, input: Pick<PlannerInput, 
     if (providerId === "surugaya") delta += 8;
     if (providerId === "amazon") delta += 10;
     if (providerId === "rakuten") delta += 12;
+
+    if (blindDrawPlannerPath === "stop_drawing_buy_singles" || blindDrawPlannerPath === "stop_drawing_check_used_market") {
+      if (providerId === "mercari") delta -= 26;
+      if (providerId === "surugaya") delta -= 20;
+      if (providerId === "amazon" || providerId === "rakuten" || providerId === "yahooShopping") delta += 20;
+      if (providerId === "amiami" || providerId === "gamers" || providerId === "animate") delta += 12;
+    }
+
+    if (blindDrawPlannerPath === "switch_to_exchange_path") {
+      if (providerId === "mercari") delta -= 12;
+      if (providerId === "surugaya") delta -= 8;
+      if (providerId === "amazon" || providerId === "rakuten" || providerId === "yahooShopping") delta += 10;
+    }
+
+    if (blindDrawPlannerPath === "step_back_from_completion_pressure" || blindDrawPlannerPath === "stop_now") {
+      if (providerId === "mercari") delta -= 10;
+      if (providerId === "surugaya") delta -= 10;
+      if (providerId === "amazon" || providerId === "rakuten" || providerId === "yahooShopping") delta += 16;
+    }
   }
 
   if (itemKind === "goods" && goodsClass !== "media") {
@@ -568,6 +602,7 @@ function evaluateCandidate(rawCandidate: RawProviderCandidate, input: PlannerInp
   const bonusSensitive = hasBonusSensitiveSignals(input);
   const smallCollectionFamily = isSmallCollectionFamily(input.goodsClass);
   const mediaPreorder = input.goodsClass === "media" && input.itemKind === "preorder";
+  const blindDrawPlannerPath = getBlindDrawPlannerPath(input.resultTags);
 
   const hardBlockReasons: string[] = [];
   const demotionReasons: string[] = [];
@@ -654,6 +689,35 @@ function evaluateCandidate(rawCandidate: RawProviderCandidate, input: PlannerInp
       demotionReasons.push("secondary_market_alive");
       rank += input.goodsClass === "media" ? 24 : 10;
       maxTier = tightenMaxTier(maxTier, "okay");
+    }
+  }
+
+  if (input.itemKind === "blind_draw") {
+    if (blindDrawPlannerPath === "stop_drawing_buy_singles" || blindDrawPlannerPath === "stop_drawing_check_used_market") {
+      if (config.role === "generic_retail_fallback") {
+        demotionReasons.push("blind_draw_secondary_market_preferred");
+        rank += 18;
+        maxTier = tightenMaxTier(maxTier, "lowProbability");
+      }
+      if (rawCandidate.providerId === "mercari" || rawCandidate.providerId === "surugaya") {
+        rank -= 8;
+      }
+    }
+
+    if (blindDrawPlannerPath === "switch_to_exchange_path") {
+      if (config.role === "generic_retail_fallback") {
+        demotionReasons.push("blind_draw_exchange_not_guaranteed");
+        rank += 10;
+        maxTier = tightenMaxTier(maxTier, "okay");
+      }
+    }
+
+    if (blindDrawPlannerPath === "step_back_from_completion_pressure") {
+      if (config.role === "generic_retail_fallback") {
+        demotionReasons.push("blind_draw_completion_pressure_clamp");
+        rank += 14;
+        maxTier = tightenMaxTier(maxTier, "lowProbability");
+      }
     }
   }
 

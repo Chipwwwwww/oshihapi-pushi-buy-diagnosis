@@ -754,6 +754,45 @@ export default function ResultPage() {
         </Card>
       ) : null}
 
+      {run.meta.itemKind === "blind_draw" && run.output.diagnosticTrace?.resultInputsSummary?.blindDrawStopline ? (
+        <Card className="space-y-4 border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-zinc-50">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className={sectionTitleClass}>ブラインド商品の止めどき</h2>
+            <Badge variant="outline">{run.output.diagnosticTrace.resultInputsSummary.blindDrawStopline.plannerPath}</Badge>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+            <div className="rounded-2xl border border-border p-4">
+              <p className="text-sm font-semibold">
+                {run.output.diagnosticTrace.resultInputsSummary.blindDrawStopline.card.title}
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {run.output.diagnosticTrace.resultInputsSummary.blindDrawStopline.card.summary}
+              </p>
+              <p className="mt-3 text-xs text-muted-foreground">
+                {run.output.diagnosticTrace.resultInputsSummary.blindDrawStopline.card.optimizationNote}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-border p-4">
+              <p className="text-sm font-semibold">前提と条件</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {run.output.diagnosticTrace.resultInputsSummary.blindDrawStopline.card.assumptionChange}
+              </p>
+              <p className="mt-3 text-xs text-muted-foreground">
+                {run.output.diagnosticTrace.resultInputsSummary.blindDrawStopline.card.exchangeGuardrail}
+              </p>
+            </div>
+          </div>
+          <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">
+            <p>被り許容: {run.output.diagnosticTrace.resultInputsSummary.blindDrawStopline.duplicateTolerance}</p>
+            <p>交換意向: {run.output.diagnosticTrace.resultInputsSummary.blindDrawStopline.exchangeWillingness}</p>
+            <p>交換摩擦: {run.output.diagnosticTrace.resultInputsSummary.blindDrawStopline.exchangeFriction}</p>
+            <p>単品 fallback: {run.output.diagnosticTrace.resultInputsSummary.blindDrawStopline.singlesFallbackPreference}</p>
+            <p>stop-line: {run.output.diagnosticTrace.resultInputsSummary.blindDrawStopline.stopLineSignal}</p>
+            <p>clamp: {run.output.diagnosticTrace.resultInputsSummary.blindDrawStopline.clampReason}</p>
+          </div>
+        </Card>
+      ) : null}
+
       <Card className="space-y-4">
         <h2 className={sectionTitleClass}>{modeCopy.ui.actionsTitle}</h2>
         <ul className="grid gap-4">
