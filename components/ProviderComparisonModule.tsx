@@ -122,17 +122,18 @@ export default function ProviderComparisonModule({ cards, onProviderClick }: Pro
 
   const grouped = groupCards(cards);
   const lowProbabilityCollapsed = grouped.lowProbability.length > 1;
+  const okayCollapsed = grouped.okay.length > 0;
 
   return (
-    <Card className="space-y-4">
+    <Card className="space-y-4 border-slate-200/80 bg-white/90 dark:border-white/10 dark:bg-white/4">
       <div className="space-y-1">
-        <h2 className={sectionTitleClass}>次にチェックする場所</h2>
-        <p className={helperTextClass}>特典確認先・専門店・比較先を分けて表示しています。必要なら下の検索ツールも使ってください。</p>
+        <h2 className={sectionTitleClass}>診断に沿って確認する場所</h2>
+        <p className={helperTextClass}>購入推奨そのものではなく、診断で妥当だった確認先だけを絞って表示しています。</p>
       </div>
 
       <div className="space-y-4">
         <TierSection tier="recommended" items={grouped.recommended} onProviderClick={onProviderClick} />
-        <TierSection tier="okay" items={grouped.okay} onProviderClick={onProviderClick} />
+        <TierSection tier="okay" items={grouped.okay} onProviderClick={onProviderClick} defaultCollapsed={okayCollapsed} />
         <TierSection
           tier="lowProbability"
           items={grouped.lowProbability}

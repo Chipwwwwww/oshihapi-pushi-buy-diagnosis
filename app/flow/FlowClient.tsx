@@ -178,6 +178,7 @@ export default function FlowPage() {
   const basketId = searchParams.get("basketId") ?? undefined;
   const basketItemId = searchParams.get("basketItemId") ?? undefined;
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [showLeavePrompt, setShowLeavePrompt] = useState(false);
   const [draftItemName, setDraftItemName] = useState(itemNameParam);
   const [draftPriceYen, setDraftPriceYen] = useState(priceYenParam);
   const [draftDeadline, setDraftDeadline] = useState<DeadlineValue>(deadline ?? "unknown");
@@ -326,7 +327,9 @@ export default function FlowPage() {
 
 
   const startNew = searchParams.get("startNew") === "1";
+  const scenarioKeyParam = searchParams.get("scenarioKey") ?? undefined;
   const invalidationReason = initialDraft?.status === "invalidated" ? initialDraft.reason : undefined;
+  const hasFlowProgress = currentIndex > 0 || Object.keys(answers).length > 0;
 
   useEffect(() => {
     if (rawMode) return;
@@ -339,6 +342,28 @@ export default function FlowPage() {
     if (!startNew) return;
     clearCompatibleDrafts({ mode, itemKind: itemKind ?? "goods", goodsClass, styleMode });
   }, [goodsClass, itemKind, mode, startNew, styleMode]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const currentUrl = `/flow?${searchParams.toString()}`;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isSettingsOpen) {
+        setIsSettingsOpen(false);
+      }
+    };
+    const handlePopState = () => {
+      if (!hasFlowProgress) return;
+      window.history.pushState({ oshihapiFlowGuard: true }, "", currentUrl);
+      setShowLeavePrompt(true);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [hasFlowProgress, isSettingsOpen, searchParams]);
 
   const getOptionLabel = (questionId: string, optionId: string, fallback: string) =>
     COPY_BY_MODE[styleMode].questions[questionId]?.options?.[optionId] ?? fallback;
@@ -584,12 +609,23 @@ export default function FlowPage() {
 
   const handleBack = () => {
     if (safeCurrentIndex === 0) {
+      if (hasFlowProgress) {
+        setShowLeavePrompt(true);
+        return;
+      }
       router.push("/");
     } else {
       recordQuestionTime(safeCurrentIndex);
       numBacktracksRef.current += 1;
       setCurrentIndex((prev) => prev - 1);
     }
+  };
+
+  const handleLeaveToHome = () => {
+    const params = new URLSearchParams();
+    params.set("resume", "1");
+    if (scenarioKeyParam) params.set("scenarioKey", scenarioKeyParam);
+    router.push(`/?${params.toString()}`);
   };
 
   const handleClarificationSelect = (option: SearchClueClarification) => {
@@ -639,6 +675,9 @@ export default function FlowPage() {
           </h1>
           {invalidationReason ? (
             <p className="text-xs text-amber-700 dark:text-amber-300">以前の下書きは互換性がなく無効化されました: {invalidationReason}</p>
+          ) : null}
+          {scenarioKeyParam ? (
+            <p className="text-xs text-slate-500 dark:text-zinc-400">開始プリセット: {scenarioKeyParam}</p>
           ) : null}
           {mode === "short" ? (
             <button
@@ -889,8 +928,24 @@ export default function FlowPage() {
       </Card>
 
       {isSettingsOpen ? (
-        <div className="fixed inset-0 z-50 flex items-end bg-slate-900/60 sm:items-center sm:justify-center" role="dialog" aria-modal="true">
-          <div className="max-h-[90vh] w-full overflow-y-auto rounded-t-3xl bg-background p-4 sm:max-w-2xl sm:rounded-3xl">
+        <div
+          className="fixed inset-0 z-50 flex items-end bg-slate-900/60 sm:items-center sm:justify-center"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setIsSettingsOpen(false)}
+        >
+          <div
+            className="max-h-[90vh] w-full overflow-y-auto rounded-t-3xl bg-background p-4 sm:max-w-2xl sm:rounded-3xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              aria-label="設定を閉じる"
+              onClick={() => setIsSettingsOpen(false)}
+              className="mb-3 ml-auto flex h-10 w-10 items-center justify-center rounded-full border border-border text-lg text-foreground hover:bg-muted"
+            >
+              ×
+            </button>
             <div className="mb-4 flex items-center justify-between">
               <h2 className={sectionTitleClass}>設定（任意）</h2>
               <Button variant="ghost" onClick={() => setIsSettingsOpen(false)} className="px-3">閉じる</Button>
@@ -921,6 +976,21 @@ export default function FlowPage() {
               onGoodsClassChange={setDraftGoodsClass}
             />
             <Button onClick={handleApplyOptionalSettings} className="mt-4 w-full">この設定を反映</Button>
+          </div>
+        </div>
+      ) : null}
+
+      {showLeavePrompt ? (
+        <div className="fixed inset-0 z-50 flex items-end bg-slate-900/60 sm:items-center sm:justify-center" role="dialog" aria-modal="true">
+          <div className="w-full rounded-t-3xl bg-background p-4 sm:max-w-md sm:rounded-3xl">
+            <div className="space-y-2">
+              <h2 className={sectionTitleClass}>途中の回答を残したまま戻りますか？</h2>
+              <p className={helperTextClass}>いまの回答は下書きとして保存されています。ホームへ戻っても「下書きを再開」から復帰できます。</p>
+            </div>
+            <div className="mt-4 grid gap-2">
+              <Button onClick={handleLeaveToHome} className="w-full">下書きを残してホームへ戻る</Button>
+              <Button variant="outline" onClick={() => setShowLeavePrompt(false)} className="w-full">このまま続ける</Button>
+            </div>
           </div>
         </div>
       ) : null}

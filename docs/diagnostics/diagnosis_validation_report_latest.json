@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-21T13:10:49.606Z",
+  "generatedAt": "2026-03-21T14:17:05.533Z",
   "scenarioCount": 32,
   "scenarios": [
     {
@@ -26,11 +26,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "holdSubtype": "risk_uncertain",
+        "holdSubtype": "info_missing",
         "confidence": 40,
         "score": -0.013936153846153859,
-        "reasonCount": 4,
-        "actionCount": 3
+        "reasonCount": 5,
+        "actionCount": 4
       }
     },
     {
@@ -58,11 +58,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "holdSubtype": "risk_uncertain",
-        "confidence": 40,
+        "holdSubtype": "info_missing",
+        "confidence": 38,
         "score": -0.02615492307692306,
-        "reasonCount": 4,
-        "actionCount": 3
+        "reasonCount": 5,
+        "actionCount": 4
       }
     },
     {
@@ -250,11 +250,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "holdSubtype": "risk_uncertain",
-        "confidence": 41,
+        "holdSubtype": "info_missing",
+        "confidence": 38,
         "score": 0.041104615384615406,
-        "reasonCount": 5,
-        "actionCount": 3
+        "reasonCount": 6,
+        "actionCount": 4
       }
     },
     {
@@ -463,11 +463,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "holdSubtype": "risk_uncertain",
-        "confidence": 41,
+        "holdSubtype": "info_missing",
+        "confidence": 38,
         "score": 0.041104615384615406,
-        "reasonCount": 5,
-        "actionCount": 3
+        "reasonCount": 6,
+        "actionCount": 4
       }
     },
     {
@@ -1057,13 +1057,13 @@
         "q_alternative_plan",
         "q_addon_goods_event_limit_context",
         "q_addon_common_info",
-        "q_addon_common_priority",
-        "q_addon_goods_compare",
-        "q_addon_goods_portability",
         "q_addon_media_motive",
         "q_addon_media_support_scope",
         "q_addon_media_collection_budget",
         "q_addon_media_edition_intent",
+        "q_addon_common_priority",
+        "q_addon_goods_compare",
+        "q_addon_goods_portability",
         "q_addon_media_member_version",
         "q_addon_media_playback_space",
         "q_addon_media_limited_pressure",
@@ -1073,15 +1073,16 @@
         "mode_long",
         "long_goods_class_addon",
         "goods_class_media",
-        "unknown_budget_or_short_or_lacks_meta"
+        "unknown_budget_or_short_or_lacks_meta",
+        "force_media_core_questions"
       ],
       "result": {
         "decision": "THINK",
-        "holdSubtype": "risk_uncertain",
-        "confidence": 41,
+        "holdSubtype": "info_missing",
+        "confidence": 40,
         "score": 0.0363653846153847,
-        "reasonCount": 4,
-        "actionCount": 3
+        "reasonCount": 5,
+        "actionCount": 4
       }
     },
     {
@@ -1127,11 +1128,11 @@
       ],
       "result": {
         "decision": "THINK",
-        "holdSubtype": "risk_uncertain",
-        "confidence": 41,
+        "holdSubtype": "info_missing",
+        "confidence": 40,
         "score": 0.02887646153846157,
-        "reasonCount": 4,
-        "actionCount": 3
+        "reasonCount": 5,
+        "actionCount": 4
       }
     },
     {
@@ -1231,6 +1232,8 @@
     "blindDrawAcceptance": "pass",
     "mediaEditionAcceptance": "pass",
     "mixedMediaFlow": "pass",
+    "mediumMediaCoverage": "pass",
+    "trustRepairAcceptance": "pass",
     "homepageFunnel": "pass",
     "draftInvalidation": "pass",
     "replaySeed": "pass"

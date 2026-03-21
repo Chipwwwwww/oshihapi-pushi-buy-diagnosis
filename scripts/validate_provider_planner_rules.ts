@@ -149,6 +149,52 @@ async function main() {
   assert(amiamiEval?.builderEligibility === "ineligible", "amiami builder eligibility should be constrained outside its intended classes");
   assert(amiamiEval?.demotionReasons.includes("builder_ineligible"), "builder ineligibility should remain explainable");
 
+  const blindUnknownHeavy = await scenario({
+    itemKind: "blind_draw",
+    goodsClass: "small_collection",
+    confidence: 46,
+    resultTags: ["trust_gate_random_goods_unknown_heavy"],
+    searchClues: {
+      raw: "ブラインド グッズ",
+      normalized: "ブラインド グッズ",
+      workCandidates: [],
+      characterCandidates: [],
+      itemTypeCandidates: [],
+      editionClues: [],
+      bonusClues: [],
+      freeTextRemainder: [],
+      mode: "fuzzy",
+      confidence: "low",
+    },
+  });
+  assert(
+    !blindUnknownHeavy.cards.some((card) => (card.providerId === "mercari" || card.providerId === "surugaya") && card.tier === "recommended"),
+    "unknown-heavy blind-draw routing should not over-promote used-market fallback before the diagnosis is established",
+  );
+
+  const venueUnknownHeavy = await scenario({
+    itemKind: "goods",
+    goodsClass: "small_collection",
+    confidence: 48,
+    resultTags: ["trust_gate_venue_unknown_heavy"],
+    searchClues: {
+      raw: "会場限定 かも",
+      normalized: "会場限定 かも",
+      workCandidates: [],
+      characterCandidates: [],
+      itemTypeCandidates: [],
+      editionClues: [],
+      bonusClues: [],
+      freeTextRemainder: [],
+      mode: "fuzzy",
+      confidence: "medium",
+    },
+  });
+  assert(
+    !venueUnknownHeavy.cards.some((card) => card.providerId === "amazon" || card.providerId === "rakuten"),
+    "unknown-heavy venue routing should not push generic retail before the recovery path is established",
+  );
+
   const noRegression = await scenario({
     itemKind: "preorder",
     goodsClass: "small_collection",

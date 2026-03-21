@@ -585,6 +585,9 @@ function evaluateCandidate(rawCandidate: RawProviderCandidate, input: PlannerInp
     (input.resultTags ?? []).includes("venue_limited_path_skip_onsite_chase_and_check_later");
   const venueWaitPath = (input.resultTags ?? []).includes("venue_limited_path_wait_for_post_event_mailorder");
   const venueFomoClampPath = (input.resultTags ?? []).includes("venue_limited_path_step_back_from_fomo_pressure");
+  const randomGoodsUnknownHeavy = (input.resultTags ?? []).includes("trust_gate_random_goods_unknown_heavy");
+  const mediaUnknownHeavy = (input.resultTags ?? []).includes("trust_gate_media_unknown_heavy");
+  const venueUnknownHeavy = (input.resultTags ?? []).includes("trust_gate_venue_unknown_heavy");
 
   const hardBlockReasons: string[] = [];
   const demotionReasons: string[] = [];
@@ -702,6 +705,19 @@ function evaluateCandidate(rawCandidate: RawProviderCandidate, input: PlannerInp
     }
   }
 
+  if (input.itemKind === "blind_draw" && randomGoodsUnknownHeavy) {
+    if (rawCandidate.providerId === "mercari" || rawCandidate.providerId === "surugaya") {
+      demotionReasons.push("diagnosis_not_yet_singles_ready");
+      rank += 14;
+      maxTier = tightenMaxTier(maxTier, "okay");
+    }
+    if (rawCandidate.providerId === "amazon" || rawCandidate.providerId === "rakuten" || rawCandidate.providerId === "yahooShopping") {
+      demotionReasons.push("unknown_heavy_blind_draw");
+      rank += 18;
+      maxTier = tightenMaxTier(maxTier, "lowProbability");
+    }
+  }
+
   if (mediaPreorder) {
     if (rawCandidate.providerId === "hmv") rank -= 18;
     if (rawCandidate.providerId === "towerRecords") rank -= 14;
@@ -721,6 +737,32 @@ function evaluateCandidate(rawCandidate: RawProviderCandidate, input: PlannerInp
     if (rawCandidate.providerId === "mercari" || rawCandidate.providerId === "surugaya") {
       demotionReasons.push("secondary_market_not_primary");
       rank += bonusSensitive ? 10 : 6;
+      maxTier = tightenMaxTier(maxTier, "okay");
+    }
+  }
+
+  if (input.goodsClass === "media" && mediaUnknownHeavy) {
+    if (rawCandidate.providerId === "melonbooks" && !isBookOrComicContext(input)) {
+      demotionReasons.push("mainstream_media_not_bookstore_driven");
+      rank += 18;
+      maxTier = tightenMaxTier(maxTier, "lowProbability");
+    }
+    if (rawCandidate.providerId === "amazon" || rawCandidate.providerId === "rakuten" || rawCandidate.providerId === "mercari" || rawCandidate.providerId === "surugaya") {
+      demotionReasons.push("edition_logic_not_established");
+      rank += 12;
+      maxTier = tightenMaxTier(maxTier, "okay");
+    }
+  }
+
+  if (input.itemKind === "goods" && venueUnknownHeavy) {
+    if (rawCandidate.providerId === "amazon" || rawCandidate.providerId === "rakuten" || rawCandidate.providerId === "yahooShopping") {
+      demotionReasons.push("recovery_path_not_established");
+      rank += 16;
+      maxTier = tightenMaxTier(maxTier, "lowProbability");
+    }
+    if (rawCandidate.providerId === "mercari" || rawCandidate.providerId === "surugaya") {
+      demotionReasons.push("used_fallback_not_established");
+      rank += 10;
       maxTier = tightenMaxTier(maxTier, "okay");
     }
   }

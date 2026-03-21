@@ -69,6 +69,17 @@ export const MIXED_MEDIA_RANDOM_GOODS_QUESTION_IDS = [
   "q_addon_blind_draw_miss_pain",
 ] as const;
 
+export const MEDIA_CORE_QUESTION_IDS = [
+  "q_addon_media_motive",
+  "q_addon_media_support_scope",
+  "q_addon_media_collection_budget",
+  "q_addon_media_edition_intent",
+  "q_addon_media_member_version",
+  "q_addon_media_playback_space",
+  "q_addon_media_limited_pressure",
+  "q_addon_media_random_goods_intent",
+] as const;
+
 export const ADDON_BY_GOODS_CLASS: Record<GoodsClass, readonly string[]> = {
   small_collection: ["q_addon_goods_collection_goal", "q_addon_goods_trade_intent"],
   paper: ["q_addon_goods_paper_care", "q_addon_goods_paper_view_freq"],

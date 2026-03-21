@@ -11,6 +11,7 @@ import { getStyleModeFromLocalStorage, type StyleMode } from "@/src/oshihapi/mod
 import { getModeTradeoff, getOptionalMetaHint, isGoodsClassApplicable } from "@/src/oshihapi/homeFunnel";
 import {
   getCoveragePreset,
+  getScenarioCoverageEntry,
   getEntryCoverageGroups,
   getScenarioCoverageSummary,
   getSupportLevelBadgeLabel,
@@ -54,6 +55,7 @@ export default function Home() {
   const router = useRouter();
   const [itemKind, setItemKind] = useState<ItemKind>("goods");
   const [goodsClass, setGoodsClass] = useState<GoodsClass>("small_collection");
+  const [selectedScenarioKey, setSelectedScenarioKey] = useState<ScenarioKey | null>(null);
   const [mode, setMode] = useState<Mode>("short");
   const [searchClue, setSearchClue] = useState("");
   const [itemName, setItemName] = useState("");
@@ -98,6 +100,12 @@ export default function Home() {
     () => [...coverageGroups.secondaryStrong, ...coverageGroups.partial],
     [coverageGroups],
   );
+  const highlightedScenarioKey = selectedScenarioKey ?? selectedCoverage.key;
+  const highlightedCoverage = selectedScenarioKey
+    ? getScenarioCoverageEntry(selectedScenarioKey)
+    : selectedCoverage;
+  const visibleSupportingCoverageGroups = supportingCoverageGroups.slice(0, 6);
+  const hiddenSupportingCoverageGroups = supportingCoverageGroups.slice(6);
 
   const buildFlowParams = () => {
     const params = new URLSearchParams();
@@ -110,6 +118,7 @@ export default function Home() {
     if (parsedPriceYen !== undefined) params.set("priceYen", String(parsedPriceYen));
     params.set("deadline", deadline);
     params.set("decisiveness", decisiveness);
+    if (selectedScenarioKey) params.set("scenarioKey", selectedScenarioKey);
     return params;
   };
 
@@ -148,8 +157,20 @@ export default function Home() {
 
   const handleScenarioSelect = (scenarioKey: ScenarioKey) => {
     const preset = getCoveragePreset(scenarioKey);
+    setSelectedScenarioKey(scenarioKey);
     setItemKind(preset.itemKind ?? "goods");
     if (preset.goodsClass) setGoodsClass(preset.goodsClass);
+    setMode((currentMode) => (scenarioKey === "multi_edition_media" || scenarioKey === "post_event_mailorder" || scenarioKey === "missed_onsite_recovery" ? (currentMode === "short" ? "medium" : currentMode) : currentMode));
+  };
+
+  const handleItemKindChange = (nextItemKind: ItemKind) => {
+    setSelectedScenarioKey(null);
+    setItemKind(nextItemKind);
+  };
+
+  const handleGoodsClassChange = (nextGoodsClass: GoodsClass) => {
+    setSelectedScenarioKey(null);
+    setGoodsClass(nextGoodsClass);
   };
 
   return (
@@ -181,7 +202,7 @@ export default function Home() {
               onClick={() => handleScenarioSelect(entry.key)}
               className={[
                 "rounded-2xl border px-4 py-4 text-left transition",
-                selectedCoverage.key === entry.key
+                highlightedScenarioKey === entry.key
                   ? "border-accent bg-accent/5 shadow-sm"
                   : "border-slate-200 bg-white hover:border-accent/40 dark:border-white/10 dark:bg-white/4 dark:hover:border-accent/40",
               ].join(" ")}
@@ -201,14 +222,14 @@ export default function Home() {
             <span className="text-xs text-slate-500 dark:text-zinc-400">主役の4件より低い階層で表示</span>
           </div>
           <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-            {supportingCoverageGroups.map((entry) => (
+            {visibleSupportingCoverageGroups.map((entry) => (
               <button
                 key={entry.key}
                 type="button"
                 onClick={() => handleScenarioSelect(entry.key)}
                 className={[
                   "rounded-xl border px-3 py-3 text-left transition",
-                  selectedCoverage.key === entry.key
+                  highlightedScenarioKey === entry.key
                     ? "border-accent/50 bg-accent/5"
                     : "border-slate-200 bg-white/80 hover:border-slate-300 dark:border-white/10 dark:bg-white/5",
                 ].join(" ")}
@@ -221,6 +242,34 @@ export default function Home() {
               </button>
             ))}
           </div>
+          {hiddenSupportingCoverageGroups.length > 0 ? (
+            <details className="mt-3 rounded-xl border border-slate-200/80 bg-white/70 px-3 py-3 dark:border-white/10 dark:bg-white/5">
+              <summary className="cursor-pointer text-sm font-medium text-slate-700 dark:text-zinc-200">
+                残り {hiddenSupportingCoverageGroups.length} 件を開く
+              </summary>
+              <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                {hiddenSupportingCoverageGroups.map((entry) => (
+                  <button
+                    key={entry.key}
+                    type="button"
+                    onClick={() => handleScenarioSelect(entry.key)}
+                    className={[
+                      "rounded-xl border px-3 py-3 text-left transition",
+                      highlightedScenarioKey === entry.key
+                        ? "border-accent/50 bg-accent/5"
+                        : "border-slate-200 bg-white/80 hover:border-slate-300 dark:border-white/10 dark:bg-white/5",
+                    ].join(" ")}
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-medium text-slate-900 dark:text-zinc-50">{entry.recommendedEntryLabel}</p>
+                      <span className="text-xs text-slate-500 dark:text-zinc-400">{getSupportLevelBadgeLabel(entry.supportLevel)}</span>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-600 dark:text-zinc-300">{entry.compactEntryHint}</p>
+                  </button>
+                ))}
+              </div>
+            </details>
+          ) : null}
         </div>
 
         {coverageGroups.partial.length > 0 ? (
@@ -268,11 +317,16 @@ export default function Home() {
       <Card className="space-y-3 border border-accent/20 bg-accent/5 text-slate-900 dark:border-accent/25 dark:bg-accent/10 dark:text-zinc-50">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className={sectionTitleClass}>現在の選択シナリオ</h2>
-          <Badge variant="accent">{getSupportLevelBadgeLabel(selectedCoverage.supportLevel)}</Badge>
+          <Badge variant="accent">{getSupportLevelBadgeLabel(highlightedCoverage.supportLevel)}</Badge>
+          {selectedScenarioKey ? <Badge variant="outline">プリセット固定中</Badge> : null}
         </div>
-        <p className="text-sm font-semibold text-slate-800 dark:text-zinc-100">{selectedCoverage.recommendedEntryLabel}</p>
-        <p className="text-sm text-slate-700 dark:text-zinc-200">最適化: {selectedCoverage.optimizationSummary}</p>
-        <p className="text-xs text-slate-500 dark:text-zinc-400">{selectedCoverage.shortScopeDisclosure}</p>
+        <p className="text-sm font-semibold text-slate-800 dark:text-zinc-100">{highlightedCoverage.recommendedEntryLabel}</p>
+        <p className="text-sm text-slate-700 dark:text-zinc-200">最適化: {highlightedCoverage.optimizationSummary}</p>
+        <p className="text-xs text-slate-500 dark:text-zinc-400">
+          {selectedScenarioKey
+            ? "カード選択に合わせて種別プリセットを同期しました。必要なら下の種別変更で解除できます。"
+            : highlightedCoverage.shortScopeDisclosure}
+        </p>
       </Card>
 
       <Card className="space-y-4 border border-accent/25 bg-white text-slate-900 shadow-sm shadow-accent/5 dark:border-accent/30 dark:bg-white/6 dark:text-zinc-50">
@@ -302,13 +356,13 @@ export default function Home() {
         </p>
         <div className="grid gap-3">
           {itemKindOptions.map((option) => (
-            <RadioCard key={option.value} title={option.label} description={option.lead} isSelected={itemKind === option.value} onClick={() => setItemKind(option.value)} />
+            <RadioCard key={option.value} title={option.label} description={option.lead} isSelected={itemKind === option.value} onClick={() => handleItemKindChange(option.value)} />
           ))}
         </div>
         {isGoodsClassApplicable(itemKind) ? (
           <label className="space-y-1 text-sm">
             <span className="text-slate-600 dark:text-zinc-300">グッズ種別（精度アップ）</span>
-            <select value={goodsClass} onChange={(e) => setGoodsClass(e.target.value as GoodsClass)} className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/15 dark:bg-[#111827] dark:text-zinc-50">
+            <select value={goodsClass} onChange={(e) => handleGoodsClassChange(e.target.value as GoodsClass)} className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/15 dark:bg-[#111827] dark:text-zinc-50">
               {goodsClassOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
           </label>

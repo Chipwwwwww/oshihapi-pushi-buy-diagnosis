@@ -250,6 +250,28 @@ const SCENARIOS: ScenarioSpec[] = [
     },
   },
   {
+    id: "blind_draw_unknown_heavy_gate",
+    rawClue: "ブラインド グッズ",
+    itemKind: "blind_draw",
+    goodsClass: "small_collection",
+    confidence: 44,
+    resultTags: ["trust_gate_random_goods_unknown_heavy"],
+    expected: [
+      "Unknown-heavy blind-draw states should stay conservative.",
+      "Singles/used fallback should not dominate before the diagnosis establishes that path.",
+      "Visible cards should remain short and low-confidence clamped.",
+    ],
+    improvedVsOldLogic: "When stop-line inputs are still unknown, the provider layer now stays conservative instead of jumping straight to Mercari-heavy completion advice.",
+    assertions: (result) => {
+      assert(result.cards.length <= 4, "blind_draw_unknown_heavy_gate: visible cards should remain capped");
+      assert(result.cards.filter((card) => card.tier === "recommended").length <= 1, "blind_draw_unknown_heavy_gate: recommended tier should stay conservative");
+      assert(
+        !result.cards.some((card) => (card.providerId === "mercari" || card.providerId === "surugaya") && card.tier === "recommended"),
+        "blind_draw_unknown_heavy_gate: used-market fallback should not dominate before singles path is justified",
+      );
+    },
+  },
+  {
     id: "venue_limited_used_fallback",
     rawClue: "イベント限定 アクスタ",
     itemKind: "goods",

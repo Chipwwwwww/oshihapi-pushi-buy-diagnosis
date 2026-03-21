@@ -840,6 +840,117 @@ function determineHoldSubtype(buckets: FactorBuckets, unknownCount: number): { s
   return { subtype: 'risk_uncertain', reason: '種別固有のリスクに対して、確信が不足している。' };
 }
 
+type TrustGateOutcome = {
+  active: boolean;
+  scenario: "random_goods" | "media_edition" | "venue_limited";
+  criticalUnknownCount: number;
+  confidenceCap: number;
+  forceHold: boolean;
+  reason: string;
+  action: string;
+  tag: string;
+};
+
+function countUnknownValues(values: string[]): number {
+  return values.filter((value) => value === 'unknown').length;
+}
+
+function resolveTrustGateOutcome(params: {
+  randomGoodsPlan?: RandomGoodsPlan;
+  mediaEditionPlan?: MediaEditionPlan;
+  venueLimitedGoodsPlan?: VenueLimitedGoodsPlan;
+}): TrustGateOutcome | undefined {
+  const { randomGoodsPlan, mediaEditionPlan, venueLimitedGoodsPlan } = params;
+
+  if (randomGoodsPlan) {
+    const criticalUnknownCount = countUnknownValues([
+      randomGoodsPlan.targetStyle,
+      randomGoodsPlan.duplicateTolerance,
+      randomGoodsPlan.exchangeWillingness,
+      randomGoodsPlan.exchangeFriction,
+      randomGoodsPlan.singlesFallback,
+      randomGoodsPlan.stopBudget,
+    ]);
+    const reliesOnUnknown =
+      (randomGoodsPlan.chosenPath === 'switch_to_exchange_path' &&
+        (randomGoodsPlan.exchangeWillingness === 'unknown' || randomGoodsPlan.exchangeFriction === 'unknown')) ||
+      ((randomGoodsPlan.chosenPath === 'stop_drawing_buy_singles' || randomGoodsPlan.chosenPath === 'stop_drawing_check_used_market') &&
+        (randomGoodsPlan.targetStyle === 'unknown' || randomGoodsPlan.singlesFallback === 'unknown')) ||
+      (randomGoodsPlan.chosenPath === 'continue_a_little_more' &&
+        (randomGoodsPlan.targetStyle === 'unknown' || randomGoodsPlan.stopBudget === 'unknown'));
+
+    if (criticalUnknownCount >= 2 || reliesOnUnknown) {
+      return {
+        active: true,
+        scenario: "random_goods",
+        criticalUnknownCount,
+        confidenceCap: criticalUnknownCount >= 3 ? 38 : 54,
+        forceHold: criticalUnknownCount >= 2,
+        reason: 'ブラインド商品の止めどきに必要な前提がまだ足りず、交換・単品回収・撤退ラインを強く言い切れません。',
+        action: 'まず「本命の範囲」「被り許容」「交換負担」「止める予算ライン」を埋めてから再判定する。',
+        tag: 'trust_gate_random_goods_unknown_heavy',
+      };
+    }
+  }
+
+  if (mediaEditionPlan) {
+    const criticalUnknownCount = countUnknownValues([
+      mediaEditionPlan.characterVsCast,
+      mediaEditionPlan.oneOshiVsBox,
+      mediaEditionPlan.collectionCompleteness,
+      mediaEditionPlan.editionAmbition,
+      mediaEditionPlan.memberVersionPreference,
+    ]) + (mediaEditionPlan.randomGoodsAddonIntent === 'present' ? 0 : 0);
+    const reliesOnUnknown =
+      ((mediaEditionPlan.chosenPath === 'buy_one_best_fit_edition' || mediaEditionPlan.chosenPath === 'buy_limited_only') &&
+        (mediaEditionPlan.editionAmbition === 'unknown' || mediaEditionPlan.characterVsCast === 'unknown')) ||
+      (mediaEditionPlan.chosenPath === 'full_set_is_justified' &&
+        (mediaEditionPlan.oneOshiVsBox === 'unknown' || mediaEditionPlan.collectionCompleteness === 'unknown' || mediaEditionPlan.editionAmbition === 'unknown'));
+
+    if (criticalUnknownCount >= 2 || reliesOnUnknown) {
+      return {
+        active: true,
+        scenario: "media_edition",
+        criticalUnknownCount,
+        confidenceCap: criticalUnknownCount >= 3 ? 40 : 55,
+        forceHold: criticalUnknownCount >= 2,
+        reason: '版違いメディアの判断軸がまだ足りず、1種推奨や全版追い可否を強く固定できません。',
+        action: 'まず「版違いの意図」「単推しか箱推しか」「予算とコンプ優先度」「キャラ/演者 motive」を埋める。',
+        tag: 'trust_gate_media_unknown_heavy',
+      };
+    }
+  }
+
+  if (venueLimitedGoodsPlan) {
+    const criticalUnknownCount = countUnknownValues([
+      venueLimitedGoodsPlan.venueContext,
+      venueLimitedGoodsPlan.recoveryPlausibility,
+      venueLimitedGoodsPlan.waitTolerance,
+      venueLimitedGoodsPlan.usedFallbackWillingness,
+      venueLimitedGoodsPlan.regretAxis,
+    ]);
+    const reliesOnUnknown =
+      (venueLimitedGoodsPlan.chosenPath === 'wait_for_post_event_mailorder' && venueLimitedGoodsPlan.recoveryPlausibility === 'unknown') ||
+      (venueLimitedGoodsPlan.chosenPath === 'buy_now_if_it_is_truly_hard_to_recover' &&
+        (venueLimitedGoodsPlan.recoveryPlausibility === 'unknown' || venueLimitedGoodsPlan.venueContext === 'unknown'));
+
+    if (criticalUnknownCount >= 2 || reliesOnUnknown) {
+      return {
+        active: true,
+        scenario: "venue_limited",
+        criticalUnknownCount,
+        confidenceCap: criticalUnknownCount >= 3 ? 40 : 55,
+        forceHold: criticalUnknownCount >= 2,
+        reason: '会場限定かどうか、事後回復の見込み、待てる余地が未確定で、急ぐ/待つを強く言い切れません。',
+        action: 'まず「本当に会場限定か」「事後通販の根拠」「待てるか」「中古回復を使うか」を確認する。',
+        tag: 'trust_gate_venue_unknown_heavy',
+      };
+    }
+  }
+
+  return undefined;
+}
+
 function buildExplanations(params: {
   decision: Decision;
   holdSubtype?: HoldSubtype;
@@ -1262,11 +1373,36 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     }
   }
 
+  const trustGate = resolveTrustGateOutcome({
+    randomGoodsPlan,
+    mediaEditionPlan,
+    venueLimitedGoodsPlan,
+  });
+  if (trustGate?.active) {
+    tags.push(trustGate.tag, `critical_unknowns_${trustGate.scenario}_${trustGate.criticalUnknownCount}`);
+    confidence = Math.min(confidence, trustGate.confidenceCap);
+    if (decision === 'BUY' || trustGate.forceHold) {
+      decision = 'THINK';
+    }
+    holdSubtype = 'info_missing';
+    subtypeReason = '重要な前提が未回答のため、いったん弱めの保留に落としています。';
+    reasons.unshift({
+      id: `${trustGate.scenario}_trust_gate`,
+      severity: 'warn',
+      text: trustGate.reason,
+    });
+    actions.unshift({
+      id: `${trustGate.scenario}_trust_gate_fill_missing`,
+      text: trustGate.action,
+    });
+  }
+
   const downgradeFlags: string[] = [];
   if (unknownCount >= 3) downgradeFlags.push('unknown_count_ge_3');
   if (unknownCount >= 5) downgradeFlags.push('force_hold_unknown_count_ge_5');
   if (impulseFlag) downgradeFlags.push('impulse_nudge_applied');
   if (holdSubtype) downgradeFlags.push(`hold_subtype_${holdSubtype}`);
+  if (trustGate?.active) downgradeFlags.push(`${trustGate.tag}_active`);
   if (randomGoodsPlan) {
     downgradeFlags.push(`random_goods_path_${randomGoodsPlan.chosenPath}`);
     if (randomGoodsPlan.clampReason) downgradeFlags.push(`random_goods_clamp_${randomGoodsPlan.clampReason}`);

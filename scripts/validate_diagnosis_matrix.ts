@@ -634,6 +634,95 @@ function runMixedMediaFlowCheck() {
   }
 }
 
+function runTrustRepairAcceptanceChecks() {
+  const blindUnknownHeavy = buildEvaluatedOutput('blind_draw', {
+    q_goal: 'single',
+    q_budget_pain: 'ok',
+    q_addon_blind_draw_exit: 'unknown',
+    q_addon_blind_draw_duplicate_tolerance: 'unknown',
+    q_addon_blind_draw_trade_intent: 'unknown',
+    q_addon_blind_draw_exchange_friction: 'unknown',
+    q_addon_blind_draw_single_fallback: 'unknown',
+    q_addon_blind_draw_stop_budget: 'unknown',
+    q_regret_impulse: 'calm',
+  }, 'small_collection');
+  if (blindUnknownHeavy.decision === 'BUY') {
+    throw new Error('trust_repair_blind_unknown: unknown-heavy blind draw should not stay BUY');
+  }
+  if (blindUnknownHeavy.holdSubtype !== 'info_missing' || (blindUnknownHeavy.confidence ?? 100) > 54) {
+    throw new Error('trust_repair_blind_unknown: unknown-heavy blind draw should downgrade confidence and hold subtype');
+  }
+
+  const venueUnknownRecovery = buildEvaluatedOutput('goods', {
+    q_addon_goods_event_limit_context: 'venue_limited',
+    q_addon_goods_post_event_mailorder: 'unknown',
+    q_addon_goods_wait_tolerance: 'unknown',
+    q_addon_goods_first_chance_tolerance: 'medium',
+    q_addon_goods_used_fallback: 'unknown',
+    q_addon_goods_scarcity_pressure: 'medium',
+    q_addon_goods_venue_motive: 'mixed',
+    q_addon_goods_regret_axis: 'unknown',
+    q_regret_impulse: 'calm',
+  }, 'small_collection');
+  if (venueUnknownRecovery.venueLimitedGoodsPlan?.chosenPath === 'wait_for_post_event_mailorder' && venueUnknownRecovery.decision === 'BUY') {
+    throw new Error('trust_repair_venue_unknown: weakly known recovery path should not produce a hard wait recommendation');
+  }
+  if (venueUnknownRecovery.holdSubtype !== 'info_missing') {
+    throw new Error('trust_repair_venue_unknown: weakly known recovery path should mark info_missing');
+  }
+
+  const mediaUnknownHeavy = buildEvaluatedOutput('goods', {
+    q_goal: 'single',
+    q_budget_pain: 'some',
+    q_addon_media_motive: 'unknown',
+    q_addon_media_support_scope: 'unknown',
+    q_addon_media_collection_budget: 'unknown',
+    q_addon_media_edition_intent: 'unknown',
+    q_addon_media_member_version: 'unknown',
+    q_addon_media_playback_space: 'ready',
+    q_addon_media_limited_pressure: 'unknown',
+    q_addon_media_random_goods_intent: 'present',
+    q_addon_blind_draw_cap: 'unknown',
+    q_addon_blind_draw_exit: 'unknown',
+    q_addon_blind_draw_duplicate_tolerance: 'unknown',
+    q_addon_blind_draw_trade_intent: 'unknown',
+    q_addon_blind_draw_exchange_friction: 'unknown',
+    q_addon_blind_draw_single_fallback: 'unknown',
+    q_addon_blind_draw_stop_budget: 'unknown',
+  }, 'media');
+  if (mediaUnknownHeavy.decision === 'BUY') {
+    throw new Error('trust_repair_media_unknown: unknown-heavy media edition flow should not stay BUY');
+  }
+  if ((mediaUnknownHeavy.confidence ?? 100) > 55 || mediaUnknownHeavy.holdSubtype !== 'info_missing') {
+    throw new Error('trust_repair_media_unknown: unknown-heavy media edition flow should downgrade confidence and hold subtype');
+  }
+}
+
+function runMediumMediaCoverageCheck() {
+  const flow = resolveFlowQuestions({
+    mode: "medium",
+    itemKind: "goods",
+    goodsClass: "media",
+    goodsSubtype: "general",
+    useCase: "merch",
+    answers: {},
+    meta: { itemKind: "goods", goodsClass: "media", itemName: "検証", priceYen: 4000 },
+    styleMode: "standard",
+  });
+  const questionIds = flow.questions.map((question) => question.id);
+  for (const required of [
+    "q_addon_media_motive",
+    "q_addon_media_support_scope",
+    "q_addon_media_collection_budget",
+    "q_addon_media_edition_intent",
+    "q_addon_media_random_goods_intent",
+  ]) {
+    if (!questionIds.includes(required)) {
+      throw new Error(`medium_media_coverage: expected ${required} in medium media flow`);
+    }
+  }
+}
+
 
 function runHomepageFunnelChecks() {
   if (!isGoodsClassApplicable("goods") || !isGoodsClassApplicable("used") || !isGoodsClassApplicable("preorder")) {
@@ -736,6 +825,8 @@ runScoringSeparationChecks();
 const blindDrawAcceptanceCases = runBlindDrawAcceptanceChecks();
 const mediaEditionAcceptanceCases = runMediaEditionAcceptanceChecks();
 runMixedMediaFlowCheck();
+runMediumMediaCoverageCheck();
+runTrustRepairAcceptanceChecks();
 runHomepageFunnelChecks();
 runDraftInvalidationCheck();
 runReplaySeedCheck();
@@ -780,6 +871,8 @@ const report = {
     blindDrawAcceptance: "pass",
     mediaEditionAcceptance: "pass",
     mixedMediaFlow: "pass",
+    mediumMediaCoverage: "pass",
+    trustRepairAcceptance: "pass",
     homepageFunnel: "pass",
     draftInvalidation: "pass",
     replaySeed: "pass",
