@@ -198,6 +198,9 @@ export type MediaEditionPlan = {
   productVsBonusMotive: 'product_core' | 'balanced' | 'bonus_driven' | 'unknown';
   overpayVsMissPreference: 'overpay_more' | 'miss_more' | 'balanced' | 'unknown';
   storeBonusScenarioDetected: boolean;
+  bonusPressureChangedRecommendation: boolean;
+  splitOrderBurdenChangedRecommendation: boolean;
+  bonusInflationRisk: 'low' | 'medium' | 'high' | 'unknown';
   memberVersionPreference: 'none' | 'specific_version' | 'multiple_versions' | 'unknown';
   randomGoodsAddonIntent: 'none' | 'present';
   chosenPath: MediaEditionPlannerPath;
@@ -221,6 +224,9 @@ export type VenueLimitedGoodsPlan = {
   primaryMotive: 'collection_completeness' | 'event_memory' | 'practical_collecting' | 'mixed' | 'unknown';
   liveGoodsMotive: 'core_attachment' | 'symbolic_value' | 'event_atmosphere' | 'mixed' | 'unknown';
   regretAxis: 'overpay_more' | 'miss_more' | 'balanced' | 'unknown';
+  postEventFollowupPlausibility: 'high' | 'medium' | 'low' | 'unknown';
+  atmospherePressureChangedRecommendation: boolean;
+  scarcityAssessment: 'true_scarcity' | 'followup_plausible' | 'atmosphere_pressure' | 'mixed' | 'unknown';
   chosenPath: VenueLimitedPlannerPath;
   optimizingFor: string;
   recoveryChangedRecommendation: boolean;

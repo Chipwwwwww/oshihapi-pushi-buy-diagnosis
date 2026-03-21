@@ -589,8 +589,12 @@ function evaluateCandidate(rawCandidate: RawProviderCandidate, input: PlannerInp
   const venueUsedFallbackPath =
     (input.resultTags ?? []).includes("venue_limited_path_fallback_to_used_market_if_missed") ||
     (input.resultTags ?? []).includes("venue_limited_path_skip_onsite_chase_and_check_later");
-  const venueWaitPath = (input.resultTags ?? []).includes("venue_limited_path_wait_for_post_event_mailorder");
-  const venueFomoClampPath = (input.resultTags ?? []).includes("venue_limited_path_step_back_from_fomo_pressure");
+  const venueWaitPath =
+    (input.resultTags ?? []).includes("venue_limited_path_wait_for_post_event_mailorder") ||
+    (input.resultTags ?? []).includes("venue_limited_path_wait_for_post_event_followup");
+  const venueFomoClampPath =
+    (input.resultTags ?? []).includes("venue_limited_path_step_back_from_fomo_pressure") ||
+    (input.resultTags ?? []).includes("venue_limited_path_skip_atmosphere_driven_goods_chase");
   const randomGoodsUnknownHeavy = (input.resultTags ?? []).includes("trust_gate_random_goods_unknown_heavy");
   const mediaUnknownHeavy = (input.resultTags ?? []).includes("trust_gate_media_unknown_heavy");
   const venueUnknownHeavy = (input.resultTags ?? []).includes("trust_gate_venue_unknown_heavy");
