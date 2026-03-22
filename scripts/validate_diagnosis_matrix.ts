@@ -4,6 +4,7 @@ import { evaluate } from "@/src/oshihapi/engine";
 import { merch_v2_ja } from "@/src/oshihapi/merch_v2_ja";
 import { getOptionalMetaHint, isGoodsClassApplicable } from "@/src/oshihapi/homeFunnel";
 import { resolveFlowQuestions } from "@/src/oshihapi/flowResolver";
+import { parseSearchClues } from "@/src/oshihapi/input/parseSearchClues";
 import { pruneAnswersAfterQuestion } from "@/src/oshihapi/flowState";
 import {
   saveDiagnosisState,
@@ -1367,6 +1368,88 @@ function runMediumMediaCoverageCheck() {
 }
 
 
+function runVTMediaAcceptanceChecks() {
+  const vtBluray = parseSearchClues('hololive 初回限定 Blu-ray 特典');
+  const vtCd = parseSearchClues('VT 特典付きCD 法人特典');
+  const vtBook = parseSearchClues('VT 写真集 法人特典');
+
+  const vtBlurayFlow = resolveFlowQuestions({
+    mode: 'long',
+    itemKind: 'goods',
+    goodsClass: 'media',
+    goodsSubtype: 'general',
+    useCase: 'merch',
+    answers: {},
+    meta: { itemKind: 'goods', goodsClass: 'media', searchClueRaw: vtBluray.raw, parsedSearchClues: vtBluray, itemName: 'VT Blu-ray', priceYen: 8800 },
+    styleMode: 'standard',
+  });
+  if (!vtBlurayFlow.questions.some((q) => q.id === 'q_addon_media_edition_intent')) {
+    throw new Error('vt_media_bluray: existing media addon path should remain active');
+  }
+  if (!vtBlurayFlow.diagnosticTrace.branchHits.some((branch) => branch.id === 'search_clue_media_resolved')) {
+    throw new Error('vt_media_bluray: resolved media clue diagnostics should remain stable');
+  }
+  if (vtBlurayFlow.coverage.key !== 'store_bonus_collection' && vtBlurayFlow.coverage.key !== 'limited_vs_standard_media' && vtBlurayFlow.coverage.key !== 'media_purchase_decision') {
+    throw new Error('vt_media_bluray: coverage should remain inside existing media scenarios');
+  }
+
+  const vtBlurayAnswers = Object.fromEntries(vtBlurayFlow.questions.map((q) => [q.id, defaultAnswer(q.id)]));
+  const vtBlurayOutput = evaluate({
+    questionSet: { id: 'vt-bluray', locale: 'ja', category: 'merch', version: 1, questions: vtBlurayFlow.questions },
+    meta: { itemKind: 'goods', goodsClass: 'media', searchClueRaw: vtBluray.raw, parsedSearchClues: vtBluray, itemName: 'VT Blu-ray', priceYen: 8800 },
+    answers: vtBlurayAnswers,
+    mode: 'long',
+    useCase: 'merch',
+  });
+  const vtVerdictFamily = vtBlurayOutput.verdictFamily ?? '';
+  const vtDisplayVerdict = vtBlurayOutput.displayVerdictKey ?? '';
+  if (!['buy', 'hold', 'stop'].includes(vtVerdictFamily) || !['buy', 'hold_needs_check', 'hold_conflicting', 'hold_timing_wait', 'stop'].includes(vtDisplayVerdict)) {
+    throw new Error('vt_media_bluray: canonical verdict routing should stay intact');
+  }
+
+  const vtCdFlow = resolveFlowQuestions({
+    mode: 'long',
+    itemKind: 'goods',
+    goodsClass: 'media',
+    goodsSubtype: 'general',
+    useCase: 'merch',
+    answers: {},
+    meta: { itemKind: 'goods', goodsClass: 'media', searchClueRaw: vtCd.raw, parsedSearchClues: vtCd, itemName: 'VT CD', priceYen: 2500 },
+    styleMode: 'standard',
+  });
+  if (!vtCdFlow.diagnosticTrace.branchHits.some((branch) => branch.id === 'search_clue_bonus_strong')) {
+    throw new Error('vt_media_cd: bonus-heavy VT CD clue should preserve media bonus-sensitive routing');
+  }
+
+  const vtBookFlow = resolveFlowQuestions({
+    mode: 'long',
+    itemKind: 'goods',
+    goodsClass: 'media',
+    goodsSubtype: 'general',
+    useCase: 'merch',
+    answers: {},
+    meta: { itemKind: 'goods', goodsClass: 'media', searchClueRaw: vtBook.raw, parsedSearchClues: vtBook, itemName: 'VT 写真集', priceYen: 3300 },
+    styleMode: 'standard',
+  });
+  if (vtBookFlow.coverage.key !== 'store_bonus_collection' && vtBookFlow.coverage.key !== 'media_purchase_decision') {
+    throw new Error('vt_media_book: VT book clue should stay inside the media wedge when media is selected');
+  }
+
+  const genericMediaFlow = resolveFlowQuestions({
+    mode: 'long',
+    itemKind: 'goods',
+    goodsClass: 'media',
+    goodsSubtype: 'general',
+    useCase: 'merch',
+    answers: {},
+    meta: { itemKind: 'goods', goodsClass: 'media', searchClueRaw: '初回限定 Blu-ray', parsedSearchClues: parseSearchClues('初回限定 Blu-ray'), itemName: '通常メディア', priceYen: 7000 },
+    styleMode: 'standard',
+  });
+  if (!genericMediaFlow.questions.some((q) => q.id === 'q_addon_media_motive')) {
+    throw new Error('vt_media_regression: generic media flow should remain unchanged');
+  }
+}
+
 function runHomepageFunnelChecks() {
   if (!isGoodsClassApplicable("goods") || !isGoodsClassApplicable("used") || !isGoodsClassApplicable("preorder")) {
     throw new Error("homepage_funnel: goods-like item kinds should allow goodsClass step");
@@ -1469,6 +1552,7 @@ const blindDrawAcceptanceCases = runBlindDrawAcceptanceChecks();
 const mediaEditionAcceptanceCases = runMediaEditionAcceptanceChecks();
 runMixedMediaFlowCheck();
 runMediumMediaCoverageCheck();
+runVTMediaAcceptanceChecks();
 runTrustRepairAcceptanceChecks();
 const bandNarrowingAcceptance = runBandNarrowingAcceptanceChecks();
 const canonicalVerdictAcceptance = runCanonicalVerdictAcceptanceChecks();
@@ -1517,6 +1601,7 @@ const report = {
     mediaEditionAcceptance: "pass",
     mixedMediaFlow: "pass",
     mediumMediaCoverage: "pass",
+    vtMediaAcceptance: "pass",
     trustRepairAcceptance: "pass",
     homepageFunnel: "pass",
     draftInvalidation: "pass",
