@@ -1,5 +1,7 @@
 "use client";
 
+import { getLeanDisplay } from "@/src/oshihapi/resultContract";
+
 type Decision = "buy" | "wait" | "no";
 
 export type DecisionScaleProps = {
@@ -27,6 +29,7 @@ export default function DecisionScale({ decision, index, bandHalfWidth = 18, cla
   const bandWidth = Math.min(100 - bandStart, normalizedBand * 2);
 
   const t = LABEL[decision];
+  const leanDisplay = getLeanDisplay(decision === "buy" ? "BUY" : decision === "no" ? "SKIP" : "THINK", clamped);
 
   return (
     <div
@@ -44,8 +47,8 @@ export default function DecisionScale({ decision, index, bandHalfWidth = 18, cla
           <div className="mt-1 text-sm text-muted-foreground">{t.sub}</div>
         </div>
         <div className="text-right text-xs text-muted-foreground">
-          <div>判定の傾き</div>
-          <div className="mt-1 font-medium">{Math.round(clamped * 100)}%</div>
+          <div>{leanDisplay.heading}</div>
+          <div className="mt-1 font-medium">{leanDisplay.valueText}</div>
         </div>
       </div>
 

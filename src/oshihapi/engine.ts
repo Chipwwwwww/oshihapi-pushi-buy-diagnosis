@@ -28,6 +28,7 @@ import { computeResultBandTrace } from './bandNarrowing';
 import { shouldAskStorage } from './storageGate';
 import { resolveScenarioKey } from './scenarioCoverage';
 import { resolveCanonicalVerdict, toConfidenceLevel, toVerdictStrength } from './verdictModel';
+import { buildSignedFactorContributions, getSignedFactorLabels } from './resultContract';
 import { buildUsedExitPlan } from './usedExitPlan';
 import { getVoiceMediaSignals } from './voiceMedia';
 
@@ -118,26 +119,6 @@ function stdDev(values: number[]) {
   const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
   const variance = values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / values.length;
   return Math.sqrt(variance);
-}
-
-function getTopFactors(scores: Record<ScoreDimension, number>, kind: 'positive' | 'negative', count = 3): string[] {
-  const labels: Record<ScoreDimension, string> = {
-    desire: '欲しい気持ち',
-    affordability: '予算の余裕',
-    urgency: '今必要か',
-    rarity: '希少性',
-    restockChance: '再販の見込み',
-    regretRisk: '後悔リスク',
-    impulse: '衝動性',
-    opportunityCost: '機会コスト',
-  };
-  const entries = Object.entries(scores) as [ScoreDimension, number][];
-  const sorted = entries
-    .map(([dim, score]) => ({ dim, score, signed: normalize01ToSigned(score) }))
-    .filter((entry) => (kind === 'positive' ? entry.signed > 0 : entry.signed < 0))
-    .sort((a, b) => Math.abs(b.signed) - Math.abs(a.signed))
-    .slice(0, count);
-  return sorted.map((entry) => `${labels[entry.dim]} (${Math.round(entry.score)})`);
 }
 
 function getSingleAnswer(answers: Record<string, AnswerValue>, id: string): string | undefined {
@@ -1375,19 +1356,23 @@ function buildExplanations(params: {
   buckets: FactorBuckets;
   unknownCount: number;
   itemKind: ItemKind;
+  positiveFactors: string[];
+  negativeFactors: string[];
 }): {
   blockingFactors: string[];
   recommendationReasons: string[];
   whyNotBuyYet: string;
   whyNotSkipYet: string;
 } {
-  const { decision, holdSubtype, buckets, unknownCount, itemKind } = params;
+  const { decision, holdSubtype, buckets, unknownCount, itemKind, positiveFactors, negativeFactors } = params;
   const blockingFactors: string[] = [];
   if (buckets.budgetPressure >= 65) blockingFactors.push('予算圧が高い');
   if (buckets.uncertaintyUnknowns >= 60 || unknownCount > 0) blockingFactors.push('不明点が残っている');
   if (buckets.impulseVolatility >= 65) blockingFactors.push('勢い要素が強い');
   if (buckets.readinessLogistics >= 65) blockingFactors.push('利用・保管準備が不足');
   if (buckets.itemKindRisk >= 62) blockingFactors.push(`${itemKind}特有のリスクが高い`);
+  const topPositive = positiveFactors[0];
+  const topNegative = negativeFactors[0];
 
   const recommendationReasons: string[] = [];
   if (decision === 'BUY') {
@@ -1405,17 +1390,17 @@ function buildExplanations(params: {
     decision === 'BUY'
       ? 'BUY判定に必要な条件を満たしている。'
       : holdSubtype === 'needs_check'
-        ? '相場・状態・条件など、1つの重要確認で結論が動く余地があるため。'
+        ? `${topNegative ? `${topNegative}。` : ''} まだ不明点が残っており、相場・状態・再販導線などの重要確認が埋まるまで買い切れないため。`.trim()
         : holdSubtype === 'conflicting'
-          ? '買う理由と止める理由が強く衝突し、押し切るには危険なため。'
+          ? `${topPositive ? `${topPositive}一方で、` : ''}${topNegative ?? '止める材料'}も強く、押し切るには危険なため。`
           : holdSubtype === 'timing_wait'
-            ? 'アイテムの良し悪しではなく、今の買い時が不利なため。'
-            : 'リスクに対して見返り確信が不足しているため。';
+            ? `${topNegative ? `${topNegative}。` : ''} アイテム自体より、今このタイミングで動く根拠がまだ弱いため。`.trim()
+            : `${topNegative ? `${topNegative}。` : ''} リスクに対して見返り確信が不足しているため。`.trim();
 
   const whyNotSkipYet =
     decision === 'SKIP'
       ? 'SKIP判定に必要な阻害要因が十分に揃っている。'
-      : '満足可能性や機会価値がまだ残っており、即時見送りまでは至らないため。';
+      : `${topPositive ? `${topPositive}ため、` : ''}満足可能性や機会価値がまだ残っており、即時見送りまでは至らないため。`;
 
   return { blockingFactors: blockingFactors.slice(0, 3), recommendationReasons, whyNotBuyYet, whyNotSkipYet };
 }
@@ -2112,9 +2097,27 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
   }
 
   const decisionJa = decision === 'BUY' ? '買う' : decision === 'SKIP' ? 'やめる' : '保留';
-  const positiveFactors = getTopFactors(scores, 'positive');
-  const negativeFactors = getTopFactors(scores, 'negative');
-  const explain = buildExplanations({ decision, holdSubtype, buckets: factorBuckets, unknownCount, itemKind });
+  const factorContributions = buildSignedFactorContributions(scores, weights);
+  const positiveFactors = getSignedFactorLabels(factorContributions, 'buy');
+  const negativeFactors = getSignedFactorLabels(factorContributions, 'stop');
+  const explain = buildExplanations({
+    decision,
+    holdSubtype,
+    buckets: factorBuckets,
+    unknownCount,
+    itemKind,
+    positiveFactors,
+    negativeFactors,
+  });
+  if (decision === 'THINK') {
+    if (holdSubtype === 'needs_check') {
+      subtypeReason = `${explain.blockingFactors[0] ?? '重要な不明点'}が残っています。相場・状態・再販導線など、結論を動かす確認を1〜2件済ませてから再判定するのが安全です。`;
+    } else if (holdSubtype === 'conflicting') {
+      subtypeReason = `${positiveFactors[0] ?? '買い材料'}と${negativeFactors[0] ?? '止める材料'}が同時に強く、結論が割れています。上限金額か優先条件を1つ固定すると判断が動きやすくなります。`;
+    } else if (holdSubtype === 'timing_wait') {
+      subtypeReason = `${positiveFactors[0] ?? '欲しい理由'}はありますが、${negativeFactors[0] ?? '今動く弱さ'}も残っています。再販・中古・事後販売の確認で、動く時期を見極めるのが安全です。`;
+    }
+  }
   const shareText = buildShareText(decisionJa, reasons);
   const presentation = buildPresentation({ decision, actions, reasons });
   const bandTrace = computeResultBandTrace({
@@ -2163,10 +2166,18 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
           confidenceLevel,
           verdictStrength,
           rawDecision,
-          buySignals: getTopFactors(scores, 'positive'),
-          stopSignals: getTopFactors(scores, 'negative'),
+          buySignals: positiveFactors,
+          stopSignals: negativeFactors,
           blockers: explain.blockingFactors,
           holdTriggers: canonicalVerdict.holdTriggers,
+          factorContributions: factorContributions.map((entry) => ({
+            dimension: entry.dimension,
+            score: entry.score,
+            weight: entry.weight,
+            signedContribution: entry.signedContribution,
+            direction: entry.direction,
+            label: entry.label,
+          })),
           usedExit: {
             shown: Boolean(usedExitPlan?.providers.length),
             mode: usedExitPlan?.mode ?? null,
@@ -2233,6 +2244,14 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
         stopSignals: negativeFactors,
         blockers: explain.blockingFactors,
         holdTriggers: canonicalVerdict.holdTriggers,
+        factorContributions: factorContributions.map((entry) => ({
+          dimension: entry.dimension,
+          score: entry.score,
+          weight: entry.weight,
+          signedContribution: entry.signedContribution,
+          direction: entry.direction,
+          label: entry.label,
+        })),
         usedExit: {
           shown: Boolean(usedExitPlan?.providers.length),
           mode: usedExitPlan?.mode ?? null,

@@ -6,6 +6,7 @@ import { getOptionalMetaHint, isGoodsClassApplicable } from "@/src/oshihapi/home
 import { resolveFlowQuestions } from "@/src/oshihapi/flowResolver";
 import { parseSearchClues } from "@/src/oshihapi/input/parseSearchClues";
 import { pruneAnswersAfterQuestion } from "@/src/oshihapi/flowState";
+import { getLeanDisplay } from "@/src/oshihapi/resultContract";
 import {
   saveDiagnosisState,
   loadDiagnosisState,
@@ -1223,6 +1224,13 @@ function runCanonicalVerdictAcceptanceChecks() {
   if (holdNeedsCheck.usedExitPlan?.mode !== 'check_first' || !holdNeedsCheck.usedExitPlan.whatToCheck?.length) {
     throw new Error('canonical_hold_needs_check: hold.needs_check should expose checklist-first used exit guidance');
   }
+  const mildHoldLean = getLeanDisplay(holdNeedsCheck.decision, holdNeedsCheck.score);
+  if (mildHoldLean.valueText.includes('%') || !mildHoldLean.valueText.includes('保留')) {
+    throw new Error('canonical_hold_needs_check: hold verdict lean display should stay explicitly in hold semantics');
+  }
+  if (!holdNeedsCheck.subtypeReason?.includes('再判定') || !holdNeedsCheck.whyNotBuyYet?.includes('重要確認')) {
+    throw new Error('canonical_hold_needs_check: hold.needs_check explanation should name unresolved checks and a concrete recheck path');
+  }
   assertHoldReasonMatchesSubtype('canonical_hold_needs_check', holdNeedsCheck);
 
   const holdConflicting = buildEvaluatedOutput('used', {
@@ -1244,6 +1252,9 @@ function runCanonicalVerdictAcceptanceChecks() {
   }
   if (holdConflicting.usedExitPlan?.mode !== 'reference_only' || holdConflicting.usedExitPlan.suppressPurchaseTone !== true) {
     throw new Error('canonical_hold_conflicting: hold.conflicting should suppress purchase tone and stay reference_only');
+  }
+  if (!holdConflicting.whyNotBuyYet?.includes('一方で') || !holdConflicting.whyNotSkipYet?.includes('ため')) {
+    throw new Error('canonical_hold_conflicting: hold.conflicting explanation should reflect competing signed factors from this run');
   }
   assertHoldReasonMatchesSubtype('canonical_hold_conflicting', holdConflicting);
 
@@ -1275,7 +1286,59 @@ function runCanonicalVerdictAcceptanceChecks() {
   ) {
     throw new Error('canonical_hold_timing_wait: hold.timing_wait should expose timing_wait_route used-exit guidance');
   }
+  if (!holdTimingWait.subtypeReason?.includes('再販・中古・事後販売')) {
+    throw new Error('canonical_hold_timing_wait: hold.timing_wait explanation should name what confirmation can move timing');
+  }
   assertHoldReasonMatchesSubtype('canonical_hold_timing_wait', holdTimingWait);
+
+  const lowRestockExpectation = buildEvaluatedOutput('preorder', {
+    q_desire: 1,
+    q_budget_pain: 'ok',
+    q_price_feel: 'low',
+    q_regret_impulse: 'excited',
+    q_goal: 'single',
+    q_motives_multi: ['content'],
+    q_addon_common_info: 'enough',
+    q_rarity_restock: 'unlikely',
+    q_urgency: 'low_stock',
+    q_alternative_plan: 'clear',
+  });
+  if (!lowRestockExpectation.positiveFactors?.includes('再販・再入荷の見込みが低い')) {
+    throw new Error('factor_restock_low_semantics: low restock expectation should surface as a buy-leaning signed factor');
+  }
+  if (lowRestockExpectation.negativeFactors?.some((factor) => factor.includes('再販・再入荷'))) {
+    throw new Error('factor_restock_low_semantics: low restock expectation must not flip into a negative restock label');
+  }
+  const contributionTrace = lowRestockExpectation.diagnosticTrace?.resultInputsSummary.factorContributions ?? [];
+  const restockContribution = contributionTrace.find((entry) => entry.dimension === 'restockChance');
+  if (!restockContribution || restockContribution.direction !== 'buy' || restockContribution.label !== '再販・再入荷の見込みが低い') {
+    throw new Error('factor_restock_low_semantics: diagnostics should retain the signed restock contribution source of truth');
+  }
+
+  const signedFactorOrdering = buildEvaluatedOutput('goods', {
+    q_desire: 5,
+    q_budget_pain: 'force',
+    q_price_feel: 'high',
+    q_regret_impulse: 'fomo',
+    q_goal: 'single',
+    q_motives_multi: ['use'],
+    q_addon_common_info: 'enough',
+    q_rarity_restock: 'unlikely',
+    q_urgency: 'last',
+  });
+  const signedFactorTrace = signedFactorOrdering.diagnosticTrace?.resultInputsSummary.factorContributions ?? [];
+  const strongestBuyFactor = signedFactorTrace
+    .filter((entry) => entry.direction === 'buy')
+    .sort((a, b) => Math.abs(b.signedContribution) - Math.abs(a.signedContribution))[0];
+  const strongestStopFactor = signedFactorTrace
+    .filter((entry) => entry.direction === 'stop')
+    .sort((a, b) => Math.abs(b.signedContribution) - Math.abs(a.signedContribution))[0];
+  if (!strongestBuyFactor || signedFactorOrdering.positiveFactors?.[0] !== strongestBuyFactor.label) {
+    throw new Error('signed_factor_ordering: positive factor cards should come from the top signed buy contribution');
+  }
+  if (!strongestStopFactor || signedFactorOrdering.negativeFactors?.[0] !== strongestStopFactor.label) {
+    throw new Error('signed_factor_ordering: negative factor cards should come from the top signed stop contribution');
+  }
 
   const nearCenterBiased = buildEvaluatedOutput('goods', {
     q_desire: 4,
@@ -1357,9 +1420,10 @@ function runCanonicalVerdictAcceptanceChecks() {
     replayed.holdSubtype !== replayOutput.holdSubtype ||
     replayed.displayVerdictKey !== replayOutput.displayVerdictKey ||
     replayed.usedExitPlan?.mode !== replayOutput.usedExitPlan?.mode ||
-    JSON.stringify(replayed.usedExitPlan?.providers ?? []) !== JSON.stringify(replayOutput.usedExitPlan?.providers ?? [])
+    JSON.stringify(replayed.usedExitPlan?.providers ?? []) !== JSON.stringify(replayOutput.usedExitPlan?.providers ?? []) ||
+    JSON.stringify(replayed.diagnosticTrace?.resultInputsSummary.factorContributions ?? []) !== JSON.stringify(replayOutput.diagnosticTrace?.resultInputsSummary.factorContributions ?? [])
   ) {
-    throw new Error('canonical_replay_stability: restore/replay should preserve verdict family/subtype/display key and used-exit plan');
+    throw new Error('canonical_replay_stability: restore/replay should preserve verdict family/subtype/display key, used-exit plan, and signed factor trace');
   }
 
   return {

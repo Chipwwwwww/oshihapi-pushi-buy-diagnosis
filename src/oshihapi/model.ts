@@ -200,6 +200,14 @@ export type ResultInputsSummaryTrace = {
   stopSignals?: string[];
   blockers?: string[];
   holdTriggers?: string[];
+  factorContributions?: Array<{
+    dimension: ScoreDimension;
+    score: number;
+    weight: number;
+    signedContribution: number;
+    direction: 'buy' | 'stop';
+    label: string;
+  }>;
   usedExit?: {
     shown: boolean;
     mode: UsedExitPlanMode | null;
