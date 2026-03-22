@@ -236,11 +236,12 @@ export function resolveFlowQuestions(input: FlowResolverInput): FlowResolution {
   }
   if (shouldAskVoiceMediaAddon(input)) {
     ids.push(...VOICE_MEDIA_ADDON_QUESTION_IDS);
+    moveQuestionBefore(ids, "q_addon_voice_cd_kind", "q_addon_common_priority");
     moveQuestionBefore(ids, "q_addon_voice_cast_check", "q_addon_common_priority");
     if (voiceMediaSignals.hasStoreBonusSignal || voiceMediaSignals.hasFirstComeBonusSignal || voiceMediaSignals.hasEditionSignal) {
-      moveQuestionBefore(ids, "q_addon_voice_audio_bonus_value", "q_addon_common_priority");
+      moveQuestionBefore(ids, "q_addon_voice_bonus_is_audio", "q_addon_common_priority");
     }
-    moveQuestionBefore(ids, "q_addon_voice_listen_intent", "q_addon_common_priority");
+    moveQuestionBefore(ids, "q_addon_voice_listen_timing", "q_addon_common_priority");
   }
 
   const deduped = Array.from(new Set(ids)).filter((id) => {

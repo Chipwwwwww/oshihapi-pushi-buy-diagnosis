@@ -145,6 +145,14 @@ function getSingleAnswer(answers: Record<string, AnswerValue>, id: string): stri
   return typeof value === 'string' ? value : undefined;
 }
 
+function getSingleAnswerFromAliases(answers: Record<string, AnswerValue>, ids: string[]): string | undefined {
+  for (const id of ids) {
+    const value = getSingleAnswer(answers, id);
+    if (value) return value;
+  }
+  return undefined;
+}
+
 function hasCompleteMotive(motives: string[]) {
   return motives.includes('complete');
 }
@@ -1398,18 +1406,36 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
   applyMotives(scores, motives, tags);
 
   const voiceMediaSignals = getVoiceMediaSignals(input.meta);
+  const voiceCdKind = getSingleAnswer(input.answers, 'q_addon_voice_cd_kind');
   const voiceCastCheck = getSingleAnswer(input.answers, 'q_addon_voice_cast_check');
-  const voiceBonusValue = getSingleAnswer(input.answers, 'q_addon_voice_audio_bonus_value');
-  const voiceListenIntent = getSingleAnswer(input.answers, 'q_addon_voice_listen_intent');
+  const voiceBonusValueRaw = getSingleAnswerFromAliases(input.answers, ['q_addon_voice_bonus_is_audio', 'q_addon_voice_audio_bonus_value']);
+  const voiceListenIntentRaw = getSingleAnswerFromAliases(input.answers, ['q_addon_voice_listen_timing', 'q_addon_voice_listen_intent']);
+  const voiceBonusValue =
+    voiceBonusValueRaw === 'core' ? 'core_audio'
+      : voiceBonusValueRaw === 'unsure' ? 'not_checked'
+      : voiceBonusValueRaw;
+  const voiceListenIntent =
+    voiceListenIntentRaw === 'collecting_main' ? 'archive_main'
+      : voiceListenIntentRaw;
 
   if (voiceMediaSignals.eligible) {
     tags.push('voice_media_route');
+    if (voiceCdKind === 'not_checked') {
+      tags.push('unknown_voice_cd_kind_confirmation');
+      scores.regretRisk = clamp(0, 100, scores.regretRisk + 8);
+      scores.opportunityCost = clamp(0, 100, scores.opportunityCost + 8);
+    }
+    if (voiceCdKind === 'adjacent_media') {
+      tags.push('voice_adjacent_media_pull');
+      scores.regretRisk = clamp(0, 100, scores.regretRisk + 6);
+      scores.opportunityCost = clamp(0, 100, scores.opportunityCost + 10);
+    }
     if (voiceCastCheck === 'important_unconfirmed') {
       tags.push('unknown_voice_cast_confirmation');
       scores.regretRisk = clamp(0, 100, scores.regretRisk + 8);
       scores.opportunityCost = clamp(0, 100, scores.opportunityCost + 6);
     }
-    if (voiceBonusValue === 'unsure') {
+    if (voiceBonusValue === 'not_checked') {
       tags.push('unknown_voice_bonus_value');
       if (voiceMediaSignals.hasStoreBonusSignal || voiceMediaSignals.hasFirstComeBonusSignal || voiceMediaSignals.hasEditionSignal) {
         tags.push('unknown_voice_bonus_scope');
@@ -1422,11 +1448,15 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     }
     if (
       (voiceMediaSignals.hasContentSignal || voiceMediaSignals.hasEditionSignal || voiceMediaSignals.hasStoreBonusSignal) &&
-      voiceBonusValue === 'unsure'
+      voiceBonusValue === 'not_checked'
     ) {
       tags.push('unknown_voice_content_scope');
     }
-    if (voiceBonusValue === 'core' && (voiceListenIntent === 'collecting_main' || voiceListenIntent === 'not_sure')) {
+    if (voiceCdKind === 'store_bonus_audio' && (voiceBonusValue === 'not_checked' || voiceBonusValue === 'nice_to_have')) {
+      tags.push('voice_store_bonus_verification_bias');
+      scores.urgency = clamp(0, 100, scores.urgency + 4);
+    }
+    if (voiceBonusValue === 'core_audio' && (voiceListenIntent === 'archive_main' || voiceListenIntent === 'not_sure')) {
       tags.push('voice_bonus_use_mismatch', 'bonus_pressure_high');
       scores.impulse = clamp(0, 100, scores.impulse + 8);
       scores.opportunityCost = clamp(0, 100, scores.opportunityCost + 10);
@@ -1679,6 +1709,23 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
   }
 
   if (voiceMediaSignals.eligible) {
+    if (voiceCdKind === 'not_checked') {
+      extraReasons.unshift({
+        id: 'voice_cd_kind_needs_check',
+        severity: 'warn',
+        text: '本編ドラマCDなのか、店舗特典ドラマ確認が主なのか未整理で、判断軸そのものがまだ固まっていません。',
+      });
+      extraActions.unshift({
+        id: 'voice_cd_kind_verify',
+        text: '商品構成（本編CD / 特典CD / 店舗別差分）を確認してから再診断する',
+      });
+    } else if (voiceCdKind === 'adjacent_media') {
+      extraReasons.unshift({
+        id: 'voice_cd_kind_adjacent',
+        severity: 'warn',
+        text: 'ドラマ要素より別媒体・別仕様への関心が主役なら、この枠で即決すると満足条件がずれやすいです。',
+      });
+    }
     if (voiceCastCheck === 'important_unconfirmed') {
       extraReasons.unshift({
         id: 'voice_cast_needs_check',
@@ -1691,7 +1738,7 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
       });
     }
     if (
-      voiceBonusValue === 'unsure' &&
+      voiceBonusValue === 'not_checked' &&
       (voiceMediaSignals.hasStoreBonusSignal || voiceMediaSignals.hasFirstComeBonusSignal || voiceMediaSignals.hasEditionSignal)
     ) {
       extraReasons.unshift({
@@ -1706,13 +1753,14 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
         text: '店舗特典の有無・先着条件・通常盤/限定盤の差を先に確認する',
       });
     }
-    if (voiceBonusValue === 'core' && (voiceListenIntent === 'collecting_main' || voiceListenIntent === 'not_sure')) {
+    if (voiceBonusValue === 'core_audio' && (voiceListenIntent === 'archive_main' || voiceListenIntent === 'not_sure')) {
       extraReasons.unshift({
         id: 'voice_listen_mismatch',
         severity: 'warn',
         text: '特典への熱量に対して「実際に聴く」像が弱く、満足より回収圧が先行している可能性があります。',
       });
     } else if (
+      voiceCdKind !== 'adjacent_media' &&
       voiceCastCheck === 'important_confirmed' &&
       voiceListenIntent === 'listen_soon' &&
       (voiceBonusValue === 'not_important' || voiceBonusValue === 'nice_to_have')

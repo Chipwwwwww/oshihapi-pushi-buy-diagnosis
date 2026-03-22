@@ -76,9 +76,10 @@ export const MEDIA_P3B_QUESTION_IDS = [
 ] as const;
 
 export const VOICE_MEDIA_ADDON_QUESTION_IDS = [
+  "q_addon_voice_cd_kind",
   "q_addon_voice_cast_check",
-  "q_addon_voice_audio_bonus_value",
-  "q_addon_voice_listen_intent",
+  "q_addon_voice_bonus_is_audio",
+  "q_addon_voice_listen_timing",
 ] as const;
 
 export const MEDIA_P3C_QUESTION_IDS = [

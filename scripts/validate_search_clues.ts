@@ -161,9 +161,10 @@ function main() {
     },
     styleMode: "standard",
   });
+  assert(dramaCdFlow.questions.some((question) => question.id === "q_addon_voice_cd_kind"), "drama CD clue should activate the narrow voice-media route question");
   assert(dramaCdFlow.questions.some((question) => question.id === "q_addon_voice_cast_check"), "drama CD clue should activate the narrow voice-media addon questions");
-  assert(dramaCdFlow.questions.some((question) => question.id === "q_addon_voice_audio_bonus_value"), "drama CD clue should ask bonus-value clarification");
-  assert(dramaCdFlow.questions.some((question) => question.id === "q_addon_voice_listen_intent"), "drama CD clue should ask listen-intent clarification");
+  assert(dramaCdFlow.questions.some((question) => question.id === "q_addon_voice_bonus_is_audio"), "drama CD clue should ask bonus-value clarification");
+  assert(dramaCdFlow.questions.some((question) => question.id === "q_addon_voice_listen_timing"), "drama CD clue should ask listen-intent clarification");
   assert(dramaCdFlow.diagnosticTrace.branchHits.some((trace) => trace.id === "voice_media_addon_route"), "voice-media addon route should remain diagnosable");
 
   const mediaMotiveIndex = mediaFlow.questions.findIndex((question) => question.id === "q_addon_media_motive");

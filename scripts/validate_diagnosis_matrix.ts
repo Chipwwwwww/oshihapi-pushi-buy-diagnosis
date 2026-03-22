@@ -73,9 +73,10 @@ function defaultAnswer(questionId: string): AnswerValue {
   if (questionId === "q_addon_media_bonus_importance") return "medium";
   if (questionId === "q_addon_media_multi_store_tolerance") return "compare_then_one";
   if (questionId === "q_addon_media_split_order_burden") return "medium";
+  if (questionId === "q_addon_voice_cd_kind") return "drama_cd_main";
   if (questionId === "q_addon_voice_cast_check") return "important_confirmed";
-  if (questionId === "q_addon_voice_audio_bonus_value") return "nice_to_have";
-  if (questionId === "q_addon_voice_listen_intent") return "maybe_later";
+  if (questionId === "q_addon_voice_bonus_is_audio" || questionId === "q_addon_voice_audio_bonus_value") return "nice_to_have";
+  if (questionId === "q_addon_voice_listen_timing" || questionId === "q_addon_voice_listen_intent") return "maybe_later";
   if (questionId.includes("ticket")) return "partly";
   if (questionId.includes("preorder")) return "unknown";
   if (questionId.includes("used")) return "careful";
@@ -1490,7 +1491,7 @@ function runVoiceMediaAcceptanceChecks() {
     },
     styleMode: 'standard',
   });
-  for (const questionId of ['q_addon_voice_cast_check', 'q_addon_voice_audio_bonus_value', 'q_addon_voice_listen_intent']) {
+  for (const questionId of ['q_addon_voice_cd_kind', 'q_addon_voice_cast_check', 'q_addon_voice_bonus_is_audio', 'q_addon_voice_listen_timing']) {
     if (!unresolvedBonusFlow.questions.some((question) => question.id === questionId)) {
       throw new Error(`voice_media_questions: expected ${questionId} for eligible drama CD flow`);
     }
@@ -1518,9 +1519,10 @@ function runVoiceMediaAcceptanceChecks() {
       q_addon_media_multi_store_tolerance: 'compare_then_one',
       q_addon_media_split_order_burden: 'medium',
       q_addon_media_random_goods_intent: 'none',
+      q_addon_voice_cd_kind: 'store_bonus_audio',
       q_addon_voice_cast_check: 'important_unconfirmed',
-      q_addon_voice_audio_bonus_value: 'unsure',
-      q_addon_voice_listen_intent: 'maybe_later',
+      q_addon_voice_bonus_is_audio: 'not_checked',
+      q_addon_voice_listen_timing: 'maybe_later',
     },
     'media',
     {
@@ -1568,9 +1570,10 @@ function runVoiceMediaAcceptanceChecks() {
       q_addon_media_multi_store_tolerance: 'one_store_ok',
       q_addon_media_split_order_burden: 'low',
       q_addon_media_random_goods_intent: 'none',
+      q_addon_voice_cd_kind: 'drama_cd_main',
       q_addon_voice_cast_check: 'important_confirmed',
-      q_addon_voice_audio_bonus_value: 'not_important',
-      q_addon_voice_listen_intent: 'listen_soon',
+      q_addon_voice_bonus_is_audio: 'not_important',
+      q_addon_voice_listen_timing: 'listen_soon',
     },
     'media',
     {
@@ -1610,9 +1613,10 @@ function runVoiceMediaAcceptanceChecks() {
       q_addon_media_multi_store_tolerance: 'all_bonuses_or_bust',
       q_addon_media_split_order_burden: 'high',
       q_addon_media_random_goods_intent: 'none',
+      q_addon_voice_cd_kind: 'store_bonus_audio',
       q_addon_voice_cast_check: 'important_confirmed',
-      q_addon_voice_audio_bonus_value: 'core',
-      q_addon_voice_listen_intent: 'collecting_main',
+      q_addon_voice_bonus_is_audio: 'core_audio',
+      q_addon_voice_listen_timing: 'archive_main',
     },
     'media',
     {
@@ -1674,9 +1678,10 @@ function runVoiceMediaAcceptanceChecks() {
       q_addon_media_multi_store_tolerance: 'one_store_ok',
       q_addon_media_split_order_burden: 'medium',
       q_addon_media_random_goods_intent: 'none',
+      q_addon_voice_cd_kind: 'drama_cd_main',
       q_addon_voice_cast_check: 'important_confirmed',
-      q_addon_voice_audio_bonus_value: 'not_important',
-      q_addon_voice_listen_intent: 'maybe_later',
+      q_addon_voice_bonus_is_audio: 'not_important',
+      q_addon_voice_listen_timing: 'maybe_later',
       q_addon_goods_regret_axis: 'overpay_more',
     },
     'media',
@@ -1703,9 +1708,10 @@ function runVoiceMediaAcceptanceChecks() {
     goodsClass: 'media' as const,
     styleMode: 'standard' as const,
     answers: {
+      q_addon_voice_cd_kind: 'drama_cd_main',
       q_addon_voice_cast_check: 'important_confirmed',
-      q_addon_voice_audio_bonus_value: 'nice_to_have',
-      q_addon_voice_listen_intent: 'listen_soon',
+      q_addon_voice_bonus_is_audio: 'nice_to_have',
+      q_addon_voice_listen_timing: 'listen_soon',
     },
     meta: {
       itemKind: 'goods' as const,
@@ -1725,7 +1731,7 @@ function runVoiceMediaAcceptanceChecks() {
     },
   };
   const replayDraft = createReplayDraft(replaySource as never, 'standard');
-  if (replayDraft.answers.q_addon_voice_cast_check !== 'important_confirmed' || replayDraft.answers.q_addon_voice_listen_intent !== 'listen_soon') {
+  if (replayDraft.answers.q_addon_voice_cast_check !== 'important_confirmed' || replayDraft.answers.q_addon_voice_listen_timing !== 'listen_soon') {
     throw new Error('voice_media_replay: addon answers should persist into replay draft');
   }
 }
