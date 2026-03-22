@@ -1189,6 +1189,63 @@ function determineHoldSubtype(buckets: FactorBuckets, unknownCount: number): { s
   return { subtype: 'timing_wait', reason: 'モノ自体は否定しないが、今動くタイミングが良くない。' };
 }
 
+function resolveVoiceDramaBonusMismatch(params: {
+  voiceMediaEligible: boolean;
+  voiceCdKind?: string;
+  voiceBonusValue?: string;
+  voiceListenIntent?: string;
+  tags: string[];
+  factorBuckets: FactorBuckets;
+  mediaEditionPlan?: MediaEditionPlan;
+}) {
+  const {
+    voiceMediaEligible,
+    voiceCdKind,
+    voiceBonusValue,
+    voiceListenIntent,
+    tags,
+    factorBuckets,
+    mediaEditionPlan,
+  } = params;
+
+  if (!voiceMediaEligible) {
+    return { active: false, shouldStop: false };
+  }
+
+  const weakListenIntent = voiceListenIntent === 'archive_main' || voiceListenIntent === 'not_sure';
+  const storeBonusPressure =
+    voiceCdKind === 'store_bonus_audio' ||
+    mediaEditionPlan?.bonusImportance === 'high' ||
+    mediaEditionPlan?.bonusPressure === 'high' ||
+    mediaEditionPlan?.completionPressureType === 'bonus_store_pressure' ||
+    tags.includes('bonus_pressure_high') ||
+    tags.includes('voice_store_bonus_verification_bias');
+  const meaningfulBurden =
+    factorBuckets.budgetPressure >= 58 ||
+    factorBuckets.readinessLogistics >= 64 ||
+    factorBuckets.impulseVolatility >= 68 ||
+    mediaEditionPlan?.splitOrderBurden === 'high' ||
+    mediaEditionPlan?.budgetAlignment === 'weak';
+  const active =
+    voiceBonusValue === 'core_audio' &&
+    weakListenIntent &&
+    storeBonusPressure &&
+    meaningfulBurden;
+
+  if (!active) {
+    return { active: false, shouldStop: false };
+  }
+
+  const shouldStop =
+    factorBuckets.budgetPressure >= 68 ||
+    factorBuckets.readinessLogistics >= 72 ||
+    mediaEditionPlan?.chosenPath === 'step_back_from_bonus_pressure' ||
+    mediaEditionPlan?.chosenPath === 'step_back_from_bonus_or_completion_pressure' ||
+    mediaEditionPlan?.chosenPath === 'split_orders_are_not_worth_it';
+
+  return { active: true, shouldStop };
+}
+
 type TrustGateOutcome = {
   active: boolean;
   scenario: "random_goods" | "media_edition" | "venue_limited";
@@ -1554,6 +1611,16 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     decision = 'THINK';
   }
 
+  const voiceDramaBonusMismatch = resolveVoiceDramaBonusMismatch({
+    voiceMediaEligible: voiceMediaSignals.eligible,
+    voiceCdKind,
+    voiceBonusValue,
+    voiceListenIntent,
+    tags,
+    factorBuckets,
+    mediaEditionPlan,
+  });
+
   if (randomGoodsPlan) {
     tags.push(
       `random_goods_path_${randomGoodsPlan.chosenPath}`,
@@ -1678,6 +1745,10 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     }
   }
 
+  if (voiceDramaBonusMismatch.active && decision === 'BUY') {
+    decision = voiceDramaBonusMismatch.shouldStop ? 'SKIP' : 'THINK';
+  }
+
   const goal =
     tags.includes('goal_set') ? 'set' :
     tags.includes('goal_fun') ? 'fun' :
@@ -1696,6 +1767,10 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     const resolved = determineHoldSubtype(factorBuckets, unknownCount);
     holdSubtype = resolved.subtype;
     subtypeReason = resolved.reason;
+    if (voiceDramaBonusMismatch.active && unknownCount < 2) {
+      holdSubtype = 'conflicting';
+      subtypeReason = '特典の欲しさと実際に聴く価値・負担が衝突している。';
+    }
   }
 
   const initialReasonDecision = decision;

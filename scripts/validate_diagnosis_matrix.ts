@@ -1642,8 +1642,14 @@ function runVoiceMediaAcceptanceChecks() {
       priceYen: 4800,
     },
   );
-  if (!['conflicting', undefined].includes(bonusConflictOutput.holdSubtype) && bonusConflictOutput.decision !== 'SKIP') {
-    throw new Error('voice_media_conflict: bonus-heavy low-listen case should conflict or stop');
+  if (bonusConflictOutput.decision === 'BUY') {
+    throw new Error('voice_media_conflict: bonus-heavy low-listen case should not stay BUY');
+  }
+  if (bonusConflictOutput.decision === 'THINK' && bonusConflictOutput.holdSubtype !== 'conflicting') {
+    throw new Error('voice_media_conflict: hold result should use hold.conflicting for bonus-vs-listen mismatch');
+  }
+  if (bonusConflictOutput.reasons.some((reason) => reason.id === 'hold_timing_wait')) {
+    throw new Error('voice_media_conflict: mismatch case should not leak timing_wait framing');
   }
   if (!bonusConflictOutput.reasons.some((reason) => reason.text.includes('特典') || reason.text.includes('聴く'))) {
     throw new Error('voice_media_conflict: mismatch explanation should mention bonus/listen mismatch');
