@@ -6,7 +6,11 @@ import { getOptionalMetaHint, isGoodsClassApplicable } from "@/src/oshihapi/home
 import { resolveFlowQuestions } from "@/src/oshihapi/flowResolver";
 import { parseSearchClues } from "@/src/oshihapi/input/parseSearchClues";
 import { pruneAnswersAfterQuestion } from "@/src/oshihapi/flowState";
-import { getLeanDisplay } from "@/src/oshihapi/resultContract";
+import {
+  getLeanDisplay,
+  getVisibleSignedFactorContributions,
+  isHoldLeanDisplayCoherent,
+} from "@/src/oshihapi/resultContract";
 import {
   saveDiagnosisState,
   loadDiagnosisState,
@@ -26,6 +30,17 @@ type Scenario = {
   metaVariant: "empty" | "price" | "deadline" | "full";
   answers?: Record<string, AnswerValue>;
   minBranchHitIds?: string[];
+};
+
+type ResultContractScenario = {
+  id: string;
+  family: string;
+  itemKind: ItemKind;
+  goodsClass?: GoodsClass;
+  mode?: Mode;
+  answers: Record<string, AnswerValue>;
+  expectedVerdictFamily?: DecisionOutput["verdictFamily"];
+  expectedHoldSubtype?: DecisionOutput["holdSubtype"];
 };
 
 function buildMeta(metaVariant: Scenario["metaVariant"], itemKind: ItemKind, goodsClass: GoodsClass) {
@@ -151,6 +166,7 @@ function validateResultShape(id: string, output: DecisionOutput) {
     }
     if (!Array.isArray(output.usedExitPlan.providers)) throw new Error(`${id}: usedExitPlan providers missing`);
   }
+  assertResultContractCoherence(id, output);
 }
 
 function buildEvaluatedOutput(
@@ -192,6 +208,299 @@ function buildEvaluatedOutput(
     answers,
     mode: 'long',
     useCase: itemKind === 'game_billing' ? 'game_billing' : 'merch',
+  });
+}
+
+function assertResultContractCoherence(id: string, output: DecisionOutput) {
+  const factorContributions = output.diagnosticTrace?.resultInputsSummary?.factorContributions ?? [];
+  const expectedPositive = getVisibleSignedFactorContributions(factorContributions, 'buy').map((entry) => entry.label);
+  const expectedNegative = getVisibleSignedFactorContributions(factorContributions, 'stop').map((entry) => entry.label);
+
+  if (JSON.stringify(output.positiveFactors ?? []) !== JSON.stringify(expectedPositive)) {
+    throw new Error(`${id}: positive factors must come from signed contribution source of truth`);
+  }
+  if (JSON.stringify(output.negativeFactors ?? []) !== JSON.stringify(expectedNegative)) {
+    throw new Error(`${id}: negative factors must come from signed contribution source of truth`);
+  }
+  if (output.decision === 'THINK') {
+    const holdLean = getLeanDisplay(output.decision, output.score);
+    if (!isHoldLeanDisplayCoherent(holdLean.valueText)) {
+      throw new Error(`${id}: hold verdict lean display must stay inside hold semantics`);
+    }
+    if (!output.subtypeReason || !output.whyNotBuyYet || !output.whyNotSkipYet) {
+      throw new Error(`${id}: hold verdict explanations must stay populated and aligned`);
+    }
+  } else {
+    const directionalLean = getLeanDisplay(output.decision, output.score);
+    if (!directionalLean.valueText.includes('%')) {
+      throw new Error(`${id}: directional verdict lean display should stay numeric`);
+    }
+  }
+  if (output.decision === 'BUY' && output.whyNotBuyYet !== 'BUY判定に必要な条件を満たしている。') {
+    throw new Error(`${id}: BUY explanation contract regressed`);
+  }
+  if (output.decision === 'SKIP' && output.whyNotSkipYet !== 'SKIP判定に必要な阻害要因が十分に揃っている。') {
+    throw new Error(`${id}: SKIP explanation contract regressed`);
+  }
+}
+
+function assertStyleModeInvariantForScenario(
+  id: string,
+  itemKind: ItemKind,
+  goodsClass: GoodsClass,
+  mode: Mode,
+  answers: Record<string, AnswerValue>,
+) {
+  const standardFlow = resolveFlowQuestions({
+    mode,
+    itemKind,
+    goodsClass,
+    goodsSubtype: 'general',
+    useCase: itemKind === 'game_billing' ? 'game_billing' : 'merch',
+    answers,
+    meta: { itemKind, goodsClass, itemName: `${id}-standard`, priceYen: 4200 },
+    styleMode: 'standard',
+  });
+  const oshiFlow = resolveFlowQuestions({
+    mode,
+    itemKind,
+    goodsClass,
+    goodsSubtype: 'general',
+    useCase: itemKind === 'game_billing' ? 'game_billing' : 'merch',
+    answers,
+    meta: { itemKind, goodsClass, itemName: `${id}-oshi`, priceYen: 4200 },
+    styleMode: 'oshi',
+  });
+  const standardAnswers = Object.fromEntries(standardFlow.questions.map((q) => [q.id, answers[q.id] ?? defaultAnswer(q.id)]));
+  const oshiAnswers = Object.fromEntries(oshiFlow.questions.map((q) => [q.id, answers[q.id] ?? defaultAnswer(q.id)]));
+  const standardOutput = evaluate({
+    questionSet: { id: `${id}_standard`, locale: 'ja', category: 'merch', version: 1, questions: standardFlow.questions },
+    meta: { itemKind, goodsClass, itemName: `${id}-standard`, priceYen: 4200 },
+    answers: standardAnswers,
+    mode,
+    useCase: itemKind === 'game_billing' ? 'game_billing' : 'merch',
+  });
+  const oshiOutput = evaluate({
+    questionSet: { id: `${id}_oshi`, locale: 'ja', category: 'merch', version: 1, questions: oshiFlow.questions },
+    meta: { itemKind, goodsClass, itemName: `${id}-oshi`, priceYen: 4200 },
+    answers: oshiAnswers,
+    mode,
+    useCase: itemKind === 'game_billing' ? 'game_billing' : 'merch',
+  });
+  if (
+    standardOutput.decision !== oshiOutput.decision ||
+    standardOutput.verdictFamily !== oshiOutput.verdictFamily ||
+    standardOutput.holdSubtype !== oshiOutput.holdSubtype ||
+    standardOutput.displayVerdictKey !== oshiOutput.displayVerdictKey ||
+    JSON.stringify(standardOutput.positiveFactors ?? []) !== JSON.stringify(oshiOutput.positiveFactors ?? []) ||
+    JSON.stringify(standardOutput.negativeFactors ?? []) !== JSON.stringify(oshiOutput.negativeFactors ?? []) ||
+    JSON.stringify(standardOutput.diagnosticTrace?.resultInputsSummary?.factorContributions ?? []) !== JSON.stringify(oshiOutput.diagnosticTrace?.resultInputsSummary?.factorContributions ?? [])
+  ) {
+    throw new Error(`${id}: styleMode must stay presentation-only for verdict and signed reason selection`);
+  }
+}
+
+function runResultContractScenarioSweeper() {
+  const scenarios: ResultContractScenario[] = [
+    {
+      id: 'sweeper_blind_draw_exchange_path',
+      family: 'blind_draw / stop line / duplication tolerance / exchange tolerance',
+      itemKind: 'blind_draw',
+      mode: 'long',
+      answers: {
+        q_goal: 'single',
+        q_motives_multi: ['use'],
+        q_addon_blind_draw_duplicate_tolerance: 'low',
+        q_addon_blind_draw_trade_intent: 'yes',
+        q_addon_blind_draw_exchange_friction: 'low',
+        q_addon_blind_draw_stop_budget: 'strict',
+        q_addon_blind_draw_single_fallback: 'after_stop',
+      },
+    },
+    {
+      id: 'sweeper_preorder_low_rerun',
+      family: 'preorder / waiting / bonus pressure / rerun likelihood low',
+      itemKind: 'preorder',
+      answers: {
+        q_desire: 5,
+        q_budget_pain: 'ok',
+        q_price_feel: 'good',
+        q_regret_impulse: 'calm',
+        q_goal: 'single',
+        q_motives_multi: ['content', 'use'],
+        q_addon_common_info: 'enough',
+        q_rarity_restock: 'unlikely',
+        q_urgency: 'last',
+        q_alternative_plan: 'clear',
+      },
+      expectedVerdictFamily: 'buy',
+    },
+    {
+      id: 'sweeper_used_authenticity_conflict',
+      family: 'used / price-check / condition tolerance / authenticity/return sensitivity',
+      itemKind: 'used',
+      answers: {
+        q_desire: 5,
+        q_budget_pain: 'ok',
+        q_price_feel: 'good',
+        q_regret_impulse: 'calm',
+        q_goal: 'single',
+        q_motives_multi: ['use'],
+        q_addon_common_info: 'enough',
+        q_addon_used_condition: 'hard',
+        q_addon_used_price_gap: 'small',
+        q_addon_used_defect_return: 'not_ok',
+        q_addon_used_authenticity: 'must',
+        q_addon_used_seller_trust: 'low',
+      },
+      expectedVerdictFamily: 'hold',
+      expectedHoldSubtype: 'conflicting',
+    },
+    {
+      id: 'sweeper_media_bonus_pressure',
+      family: 'media / cast motive / rewatch frequency / limited edition / bonus pressure',
+      itemKind: 'goods',
+      goodsClass: 'media',
+      answers: {
+        q_desire: 4,
+        q_budget_pain: 'some',
+        q_price_feel: 'normal',
+        q_regret_impulse: 'calm',
+        q_goal: 'single',
+        q_motives_multi: ['content', 'bonus', 'seiyuu_cast'],
+        q_addon_common_info: 'enough',
+        q_addon_media_motive: 'cast_performer',
+        q_addon_media_support_scope: 'one_oshi',
+        q_addon_media_collection_budget: 'balanced',
+        q_addon_media_edition_intent: 'limited_preferred',
+        q_addon_media_bonus_importance: 'high',
+        q_addon_media_multi_store_tolerance: 'all_bonuses_or_bust',
+        q_addon_media_split_order_burden: 'high',
+        q_addon_media_random_goods_intent: 'none',
+        q_addon_voice_cd_kind: 'store_bonus_audio',
+        q_addon_voice_cast_check: 'important_confirmed',
+        q_addon_voice_bonus_is_audio: 'core_audio',
+        q_addon_voice_listen_timing: 'archive_main',
+      },
+    },
+    {
+      id: 'sweeper_high_desire_low_necessity',
+      family: 'high desire + low necessity',
+      itemKind: 'goods',
+      answers: {
+        q_desire: 5,
+        q_budget_pain: 'some',
+        q_price_feel: 'high',
+        q_regret_impulse: 'fomo',
+        q_goal: 'single',
+        q_motives_multi: ['vague', 'fomo'],
+        q_addon_common_info: 'enough',
+      },
+    },
+    {
+      id: 'sweeper_mild_middle_hold',
+      family: 'mild middle-band hold',
+      itemKind: 'goods',
+      answers: {
+        q_desire: 4,
+        q_budget_pain: 'some',
+        q_price_feel: 'unknown',
+        q_regret_impulse: 'calm',
+        q_goal: 'single',
+        q_motives_multi: ['use'],
+        q_addon_common_info: 'lack',
+      },
+      expectedVerdictFamily: 'hold',
+    },
+    {
+      id: 'sweeper_low_restock_expectation',
+      family: 'low rerun/reprint expectation',
+      itemKind: 'preorder',
+      answers: {
+        q_desire: 2,
+        q_budget_pain: 'ok',
+        q_price_feel: 'low',
+        q_regret_impulse: 'calm',
+        q_goal: 'single',
+        q_motives_multi: ['content'],
+        q_addon_common_info: 'enough',
+        q_rarity_restock: 'unlikely',
+        q_urgency: 'low_stock',
+        q_alternative_plan: 'clear',
+      },
+    },
+    {
+      id: 'sweeper_ambiguous_legitimate_hold',
+      family: 'ambiguous-but-legitimate hold',
+      itemKind: 'goods',
+      answers: {
+        q_desire: 4,
+        q_budget_pain: 'ok',
+        q_price_feel: 'unknown',
+        q_regret_impulse: 'calm',
+        q_addon_common_info: 'lack',
+        q_addon_goods_event_limit_context: 'venue_limited',
+        q_addon_goods_post_event_mailorder: 'unknown',
+        q_addon_goods_wait_tolerance: 'unknown',
+        q_addon_goods_used_fallback: 'unknown',
+      },
+      expectedVerdictFamily: 'hold',
+      expectedHoldSubtype: 'needs_check',
+    },
+    {
+      id: 'sweeper_clear_skip',
+      family: 'cases that should clearly land closer to BUY / HOLD / SKIP',
+      itemKind: 'goods',
+      answers: {
+        q_desire: 1,
+        q_budget_pain: 'force',
+        q_price_feel: 'high',
+        q_regret_impulse: 'fomo',
+        q_addon_common_info: 'lack',
+        q_goal: 'set',
+        q_motives_multi: ['vague', 'fomo'],
+      },
+      expectedVerdictFamily: 'stop',
+    },
+  ];
+
+  return scenarios.map((scenario) => {
+    const goodsClass = scenario.goodsClass ?? 'small_collection';
+    const mode = scenario.mode ?? 'long';
+    const output = buildEvaluatedOutput(scenario.itemKind, scenario.answers, goodsClass);
+    assertResultContractCoherence(scenario.id, output);
+    assertStyleModeInvariantForScenario(scenario.id, scenario.itemKind, goodsClass, mode, scenario.answers);
+    if (scenario.expectedVerdictFamily && output.verdictFamily !== scenario.expectedVerdictFamily) {
+      throw new Error(`${scenario.id}: expected verdict family ${scenario.expectedVerdictFamily}, got ${output.verdictFamily}`);
+    }
+    if (scenario.expectedHoldSubtype && output.holdSubtype !== scenario.expectedHoldSubtype) {
+      throw new Error(`${scenario.id}: expected hold subtype ${scenario.expectedHoldSubtype}, got ${output.holdSubtype}`);
+    }
+    return {
+      id: scenario.id,
+      family: scenario.family,
+      itemKind: scenario.itemKind,
+      goodsClass,
+      selectedAnswers: scenario.answers,
+      verdict: output.decision,
+      verdictFamily: output.verdictFamily,
+      holdSubtype: output.holdSubtype ?? null,
+      score: output.score,
+      band: output.bandTrace?.effectiveBandHalfWidth ?? null,
+      lean: getLeanDisplay(output.decision, output.score),
+      positiveFactors: output.positiveFactors ?? [],
+      negativeFactors: output.negativeFactors ?? [],
+      blocker: output.blockingFactors?.[0] ?? null,
+      whyNotBuyYet: output.whyNotBuyYet,
+      whyNotSkipYet: output.whyNotSkipYet,
+      nextStep: output.actions[0]?.text ?? null,
+      diagnosticsDisplayVerdictKey: output.displayVerdictKey,
+      traceFactorIds: (output.diagnosticTrace?.resultInputsSummary?.factorContributions ?? []).map((entry) => ({
+        dimension: entry.dimension,
+        direction: entry.direction,
+        label: entry.label,
+      })),
+    };
   });
 }
 
@@ -1887,7 +2196,16 @@ function runStyleInvariantCheck() {
     answers: makeAnswers(other.questions),
     mode: 'medium',
   });
-  if (outBase.decision !== outOther.decision || outBase.holdSubtype !== outOther.holdSubtype || Math.round(outBase.score * 1000) !== Math.round(outOther.score * 1000)) {
+  if (
+    outBase.decision !== outOther.decision ||
+    outBase.verdictFamily !== outOther.verdictFamily ||
+    outBase.holdSubtype !== outOther.holdSubtype ||
+    outBase.displayVerdictKey !== outOther.displayVerdictKey ||
+    Math.round(outBase.score * 1000) !== Math.round(outOther.score * 1000) ||
+    JSON.stringify(outBase.positiveFactors ?? []) !== JSON.stringify(outOther.positiveFactors ?? []) ||
+    JSON.stringify(outBase.negativeFactors ?? []) !== JSON.stringify(outOther.negativeFactors ?? []) ||
+    JSON.stringify(outBase.diagnosticTrace?.resultInputsSummary?.factorContributions ?? []) !== JSON.stringify(outOther.diagnosticTrace?.resultInputsSummary?.factorContributions ?? [])
+  ) {
     throw new Error('style_invariant: style mode changed scoring outcome');
   }
 }
@@ -1932,6 +2250,7 @@ runVoiceMediaAcceptanceChecks();
 runTrustRepairAcceptanceChecks();
 const bandNarrowingAcceptance = runBandNarrowingAcceptanceChecks();
 const canonicalVerdictAcceptance = runCanonicalVerdictAcceptanceChecks();
+const resultContractSweeper = runResultContractScenarioSweeper();
 runHomepageFunnelChecks();
 runDraftInvalidationCheck();
 runReplaySeedCheck();
@@ -1983,11 +2302,13 @@ const report = {
     homepageFunnel: "pass",
     draftInvalidation: "pass",
     replaySeed: "pass",
+    resultContractSweeper: "pass",
     bandNarrowing: bandNarrowingAcceptance,
     canonicalVerdict: canonicalVerdictAcceptance,
   },
   blindDrawAcceptanceCases,
   mediaEditionAcceptanceCases,
+  resultContractSweeper,
   uniquePathGaps,
 };
 
