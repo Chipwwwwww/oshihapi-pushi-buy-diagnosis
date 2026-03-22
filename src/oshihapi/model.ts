@@ -21,6 +21,9 @@ export type GoodsClass =
 export type QuestionType = 'single' | 'multi' | 'scale' | 'number' | 'text';
 
 export type Decision = 'BUY' | 'THINK' | 'SKIP';
+export type VerdictFamily = 'buy' | 'hold' | 'stop';
+export type DisplayVerdictKey = 'buy' | 'stop' | 'hold_needs_check' | 'hold_conflicting' | 'hold_timing_wait';
+export type ConfidenceLevel = 'high' | 'medium' | 'low';
 export type RandomGoodsPlannerPath =
   | 'continue_a_little_more'
   | 'stop_now'
@@ -57,11 +60,9 @@ export type VenueLimitedPlannerPath =
   | 'buy_live_goods_now_if_it_matches_core_motive'
   | 'skip_atmosphere_driven_goods_chase';
 export type HoldSubtype =
-  | 'info_missing'
-  | 'budget_pain'
-  | 'impulse_cooldown'
-  | 'condition_not_ready'
-  | 'risk_uncertain';
+  | 'needs_check'
+  | 'conflicting'
+  | 'timing_wait';
 export type MerchMethod = 'USED_SINGLE' | 'BOX' | 'BLIND_DRAW' | 'PASS';
 
 export type ScoreDimension =
@@ -180,6 +181,16 @@ export type ResultInputsSummaryTrace = {
   futureUseFlag: boolean;
   downgradeFlags: string[];
   bandTrace?: ResultBandTrace;
+  verdictFamily?: VerdictFamily;
+  holdSubtype?: HoldSubtype | null;
+  displayVerdictKey?: DisplayVerdictKey;
+  confidenceLevel?: ConfidenceLevel;
+  verdictStrength?: 'strong' | 'clear' | 'lean';
+  rawDecision?: Decision;
+  buySignals?: string[];
+  stopSignals?: string[];
+  blockers?: string[];
+  holdTriggers?: string[];
 };
 
 export type RandomGoodsPlan = {
@@ -324,6 +335,10 @@ export type DecisionOutput = {
   bandTrace?: ResultBandTrace;
   decision: Decision;
   holdSubtype?: HoldSubtype;
+  verdictFamily?: VerdictFamily;
+  displayVerdictKey?: DisplayVerdictKey;
+  confidenceLevel?: ConfidenceLevel;
+  verdictStrength?: 'strong' | 'clear' | 'lean';
   confidence: number; // 0-100
   score: number; // -1..+1
   scoreSummary: Record<ScoreDimension, number>; // 0-100

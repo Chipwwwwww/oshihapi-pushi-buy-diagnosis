@@ -60,11 +60,11 @@ export function computeResultBandTrace(input: {
   const noTrustGate = !hasDowngradeFlag(output, (value) => value.endsWith('_trust_gate_active'));
   const notFallbackDegraded = !hasDowngradeFlag(output, (value) => value.startsWith('force_hold_unknown_count_'));
   const confidenceFloor = output.decision === 'THINK' ? 47 : 64;
-  const notLowConfidence = output.confidence >= confidenceFloor && output.holdSubtype !== 'info_missing';
+  const notLowConfidence = output.confidence >= confidenceFloor && output.holdSubtype !== 'needs_check';
 
   const decisionAligned =
     output.decision === 'THINK'
-      ? output.confidence >= confidenceFloor && output.holdSubtype != null && output.holdSubtype !== 'info_missing'
+      ? output.confidence >= confidenceFloor && output.holdSubtype != null && output.holdSubtype !== 'needs_check'
       : Math.abs(output.score) >= 0.22 && output.confidence >= confidenceFloor;
 
   const scoreSummary = output.scoreSummary;

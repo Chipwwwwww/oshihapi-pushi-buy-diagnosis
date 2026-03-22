@@ -98,6 +98,9 @@ export const MODE_DICTIONARY: Record<ResultMode, ModeDefinition> = {
       },
       waitTypeLabel: {
         none: "待機なし",
+        needs_check: "要確認保留",
+        conflicting: "衝突保留",
+        timing_wait: "タイミング待ち",
         short: "短め",
         long: "長め",
       },
@@ -129,6 +132,9 @@ export const MODE_DICTIONARY: Record<ResultMode, ModeDefinition> = {
       buy: "条件がそろっているので前向きに進めてOK。上限を先に決めると安心です。",
       wait: {
         none: "迷いが残るときは、情報を1つ足してから再判断すると納得しやすくなります。",
+        needs_check: "今は決め切らず、結論を動かす確認項目を先に1つ潰しましょう。",
+        conflicting: "強い賛成材料と強い反対材料が衝突中です。今日は押し切らない方が安全です。",
+        timing_wait: "アイテム自体より買う時期が不利です。再販・中古・相場の動きを待つ方が自然です。",
         short: "短めの待機で熱量を落ち着かせると、判断の精度が上がります。",
         long: "長めに待っても欲しさが続くか確認すると、後悔リスクを抑えられます。",
       },
@@ -163,6 +169,9 @@ export const MODE_DICTIONARY: Record<ResultMode, ModeDefinition> = {
       },
       waitTypeLabel: {
         none: "いったん様子見",
+        needs_check: "まず確認して保留",
+        conflicting: "気持ちがぶつかって保留",
+        timing_wait: "いまは待ちどき",
         short: "ちょこっと待つ",
         long: "ゆっくり待つ",
       },
@@ -194,6 +203,9 @@ export const MODE_DICTIONARY: Record<ResultMode, ModeDefinition> = {
       buy: "いまの条件なら進んでよさそう。予算ラインだけ決めて、気持ちよくお迎えしよう。",
       wait: {
         none: "まだ迷いがあるから、情報をひとつ足してから決めると安心だよ。",
+        needs_check: "まず大事な確認をひとつ済ませてから決めると、かなり安心だよ。",
+        conflicting: "ほしい気持ちと止めたい理由がぶつかってるよ。今日はむりに決めなくてOK。",
+        timing_wait: "モノは悪くないけど、いま動く時期がちょっと不利かも。少し待つ方が自然だよ。",
         short: "ちょこっと待つと、気持ちが整って答えが見えやすくなるよ。",
         long: "ゆっくり待っても欲しいなら、本当に大事な買い物ってわかるよ。",
       },
@@ -228,6 +240,9 @@ export const MODE_DICTIONARY: Record<ResultMode, ModeDefinition> = {
       },
       waitTypeLabel: {
         none: "待機なし",
+        needs_check: "要確認保留",
+        conflicting: "衝突保留",
+        timing_wait: "タイミング待機",
         short: "小休止",
         long: "作戦待機",
       },
@@ -259,6 +274,9 @@ export const MODE_DICTIONARY: Record<ResultMode, ModeDefinition> = {
       buy: "回収条件はそろってる。上限だけ先に固定して、気持ちよくお迎えしよう。",
       wait: {
         none: "判断材料を1つ足してから再判定すると、納得度が上がる。",
+        needs_check: "いまは重要チェックを先に通すターン。確認が済めば結論はかなり固まる。",
+        conflicting: "回収したい理由と止める理由が強く衝突中。今日は押し切り回収しない方が安全。",
+        timing_wait: "案件自体は悪くないが、出動タイミングが不利。再販・中古・相場待機が有効。",
         short: "小休止で熱量を整えると、取り逃し不安に流されにくい。",
         long: "作戦待機しても欲しいなら、優先度の高い案件と判断しやすい。",
       },

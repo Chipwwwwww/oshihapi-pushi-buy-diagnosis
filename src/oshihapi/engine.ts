@@ -27,6 +27,7 @@ import { buildPresentation } from './decisionPresentation';
 import { computeResultBandTrace } from './bandNarrowing';
 import { shouldAskStorage } from './storageGate';
 import { resolveScenarioKey } from './scenarioCoverage';
+import { resolveCanonicalVerdict, toConfidenceLevel, toVerdictStrength } from './verdictModel';
 
 type EvaluateInput = {
   config?: EngineConfig;
@@ -1167,18 +1168,15 @@ function computeFactorBuckets(scores: Record<ScoreDimension, number>, unknownCou
 
 function determineHoldSubtype(buckets: FactorBuckets, unknownCount: number): { subtype: HoldSubtype; reason: string } {
   if (unknownCount >= 2 || buckets.uncertaintyUnknowns >= 66) {
-    return { subtype: 'info_missing', reason: '情報不足が多く、判断に必要な確度が足りない。' };
+    return { subtype: 'needs_check', reason: '結論を変えうる確認項目が残っている。' };
   }
-  if (buckets.budgetPressure >= 70) {
-    return { subtype: 'budget_pain', reason: '予算負担が重く、現時点では支出優先度が合っていない。' };
+  if (
+    (buckets.desireAttachment >= 72 || buckets.urgencyOpportunity >= 70) &&
+    (buckets.budgetPressure >= 68 || buckets.impulseVolatility >= 68 || buckets.itemKindRisk >= 68)
+  ) {
+    return { subtype: 'conflicting', reason: '買う理由と止める理由が強く衝突している。' };
   }
-  if (buckets.impulseVolatility >= 68) {
-    return { subtype: 'impulse_cooldown', reason: '気分の勢いが強く、冷却後の再評価が必要。' };
-  }
-  if (buckets.readinessLogistics >= 67) {
-    return { subtype: 'condition_not_ready', reason: '利用・保管・運用条件が整っていない。' };
-  }
-  return { subtype: 'risk_uncertain', reason: '種別固有のリスクに対して、確信が不足している。' };
+  return { subtype: 'timing_wait', reason: 'モノ自体は否定しないが、今動くタイミングが良くない。' };
 }
 
 type TrustGateOutcome = {
@@ -1339,15 +1337,13 @@ function buildExplanations(params: {
   const whyNotBuyYet =
     decision === 'BUY'
       ? 'BUY判定に必要な条件を満たしている。'
-      : holdSubtype === 'budget_pain'
-        ? '予算負担が高く、買う根拠より痛みが勝っているため。'
-        : holdSubtype === 'info_missing'
-          ? '相場・状態・条件の未確認が残り、買う確信を作れないため。'
-          : holdSubtype === 'impulse_cooldown'
-            ? '勢いによる判断誤差を除く前段階のため。'
-            : holdSubtype === 'condition_not_ready'
-              ? '使い道/保管/運用条件が整っていないため。'
-              : 'リスクに対して見返り確信が不足しているため。';
+      : holdSubtype === 'needs_check'
+        ? '相場・状態・条件など、1つの重要確認で結論が動く余地があるため。'
+        : holdSubtype === 'conflicting'
+          ? '買う理由と止める理由が強く衝突し、押し切るには危険なため。'
+          : holdSubtype === 'timing_wait'
+            ? 'アイテムの良し悪しではなく、今の買い時が不利なため。'
+            : 'リスクに対して見返り確信が不足しているため。';
 
   const whyNotSkipYet =
     decision === 'SKIP'
@@ -1789,6 +1785,7 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
   let confidence = Math.round(72 + Math.abs(scoreSigned) * 32 - ambiguity * 22 - unknownCount * 6 - (scoreSpread >= 15 ? 4 : 0));
   if (decision === 'THINK') confidence -= 5;
   confidence = clamp(0, 100, confidence);
+  const storageNeedsCheck = shouldAskStorage(input.meta.itemKind, input.meta.goodsSubtype) && (input.answers.q_storage_fit === 'NONE' || input.answers.q_storage_fit === 'UNKNOWN');
 
   if (shouldAskStorage(input.meta.itemKind, input.meta.goodsSubtype)) {
     const storageFit = input.answers.q_storage_fit;
@@ -1800,8 +1797,8 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
       reasons.push({ id: 'storage_unconfirmed', severity: 'warn', text: storageGuidance.reason });
       actions.push({ id: 'storage_plan_first', text: storageGuidance.action });
       if (decision === 'THINK') {
-        holdSubtype = 'condition_not_ready';
-        subtypeReason = '保管・運用条件の未確定が主な保留理由。';
+        holdSubtype = 'needs_check';
+        subtypeReason = '保管・運用条件の確認が済むまで結論を固定しない方が安全。';
       }
     }
   }
@@ -1817,8 +1814,8 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     if (decision === 'BUY' || trustGate.forceHold) {
       decision = 'THINK';
     }
-    holdSubtype = 'info_missing';
-    subtypeReason = '重要な前提が未回答のため、いったん弱めの保留に落としています。';
+    holdSubtype = 'needs_check';
+    subtypeReason = '重要な前提が未回答で、1つの確認で結論が動く可能性があります。';
     reasons.unshift({
       id: `${trustGate.scenario}_trust_gate`,
       severity: 'warn',
@@ -1830,11 +1827,40 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     });
   }
 
+  const rawDecision = decision;
+  const canonicalVerdict = resolveCanonicalVerdict({
+    rawDecision,
+    scoreSigned,
+    holdBand,
+    unknownCount,
+    factorBuckets,
+    trustGateActive: Boolean(trustGate?.active),
+    storageNeedsCheck,
+    randomGoodsPlan,
+    mediaEditionPlan,
+    venueLimitedGoodsPlan,
+  });
+  decision = canonicalVerdict.decision;
+  holdSubtype = canonicalVerdict.holdSubtype;
+  if (decision !== 'THINK') {
+    subtypeReason = undefined;
+  } else if (holdSubtype === 'needs_check') {
+    subtypeReason = subtypeReason ?? 'まず1つの重要確認を済ませてから決めるケースです。';
+  } else if (holdSubtype === 'conflicting') {
+    subtypeReason = '買う根拠と止める根拠が強く衝突しているため、今は無理に決めない方が安全です。';
+  } else if (holdSubtype === 'timing_wait') {
+    subtypeReason = 'アイテム自体の否定ではなく、今このタイミングを外す判断です。';
+  }
+
+  const confidenceLevel = toConfidenceLevel(confidence);
+  const verdictStrength = toVerdictStrength(scoreSigned);
+
   const downgradeFlags: string[] = [];
   if (unknownCount >= 3) downgradeFlags.push('unknown_count_ge_3');
   if (unknownCount >= 5) downgradeFlags.push('force_hold_unknown_count_ge_5');
   if (impulseFlag) downgradeFlags.push('impulse_nudge_applied');
   if (holdSubtype) downgradeFlags.push(`hold_subtype_${holdSubtype}`);
+  if (canonicalVerdict.canonicalDecisionChanged) downgradeFlags.push(`canonical_verdict_promoted_to_${canonicalVerdict.verdictFamily}`);
   if (trustGate?.active) downgradeFlags.push(`${trustGate.tag}_active`);
   if (randomGoodsPlan) {
     downgradeFlags.push(`random_goods_path_${randomGoodsPlan.chosenPath}`);
@@ -1861,6 +1887,10 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     output: {
       decision,
       holdSubtype,
+      verdictFamily: canonicalVerdict.verdictFamily,
+      displayVerdictKey: canonicalVerdict.displayVerdictKey,
+      confidenceLevel,
+      verdictStrength,
       confidence,
       score: clamp(-1, 1, scoreSigned),
       scoreSummary: scores,
@@ -1891,6 +1921,16 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
           impulseFlag,
           futureUseFlag,
           downgradeFlags,
+          verdictFamily: canonicalVerdict.verdictFamily,
+          holdSubtype: canonicalVerdict.holdSubtype ?? null,
+          displayVerdictKey: canonicalVerdict.displayVerdictKey,
+          confidenceLevel,
+          verdictStrength,
+          rawDecision,
+          buySignals: getTopFactors(scores, 'positive'),
+          stopSignals: getTopFactors(scores, 'negative'),
+          blockers: explain.blockingFactors,
+          holdTriggers: canonicalVerdict.holdTriggers,
         },
         mediaEditionPlan,
         randomGoodsPlan,
@@ -1902,6 +1942,10 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
   return {
     decision,
     holdSubtype,
+    verdictFamily: canonicalVerdict.verdictFamily,
+    displayVerdictKey: canonicalVerdict.displayVerdictKey,
+    confidenceLevel,
+    verdictStrength,
     confidence,
     score: clamp(-1, 1, scoreSigned),
     scoreSummary: scores,
@@ -1933,6 +1977,16 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
         impulseFlag,
         futureUseFlag,
         downgradeFlags,
+        verdictFamily: canonicalVerdict.verdictFamily,
+        holdSubtype: canonicalVerdict.holdSubtype ?? null,
+        displayVerdictKey: canonicalVerdict.displayVerdictKey,
+        confidenceLevel,
+        verdictStrength,
+        rawDecision,
+        buySignals: positiveFactors,
+        stopSignals: negativeFactors,
+        blockers: explain.blockingFactors,
+        holdTriggers: canonicalVerdict.holdTriggers,
         bandTrace,
       },
       mediaEditionPlan,

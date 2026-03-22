@@ -77,11 +77,9 @@ export function pickReasons(ctx: RuleContext): ReasonItem[] {
 
   if (ctx.decision === 'THINK' && ctx.holdSubtype) {
     const subtypeReason: Record<HoldSubtype, string> = {
-      info_missing: '判断に必要な確認情報が不足。',
-      budget_pain: '予算の痛みが強く、無理買いの可能性あり。',
-      impulse_cooldown: '勢い判断の可能性が高く、冷却が有効。',
-      condition_not_ready: '使う前提条件（置き場/運用）が未整備。',
-      risk_uncertain: '種別特有のリスク評価が不十分。',
+      needs_check: '結論を動かしうる確認項目が残っています。',
+      conflicting: '買う理由と止める理由が強くぶつかっています。',
+      timing_wait: 'モノ自体より、今このタイミングが不利です。',
     };
     r.push({ id: `hold_${ctx.holdSubtype}`, severity: 'warn', text: subtypeReason[ctx.holdSubtype] });
   }
@@ -114,20 +112,14 @@ export function pickActions(ctx: RuleContext): ActionItem[] {
     a.push({ id: 'budget_cap', text: '上限予算を決めて、超えたら見送る' });
   }
 
-  if (ctx.holdSubtype === 'info_missing') {
+  if (ctx.holdSubtype === 'needs_check') {
     a.push({ id: 'info_gap_close', text: '未確認情報を2点だけ埋めて再診断（相場/状態/条件）' });
   }
-  if (ctx.holdSubtype === 'budget_pain') {
-    a.push({ id: 'budget_defer', text: '予算上限を先に固定し、24h後に再評価' });
+  if (ctx.holdSubtype === 'conflicting') {
+    a.push({ id: 'conflict_sort', text: '欲しい理由と止める理由を1つずつ書き出し、どちらが重いか整理する' });
   }
-  if (ctx.holdSubtype === 'impulse_cooldown') {
-    a.push({ id: 'cooldown_tomorrow', text: '明日同じ条件で再判断（気分ノイズを除去）' });
-  }
-  if (ctx.holdSubtype === 'condition_not_ready') {
-    a.push({ id: 'condition_prep', text: '用途・置き場・運用条件を先に確定する' });
-  }
-  if (ctx.holdSubtype === 'risk_uncertain') {
-    a.push({ id: 'risk_verify', text: '真贋/日程/再販/天井のリスク根拠を確認する' });
+  if (ctx.holdSubtype === 'timing_wait') {
+    a.push({ id: 'timing_wait', text: '再販・中古・相場落ちの見込みがあるかを見て、動く時期をずらす' });
   }
 
   if (ctx.blindDrawCap != null) {

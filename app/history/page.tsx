@@ -43,6 +43,12 @@ const decisionLabels: Record<string, string> = {
   SKIP: "やめる",
 };
 
+const holdSubtypeLabels: Record<string, string> = {
+  needs_check: "要確認保留",
+  conflicting: "衝突保留",
+  timing_wait: "タイミング待ち",
+};
+
 const itemKindLabels: Record<string, string> = {
   goods: "グッズ",
   blind_draw: "盲抽",
@@ -198,12 +204,16 @@ export default function HistoryPage() {
               const formatted = formatResultByMode({
                 runId: run.runId,
                 verdict: run.output.decision as Verdict,
-                waitType: outputExt.waitType,
+                waitType: outputExt.waitType ?? (run.output.decision === "THINK" ? run.output.holdSubtype : undefined),
                 reasons: run.output.reasons.map((reason) => reason.text),
                 reasonTags: outputExt.reasonTags ?? [],
                 actions: run.output.actions.map((action) => action.text),
                 mode: resultMode,
               });
+              const decisionLabel =
+                run.output.decision === "THINK" && run.output.holdSubtype
+                  ? holdSubtypeLabels[run.output.holdSubtype] ?? decisionLabels[run.output.decision]
+                  : decisionLabels[run.output.decision];
 
               const replayFromHistory = () => {
                 const draft = createReplayDraft(run, resultMode);
@@ -227,9 +237,9 @@ export default function HistoryPage() {
                     <Badge variant="outline">衝動度: {impulseLabel(run)}</Badge>
                   </div>
                   <div className="space-y-2">
-                    <p className="text-lg font-semibold text-foreground">{formatted.sticker} {decisionLabels[run.output.decision]}</p>
+                    <p className="text-lg font-semibold text-foreground">{formatted.sticker} {decisionLabel}</p>
                     {run.output.holdSubtype ? (
-                      <p className="text-xs text-muted-foreground">保留タイプ: {run.output.holdSubtype}</p>
+                      <p className="text-xs text-muted-foreground">保留タイプ: {holdSubtypeLabels[run.output.holdSubtype] ?? run.output.holdSubtype}</p>
                     ) : null}
                     <p className="line-clamp-1 text-sm text-muted-foreground">{formatted.shareTextDmShort}</p>
                     {marketMemos[run.runId] ? (
