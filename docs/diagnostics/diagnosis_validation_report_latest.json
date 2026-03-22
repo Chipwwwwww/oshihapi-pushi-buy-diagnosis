@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-22T14:02:31.083Z",
+  "generatedAt": "2026-03-22T15:01:28.372Z",
   "scenarioCount": 32,
   "scenarios": [
     {
@@ -29,8 +29,8 @@
         "holdSubtype": "needs_check",
         "confidence": 40,
         "score": -0.013936153846153859,
-        "reasonCount": 5,
-        "actionCount": 4
+        "reasonCount": 4,
+        "actionCount": 3
       }
     },
     {
@@ -61,8 +61,8 @@
         "holdSubtype": "needs_check",
         "confidence": 38,
         "score": -0.02615492307692306,
-        "reasonCount": 5,
-        "actionCount": 4
+        "reasonCount": 4,
+        "actionCount": 3
       }
     },
     {
@@ -248,8 +248,8 @@
         "holdSubtype": "needs_check",
         "confidence": 38,
         "score": 0.041104615384615406,
-        "reasonCount": 6,
-        "actionCount": 4
+        "reasonCount": 5,
+        "actionCount": 3
       }
     },
     {
@@ -456,8 +456,8 @@
         "holdSubtype": "needs_check",
         "confidence": 38,
         "score": 0.041104615384615406,
-        "reasonCount": 6,
-        "actionCount": 4
+        "reasonCount": 5,
+        "actionCount": 3
       }
     },
     {
@@ -1067,8 +1067,8 @@
         "holdSubtype": "needs_check",
         "confidence": 40,
         "score": 0.05811892307692309,
-        "reasonCount": 5,
-        "actionCount": 4
+        "reasonCount": 4,
+        "actionCount": 3
       }
     },
     {
@@ -1126,8 +1126,8 @@
         "holdSubtype": "needs_check",
         "confidence": 40,
         "score": 0.04469892307692305,
-        "reasonCount": 5,
-        "actionCount": 4
+        "reasonCount": 4,
+        "actionCount": 3
       }
     },
     {
