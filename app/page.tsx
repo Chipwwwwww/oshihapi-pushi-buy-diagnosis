@@ -210,6 +210,7 @@ export default function Home() {
         <h1 className={pageTitleClass}>推し買い診断</h1>
         <p className={bodyTextClass}>推し活の買い物で後悔を減らすための、購入判断サポート診断。</p>
         <p className="text-sm text-slate-600 dark:text-zinc-300">手がかり入力は任意です。空欄でも診断を始められ、入力があると候補の絞り込み精度を少し上げられます。</p>
+        <p className="text-xs text-slate-500 dark:text-zinc-400">CD・Blu-ray・書籍のメディア判断では VT 文脈も扱います。チケット・遠征・会員/サブスク・スパチャは対象外です。</p>
         <p className="text-xs text-slate-500 dark:text-zinc-400">※ まとめ買い（β）は検証中です <Link href="/basket" className="underline underline-offset-2">βページを見る</Link></p>
       </header>
 
@@ -384,16 +385,17 @@ export default function Home() {
             <Badge variant="accent">空欄でも開始できます</Badge>
           </div>
           <p className="text-sm text-slate-600 dark:text-zinc-300">商品名が正確でなくても使えます。入力があると、特典・在庫・予約状況の確認精度を少し上げられます。</p>
+          <p className="text-xs text-slate-500 dark:text-zinc-400">例: VT / ユニット名 + 初回限定 + Blu-ray、VT + 特典付きCD、VT 写真集 + 法人特典。公式グッズ・ボイス・遠征系はここでは広げません。</p>
         </div>
         <div className="grid gap-3">
           <textarea
             value={searchClue}
             onChange={(event) => setSearchClue(event.target.value)}
-            placeholder={"例：作品名＋缶バッジ / 初回限定 Blu-ray / 特典付きCD"}
+            placeholder={"例：作品名＋缶バッジ / VT＋初回限定 Blu-ray / VT＋特典付きCD / VT 写真集＋法人特典"}
             className="min-h-24 w-full rounded-2xl border border-accent/30 bg-slate-50 px-4 py-3 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-accent focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent/20 dark:border-accent/30 dark:bg-[#111827] dark:text-zinc-50 dark:placeholder:text-zinc-400"
             aria-label="商品名・作品名・キャラ名・手がかり（任意）"
           />
-          <p className="text-sm text-slate-600 dark:text-zinc-300">商品名がわからなくても、作品名・キャラ名・価格・特典の手がかりで使えます。</p>
+          <p className="text-sm text-slate-600 dark:text-zinc-300">商品名がわからなくても、作品名・キャラ名・価格・特典の手がかりで使えます。VT 系でも CD / BD / 書籍なら既存のメディア診断に載せられます。</p>
         </div>
       </Card>
 

@@ -195,18 +195,18 @@ export const SCENARIO_COVERAGE_MAP: Record<ScenarioKey, ScenarioCoverageEntry> =
     supportLevel: "strong",
     homepagePriority: "primary",
     heroOrder: 4,
-    shopperIntent: "CD・映像・書籍を今買うか、比較して決めたい",
+    shopperIntent: "CD・映像・書籍を今買うか、比較して決めたい（VT メディアを含む）",
     recommendedEntryLabel: "CD・映像・書籍を買うべきか迷う",
-    compactEntryHint: "仕様差・特典差・再生環境を比較できます。",
-    providerEcologyHint: "メディア系は再生/閲覧環境、特典差、限定版、再入手性の比較が中心です。",
-    resultExplanationHint: "保存・視聴・特典のバランスを見て、どこに価値があるかを説明します。",
+    compactEntryHint: "仕様差・特典差・再生環境を比較できます。VT の CD / BD / 書籍もこの枠です。",
+    providerEcologyHint: "メディア系は再生/閲覧環境、特典差、限定版、再入手性の比較が中心です。VT 文脈も既存メディア provider の範囲で扱います。",
+    resultExplanationHint: "保存・視聴・特典のバランスを見て、どこに価値があるかを説明します。VT でも診断の軸はメディア差分確認のままです。",
     optimizationSummary: "仕様差・特典差・使い道のバランス",
     questionHint: "このフローでは、視聴環境・限定版圧・中身目的か特典目的かをはっきりさせます。",
     flowHelperHint: "仕様差と特典の優先度を確認中",
-    verificationHint: "仕様違い、店舗別特典、視聴環境、在庫状況は外部で最終確認してください。",
-    shortVerificationHint: "仕様差・店舗特典・在庫は外部で最終確認。",
-    scopeDisclosure: "メディア購入判断は強めですが、配信サービス横断の完全比較まではしていません。",
-    shortScopeDisclosure: "メディア購入は強め対応。配信横断の完全比較は対象外です。",
+    verificationHint: "仕様違い、店舗別特典、視聴環境、在庫状況は外部で最終確認してください。VT の CD / BD / 書籍でも、版違い・法人特典・初回条件の確認が重要です。",
+    shortVerificationHint: "仕様差・法人/店舗特典・在庫は外部で最終確認。",
+    scopeDisclosure: "メディア購入判断は強めで、VT の CD / BD / 書籍も既存 media 枠で扱います。一方でチケット、遠征、会員/サブスク、スパチャ、ボイス系デジタル商品は対象外です。",
+    shortScopeDisclosure: "VT は CD / BD / 書籍のみ media 枠で対応。チケット・遠征・会員/スパチャ・ボイスは対象外です。",
     diagnosticsTag: "coverage_media_strong",
   },
   multi_edition_media: {
@@ -802,7 +802,7 @@ function hasBonusSignals(parsedSearchClues?: ParsedSearchClues, searchClueRaw?: 
 }
 
 function hasMediaSignals(parsedSearchClues?: ParsedSearchClues): boolean {
-  return Boolean(parsedSearchClues?.itemTypeCandidates.some((candidate) => candidate === "CD" || candidate === "Blu-ray"));
+  return Boolean(parsedSearchClues?.itemTypeCandidates.some((candidate) => candidate === "CD" || candidate === "Blu-ray" || candidate === "書籍"));
 }
 
 function hasMediaEditionSignals(input: ScenarioResolutionInput): boolean {
