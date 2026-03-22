@@ -28,6 +28,7 @@ import { computeResultBandTrace } from './bandNarrowing';
 import { shouldAskStorage } from './storageGate';
 import { resolveScenarioKey } from './scenarioCoverage';
 import { resolveCanonicalVerdict, toConfidenceLevel, toVerdictStrength } from './verdictModel';
+import { buildUsedExitPlan } from './usedExitPlan';
 
 type EvaluateInput = {
   config?: EngineConfig;
@@ -1860,6 +1861,14 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
 
   const confidenceLevel = toConfidenceLevel(confidence);
   const verdictStrength = toVerdictStrength(scoreSigned);
+  const usedExitPlan = buildUsedExitPlan({
+    decision,
+    holdSubtype,
+    itemKind,
+    goodsClass: input.meta.goodsClass,
+    resultTags: tags,
+    holdTriggers: canonicalVerdict.holdTriggers,
+  });
 
   const downgradeFlags: string[] = [];
   if (unknownCount >= 3) downgradeFlags.push('unknown_count_ge_3');
@@ -1937,10 +1946,19 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
           stopSignals: getTopFactors(scores, 'negative'),
           blockers: explain.blockingFactors,
           holdTriggers: canonicalVerdict.holdTriggers,
+          usedExit: {
+            shown: Boolean(usedExitPlan?.providers.length),
+            mode: usedExitPlan?.mode ?? null,
+            providers: usedExitPlan?.providers.map((provider) => provider.key) ?? [],
+            why: usedExitPlan?.why ?? [],
+            checklistFirstSuppressed: usedExitPlan?.mode === 'check_first',
+            suppressPurchaseTone: usedExitPlan?.suppressPurchaseTone === true,
+          },
         },
         mediaEditionPlan,
         randomGoodsPlan,
         venueLimitedGoodsPlan,
+        usedExitPlan,
       },
     },
   });
@@ -1976,6 +1994,7 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     mediaEditionPlan,
     randomGoodsPlan,
     venueLimitedGoodsPlan,
+    usedExitPlan,
     diagnosticTrace: {
       resultInputsSummary: {
         tags: [...tags],
@@ -1993,11 +2012,20 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
         stopSignals: negativeFactors,
         blockers: explain.blockingFactors,
         holdTriggers: canonicalVerdict.holdTriggers,
+        usedExit: {
+          shown: Boolean(usedExitPlan?.providers.length),
+          mode: usedExitPlan?.mode ?? null,
+          providers: usedExitPlan?.providers.map((provider) => provider.key) ?? [],
+          why: usedExitPlan?.why ?? [],
+          checklistFirstSuppressed: usedExitPlan?.mode === 'check_first',
+          suppressPurchaseTone: usedExitPlan?.suppressPurchaseTone === true,
+        },
         bandTrace,
       },
       mediaEditionPlan,
       randomGoodsPlan,
       venueLimitedGoodsPlan,
+      usedExitPlan,
     },
   };
 }

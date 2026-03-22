@@ -1,4 +1,4 @@
-import type { Decision, GoodsClass, ItemKind } from "@/src/oshihapi/model";
+import type { Decision, DisplayVerdictKey, GoodsClass, HoldSubtype, ItemKind } from "@/src/oshihapi/model";
 import type { AmazonAffiliateDestination } from "@/src/oshihapi/amazonAffiliateConfig";
 import { isAmiamiRelevantScenario } from "@/src/oshihapi/amiamiConfig";
 import { isHmvRelevantScenario } from "@/src/oshihapi/hmvConfig";
@@ -77,10 +77,13 @@ type PlannerInput = {
   itemKind?: ItemKind;
   goodsClass?: GoodsClass;
   verdict?: Decision;
+  holdSubtype?: HoldSubtype;
+  displayVerdictKey?: DisplayVerdictKey;
   confidence?: number;
   resultTags?: string[];
   mercariRelevant: boolean;
   mercariKeyword: string | null;
+  surugayaKeyword?: string | null;
   amazonDestination: AmazonAffiliateDestination | null;
   rakutenAffiliateUrl: string | null;
   surugayaDestination: string | null;
@@ -154,6 +157,16 @@ function buildOutHref(params: Record<string, string | undefined>): string {
 function verdictBoost(verdict?: Decision): number {
   if (verdict === "THINK") return -2;
   return 0;
+}
+
+function isUsedOnlyVerdictState(input: Pick<PlannerInput, "holdSubtype" | "verdict" | "displayVerdictKey">) {
+  return (
+    input.holdSubtype === "timing_wait" ||
+    input.holdSubtype === "needs_check" ||
+    input.holdSubtype === "conflicting" ||
+    input.verdict === "SKIP" ||
+    input.displayVerdictKey === "stop"
+  );
 }
 
 function isAmazonScenarioEligible(input: Pick<PlannerInput, "itemKind" | "goodsClass">): boolean {
@@ -1077,7 +1090,7 @@ function buildRawCandidate(providerId: ProviderId, input: PlannerInput): RawProv
 
   if (providerId === "surugaya") {
     const scenarioEligible = isSurugayaRelevantScenario(input.itemKind, input.goodsClass);
-    const destinationReady = Boolean(scenarioEligible && input.surugayaDestination);
+    const destinationReady = Boolean(scenarioEligible && input.surugayaKeyword);
     return {
       providerId,
       rank: baseRank,
@@ -1087,7 +1100,8 @@ function buildRawCandidate(providerId: ProviderId, input: PlannerInput): RawProv
       outHref: destinationReady
         ? buildOutHref({
             provider: providerId,
-            dest: "surugaya-affiliate",
+            dest: "surugaya-search",
+            keyword: input.surugayaKeyword ?? undefined,
             runId: input.runId,
             source: "result_page",
             itemKind: input.itemKind,
@@ -1393,7 +1407,10 @@ export async function planProviderCards(input: PlannerInput): Promise<{
     }
   }
 
-  const deterministicCards = sortTieredCards(lowConfidenceClamp.cards);
+  let deterministicCards = sortTieredCards(lowConfidenceClamp.cards);
+  if (isUsedOnlyVerdictState(input)) {
+    deterministicCards = deterministicCards.filter((card) => card.providerId === "mercari" || card.providerId === "surugaya");
+  }
   const eligibility = getAiEligibility(input, deterministicCards);
   const aiEnabled = isAiRerankEnabled();
   const aiModel = getAiModel();

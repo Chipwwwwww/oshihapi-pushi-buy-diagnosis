@@ -6,6 +6,7 @@ import DecisionScale from "@/components/DecisionScale";
 import ModeToggle from "@/components/ModeToggle";
 import AiConsultCta from "@/components/AiConsultCta";
 import MarketCheckCard from "@/components/MarketCheckCard";
+import UsedExitCard from "@/components/UsedExitCard";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -43,13 +44,14 @@ import {
 import { buildMercariKeyword, isMercariRelevantScenario } from "@/src/oshihapi/mercariKeyword";
 import { resolveAmazonAffiliateDestination } from "@/src/oshihapi/amazonAffiliateConfig";
 import { buildRakutenKeyword } from "@/src/oshihapi/rakutenKeyword";
-import { resolveSurugayaAffiliateDestination } from "@/src/oshihapi/surugayaConfig";
+import { buildSurugayaKeyword, resolveSurugayaAffiliateDestination } from "@/src/oshihapi/surugayaConfig";
 import { resolveAmiamiAffiliateDestination } from "@/src/oshihapi/amiamiConfig";
 import { resolveGamersAffiliateDestination } from "@/src/oshihapi/gamersConfig";
 import { resolveHmvAffiliateDestination } from "@/src/oshihapi/hmvConfig";
 import type { ProviderCandidate, ProviderDiagnostics } from "@/src/oshihapi/providerPlanner";
 import ProviderComparisonModule from "@/components/ProviderComparisonModule";
 import { getScenarioCoverageSummary, getSupportLevelBadgeLabel } from "@/src/oshihapi/scenarioCoverage";
+import { buildUsedExitPlan } from "@/src/oshihapi/usedExitPlan";
 
 const BASKET_STORAGE_KEY = "oshihapi_basket_last";
 const HOLD_SUBTYPE_BADGE_LABEL: Record<string, string> = {
@@ -335,6 +337,17 @@ export default function ResultPage() {
       }),
     [run?.meta.goodsClass, run?.meta.itemKind],
   );
+  const surugayaKeyword = useMemo(
+    () =>
+      run
+        ? buildSurugayaKeyword({
+            rawSearchWord: defaultSearchWord,
+            itemKind: run.meta.itemKind,
+            goodsClass: run.meta.goodsClass,
+          })
+        : null,
+    [defaultSearchWord, run],
+  );
   const amiamiDestination = useMemo(
     () =>
       resolveAmiamiAffiliateDestination({
@@ -378,10 +391,13 @@ export default function ResultPage() {
             itemKind: run.meta.itemKind,
             goodsClass: run.meta.goodsClass,
             verdict: run.output.decision,
+            holdSubtype: run.output.holdSubtype,
+            displayVerdictKey: run.output.displayVerdictKey,
             confidence: run.output.confidence,
             resultTags: run.output.diagnosticTrace?.resultInputsSummary?.tags ?? [],
             mercariRelevant,
             mercariKeyword: mercariKeywordResult.keyword,
+            surugayaKeyword,
             amazonDestination,
             rakutenAffiliateUrl: rakutenItem?.affiliateUrl ?? null,
             surugayaDestination,
@@ -423,6 +439,7 @@ export default function ResultPage() {
     rakutenItem?.affiliateUrl,
     rakutenReady,
     run,
+    surugayaKeyword,
     surugayaDestination,
     amiamiDestination,
     gamersDestination,
@@ -517,6 +534,31 @@ export default function ResultPage() {
         reasonTags?: string[];
       })
     | undefined;
+  const usedExitPlan = useMemo(() => {
+    if (!run) return undefined;
+    return (
+      run.output.usedExitPlan ??
+      buildUsedExitPlan({
+        decision: run.output.decision,
+        holdSubtype: run.output.holdSubtype,
+        itemKind: run.meta.itemKind,
+        goodsClass: run.meta.goodsClass,
+        resultTags: run.output.diagnosticTrace?.resultInputsSummary?.tags ?? [],
+        holdTriggers: run.output.diagnosticTrace?.resultInputsSummary?.holdTriggers ?? [],
+      })
+    );
+  }, [run]);
+  const usedExitCards = useMemo(
+    () => providerPlan.cards.filter((card) => card.providerId === "mercari" || card.providerId === "surugaya"),
+    [providerPlan.cards],
+  );
+  const comparisonCards = useMemo(
+    () =>
+      usedExitPlan
+        ? providerPlan.cards.filter((card) => card.providerId !== "mercari" && card.providerId !== "surugaya")
+        : providerPlan.cards,
+    [providerPlan.cards, usedExitPlan],
+  );
   const modeCopy = COPY_BY_MODE[styleMode];
   const bandTrace = getBandTrace(run);
   const normalizedWaitType = outputExt?.waitType ?? (run?.output.decision === "THINK" ? run?.output.holdSubtype ?? "none" : "none");
@@ -1279,8 +1321,26 @@ export default function ResultPage() {
         </Card>
       ) : null}
 
+      {usedExitPlan ? (
+        <UsedExitCard
+          plan={usedExitPlan}
+          cards={usedExitCards}
+          onProviderClick={(providerId) => {
+            if (providerId === "mercari") {
+              logActionClick("mercari_search_click");
+              return;
+            }
+            if (providerId === "surugaya") {
+              logActionClick("surugaya_result_click");
+              return;
+            }
+            logActionClick(`provider_click:${providerId}`);
+          }}
+        />
+      ) : null}
+
       <ProviderComparisonModule
-        cards={providerPlan.cards}
+        cards={comparisonCards}
         scenarioKey={scenarioCoverage?.key ?? null}
         onProviderClick={(providerId) => {
           if (providerId === "mercari") {
@@ -1314,7 +1374,7 @@ export default function ResultPage() {
           itemKind={run.meta.itemKind}
           goodsClass={run.meta.goodsClass}
           verdict={run.output.decision}
-          mercariEnabled={mercariRelevant}
+          mercariEnabled={mercariRelevant && !usedExitPlan}
           onMercariClick={() => logActionClick("mercari_search_click")}
           showBecausePricecheck={showBecausePricecheck || hasPlatformMarketAction || run.useCase === "game_billing"}
           title={run.useCase === "game_billing" ? "情報チェック（評価・天井など）" : undefined}

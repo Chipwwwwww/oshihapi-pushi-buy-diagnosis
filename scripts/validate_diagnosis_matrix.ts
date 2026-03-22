@@ -138,6 +138,13 @@ function validateResultShape(id: string, output: DecisionOutput) {
   if (!Number.isFinite(output.confidence)) throw new Error(`${id}: confidence missing`);
   if (!Array.isArray(output.reasons) || output.reasons.length === 0) throw new Error(`${id}: reasons missing`);
   if (!Array.isArray(output.actions) || output.actions.length === 0) throw new Error(`${id}: actions missing`);
+  if (output.usedExitPlan) {
+    if (!output.usedExitPlan.mode) throw new Error(`${id}: usedExitPlan mode missing`);
+    if (!Array.isArray(output.usedExitPlan.why) || output.usedExitPlan.why.length === 0) {
+      throw new Error(`${id}: usedExitPlan why missing`);
+    }
+    if (!Array.isArray(output.usedExitPlan.providers)) throw new Error(`${id}: usedExitPlan providers missing`);
+  }
 }
 
 function buildEvaluatedOutput(itemKind: ItemKind, overrides: Record<string, AnswerValue>, goodsClass: GoodsClass = 'small_collection') {
@@ -1143,6 +1150,9 @@ function runCanonicalVerdictAcceptanceChecks() {
   if (strongBuy.decision !== 'BUY' || strongBuy.verdictFamily !== 'buy' || strongBuy.holdSubtype != null) {
     throw new Error('canonical_buy: aligned positive case should stay BUY with buy family');
   }
+  if (strongBuy.usedExitPlan?.mode !== 'secondary_compare') {
+    throw new Error('canonical_buy: buy should only expose secondary_compare used-exit mode');
+  }
   assertNoHoldCopyOnDirectionalVerdict('canonical_buy', strongBuy);
 
   const strongStop = buildEvaluatedOutput('goods', {
@@ -1156,6 +1166,9 @@ function runCanonicalVerdictAcceptanceChecks() {
   });
   if (strongStop.decision !== 'SKIP' || strongStop.verdictFamily !== 'stop' || strongStop.holdSubtype != null) {
     throw new Error('canonical_stop: aligned negative case should stay SKIP with stop family');
+  }
+  if (strongStop.usedExitPlan?.mode !== 'delayed_recheck') {
+    throw new Error('canonical_stop: stop should only expose delayed_recheck used-exit mode');
   }
   assertNoHoldCopyOnDirectionalVerdict('canonical_stop', strongStop);
 
@@ -1174,6 +1187,9 @@ function runCanonicalVerdictAcceptanceChecks() {
   if (holdNeedsCheck.decision !== 'THINK' || holdNeedsCheck.holdSubtype !== 'needs_check' || holdNeedsCheck.displayVerdictKey !== 'hold_needs_check') {
     throw new Error('canonical_hold_needs_check: missing high-impact check should route to hold.needs_check');
   }
+  if (holdNeedsCheck.usedExitPlan?.mode !== 'check_first' || !holdNeedsCheck.usedExitPlan.whatToCheck?.length) {
+    throw new Error('canonical_hold_needs_check: hold.needs_check should expose checklist-first used exit guidance');
+  }
 
   const holdConflicting = buildEvaluatedOutput('used', {
     q_desire: 5,
@@ -1191,6 +1207,9 @@ function runCanonicalVerdictAcceptanceChecks() {
   });
   if (holdConflicting.decision !== 'THINK' || holdConflicting.holdSubtype !== 'conflicting' || holdConflicting.displayVerdictKey !== 'hold_conflicting') {
     throw new Error('canonical_hold_conflicting: major buy/stop signals should route to hold.conflicting');
+  }
+  if (holdConflicting.usedExitPlan?.mode !== 'reference_only' || holdConflicting.usedExitPlan.suppressPurchaseTone !== true) {
+    throw new Error('canonical_hold_conflicting: hold.conflicting should suppress purchase tone and stay reference_only');
   }
 
   const holdTimingWait = buildEvaluatedOutput('goods', {
@@ -1213,6 +1232,13 @@ function runCanonicalVerdictAcceptanceChecks() {
   });
   if (holdTimingWait.decision !== 'THINK' || holdTimingWait.holdSubtype !== 'timing_wait' || holdTimingWait.displayVerdictKey !== 'hold_timing_wait') {
     throw new Error('canonical_hold_timing_wait: timing-based defer should route to hold.timing_wait');
+  }
+  if (
+    holdTimingWait.usedExitPlan?.mode !== 'timing_wait_route' ||
+    !holdTimingWait.usedExitPlan.whenToRecheck ||
+    !holdTimingWait.usedExitPlan.providers.some((provider) => provider.key === 'mercari' || provider.key === 'surugaya')
+  ) {
+    throw new Error('canonical_hold_timing_wait: hold.timing_wait should expose timing_wait_route used-exit guidance');
   }
 
   const nearCenterBiased = buildEvaluatedOutput('goods', {
@@ -1293,9 +1319,11 @@ function runCanonicalVerdictAcceptanceChecks() {
   if (
     replayed.verdictFamily !== replayOutput.verdictFamily ||
     replayed.holdSubtype !== replayOutput.holdSubtype ||
-    replayed.displayVerdictKey !== replayOutput.displayVerdictKey
+    replayed.displayVerdictKey !== replayOutput.displayVerdictKey ||
+    replayed.usedExitPlan?.mode !== replayOutput.usedExitPlan?.mode ||
+    JSON.stringify(replayed.usedExitPlan?.providers ?? []) !== JSON.stringify(replayOutput.usedExitPlan?.providers ?? [])
   ) {
-    throw new Error('canonical_replay_stability: restore/replay should preserve verdict family/subtype/display key');
+    throw new Error('canonical_replay_stability: restore/replay should preserve verdict family/subtype/display key and used-exit plan');
   }
 
   return {
