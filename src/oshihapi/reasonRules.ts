@@ -80,6 +80,14 @@ export function pickReasons(ctx: RuleContext): ReasonItem[] {
     r.push({ id: 'voice_bonus_use_gap', severity: 'warn', text: '特典圧に対して再生・消化のイメージが弱く、特典目的の惰性買いに寄りやすいです。' });
   }
 
+  if (voiceMediaSignals.eligible && (has('unknown_voice_cd_kind', ctx.tags) || has('unknown_voice_cd_kind_confirmation', ctx.tags))) {
+    r.push({ id: 'voice_cd_kind_unknown', severity: 'warn', text: '本編ドラマCDか特典ドラマ確認が主目的か未整理で、比較軸がまだ曖昧です。' });
+  }
+
+  if (voiceMediaSignals.eligible && (has('voice_adjacent_media', ctx.tags) || has('voice_adjacent_media_pull', ctx.tags))) {
+    r.push({ id: 'voice_adjacent_media', severity: 'warn', text: 'ドラマ要素以外の仕様が主役なら、このルートでは満足条件の取り違えが起きやすいです。' });
+  }
+
   if (has('media_usage_unready', ctx.tags)) {
     r.push({ id: 'media_usage_concern', severity: 'warn', text: '再生環境や見返す頻度を考えると、今すぐでなくてもよい可能性があります。' });
   }

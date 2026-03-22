@@ -53,7 +53,7 @@
 
 ## B. Orphan Questions
 
-- q_addon_goods_first_chance_tolerance, q_addon_goods_live_goods_motive, q_addon_goods_post_event_mailorder, q_addon_goods_regret_axis, q_addon_goods_scarcity_pressure, q_addon_goods_used_fallback, q_addon_goods_venue_motive, q_addon_goods_wait_tolerance, q_addon_preorder_restock, q_addon_voice_audio_bonus_value, q_addon_voice_cast_check, q_addon_voice_listen_intent, q_long_note
+- q_addon_goods_first_chance_tolerance, q_addon_goods_live_goods_motive, q_addon_goods_post_event_mailorder, q_addon_goods_regret_axis, q_addon_goods_scarcity_pressure, q_addon_goods_used_fallback, q_addon_goods_venue_motive, q_addon_goods_wait_tolerance, q_addon_preorder_restock, q_addon_voice_bonus_is_audio, q_addon_voice_cast_check, q_addon_voice_cd_kind, q_addon_voice_listen_timing, q_long_note
 
 ## C. Question Catalog Detail
 
@@ -2437,7 +2437,7 @@
 
 </details>
 
-### q_addon_voice_audio_bonus_value
+### q_addon_voice_bonus_is_audio
 - useCase: merch
 - type: single
 - scoring relevance: delta
@@ -2458,10 +2458,10 @@
 
 | optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
 |---|---|---|---|---|---|---|---|---|---|
-| core | 特典ドラマ/音声特典が本命に近い | 特典ドラマ/音声特典が本命に近い | 特典ドラマ/音声特典が本命に近い | true | bonus_pressure_high;voice_bonus_core | desire:74;impulse:70;regretRisk:68;urgency:72 |  |  |  |
+| core_audio | 特典ドラマ/音声特典そのものが核心 | 特典ドラマ/音声特典そのものが核心 | 特典ドラマ/音声特典そのものが核心 | true | bonus_pressure_high;voice_bonus_core | desire:74;impulse:70;regretRisk:68;urgency:72 |  |  |  |
 | nice_to_have | あれば嬉しいが、本体優先 | あれば嬉しいが、本体優先 | あれば嬉しいが、本体優先 | true | bonus_pressure_mid | desire:60;impulse:54;regretRisk:54;urgency:56 |  |  |  |
+| not_checked | まだ調べ切れていない/差が分からない | まだ調べ切れていない/差が分からない | まだ調べ切れていない/差が分からない | true | unknown_voice_bonus | opportunityCost:74;regretRisk:78;urgency:56 |  |  |  |
 | not_important | 特典は重要ではない | 特典は重要ではない | 特典は重要ではない | true |  | impulse:40;opportunityCost:42;regretRisk:42 |  |  |  |
-| unsure | まだ調べ切れていない/差が分からない | まだ調べ切れていない/差が分からない | まだ調べ切れていない/差が分からない | true | unknown_voice_bonus | opportunityCost:74;regretRisk:78;urgency:56 |  |  |  |
 
 </details>
 
@@ -2492,7 +2492,35 @@
 
 </details>
 
-### q_addon_voice_listen_intent
+### q_addon_voice_cd_kind
+- useCase: merch
+- type: single
+- scoring relevance: delta
+- impactCategory: score
+- relevanceSummary: score
+- behaviorRelevance: {"affectsScore":true,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: 
+- isOrphan: true
+- mapTo: 
+- tags: bonus_pressure_mid, unknown_voice_cd_kind, voice_adjacent_media, voice_cd_main, voice_store_bonus_focus
+- unknown tags hints: unknown_voice_cd_kind
+- text_standard: 今回の対象、どのドラマCD文脈に近い？
+- text_kawaii: 今回ほしいのは、どのドラマCD文脈に近い？
+- text_oshi: 対象はどの drama-CD 文脈？
+- sameAsStandard: false
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| adjacent_media | ドラマ要素は気になるが、主役は別の媒体/仕様 | ドラマ要素は気になるが、主役は別の媒体/仕様 | ドラマ要素は気になるが、主役は別の媒体/仕様 | true | voice_adjacent_media | desire:46;impulse:56;opportunityCost:70;regretRisk:68 |  |  |  |
+| drama_cd_main | 本編ドラマCDとして買いたい | 本編ドラマCDとして買いたい | 本編ドラマCDとして買いたい | true | voice_cd_main | desire:68;opportunityCost:42;regretRisk:42 |  |  |  |
+| not_checked | まだ商品構成を確認できていない | まだ商品構成を確認できていない | まだ商品構成を確認できていない | true | unknown_voice_cd_kind | opportunityCost:76;regretRisk:82;urgency:54 |  |  |  |
+| store_bonus_audio | 店舗特典ドラマ・特典CD込みで判断したい | 店舗特典ドラマ・特典CD込みで判断したい | 店舗特典ドラマ・特典CD込みで判断したい | true | voice_store_bonus_focus;bonus_pressure_mid | desire:64;regretRisk:54;urgency:58 |  |  |  |
+
+</details>
+
+### q_addon_voice_listen_timing
 - useCase: merch
 - type: single
 - scoring relevance: delta
@@ -2504,16 +2532,16 @@
 - mapTo: 
 - tags: unknown_voice_listen, voice_collecting_main, voice_listen_ready
 - unknown tags hints: unknown_voice_listen
-- text_standard: このドラマCD、実際に聴く予定はどれに近い？
-- text_kawaii: このドラマCD、実際に聴く予定は？
-- text_oshi: 実際の listen intent は？
+- text_standard: このドラマCD、実際に聴くタイミングはどれに近い？
+- text_kawaii: このドラマCD、いつ頃聴くイメージ？
+- text_oshi: 実際の listen timing は？
 - sameAsStandard: false
 <details>
 <summary>Options</summary>
 
 | optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
 |---|---|---|---|---|---|---|---|---|---|
-| collecting_main | 聴くより所持・回収の意味が強い | 聴くより所持・回収の意味が強い | 聴くより所持・回収の意味が強い | true | voice_collecting_main | desire:52;impulse:68;opportunityCost:72;regretRisk:68 |  |  |  |
+| archive_main | 聴くより所持・回収の意味が強い | 聴くより所持・回収の意味が強い | 聴くより所持・回収の意味が強い | true | voice_collecting_main | desire:52;impulse:68;opportunityCost:72;regretRisk:68 |  |  |  |
 | listen_soon | 近いうちにちゃんと聴く予定 | 近いうちにちゃんと聴く予定 | 近いうちにちゃんと聴く予定 | true | voice_listen_ready | desire:74;opportunityCost:36;regretRisk:40 |  |  |  |
 | maybe_later | あとで聴くかも/保存寄り | あとで聴くかも/保存寄り | あとで聴くかも/保存寄り | true |  | desire:56;opportunityCost:56;regretRisk:54 |  |  |  |
 | not_sure | まだ自分でも決め切れていない | まだ自分でも決め切れていない | まだ自分でも決め切れていない | true | unknown_voice_listen | desire:48;impulse:58;opportunityCost:70;regretRisk:72 |  |  |  |

@@ -9087,7 +9087,7 @@
     },
     {
       "useCase": "merch",
-      "questionId": "q_addon_voice_audio_bonus_value",
+      "questionId": "q_addon_voice_bonus_is_audio",
       "questionType": "single",
       "scoringRelevance": "delta",
       "impactCategory": "score",
@@ -9121,11 +9121,11 @@
       "scaleLabels": null,
       "options": [
         {
-          "optionId": "core",
+          "optionId": "core_audio",
           "labels": {
-            "standard": "特典ドラマ/音声特典が本命に近い",
-            "kawaii": "特典ドラマ/音声特典が本命に近い",
-            "oshi": "特典ドラマ/音声特典が本命に近い"
+            "standard": "特典ドラマ/音声特典そのものが核心",
+            "kawaii": "特典ドラマ/音声特典そのものが核心",
+            "oshi": "特典ドラマ/音声特典そのものが核心"
           },
           "sameAsStandard": true,
           "mapTo": null,
@@ -9162,24 +9162,7 @@
           "buyStopDelta": null
         },
         {
-          "optionId": "not_important",
-          "labels": {
-            "standard": "特典は重要ではない",
-            "kawaii": "特典は重要ではない",
-            "oshi": "特典は重要ではない"
-          },
-          "sameAsStandard": true,
-          "mapTo": null,
-          "delta": {
-            "impulse": 40,
-            "opportunityCost": 42,
-            "regretRisk": 42
-          },
-          "tags": [],
-          "buyStopDelta": null
-        },
-        {
-          "optionId": "unsure",
+          "optionId": "not_checked",
           "labels": {
             "standard": "まだ調べ切れていない/差が分からない",
             "kawaii": "まだ調べ切れていない/差が分からない",
@@ -9195,6 +9178,23 @@
           "tags": [
             "unknown_voice_bonus"
           ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "not_important",
+          "labels": {
+            "standard": "特典は重要ではない",
+            "kawaii": "特典は重要ではない",
+            "oshi": "特典は重要ではない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "impulse": 40,
+            "opportunityCost": 42,
+            "regretRisk": 42
+          },
+          "tags": [],
           "buyStopDelta": null
         }
       ]
@@ -9288,7 +9288,123 @@
     },
     {
       "useCase": "merch",
-      "questionId": "q_addon_voice_listen_intent",
+      "questionId": "q_addon_voice_cd_kind",
+      "questionType": "single",
+      "scoringRelevance": "delta",
+      "impactCategory": "score",
+      "behaviorRelevance": {
+        "affectsScore": true,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "score",
+      "mapTo": null,
+      "tags": [
+        "bonus_pressure_mid",
+        "unknown_voice_cd_kind",
+        "voice_adjacent_media",
+        "voice_cd_main",
+        "voice_store_bonus_focus"
+      ],
+      "unknownTagHints": [
+        "unknown_voice_cd_kind"
+      ],
+      "appearsInBranches": [],
+      "isOrphan": true,
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "今回の対象、どのドラマCD文脈に近い？",
+        "kawaii": "今回ほしいのは、どのドラマCD文脈に近い？",
+        "oshi": "対象はどの drama-CD 文脈？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "adjacent_media",
+          "labels": {
+            "standard": "ドラマ要素は気になるが、主役は別の媒体/仕様",
+            "kawaii": "ドラマ要素は気になるが、主役は別の媒体/仕様",
+            "oshi": "ドラマ要素は気になるが、主役は別の媒体/仕様"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "desire": 46,
+            "impulse": 56,
+            "regretRisk": 68,
+            "opportunityCost": 70
+          },
+          "tags": [
+            "voice_adjacent_media"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "drama_cd_main",
+          "labels": {
+            "standard": "本編ドラマCDとして買いたい",
+            "kawaii": "本編ドラマCDとして買いたい",
+            "oshi": "本編ドラマCDとして買いたい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "desire": 68,
+            "regretRisk": 42,
+            "opportunityCost": 42
+          },
+          "tags": [
+            "voice_cd_main"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "not_checked",
+          "labels": {
+            "standard": "まだ商品構成を確認できていない",
+            "kawaii": "まだ商品構成を確認できていない",
+            "oshi": "まだ商品構成を確認できていない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 82,
+            "opportunityCost": 76,
+            "urgency": 54
+          },
+          "tags": [
+            "unknown_voice_cd_kind"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "store_bonus_audio",
+          "labels": {
+            "standard": "店舗特典ドラマ・特典CD込みで判断したい",
+            "kawaii": "店舗特典ドラマ・特典CD込みで判断したい",
+            "oshi": "店舗特典ドラマ・特典CD込みで判断したい"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "desire": 64,
+            "urgency": 58,
+            "regretRisk": 54
+          },
+          "tags": [
+            "voice_store_bonus_focus",
+            "bonus_pressure_mid"
+          ],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_voice_listen_timing",
       "questionType": "single",
       "scoringRelevance": "delta",
       "impactCategory": "score",
@@ -9314,14 +9430,14 @@
       "isOrphan": true,
       "sameAsStandard": false,
       "styles": {
-        "standard": "このドラマCD、実際に聴く予定はどれに近い？",
-        "kawaii": "このドラマCD、実際に聴く予定は？",
-        "oshi": "実際の listen intent は？"
+        "standard": "このドラマCD、実際に聴くタイミングはどれに近い？",
+        "kawaii": "このドラマCD、いつ頃聴くイメージ？",
+        "oshi": "実際の listen timing は？"
       },
       "scaleLabels": null,
       "options": [
         {
-          "optionId": "collecting_main",
+          "optionId": "archive_main",
           "labels": {
             "standard": "聴くより所持・回収の意味が強い",
             "kawaii": "聴くより所持・回収の意味が強い",

@@ -1,8 +1,8 @@
 import { normalizeSearchClues } from "@/src/oshihapi/input/normalizeSearchClues";
 import type { InputMeta } from "@/src/oshihapi/model";
 
-const DRAMA_CD_KEYWORDS = ["ドラマcd", "ミニドラマ", "特典ドラマ", "特典cd"];
-const STORE_BONUS_KEYWORDS = ["法人特典", "店舗特典", "先着特典", "特典は無くなり次第終了", "特典付き", "特典"];
+const DRAMA_CD_KEYWORDS = ["ドラマcd", "ドラマ cd", "ミニドラマ", "特典ドラマ", "特典cd", "特典 cd", "店舗特典ドラマ", "店舗特典付きドラマcd"];
+const STORE_BONUS_KEYWORDS = ["法人特典", "店舗特典", "先着特典", "特典は無くなり次第終了", "特典付き", "特典", "店舗別特典"];
 const EDITION_KEYWORDS = ["初回限定盤", "初回限定", "限定盤", "通常盤"];
 const CAST_KEYWORDS = ["キャスト", "出演", "cv"];
 const CONTENT_KEYWORDS = ["収録内容", "収録", "トラック"];

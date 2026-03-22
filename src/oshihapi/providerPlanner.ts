@@ -325,6 +325,7 @@ function getScenarioRankDelta(providerId: ProviderId, input: Pick<PlannerInput, 
 function buildShortReason(providerId: ProviderId, input: Pick<PlannerInput, "itemKind" | "goodsClass" | "searchClues" | "resultTags">): string {
   const { itemKind, goodsClass, searchClues } = input;
   const specialtyScenario = classifySpecialtyScenario(input);
+  const voiceMediaRoute = (input.resultTags ?? []).includes("voice_media_route");
   const randomGoodsSinglesPath =
     (input.resultTags ?? []).includes("random_goods_path_stop_drawing_buy_singles") ||
     (input.resultTags ?? []).includes("random_goods_path_stop_drawing_check_used_market");
@@ -336,6 +337,12 @@ function buildShortReason(providerId: ProviderId, input: Pick<PlannerInput, "ite
   }
 
   if (goodsClass === "media") {
+    if (voiceMediaRoute) {
+      if (providerId === "hmv") return "ドラマCD本体・版情報の確認先";
+      if (providerId === "gamers") return "店舗特典ドラマの確認先";
+      if (providerId === "amazon") return "通常流通の比較先";
+      if (providerId === "surugaya") return "中古フォローの確認先";
+    }
     if (providerId === "hmv") return "CD・映像・書籍の発売情報に強い";
     if (providerId === "towerRecords") return "媒体特化の補助候補";
     if (providerId === "melonbooks") return "書籍系特典の参考先";
