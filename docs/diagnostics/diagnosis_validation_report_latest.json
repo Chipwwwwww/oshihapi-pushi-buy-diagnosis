@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-22T08:53:44.765Z",
+  "generatedAt": "2026-03-22T09:10:53.975Z",
   "scenarioCount": 32,
   "scenarios": [
     {
@@ -92,8 +92,8 @@
         "decision": "SKIP",
         "confidence": 41,
         "score": -0.03490138461538465,
-        "reasonCount": 3,
-        "actionCount": 3
+        "reasonCount": 2,
+        "actionCount": 2
       }
     },
     {
@@ -123,8 +123,8 @@
         "decision": "SKIP",
         "confidence": 40,
         "score": -0.0264176923076923,
-        "reasonCount": 3,
-        "actionCount": 3
+        "reasonCount": 2,
+        "actionCount": 2
       }
     },
     {
@@ -152,8 +152,8 @@
         "decision": "BUY",
         "confidence": 40,
         "score": -0.01499661538461536,
-        "reasonCount": 3,
-        "actionCount": 3
+        "reasonCount": 2,
+        "actionCount": 2
       }
     },
     {
@@ -173,8 +173,8 @@
         "decision": "SKIP",
         "confidence": 46,
         "score": -0.021470000000000013,
-        "reasonCount": 3,
-        "actionCount": 3
+        "reasonCount": 2,
+        "actionCount": 1
       }
     },
     {
@@ -206,8 +206,8 @@
         "decision": "BUY",
         "confidence": 41,
         "score": 0.04244661538461539,
-        "reasonCount": 3,
-        "actionCount": 3
+        "reasonCount": 2,
+        "actionCount": 2
       }
     },
     {
@@ -282,8 +282,8 @@
         "decision": "BUY",
         "confidence": 41,
         "score": 0.04054153846153848,
-        "reasonCount": 3,
-        "actionCount": 3
+        "reasonCount": 2,
+        "actionCount": 2
       }
     },
     {
@@ -316,8 +316,8 @@
         "decision": "BUY",
         "confidence": 41,
         "score": 0.046266153846153846,
-        "reasonCount": 3,
-        "actionCount": 3
+        "reasonCount": 2,
+        "actionCount": 2
       }
     },
     {
@@ -348,8 +348,8 @@
         "decision": "BUY",
         "confidence": 42,
         "score": 0.053154461538461546,
-        "reasonCount": 3,
-        "actionCount": 3
+        "reasonCount": 2,
+        "actionCount": 2
       }
     },
     {
@@ -374,8 +374,8 @@
         "decision": "SKIP",
         "confidence": 47,
         "score": -0.03331000000000005,
-        "reasonCount": 3,
-        "actionCount": 3
+        "reasonCount": 2,
+        "actionCount": 1
       }
     },
     {
@@ -414,8 +414,8 @@
         "decision": "BUY",
         "confidence": 41,
         "score": 0.04244661538461539,
-        "reasonCount": 3,
-        "actionCount": 3
+        "reasonCount": 2,
+        "actionCount": 2
       }
     },
     {
@@ -499,8 +499,8 @@
         "decision": "BUY",
         "confidence": 41,
         "score": 0.030321692307692338,
-        "reasonCount": 3,
-        "actionCount": 3
+        "reasonCount": 2,
+        "actionCount": 2
       }
     },
     {
@@ -577,8 +577,8 @@
         "decision": "BUY",
         "confidence": 41,
         "score": 0.028444769230769266,
-        "reasonCount": 3,
-        "actionCount": 3
+        "reasonCount": 2,
+        "actionCount": 2
       }
     },
     {
@@ -603,8 +603,8 @@
         "decision": "SKIP",
         "confidence": 47,
         "score": -0.03331000000000005,
-        "reasonCount": 3,
-        "actionCount": 3
+        "reasonCount": 2,
+        "actionCount": 1
       }
     },
     {
@@ -642,8 +642,8 @@
         "decision": "BUY",
         "confidence": 41,
         "score": 0.04244661538461539,
-        "reasonCount": 3,
-        "actionCount": 3
+        "reasonCount": 2,
+        "actionCount": 2
       }
     },
     {
@@ -685,8 +685,8 @@
         "decision": "BUY",
         "confidence": 41,
         "score": 0.030321692307692338,
-        "reasonCount": 3,
-        "actionCount": 3
+        "reasonCount": 2,
+        "actionCount": 2
       }
     },
     {
@@ -724,8 +724,8 @@
         "decision": "BUY",
         "confidence": 41,
         "score": 0.04244661538461539,
-        "reasonCount": 3,
-        "actionCount": 3
+        "reasonCount": 2,
+        "actionCount": 2
       }
     },
     {
@@ -767,8 +767,8 @@
         "decision": "BUY",
         "confidence": 41,
         "score": 0.030321692307692338,
-        "reasonCount": 3,
-        "actionCount": 3
+        "reasonCount": 2,
+        "actionCount": 2
       }
     },
     {
@@ -807,8 +807,8 @@
         "decision": "BUY",
         "confidence": 41,
         "score": 0.04244661538461539,
-        "reasonCount": 3,
-        "actionCount": 3
+        "reasonCount": 2,
+        "actionCount": 2
       }
     },
     {
@@ -851,8 +851,8 @@
         "decision": "BUY",
         "confidence": 41,
         "score": 0.030321692307692338,
-        "reasonCount": 3,
-        "actionCount": 3
+        "reasonCount": 2,
+        "actionCount": 2
       }
     },
     {
@@ -888,8 +888,8 @@
         "decision": "BUY",
         "confidence": 41,
         "score": 0.04362907692307692,
-        "reasonCount": 3,
-        "actionCount": 3
+        "reasonCount": 2,
+        "actionCount": 2
       }
     },
     {
@@ -929,8 +929,8 @@
         "decision": "BUY",
         "confidence": 41,
         "score": 0.03495769230769233,
-        "reasonCount": 3,
-        "actionCount": 3
+        "reasonCount": 2,
+        "actionCount": 2
       }
     },
     {
@@ -968,8 +968,8 @@
         "decision": "BUY",
         "confidence": 41,
         "score": 0.04244661538461539,
-        "reasonCount": 3,
-        "actionCount": 3
+        "reasonCount": 2,
+        "actionCount": 2
       }
     },
     {
@@ -1011,8 +1011,8 @@
         "decision": "BUY",
         "confidence": 41,
         "score": 0.030321692307692338,
-        "reasonCount": 3,
-        "actionCount": 3
+        "reasonCount": 2,
+        "actionCount": 2
       }
     },
     {
@@ -1163,8 +1163,8 @@
         "decision": "BUY",
         "confidence": 41,
         "score": 0.04362907692307692,
-        "reasonCount": 3,
-        "actionCount": 3
+        "reasonCount": 2,
+        "actionCount": 2
       }
     },
     {
@@ -1204,8 +1204,8 @@
         "decision": "BUY",
         "confidence": 41,
         "score": 0.03495769230769233,
-        "reasonCount": 3,
-        "actionCount": 3
+        "reasonCount": 2,
+        "actionCount": 2
       }
     }
   ],
@@ -1340,6 +1340,11 @@
         "decision": "BUY",
         "verdictFamily": "buy",
         "displayVerdictKey": "buy"
+      },
+      "nearCenterStopBiased": {
+        "decision": "SKIP",
+        "verdictFamily": "stop",
+        "displayVerdictKey": "stop"
       },
       "replayStable": true
     }

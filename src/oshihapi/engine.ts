@@ -1626,8 +1626,8 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     subtypeReason = resolved.reason;
   }
 
-  const reasonsBase = pickReasons({ meta: input.meta, tags, scores, decision, blindDrawCap, holdSubtype, factorBuckets });
-  const actionsBase = pickActions({ meta: input.meta, tags, scores, decision, blindDrawCap, holdSubtype, factorBuckets });
+  let reasonsBase = pickReasons({ meta: input.meta, tags, scores, decision, blindDrawCap, holdSubtype, factorBuckets });
+  let actionsBase = pickActions({ meta: input.meta, tags, scores, decision, blindDrawCap, holdSubtype, factorBuckets });
   const extraReasons: ReasonItem[] = [];
   const extraActions: ActionItem[] = [];
 
@@ -1777,8 +1777,8 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     extraActions.unshift(actionText[venueLimitedGoodsPlan.chosenPath]);
   }
 
-  const reasons = [...extraReasons, ...reasonsBase].slice(0, 6);
-  const actions = [...extraActions, ...actionsBase].slice(0, 3);
+  let reasons = [...extraReasons, ...reasonsBase].slice(0, 6);
+  let actions = [...extraActions, ...actionsBase].slice(0, 3);
 
   const scoreSpread = stdDev(Object.values(scores));
   const ambiguity = Math.max(0, 1 - Math.abs(scoreSigned));
@@ -1842,6 +1842,12 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
   });
   decision = canonicalVerdict.decision;
   holdSubtype = canonicalVerdict.holdSubtype;
+  if (canonicalVerdict.canonicalDecisionChanged) {
+    reasonsBase = pickReasons({ meta: input.meta, tags, scores, decision, blindDrawCap, holdSubtype, factorBuckets });
+    actionsBase = pickActions({ meta: input.meta, tags, scores, decision, blindDrawCap, holdSubtype, factorBuckets });
+    reasons = [...extraReasons, ...reasonsBase].slice(0, 6);
+    actions = [...extraActions, ...actionsBase].slice(0, 3);
+  }
   if (decision !== 'THINK') {
     subtypeReason = undefined;
   } else if (holdSubtype === 'needs_check') {

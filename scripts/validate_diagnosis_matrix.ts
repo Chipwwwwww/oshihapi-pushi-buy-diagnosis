@@ -1120,6 +1120,16 @@ function runBandNarrowingAcceptanceChecks() {
 }
 
 function runCanonicalVerdictAcceptanceChecks() {
+  const assertNoHoldCopyOnDirectionalVerdict = (id: string, output: DecisionOutput) => {
+    if (output.decision === 'THINK') return;
+    if (output.reasons.some((reason) => reason.id.startsWith('hold_'))) {
+      throw new Error(`${id}: directional verdict should not retain hold-only reason copy`);
+    }
+    if (output.actions.some((action) => ['info_gap_close', 'conflict_sort', 'timing_wait'].includes(action.id))) {
+      throw new Error(`${id}: directional verdict should not retain hold-only actions`);
+    }
+  };
+
   const strongBuy = buildEvaluatedOutput('goods', {
     q_desire: 5,
     q_budget_pain: 'ok',
@@ -1133,6 +1143,7 @@ function runCanonicalVerdictAcceptanceChecks() {
   if (strongBuy.decision !== 'BUY' || strongBuy.verdictFamily !== 'buy' || strongBuy.holdSubtype != null) {
     throw new Error('canonical_buy: aligned positive case should stay BUY with buy family');
   }
+  assertNoHoldCopyOnDirectionalVerdict('canonical_buy', strongBuy);
 
   const strongStop = buildEvaluatedOutput('goods', {
     q_desire: 1,
@@ -1146,6 +1157,7 @@ function runCanonicalVerdictAcceptanceChecks() {
   if (strongStop.decision !== 'SKIP' || strongStop.verdictFamily !== 'stop' || strongStop.holdSubtype != null) {
     throw new Error('canonical_stop: aligned negative case should stay SKIP with stop family');
   }
+  assertNoHoldCopyOnDirectionalVerdict('canonical_stop', strongStop);
 
   const holdNeedsCheck = buildEvaluatedOutput('goods', {
     q_desire: 4,
@@ -1217,6 +1229,26 @@ function runCanonicalVerdictAcceptanceChecks() {
   if (nearCenterBiased.decision === 'THINK') {
     throw new Error('canonical_near_center_bias: directionally biased case should no longer default to generic hold');
   }
+  assertNoHoldCopyOnDirectionalVerdict('canonical_near_center_bias', nearCenterBiased);
+
+  const nearCenterStopBiased = buildEvaluatedOutput('goods', {
+    q_desire: 3,
+    q_budget_pain: 'hard',
+    q_price_feel: 'normal',
+    q_regret_impulse: 'calm',
+    q_goal: 'single',
+    q_motives_multi: ['vague'],
+    q_addon_common_info: 'enough',
+    q_addon_goods_compare: 'enough',
+    q_addon_common_priority: 'not_now',
+    q_alternative_plan: 'clear',
+    q_rarity_restock: 'likely',
+    q_urgency: 'low_stock',
+  });
+  if (nearCenterStopBiased.decision !== 'SKIP' || nearCenterStopBiased.verdictFamily !== 'stop') {
+    throw new Error('canonical_near_center_stop_bias: stop-biased near-center case should resolve to stop family');
+  }
+  assertNoHoldCopyOnDirectionalVerdict('canonical_near_center_stop_bias', nearCenterStopBiased);
 
   const replayOutput = buildEvaluatedOutput('used', {
     q_desire: 5,
@@ -1273,6 +1305,7 @@ function runCanonicalVerdictAcceptanceChecks() {
     holdConflicting: { decision: holdConflicting.decision, holdSubtype: holdConflicting.holdSubtype, displayVerdictKey: holdConflicting.displayVerdictKey },
     holdTimingWait: { decision: holdTimingWait.decision, holdSubtype: holdTimingWait.holdSubtype, displayVerdictKey: holdTimingWait.displayVerdictKey },
     nearCenterBiased: { decision: nearCenterBiased.decision, verdictFamily: nearCenterBiased.verdictFamily, displayVerdictKey: nearCenterBiased.displayVerdictKey },
+    nearCenterStopBiased: { decision: nearCenterStopBiased.decision, verdictFamily: nearCenterStopBiased.verdictFamily, displayVerdictKey: nearCenterStopBiased.displayVerdictKey },
     replayStable: true,
   };
 }
