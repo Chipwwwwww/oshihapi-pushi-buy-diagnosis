@@ -126,6 +126,16 @@ export function pickActions(ctx: RuleContext): ActionItem[] {
     a.push({ id: 'blind_cap', text: `くじ/盲抽は上限${ctx.blindDrawCap}回で止める（当たっても追い追加しない）` });
   }
 
+  if (a.length === 0) {
+    if (ctx.decision === 'BUY') {
+      a.push({ id: 'buy_guardrail', text: '買うなら上限予算を先に固定して、その条件で進める' });
+    } else if (ctx.decision === 'SKIP') {
+      a.push({ id: 'skip_and_revisit_later', text: '今回は見送り、必要なら後日相場だけ静かに見直す' });
+    } else {
+      a.push({ id: 'recheck_one_point', text: '重要な確認を1つだけ済ませてから再診断する' });
+    }
+  }
+
   return a.slice(0, 3);
 }
 
