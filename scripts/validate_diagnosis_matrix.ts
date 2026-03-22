@@ -1159,6 +1159,16 @@ function runCanonicalVerdictAcceptanceChecks() {
       throw new Error(`${id}: directional verdict should not retain hold-only actions`);
     }
   };
+  const assertHoldReasonMatchesSubtype = (id: string, output: DecisionOutput) => {
+    if (output.decision !== 'THINK' || !output.holdSubtype) return;
+    const expectedReasonId = `hold_${output.holdSubtype}`;
+    const staleHoldReasons = output.reasons
+      .filter((reason) => reason.id.startsWith('hold_') && reason.id !== expectedReasonId)
+      .map((reason) => reason.id);
+    if (staleHoldReasons.length > 0) {
+      throw new Error(`${id}: stale hold reason copy leaked (${staleHoldReasons.join(', ')})`);
+    }
+  };
 
   const strongBuy = buildEvaluatedOutput('goods', {
     q_desire: 5,
@@ -1213,6 +1223,7 @@ function runCanonicalVerdictAcceptanceChecks() {
   if (holdNeedsCheck.usedExitPlan?.mode !== 'check_first' || !holdNeedsCheck.usedExitPlan.whatToCheck?.length) {
     throw new Error('canonical_hold_needs_check: hold.needs_check should expose checklist-first used exit guidance');
   }
+  assertHoldReasonMatchesSubtype('canonical_hold_needs_check', holdNeedsCheck);
 
   const holdConflicting = buildEvaluatedOutput('used', {
     q_desire: 5,
@@ -1234,6 +1245,7 @@ function runCanonicalVerdictAcceptanceChecks() {
   if (holdConflicting.usedExitPlan?.mode !== 'reference_only' || holdConflicting.usedExitPlan.suppressPurchaseTone !== true) {
     throw new Error('canonical_hold_conflicting: hold.conflicting should suppress purchase tone and stay reference_only');
   }
+  assertHoldReasonMatchesSubtype('canonical_hold_conflicting', holdConflicting);
 
   const holdTimingWait = buildEvaluatedOutput('goods', {
     q_desire: 4,
@@ -1263,6 +1275,7 @@ function runCanonicalVerdictAcceptanceChecks() {
   ) {
     throw new Error('canonical_hold_timing_wait: hold.timing_wait should expose timing_wait_route used-exit guidance');
   }
+  assertHoldReasonMatchesSubtype('canonical_hold_timing_wait', holdTimingWait);
 
   const nearCenterBiased = buildEvaluatedOutput('goods', {
     q_desire: 4,
@@ -1535,6 +1548,9 @@ function runVoiceMediaAcceptanceChecks() {
   if (unresolvedBonusOutput.holdSubtype !== 'needs_check') {
     throw new Error('voice_media_needs_check: unresolved cast/bonus should land on hold.needs_check');
   }
+  if (unresolvedBonusOutput.reasons.some((reason) => reason.id === 'hold_timing_wait')) {
+    throw new Error('voice_media_needs_check: unresolved cast/bonus should not leak timing_wait copy');
+  }
   if (!unresolvedBonusOutput.reasons.some((reason) => reason.text.includes('確認'))) {
     throw new Error('voice_media_needs_check: result should explain what needs checking');
   }
@@ -1694,6 +1710,9 @@ function runVoiceMediaAcceptanceChecks() {
   );
   if (usedWaitOutput.holdSubtype !== 'timing_wait') {
     throw new Error('voice_media_used_wait: used fallback should become timing_wait only when the used-route logic is explicit');
+  }
+  if (!usedWaitOutput.reasons.some((reason) => reason.id === 'hold_timing_wait')) {
+    throw new Error('voice_media_used_wait: timing_wait scenario should retain timing_wait-specific copy');
   }
   if (!usedWaitOutput.reasons.some((reason) => reason.text.includes('後から埋める') || reason.text.includes('中古'))) {
     throw new Error('voice_media_used_wait: used-route explanation should stay clear and secondary');

@@ -1698,6 +1698,8 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
     subtypeReason = resolved.reason;
   }
 
+  const initialReasonDecision = decision;
+  const initialReasonHoldSubtype = holdSubtype;
   let reasonsBase = pickReasons({ meta: input.meta, tags, scores, decision, blindDrawCap, holdSubtype, factorBuckets });
   let actionsBase = pickActions({ meta: input.meta, tags, scores, decision, blindDrawCap, holdSubtype, factorBuckets });
   const extraReasons: ReasonItem[] = [];
@@ -1965,6 +1967,8 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
   }
 
   const rawDecision = decision;
+  const preCanonicalDecision = decision;
+  const preCanonicalHoldSubtype = holdSubtype;
   const canonicalVerdict = resolveCanonicalVerdict({
     rawDecision,
     scoreSigned,
@@ -1979,7 +1983,13 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
   });
   decision = canonicalVerdict.decision;
   holdSubtype = canonicalVerdict.holdSubtype;
-  if (canonicalVerdict.canonicalDecisionChanged) {
+  if (
+    canonicalVerdict.canonicalDecisionChanged ||
+    decision !== initialReasonDecision ||
+    holdSubtype !== initialReasonHoldSubtype ||
+    decision !== preCanonicalDecision ||
+    holdSubtype !== preCanonicalHoldSubtype
+  ) {
     reasonsBase = pickReasons({ meta: input.meta, tags, scores, decision, blindDrawCap, holdSubtype, factorBuckets });
     actionsBase = pickActions({ meta: input.meta, tags, scores, decision, blindDrawCap, holdSubtype, factorBuckets });
     reasons = [...extraReasons, ...reasonsBase].slice(0, 6);
