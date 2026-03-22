@@ -133,6 +133,8 @@ function runScenario(s: Scenario) {
 
 function validateResultShape(id: string, output: DecisionOutput) {
   if (!output.decision) throw new Error(`${id}: decision missing`);
+  if (!output.verdictFamily) throw new Error(`${id}: verdictFamily missing`);
+  if (!output.displayVerdictKey) throw new Error(`${id}: displayVerdictKey missing`);
   if (!Number.isFinite(output.confidence)) throw new Error(`${id}: confidence missing`);
   if (!Array.isArray(output.reasons) || output.reasons.length === 0) throw new Error(`${id}: reasons missing`);
   if (!Array.isArray(output.actions) || output.actions.length === 0) throw new Error(`${id}: actions missing`);
@@ -910,7 +912,7 @@ function runTrustRepairAcceptanceChecks() {
   if (blindUnknownHeavy.decision === 'BUY') {
     throw new Error('trust_repair_blind_unknown: unknown-heavy blind draw should not stay BUY');
   }
-  if (blindUnknownHeavy.holdSubtype !== 'info_missing' || (blindUnknownHeavy.confidence ?? 100) > 54) {
+  if (blindUnknownHeavy.holdSubtype !== 'needs_check' || (blindUnknownHeavy.confidence ?? 100) > 54) {
     throw new Error('trust_repair_blind_unknown: unknown-heavy blind draw should downgrade confidence and hold subtype');
   }
 
@@ -929,8 +931,8 @@ function runTrustRepairAcceptanceChecks() {
   if (venueUnknownRecovery.venueLimitedGoodsPlan?.chosenPath === 'wait_for_post_event_mailorder' && venueUnknownRecovery.decision === 'BUY') {
     throw new Error('trust_repair_venue_unknown: weakly known recovery path should not produce a hard wait recommendation');
   }
-  if (venueUnknownRecovery.holdSubtype !== 'info_missing') {
-    throw new Error('trust_repair_venue_unknown: weakly known recovery path should mark info_missing');
+  if (venueUnknownRecovery.holdSubtype !== 'needs_check') {
+    throw new Error('trust_repair_venue_unknown: weakly known recovery path should mark needs_check');
   }
 
   const mediaUnknownHeavy = buildEvaluatedOutput('goods', {
@@ -958,7 +960,7 @@ function runTrustRepairAcceptanceChecks() {
   if (mediaUnknownHeavy.decision === 'BUY') {
     throw new Error('trust_repair_media_unknown: unknown-heavy media edition flow should not stay BUY');
   }
-  if ((mediaUnknownHeavy.confidence ?? 100) > 55 || mediaUnknownHeavy.holdSubtype !== 'info_missing') {
+  if ((mediaUnknownHeavy.confidence ?? 100) > 55 || mediaUnknownHeavy.holdSubtype !== 'needs_check') {
     throw new Error('trust_repair_media_unknown: unknown-heavy media edition flow should downgrade confidence and hold subtype');
   }
 }
@@ -1011,8 +1013,8 @@ function runBandNarrowingAcceptanceChecks() {
     q_addon_goods_collection_goal: 'focused',
     q_addon_goods_trade_intent: 'no_need',
   });
-  if (highSignalWait.decision !== 'THINK' || highSignalWait.holdSubtype !== 'condition_not_ready' || !highSignalWait.bandTrace?.bandNarrowingApplied) {
-    throw new Error('band_high_signal_wait: stable hold case should still narrow');
+  if (highSignalWait.decision !== 'THINK' || highSignalWait.holdSubtype !== 'needs_check' || highSignalWait.bandTrace?.bandNarrowingApplied) {
+    throw new Error('band_high_signal_wait: needs_check hold should stay explainable without forcing a narrow band');
   }
 
   const lowSignalIncomplete = buildEvaluatedOutput('goods', {
@@ -1113,6 +1115,164 @@ function runBandNarrowingAcceptanceChecks() {
     highSignalWait: highSignalWait.bandTrace,
     lowSignalIncomplete: lowSignalIncomplete.bandTrace,
     conflictingSignals: conflictingSignals.bandTrace,
+    replayStable: true,
+  };
+}
+
+function runCanonicalVerdictAcceptanceChecks() {
+  const strongBuy = buildEvaluatedOutput('goods', {
+    q_desire: 5,
+    q_budget_pain: 'ok',
+    q_price_feel: 'good',
+    q_regret_impulse: 'calm',
+    q_addon_common_info: 'enough',
+    q_addon_common_priority: 'this_one',
+    q_goal: 'single',
+    q_motives_multi: ['use', 'content'],
+  });
+  if (strongBuy.decision !== 'BUY' || strongBuy.verdictFamily !== 'buy' || strongBuy.holdSubtype != null) {
+    throw new Error('canonical_buy: aligned positive case should stay BUY with buy family');
+  }
+
+  const strongStop = buildEvaluatedOutput('goods', {
+    q_desire: 1,
+    q_budget_pain: 'force',
+    q_price_feel: 'high',
+    q_regret_impulse: 'fomo',
+    q_addon_common_info: 'lack',
+    q_goal: 'set',
+    q_motives_multi: ['vague', 'fomo'],
+  });
+  if (strongStop.decision !== 'SKIP' || strongStop.verdictFamily !== 'stop' || strongStop.holdSubtype != null) {
+    throw new Error('canonical_stop: aligned negative case should stay SKIP with stop family');
+  }
+
+  const holdNeedsCheck = buildEvaluatedOutput('goods', {
+    q_desire: 4,
+    q_budget_pain: 'ok',
+    q_price_feel: 'unknown',
+    q_regret_impulse: 'calm',
+    q_addon_common_info: 'lack',
+    q_addon_goods_event_limit_context: 'venue_limited',
+    q_addon_goods_post_event_mailorder: 'unknown',
+    q_addon_goods_wait_tolerance: 'unknown',
+    q_addon_goods_used_fallback: 'unknown',
+    q_addon_goods_live_goods_motive: 'unknown',
+  });
+  if (holdNeedsCheck.decision !== 'THINK' || holdNeedsCheck.holdSubtype !== 'needs_check' || holdNeedsCheck.displayVerdictKey !== 'hold_needs_check') {
+    throw new Error('canonical_hold_needs_check: missing high-impact check should route to hold.needs_check');
+  }
+
+  const holdConflicting = buildEvaluatedOutput('used', {
+    q_desire: 5,
+    q_budget_pain: 'ok',
+    q_price_feel: 'good',
+    q_regret_impulse: 'calm',
+    q_goal: 'single',
+    q_motives_multi: ['use'],
+    q_addon_common_info: 'enough',
+    q_addon_used_condition: 'hard',
+    q_addon_used_price_gap: 'small',
+    q_addon_used_defect_return: 'not_ok',
+    q_addon_used_authenticity: 'must',
+    q_addon_used_seller_trust: 'low',
+  });
+  if (holdConflicting.decision !== 'THINK' || holdConflicting.holdSubtype !== 'conflicting' || holdConflicting.displayVerdictKey !== 'hold_conflicting') {
+    throw new Error('canonical_hold_conflicting: major buy/stop signals should route to hold.conflicting');
+  }
+
+  const holdTimingWait = buildEvaluatedOutput('goods', {
+    q_desire: 4,
+    q_budget_pain: 'some',
+    q_price_feel: 'normal',
+    q_regret_impulse: 'calm',
+    q_goal: 'single',
+    q_motives_multi: ['content'],
+    q_addon_common_info: 'enough',
+    q_addon_goods_event_limit_context: 'event_limited',
+    q_addon_goods_post_event_mailorder: 'likely',
+    q_addon_goods_wait_tolerance: 'high',
+    q_addon_goods_first_chance_tolerance: 'high',
+    q_addon_goods_used_fallback: 'high',
+    q_addon_goods_scarcity_pressure: 'medium',
+    q_addon_goods_venue_motive: 'practical_collecting',
+    q_addon_goods_live_goods_motive: 'symbolic_value',
+    q_addon_goods_regret_axis: 'overpay_more',
+  });
+  if (holdTimingWait.decision !== 'THINK' || holdTimingWait.holdSubtype !== 'timing_wait' || holdTimingWait.displayVerdictKey !== 'hold_timing_wait') {
+    throw new Error('canonical_hold_timing_wait: timing-based defer should route to hold.timing_wait');
+  }
+
+  const nearCenterBiased = buildEvaluatedOutput('goods', {
+    q_desire: 4,
+    q_budget_pain: 'some',
+    q_price_feel: 'normal',
+    q_regret_impulse: 'calm',
+    q_goal: 'single',
+    q_motives_multi: ['use'],
+    q_addon_common_info: 'enough',
+    q_addon_goods_compare: 'enough',
+    q_addon_common_priority: 'this_one',
+  });
+  if (nearCenterBiased.decision === 'THINK') {
+    throw new Error('canonical_near_center_bias: directionally biased case should no longer default to generic hold');
+  }
+
+  const replayOutput = buildEvaluatedOutput('used', {
+    q_desire: 5,
+    q_budget_pain: 'ok',
+    q_price_feel: 'good',
+    q_regret_impulse: 'calm',
+    q_goal: 'single',
+    q_motives_multi: ['use'],
+    q_addon_common_info: 'enough',
+    q_addon_used_condition: 'hard',
+    q_addon_used_price_gap: 'small',
+    q_addon_used_defect_return: 'not_ok',
+    q_addon_used_authenticity: 'must',
+    q_addon_used_seller_trust: 'low',
+  });
+  const replayRun = {
+    runId: 'canonical-replay-source',
+    createdAt: Date.now(),
+    locale: 'ja',
+    category: 'merch',
+    mode: 'long',
+    meta: { itemKind: 'used', goodsClass: 'small_collection', itemName: 'Replay verdict', priceYen: 4200 },
+    answers: {
+      q_desire: 5,
+      q_budget_pain: 'ok',
+      q_price_feel: 'good',
+      q_regret_impulse: 'calm',
+      q_goal: 'single',
+      q_motives_multi: ['use'],
+      q_addon_common_info: 'enough',
+      q_addon_used_condition: 'hard',
+      q_addon_used_price_gap: 'small',
+      q_addon_used_defect_return: 'not_ok',
+      q_addon_used_authenticity: 'must',
+      q_addon_used_seller_trust: 'low',
+    },
+    output: replayOutput,
+    diagnosticTrace: { runContext: { mode: 'long', itemKind: 'used', goodsClass: 'small_collection', hasPrice: true, hasItemName: true }, shownQuestionIds: Object.keys(replayOutput.scoreSummary), skippedQuestionIds: [], branchHits: [], branchMisses: [] },
+  } as any;
+  const replayDraft = createReplayDraft(replayRun, 'standard');
+  const replayed = buildEvaluatedOutput('used', replayDraft.answers, 'small_collection');
+  if (
+    replayed.verdictFamily !== replayOutput.verdictFamily ||
+    replayed.holdSubtype !== replayOutput.holdSubtype ||
+    replayed.displayVerdictKey !== replayOutput.displayVerdictKey
+  ) {
+    throw new Error('canonical_replay_stability: restore/replay should preserve verdict family/subtype/display key');
+  }
+
+  return {
+    strongBuy: { decision: strongBuy.decision, verdictFamily: strongBuy.verdictFamily, displayVerdictKey: strongBuy.displayVerdictKey },
+    strongStop: { decision: strongStop.decision, verdictFamily: strongStop.verdictFamily, displayVerdictKey: strongStop.displayVerdictKey },
+    holdNeedsCheck: { decision: holdNeedsCheck.decision, holdSubtype: holdNeedsCheck.holdSubtype, displayVerdictKey: holdNeedsCheck.displayVerdictKey },
+    holdConflicting: { decision: holdConflicting.decision, holdSubtype: holdConflicting.holdSubtype, displayVerdictKey: holdConflicting.displayVerdictKey },
+    holdTimingWait: { decision: holdTimingWait.decision, holdSubtype: holdTimingWait.holdSubtype, displayVerdictKey: holdTimingWait.displayVerdictKey },
+    nearCenterBiased: { decision: nearCenterBiased.decision, verdictFamily: nearCenterBiased.verdictFamily, displayVerdictKey: nearCenterBiased.displayVerdictKey },
     replayStable: true,
   };
 }
@@ -1250,6 +1410,7 @@ runMixedMediaFlowCheck();
 runMediumMediaCoverageCheck();
 runTrustRepairAcceptanceChecks();
 const bandNarrowingAcceptance = runBandNarrowingAcceptanceChecks();
+const canonicalVerdictAcceptance = runCanonicalVerdictAcceptanceChecks();
 runHomepageFunnelChecks();
 runDraftInvalidationCheck();
 runReplaySeedCheck();
@@ -1300,6 +1461,7 @@ const report = {
     draftInvalidation: "pass",
     replaySeed: "pass",
     bandNarrowing: bandNarrowingAcceptance,
+    canonicalVerdict: canonicalVerdictAcceptance,
   },
   blindDrawAcceptanceCases,
   mediaEditionAcceptanceCases,

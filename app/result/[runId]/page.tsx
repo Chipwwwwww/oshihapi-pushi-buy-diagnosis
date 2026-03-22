@@ -52,6 +52,11 @@ import ProviderComparisonModule from "@/components/ProviderComparisonModule";
 import { getScenarioCoverageSummary, getSupportLevelBadgeLabel } from "@/src/oshihapi/scenarioCoverage";
 
 const BASKET_STORAGE_KEY = "oshihapi_basket_last";
+const HOLD_SUBTYPE_BADGE_LABEL: Record<string, string> = {
+  needs_check: "要確認保留",
+  conflicting: "衝突保留",
+  timing_wait: "タイミング待ち",
+};
 
 type RakutenSearchItem = {
   name: string;
@@ -514,7 +519,19 @@ export default function ResultPage() {
     | undefined;
   const modeCopy = COPY_BY_MODE[styleMode];
   const bandTrace = getBandTrace(run);
-  const normalizedWaitType = outputExt?.waitType ?? (run?.output.decision === "THINK" ? "none" : "none");
+  const normalizedWaitType = outputExt?.waitType ?? (run?.output.decision === "THINK" ? run?.output.holdSubtype ?? "none" : "none");
+  const displayVerdictTitle =
+    run?.output.decision === "THINK" && run.output.holdSubtype
+      ? HOLD_SUBTYPE_BADGE_LABEL[run.output.holdSubtype] ?? modeCopy.result.verdictTitle.THINK
+      : run
+        ? modeCopy.result.verdictTitle[run.output.decision]
+        : "";
+  const displayVerdictLead =
+    run?.output.decision === "THINK" && run.output.holdSubtype
+      ? MODE_DICTIONARY[styleMode].explanation.wait[run.output.holdSubtype] ?? modeCopy.result.verdictLead.THINK
+      : run
+        ? modeCopy.result.verdictLead[run.output.decision]
+        : "";
   const storageFitValue =
     run && shouldAskStorage(run.meta.itemKind, run.meta.goodsSubtype) && typeof run.answers.q_storage_fit === "string"
       ? STORAGE_FIT_LABEL[run.answers.q_storage_fit] ?? run.answers.q_storage_fit
@@ -740,8 +757,8 @@ export default function ResultPage() {
       <header className="space-y-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
         <p className="text-sm font-semibold tracking-wide text-accent">{modeCopy.ui.resultSummaryTitle}</p>
         <div className="space-y-2">
-          <h1 className="text-4xl font-black leading-tight tracking-tight text-foreground sm:text-5xl">{modeCopy.result.verdictTitle[run.output.decision]}</h1>
-          <p className={`${bodyTextClass} text-foreground/90`}>{modeCopy.result.verdictLead[run.output.decision]}</p>
+          <h1 className="text-4xl font-black leading-tight tracking-tight text-foreground sm:text-5xl">{displayVerdictTitle}</h1>
+          <p className={`${bodyTextClass} text-foreground/90`}>{displayVerdictLead}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="primary">信頼度 {safeConfidence}%</Badge>
@@ -752,7 +769,7 @@ export default function ResultPage() {
             <Badge variant="outline">{presentation.badge}</Badge>
           ) : null}
           {run.output.decision === "THINK" && run.output.holdSubtype ? (
-            <Badge variant="outline">保留タイプ: {run.output.holdSubtype}</Badge>
+            <Badge variant="outline">保留タイプ: {HOLD_SUBTYPE_BADGE_LABEL[run.output.holdSubtype] ?? run.output.holdSubtype}</Badge>
           ) : null}
         </div>
         <p className={helperTextClass}>
