@@ -73,6 +73,9 @@ function defaultAnswer(questionId: string): AnswerValue {
   if (questionId === "q_addon_media_bonus_importance") return "medium";
   if (questionId === "q_addon_media_multi_store_tolerance") return "compare_then_one";
   if (questionId === "q_addon_media_split_order_burden") return "medium";
+  if (questionId === "q_addon_voice_cast_check") return "important_confirmed";
+  if (questionId === "q_addon_voice_audio_bonus_value") return "nice_to_have";
+  if (questionId === "q_addon_voice_listen_intent") return "maybe_later";
   if (questionId.includes("ticket")) return "partly";
   if (questionId.includes("preorder")) return "unknown";
   if (questionId.includes("used")) return "careful";
@@ -148,7 +151,25 @@ function validateResultShape(id: string, output: DecisionOutput) {
   }
 }
 
-function buildEvaluatedOutput(itemKind: ItemKind, overrides: Record<string, AnswerValue>, goodsClass: GoodsClass = 'small_collection') {
+function buildEvaluatedOutput(
+  itemKind: ItemKind,
+  overrides: Record<string, AnswerValue>,
+  goodsClass: GoodsClass = 'small_collection',
+  metaOverrides: Partial<{
+    itemName: string;
+    searchClueRaw: string;
+    parsedSearchClues: ReturnType<typeof parseSearchClues>;
+    priceYen: number;
+  }> = {},
+) {
+  const meta = {
+    itemKind,
+    goodsClass,
+    itemName: metaOverrides.itemName ?? '検証',
+    priceYen: metaOverrides.priceYen ?? 4000,
+    searchClueRaw: metaOverrides.searchClueRaw,
+    parsedSearchClues: metaOverrides.parsedSearchClues,
+  };
   const flow = resolveFlowQuestions({
     mode: 'long',
     itemKind,
@@ -156,7 +177,7 @@ function buildEvaluatedOutput(itemKind: ItemKind, overrides: Record<string, Answ
     goodsSubtype: 'general',
     useCase: itemKind === 'game_billing' ? 'game_billing' : 'merch',
     answers: overrides,
-    meta: { itemKind, goodsClass, itemName: '検証', priceYen: 4000 },
+    meta,
     styleMode: 'standard',
   });
   const answers: Record<string, AnswerValue> = {};
@@ -165,7 +186,7 @@ function buildEvaluatedOutput(itemKind: ItemKind, overrides: Record<string, Answ
   }
   return evaluate({
     questionSet: { id: 'check', locale: 'ja', category: 'merch', version: 1, questions: flow.questions },
-    meta: { itemKind, goodsClass, itemName: '検証', priceYen: 4000 },
+    meta,
     answers,
     mode: 'long',
     useCase: itemKind === 'game_billing' ? 'game_billing' : 'merch',
@@ -1450,6 +1471,265 @@ function runVTMediaAcceptanceChecks() {
   }
 }
 
+function runVoiceMediaAcceptanceChecks() {
+  const unresolvedBonusClue = parseSearchClues('ドラマCD 店舗特典 先着特典 特典は無くなり次第終了');
+  const unresolvedBonusFlow = resolveFlowQuestions({
+    mode: 'long',
+    itemKind: 'goods',
+    goodsClass: 'media',
+    goodsSubtype: 'general',
+    useCase: 'merch',
+    answers: {},
+    meta: {
+      itemKind: 'goods',
+      goodsClass: 'media',
+      itemName: '店舗特典付きドラマCD',
+      priceYen: 4400,
+      searchClueRaw: unresolvedBonusClue.raw,
+      parsedSearchClues: unresolvedBonusClue,
+    },
+    styleMode: 'standard',
+  });
+  for (const questionId of ['q_addon_voice_cast_check', 'q_addon_voice_audio_bonus_value', 'q_addon_voice_listen_intent']) {
+    if (!unresolvedBonusFlow.questions.some((question) => question.id === questionId)) {
+      throw new Error(`voice_media_questions: expected ${questionId} for eligible drama CD flow`);
+    }
+  }
+
+  const unresolvedBonusOutput = buildEvaluatedOutput(
+    'goods',
+    {
+      q_goal: 'single',
+      q_motives_multi: ['content', 'bonus', 'seiyuu_cast'],
+      q_budget_pain: 'some',
+      q_addon_media_motive: 'cast_performer',
+      q_addon_media_support_scope: 'one_oshi',
+      q_addon_media_collection_budget: 'balanced',
+      q_addon_media_edition_intent: 'one_best_fit',
+      q_addon_media_single_vs_set_intent: 'one_best_fit_version',
+      q_addon_media_completion_satisfaction: 'medium',
+      q_addon_media_used_market_recovery: 'buy_now_primary',
+      q_addon_media_used_market_comfort: 'medium',
+      q_addon_media_completion_pressure_type: 'bonus_store_pressure',
+      q_addon_media_set_reward_strength: 'medium',
+      q_addon_media_member_version: 'specific_version',
+      q_addon_media_playback_space: 'ready',
+      q_addon_media_bonus_importance: 'medium',
+      q_addon_media_multi_store_tolerance: 'compare_then_one',
+      q_addon_media_split_order_burden: 'medium',
+      q_addon_media_random_goods_intent: 'none',
+      q_addon_voice_cast_check: 'important_unconfirmed',
+      q_addon_voice_audio_bonus_value: 'unsure',
+      q_addon_voice_listen_intent: 'maybe_later',
+    },
+    'media',
+    {
+      itemName: '店舗特典付きドラマCD',
+      searchClueRaw: unresolvedBonusClue.raw,
+      parsedSearchClues: unresolvedBonusClue,
+      priceYen: 4400,
+    },
+  );
+  if (unresolvedBonusOutput.holdSubtype !== 'needs_check') {
+    throw new Error('voice_media_needs_check: unresolved cast/bonus should land on hold.needs_check');
+  }
+  if (!unresolvedBonusOutput.reasons.some((reason) => reason.text.includes('確認'))) {
+    throw new Error('voice_media_needs_check: result should explain what needs checking');
+  }
+  if (unresolvedBonusOutput.displayVerdictKey === 'hold_timing_wait') {
+    throw new Error('voice_media_needs_check: first-come/store-bonus uncertainty should not lazily become timing_wait');
+  }
+
+  const buyClue = parseSearchClues('ドラマCD キャスト 収録内容');
+  const confirmedBuyOutput = buildEvaluatedOutput(
+    'goods',
+    {
+      q_desire: 5,
+      q_goal: 'single',
+      q_motives_multi: ['content', 'use', 'seiyuu_cast'],
+      q_budget_pain: 'ok',
+      q_urgency: 'low_stock',
+      q_rarity_restock: 'unlikely',
+      q_price_feel: 'good',
+      q_regret_impulse: 'calm',
+      q_addon_media_motive: 'cast_performer',
+      q_addon_media_support_scope: 'one_oshi',
+      q_addon_media_collection_budget: 'efficient',
+      q_addon_media_edition_intent: 'one_best_fit',
+      q_addon_media_single_vs_set_intent: 'one_best_fit_version',
+      q_addon_media_completion_satisfaction: 'high',
+      q_addon_media_used_market_recovery: 'buy_now_primary',
+      q_addon_media_used_market_comfort: 'low',
+      q_addon_media_completion_pressure_type: 'personal_standard',
+      q_addon_media_set_reward_strength: 'medium',
+      q_addon_media_member_version: 'specific_version',
+      q_addon_media_playback_space: 'ready',
+      q_addon_media_bonus_importance: 'low',
+      q_addon_media_multi_store_tolerance: 'one_store_ok',
+      q_addon_media_split_order_burden: 'low',
+      q_addon_media_random_goods_intent: 'none',
+      q_addon_voice_cast_check: 'important_confirmed',
+      q_addon_voice_audio_bonus_value: 'not_important',
+      q_addon_voice_listen_intent: 'listen_soon',
+    },
+    'media',
+    {
+      itemName: 'ドラマCD 本編',
+      searchClueRaw: buyClue.raw,
+      parsedSearchClues: buyClue,
+      priceYen: 3300,
+    },
+  );
+  if (confirmedBuyOutput.decision !== 'BUY') {
+    throw new Error('voice_media_buy: confirmed cast + strong listen intent should be able to resolve to buy');
+  }
+  if (confirmedBuyOutput.reasons.some((reason) => reason.id.startsWith('hold_'))) {
+    throw new Error('voice_media_buy: promoted buy should not retain stale hold-only copy');
+  }
+
+  const bonusConflictOutput = buildEvaluatedOutput(
+    'goods',
+    {
+      q_goal: 'single',
+      q_motives_multi: ['bonus', 'fomo'],
+      q_budget_pain: 'some',
+      q_regret_impulse: 'fomo',
+      q_addon_media_motive: 'cast_performer',
+      q_addon_media_support_scope: 'one_oshi',
+      q_addon_media_collection_budget: 'balanced',
+      q_addon_media_edition_intent: 'limited_preferred',
+      q_addon_media_single_vs_set_intent: 'one_best_fit_version',
+      q_addon_media_completion_satisfaction: 'medium',
+      q_addon_media_used_market_recovery: 'buy_now_primary',
+      q_addon_media_used_market_comfort: 'low',
+      q_addon_media_completion_pressure_type: 'bonus_store_pressure',
+      q_addon_media_set_reward_strength: 'weak',
+      q_addon_media_member_version: 'none',
+      q_addon_media_playback_space: 'ready',
+      q_addon_media_bonus_importance: 'high',
+      q_addon_media_multi_store_tolerance: 'all_bonuses_or_bust',
+      q_addon_media_split_order_burden: 'high',
+      q_addon_media_random_goods_intent: 'none',
+      q_addon_voice_cast_check: 'important_confirmed',
+      q_addon_voice_audio_bonus_value: 'core',
+      q_addon_voice_listen_intent: 'collecting_main',
+    },
+    'media',
+    {
+      itemName: '店舗特典付きドラマCD',
+      searchClueRaw: unresolvedBonusClue.raw,
+      parsedSearchClues: unresolvedBonusClue,
+      priceYen: 4800,
+    },
+  );
+  if (!['conflicting', undefined].includes(bonusConflictOutput.holdSubtype) && bonusConflictOutput.decision !== 'SKIP') {
+    throw new Error('voice_media_conflict: bonus-heavy low-listen case should conflict or stop');
+  }
+  if (!bonusConflictOutput.reasons.some((reason) => reason.text.includes('特典') || reason.text.includes('聴く'))) {
+    throw new Error('voice_media_conflict: mismatch explanation should mention bonus/listen mismatch');
+  }
+
+  const genericMediaFlow = resolveFlowQuestions({
+    mode: 'long',
+    itemKind: 'goods',
+    goodsClass: 'media',
+    goodsSubtype: 'general',
+    useCase: 'merch',
+    answers: {},
+    meta: {
+      itemKind: 'goods',
+      goodsClass: 'media',
+      itemName: '初回限定 Blu-ray',
+      priceYen: 7000,
+      searchClueRaw: '初回限定 Blu-ray',
+      parsedSearchClues: parseSearchClues('初回限定 Blu-ray'),
+    },
+    styleMode: 'standard',
+  });
+  if (genericMediaFlow.questions.some((question) => question.id.startsWith('q_addon_voice_'))) {
+    throw new Error('voice_media_generic_regression: generic media must not show voice-media addon questions');
+  }
+
+  const usedWaitClue = parseSearchClues('ドラマCD キャスト');
+  const usedWaitOutput = buildEvaluatedOutput(
+    'used',
+    {
+      q_goal: 'single',
+      q_motives_multi: ['content', 'seiyuu_cast'],
+      q_budget_pain: 'some',
+      q_regret_impulse: 'calm',
+      q_addon_media_motive: 'cast_performer',
+      q_addon_media_support_scope: 'one_oshi',
+      q_addon_media_collection_budget: 'balanced',
+      q_addon_media_edition_intent: 'one_best_fit',
+      q_addon_media_single_vs_set_intent: 'selective_subset',
+      q_addon_media_completion_satisfaction: 'high',
+      q_addon_media_used_market_recovery: 'wait_and_patch',
+      q_addon_media_used_market_comfort: 'high',
+      q_addon_media_completion_pressure_type: 'personal_standard',
+      q_addon_media_set_reward_strength: 'weak',
+      q_addon_media_member_version: 'specific_version',
+      q_addon_media_playback_space: 'ready',
+      q_addon_media_bonus_importance: 'low',
+      q_addon_media_multi_store_tolerance: 'one_store_ok',
+      q_addon_media_split_order_burden: 'medium',
+      q_addon_media_random_goods_intent: 'none',
+      q_addon_voice_cast_check: 'important_confirmed',
+      q_addon_voice_audio_bonus_value: 'not_important',
+      q_addon_voice_listen_intent: 'maybe_later',
+      q_addon_goods_regret_axis: 'overpay_more',
+    },
+    'media',
+    {
+      itemName: '中古で追うドラマCD',
+      searchClueRaw: usedWaitClue.raw,
+      parsedSearchClues: usedWaitClue,
+      priceYen: 2800,
+    },
+  );
+  if (usedWaitOutput.holdSubtype !== 'timing_wait') {
+    throw new Error('voice_media_used_wait: used fallback should become timing_wait only when the used-route logic is explicit');
+  }
+  if (!usedWaitOutput.reasons.some((reason) => reason.text.includes('後から埋める') || reason.text.includes('中古'))) {
+    throw new Error('voice_media_used_wait: used-route explanation should stay clear and secondary');
+  }
+
+  const replaySource = {
+    runId: 'voice-media-replay',
+    createdAt: new Date().toISOString(),
+    mode: 'long' as const,
+    useCase: 'merch' as const,
+    itemKind: 'goods' as const,
+    goodsClass: 'media' as const,
+    styleMode: 'standard' as const,
+    answers: {
+      q_addon_voice_cast_check: 'important_confirmed',
+      q_addon_voice_audio_bonus_value: 'nice_to_have',
+      q_addon_voice_listen_intent: 'listen_soon',
+    },
+    meta: {
+      itemKind: 'goods' as const,
+      goodsClass: 'media' as const,
+      itemName: 'ドラマCD replay',
+      priceYen: 3200,
+      searchClueRaw: buyClue.raw,
+      parsedSearchClues: buyClue,
+    },
+    output: confirmedBuyOutput,
+    diagnosticTrace: {
+      runContext: { mode: 'long', itemKind: 'goods', goodsClass: 'media', hasPrice: true, hasItemName: true },
+      shownQuestionIds: unresolvedBonusFlow.diagnosticTrace.shownQuestionIds,
+      skippedQuestionIds: unresolvedBonusFlow.diagnosticTrace.skippedQuestionIds,
+      branchHits: [],
+      branchMisses: [],
+    },
+  };
+  const replayDraft = createReplayDraft(replaySource as never, 'standard');
+  if (replayDraft.answers.q_addon_voice_cast_check !== 'important_confirmed' || replayDraft.answers.q_addon_voice_listen_intent !== 'listen_soon') {
+    throw new Error('voice_media_replay: addon answers should persist into replay draft');
+  }
+}
+
 function runHomepageFunnelChecks() {
   if (!isGoodsClassApplicable("goods") || !isGoodsClassApplicable("used") || !isGoodsClassApplicable("preorder")) {
     throw new Error("homepage_funnel: goods-like item kinds should allow goodsClass step");
@@ -1553,6 +1833,7 @@ const mediaEditionAcceptanceCases = runMediaEditionAcceptanceChecks();
 runMixedMediaFlowCheck();
 runMediumMediaCoverageCheck();
 runVTMediaAcceptanceChecks();
+runVoiceMediaAcceptanceChecks();
 runTrustRepairAcceptanceChecks();
 const bandNarrowingAcceptance = runBandNarrowingAcceptanceChecks();
 const canonicalVerdictAcceptance = runCanonicalVerdictAcceptanceChecks();
@@ -1602,6 +1883,7 @@ const report = {
     mixedMediaFlow: "pass",
     mediumMediaCoverage: "pass",
     vtMediaAcceptance: "pass",
+    voiceMediaAcceptance: "pass",
     trustRepairAcceptance: "pass",
     homepageFunnel: "pass",
     draftInvalidation: "pass",

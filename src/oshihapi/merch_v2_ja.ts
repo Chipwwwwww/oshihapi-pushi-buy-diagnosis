@@ -704,6 +704,43 @@ export const merch_v2_ja: QuestionSet = {
       ],
     },
     {
+      id: 'q_addon_voice_cast_check',
+      type: 'single',
+      title: 'ドラマCDとして、出演キャスト確認はどれくらい大事？',
+      description: '出演者が決め手なら、未確認のまま進めない方が安全です',
+      required: true,
+      options: [
+        { id: 'important_confirmed', label: '大事で、もう確認できている', delta: { desire: 68, regretRisk: 38, opportunityCost: 38 } },
+        { id: 'important_unconfirmed', label: '大事だが、まだ確認できていない', tags: ['unknown_voice_cast', 'voice_cast_blocker'], delta: { regretRisk: 82, opportunityCost: 74 } },
+        { id: 'not_important', label: '今回はそこまで重要ではない', delta: { regretRisk: 46, opportunityCost: 46 } },
+      ],
+    },
+    {
+      id: 'q_addon_voice_audio_bonus_value',
+      type: 'single',
+      title: '音声特典・店舗特典ドラマの価値はどれくらい？',
+      description: '店舗差・先着条件・版違い確認が必要かを見ます',
+      required: true,
+      options: [
+        { id: 'core', label: '特典ドラマ/音声特典が本命に近い', tags: ['bonus_pressure_high', 'voice_bonus_core'], delta: { desire: 74, urgency: 72, impulse: 70, regretRisk: 68 } },
+        { id: 'nice_to_have', label: 'あれば嬉しいが、本体優先', tags: ['bonus_pressure_mid'], delta: { desire: 60, urgency: 56, impulse: 54, regretRisk: 54 } },
+        { id: 'not_important', label: '特典は重要ではない', delta: { impulse: 40, opportunityCost: 42, regretRisk: 42 } },
+        { id: 'unsure', label: 'まだ調べ切れていない/差が分からない', tags: ['unknown_voice_bonus'], delta: { regretRisk: 78, opportunityCost: 74, urgency: 56 } },
+      ],
+    },
+    {
+      id: 'q_addon_voice_listen_intent',
+      type: 'single',
+      title: 'このドラマCD、実際に聴く予定はどれに近い？',
+      required: true,
+      options: [
+        { id: 'listen_soon', label: '近いうちにちゃんと聴く予定', tags: ['voice_listen_ready'], delta: { desire: 74, regretRisk: 40, opportunityCost: 36 } },
+        { id: 'maybe_later', label: 'あとで聴くかも/保存寄り', delta: { desire: 56, regretRisk: 54, opportunityCost: 56 } },
+        { id: 'collecting_main', label: '聴くより所持・回収の意味が強い', tags: ['voice_collecting_main'], delta: { desire: 52, impulse: 68, regretRisk: 68, opportunityCost: 72 } },
+        { id: 'not_sure', label: 'まだ自分でも決め切れていない', tags: ['unknown_voice_listen'], delta: { desire: 48, impulse: 58, regretRisk: 72, opportunityCost: 70 } },
+      ],
+    },
+    {
       id: 'q_addon_media_multi_store_tolerance',
       type: 'single',
       title: '複数店舗の bonus を追うなら、どこまで許容できますか？',

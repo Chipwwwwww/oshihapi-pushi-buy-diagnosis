@@ -1,6 +1,7 @@
 import type { ActionItem, GoodsSubtype, HoldSubtype, ReasonItem, ScoreDimension } from './model';
 import { buildDefaultLinkOuts, buildSearchQuery } from './supportData';
 import type { InputMeta } from './model';
+import { getVoiceMediaSignals } from './voiceMedia';
 
 type FactorBuckets = {
   desireAttachment: number;
@@ -29,6 +30,7 @@ function has(tag: string, tags: string[]) {
 export function pickReasons(ctx: RuleContext): ReasonItem[] {
   const r: ReasonItem[] = [];
   const buckets = ctx.factorBuckets;
+  const voiceMediaSignals = getVoiceMediaSignals(ctx.meta);
 
   if (ctx.scores.affordability <= 30 || has('budget_force', ctx.tags) || has('budget_hard', ctx.tags)) {
     r.push({ id: 'budget', severity: 'strong', text: '今月の負担が大きめ。ここで無理すると後悔に繋がりやすい。' });
@@ -61,7 +63,21 @@ export function pickReasons(ctx: RuleContext): ReasonItem[] {
   }
 
   if (has('actor_fan_primary', ctx.tags)) {
-    r.push({ id: 'actor_fan_filter', severity: 'info', text: '推し声優の参加が主な購入理由なら、作品そのものを後で見直しても遅くないかもしれません。' });
+    r.push({
+      id: 'actor_fan_filter',
+      severity: 'info',
+      text: voiceMediaSignals.eligible
+        ? 'キャスト参加が主理由なら、出演有無・収録内容・店舗特典差の確認精度が満足度に直結します。'
+        : '推し声優の参加が主な購入理由なら、作品そのものを後で見直しても遅くないかもしれません。',
+    });
+  }
+
+  if (voiceMediaSignals.eligible && has('voice_collecting_main', ctx.tags)) {
+    r.push({ id: 'voice_collecting_bias', severity: 'warn', text: '「聴く」より所持・回収が前に出ると、ドラマCD本体の満足線が曖昧になりやすい。' });
+  }
+
+  if (voiceMediaSignals.eligible && has('voice_bonus_use_mismatch', ctx.tags)) {
+    r.push({ id: 'voice_bonus_use_gap', severity: 'warn', text: '特典圧に対して再生・消化のイメージが弱く、特典目的の惰性買いに寄りやすいです。' });
   }
 
   if (has('media_usage_unready', ctx.tags)) {

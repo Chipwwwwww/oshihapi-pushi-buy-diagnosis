@@ -9,11 +9,13 @@ import {
   CORE_12_QUESTION_IDS,
   MEDIA_P3B_QUESTION_IDS,
   MEDIA_CORE_QUESTION_IDS,
+  VOICE_MEDIA_ADDON_QUESTION_IDS,
   MIXED_MEDIA_RANDOM_GOODS_QUESTION_IDS,
   QUICK_QUESTION_IDS,
   shouldAskStorage,
 } from "@/src/oshihapi/question_sets";
 import type { ParsedSearchClues } from "@/src/oshihapi/input/types";
+import { getVoiceMediaSignals, isEligibleVoiceMediaAddonRoute } from "@/src/oshihapi/voiceMedia";
 
 export type FlowResolverInput = {
   mode: Mode;
@@ -102,6 +104,10 @@ function shouldAskMixedMediaRandomGoodsAddon(input: FlowResolverInput): boolean 
   );
 }
 
+function shouldAskVoiceMediaAddon(input: FlowResolverInput): boolean {
+  return input.mode === "long" && isEligibleVoiceMediaAddonRoute(input.meta);
+}
+
 export function resolveFlowQuestions(input: FlowResolverInput): FlowResolution {
   const coverage = getScenarioCoverageSummary({
     itemKind: input.itemKind,
@@ -152,6 +158,7 @@ export function resolveFlowQuestions(input: FlowResolverInput): FlowResolution {
   const hasUnknownBudget = input.answers.q_budget_pain == null || input.answers.q_budget_pain === "some";
   const lacksMeta = !input.meta.itemName || !input.meta.priceYen;
   const parsedSearchClues = input.meta.parsedSearchClues;
+  const voiceMediaSignals = getVoiceMediaSignals(input.meta);
   const branchHits: BranchTrace[] = [];
   const branchMisses: BranchTrace[] = [];
   const skippedQuestionTraces: SkippedQuestionTrace[] = [];
@@ -175,6 +182,7 @@ export function resolveFlowQuestions(input: FlowResolverInput): FlowResolution {
   pushBranch("unknown_budget_or_short_or_lacks_meta", hasUnknownBudget || input.mode === "short" || lacksMeta, `unknownBudget=${String(hasUnknownBudget)},lacksMeta=${String(lacksMeta)}`);
   pushBranch("search_clue_media_resolved", hasResolvedMediaItemType(parsedSearchClues), `itemTypes=${parsedSearchClues?.itemTypeCandidates.join("|") ?? ""}`);
   pushBranch("search_clue_bonus_strong", hasStrongBonusSignal(parsedSearchClues), `bonus=${parsedSearchClues?.bonusClues.join("|") ?? ""},edition=${parsedSearchClues?.editionClues.join("|") ?? ""}`);
+  pushBranch("voice_media_addon_route", shouldAskVoiceMediaAddon(input), `eligible=${String(voiceMediaSignals.eligible)},drama=${String(voiceMediaSignals.hasDramaCdSignal)}`);
   pushBranch("mixed_media_random_goods_addon", shouldAskMixedMediaRandomGoodsAddon(input), `intent=${String(input.answers.q_addon_media_random_goods_intent ?? "none")}`);
   pushBranch(
     "force_common_info",
@@ -226,6 +234,14 @@ export function resolveFlowQuestions(input: FlowResolverInput): FlowResolution {
     moveQuestionBefore(ids, "q_addon_blind_draw_exit", "q_addon_common_priority");
     moveQuestionBefore(ids, "q_addon_blind_draw_duplicate_tolerance", "q_addon_common_priority");
   }
+  if (shouldAskVoiceMediaAddon(input)) {
+    ids.push(...VOICE_MEDIA_ADDON_QUESTION_IDS);
+    moveQuestionBefore(ids, "q_addon_voice_cast_check", "q_addon_common_priority");
+    if (voiceMediaSignals.hasStoreBonusSignal || voiceMediaSignals.hasFirstComeBonusSignal || voiceMediaSignals.hasEditionSignal) {
+      moveQuestionBefore(ids, "q_addon_voice_audio_bonus_value", "q_addon_common_priority");
+    }
+    moveQuestionBefore(ids, "q_addon_voice_listen_intent", "q_addon_common_priority");
+  }
 
   const deduped = Array.from(new Set(ids)).filter((id) => {
     if (id !== "q_storage_fit" && id !== "q_storage_space") return true;
@@ -274,6 +290,7 @@ export function resolveFlowQuestions(input: FlowResolverInput): FlowResolution {
     ...Object.values(ADDON_BY_GOODS_CLASS).flat(),
     ...MEDIA_CORE_QUESTION_IDS,
     ...MEDIA_P3B_QUESTION_IDS,
+    ...VOICE_MEDIA_ADDON_QUESTION_IDS,
     ...MIXED_MEDIA_RANDOM_GOODS_QUESTION_IDS,
     ...VENUE_LIMITED_RECOVERY_QUESTION_IDS,
     "q_addon_goods_event_limit_context",

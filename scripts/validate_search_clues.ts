@@ -23,6 +23,9 @@ function main() {
   const exactC = parseSearchClues("初回限定 Blu-ray");
   assert(exactC.mode === "exact", "edition + media item type should classify as exact");
 
+  const dramaCd = parseSearchClues("ドラマCD 店舗特典 キャスト 収録内容");
+  assert(dramaCd.itemTypeCandidates.includes("CD") && dramaCd.bonusClues.includes("特典"), "drama CD clue should stay on the existing media/CD route");
+
   const vtBluray = parseSearchClues("hololive 初回限定 Blu-ray 特典");
   assert(vtBluray.mode === "exact" && vtBluray.itemTypeCandidates.includes("Blu-ray"), "VT Blu-ray clue should stay on the existing exact media path");
 
@@ -141,6 +144,28 @@ function main() {
   });
   assert(vtBookFlow.questions.some((question) => question.id === "q_addon_media_motive"), "VT book clue should stay inside the media wedge when goodsClass=media");
 
+  const dramaCdFlow = resolveFlowQuestions({
+    mode: "long",
+    itemKind: "goods",
+    goodsClass: "media",
+    goodsSubtype: "general",
+    useCase: "merch",
+    answers: {},
+    meta: {
+      itemKind: "goods",
+      goodsClass: "media",
+      searchClueRaw: dramaCd.raw,
+      parsedSearchClues: dramaCd,
+      itemName: "店舗特典付きドラマCD",
+      priceYen: 4400,
+    },
+    styleMode: "standard",
+  });
+  assert(dramaCdFlow.questions.some((question) => question.id === "q_addon_voice_cast_check"), "drama CD clue should activate the narrow voice-media addon questions");
+  assert(dramaCdFlow.questions.some((question) => question.id === "q_addon_voice_audio_bonus_value"), "drama CD clue should ask bonus-value clarification");
+  assert(dramaCdFlow.questions.some((question) => question.id === "q_addon_voice_listen_intent"), "drama CD clue should ask listen-intent clarification");
+  assert(dramaCdFlow.diagnosticTrace.branchHits.some((trace) => trace.id === "voice_media_addon_route"), "voice-media addon route should remain diagnosable");
+
   const mediaMotiveIndex = mediaFlow.questions.findIndex((question) => question.id === "q_addon_media_motive");
   const commonPriorityIndex = mediaFlow.questions.findIndex((question) => question.id === "q_addon_common_priority");
   assert(
@@ -163,6 +188,25 @@ function main() {
     styleMode: "standard",
   });
   assert(noClueFlow.questions.length > 0, "planner flow should still work without clue input");
+
+  const genericMediaNoVoice = resolveFlowQuestions({
+    mode: "long",
+    itemKind: "goods",
+    goodsClass: "media",
+    goodsSubtype: "general",
+    useCase: "merch",
+    answers: {},
+    meta: {
+      itemKind: "goods",
+      goodsClass: "media",
+      searchClueRaw: "初回限定 Blu-ray",
+      parsedSearchClues: exactC,
+      itemName: "通常メディア",
+      priceYen: 7000,
+    },
+    styleMode: "standard",
+  });
+  assert(!genericMediaNoVoice.questions.some((question) => question.id.startsWith("q_addon_voice_")), "generic media should not show voice-media addon questions");
 
   const singleFocusLongFlow = resolveFlowQuestions({
     mode: "long",
