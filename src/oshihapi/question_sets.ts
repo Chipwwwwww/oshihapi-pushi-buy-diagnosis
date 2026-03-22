@@ -75,6 +75,12 @@ export const MEDIA_P3B_QUESTION_IDS = [
   "q_addon_media_split_order_burden",
 ] as const;
 
+export const VOICE_MEDIA_ADDON_QUESTION_IDS = [
+  "q_addon_voice_cast_check",
+  "q_addon_voice_audio_bonus_value",
+  "q_addon_voice_listen_intent",
+] as const;
+
 export const MEDIA_P3C_QUESTION_IDS = [
   "q_addon_media_single_vs_set_intent",
   "q_addon_media_completion_satisfaction",

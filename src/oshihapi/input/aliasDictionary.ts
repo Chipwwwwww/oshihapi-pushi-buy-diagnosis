@@ -21,7 +21,7 @@ export const CHARACTER_ALIASES: AliasEntry[] = [
 export const ITEM_TYPE_ALIASES: AliasEntry[] = [
   { canonical: "缶バッジ", aliases: ["缶バッジ", "缶バ"] },
   { canonical: "紙類", aliases: ["紙類", "紙もの", "ブロマイド", "ポストカード", "カード"] },
-  { canonical: "CD", aliases: ["cd", "アルバム", "シングル", "cd付", "特典付きcd"] },
+  { canonical: "CD", aliases: ["cd", "アルバム", "シングル", "cd付", "特典付きcd", "ドラマcd", "ドラマ cd"] },
   { canonical: "Blu-ray", aliases: ["blu-ray", "bd", "bluray", "blu ray", "dvd", "円盤", "藍光"] },
   { canonical: "書籍", aliases: ["書籍", "本", "写真集", "フォトブック", "photo book"] },
   { canonical: "アクリルスタンド", aliases: ["アクスタ", "アクリルスタンド"] },

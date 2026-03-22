@@ -29,6 +29,7 @@ import { shouldAskStorage } from './storageGate';
 import { resolveScenarioKey } from './scenarioCoverage';
 import { resolveCanonicalVerdict, toConfidenceLevel, toVerdictStrength } from './verdictModel';
 import { buildUsedExitPlan } from './usedExitPlan';
+import { getVoiceMediaSignals } from './voiceMedia';
 
 type EvaluateInput = {
   config?: EngineConfig;
@@ -1396,6 +1397,46 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
 
   applyMotives(scores, motives, tags);
 
+  const voiceMediaSignals = getVoiceMediaSignals(input.meta);
+  const voiceCastCheck = getSingleAnswer(input.answers, 'q_addon_voice_cast_check');
+  const voiceBonusValue = getSingleAnswer(input.answers, 'q_addon_voice_audio_bonus_value');
+  const voiceListenIntent = getSingleAnswer(input.answers, 'q_addon_voice_listen_intent');
+
+  if (voiceMediaSignals.eligible) {
+    tags.push('voice_media_route');
+    if (voiceCastCheck === 'important_unconfirmed') {
+      tags.push('unknown_voice_cast_confirmation');
+      scores.regretRisk = clamp(0, 100, scores.regretRisk + 8);
+      scores.opportunityCost = clamp(0, 100, scores.opportunityCost + 6);
+    }
+    if (voiceBonusValue === 'unsure') {
+      tags.push('unknown_voice_bonus_value');
+      if (voiceMediaSignals.hasStoreBonusSignal || voiceMediaSignals.hasFirstComeBonusSignal || voiceMediaSignals.hasEditionSignal) {
+        tags.push('unknown_voice_bonus_scope');
+      }
+      scores.regretRisk = clamp(0, 100, scores.regretRisk + 8);
+      scores.opportunityCost = clamp(0, 100, scores.opportunityCost + 8);
+    }
+    if (voiceListenIntent === 'not_sure') {
+      tags.push('unknown_voice_listen_timing');
+    }
+    if (
+      (voiceMediaSignals.hasContentSignal || voiceMediaSignals.hasEditionSignal || voiceMediaSignals.hasStoreBonusSignal) &&
+      voiceBonusValue === 'unsure'
+    ) {
+      tags.push('unknown_voice_content_scope');
+    }
+    if (voiceBonusValue === 'core' && (voiceListenIntent === 'collecting_main' || voiceListenIntent === 'not_sure')) {
+      tags.push('voice_bonus_use_mismatch', 'bonus_pressure_high');
+      scores.impulse = clamp(0, 100, scores.impulse + 8);
+      scores.opportunityCost = clamp(0, 100, scores.opportunityCost + 10);
+      scores.regretRisk = clamp(0, 100, scores.regretRisk + 8);
+    }
+    if (voiceListenIntent === 'listen_soon') {
+      scores.desire = clamp(0, 100, scores.desire + 4);
+    }
+  }
+
   const unknownCount = tags.filter(t => t.startsWith('unknown_')).length;
   const impulseFlag = scores.impulse >= 70;
   const futureUseFlag = motives.includes('support') || motives.includes('use');
@@ -1635,6 +1676,53 @@ export function evaluate(input: EvaluateInput): DecisionOutput {
   if (impulseFlag) {
     extraReasons.push({ id: 'impulse_rush', severity: 'info', text: '「買えた快感」が主役の時、満足がすぐ落ち着くこともあるかも。' });
     extraActions.push({ id: 'cooldown_10min', text: '10分だけクールダウン（カート保持）→ その後もう一回だけ判断しよ。' });
+  }
+
+  if (voiceMediaSignals.eligible) {
+    if (voiceCastCheck === 'important_unconfirmed') {
+      extraReasons.unshift({
+        id: 'voice_cast_needs_check',
+        severity: 'warn',
+        text: '出演キャスト確認が購入理由に直結しているため、未確認のままでは結論を固定しない方が安全です。',
+      });
+      extraActions.unshift({
+        id: 'voice_cast_verify',
+        text: '出演キャスト・役名表記・参加形式を確認してから再診断する',
+      });
+    }
+    if (
+      voiceBonusValue === 'unsure' &&
+      (voiceMediaSignals.hasStoreBonusSignal || voiceMediaSignals.hasFirstComeBonusSignal || voiceMediaSignals.hasEditionSignal)
+    ) {
+      extraReasons.unshift({
+        id: 'voice_bonus_needs_check',
+        severity: 'warn',
+        text: voiceMediaSignals.hasFirstComeBonusSignal
+          ? '先着特典や店舗差が絡むため、「待つ」より先に特典残数・対象店舗・版差の確認が必要です。'
+          : '店舗特典や版差の未確認点が残っており、どこで何を買うかで満足度が変わりやすいです。',
+      });
+      extraActions.unshift({
+        id: 'voice_bonus_verify',
+        text: '店舗特典の有無・先着条件・通常盤/限定盤の差を先に確認する',
+      });
+    }
+    if (voiceBonusValue === 'core' && (voiceListenIntent === 'collecting_main' || voiceListenIntent === 'not_sure')) {
+      extraReasons.unshift({
+        id: 'voice_listen_mismatch',
+        severity: 'warn',
+        text: '特典への熱量に対して「実際に聴く」像が弱く、満足より回収圧が先行している可能性があります。',
+      });
+    } else if (
+      voiceCastCheck === 'important_confirmed' &&
+      voiceListenIntent === 'listen_soon' &&
+      (voiceBonusValue === 'not_important' || voiceBonusValue === 'nice_to_have')
+    ) {
+      extraReasons.unshift({
+        id: 'voice_route_ready',
+        severity: 'info',
+        text: 'キャスト確認と聴く予定が揃っているため、ドラマCDとしての満足条件は比較的はっきりしています。',
+      });
+    }
   }
 
   if (randomGoodsPlan) {

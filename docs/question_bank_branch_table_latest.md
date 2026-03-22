@@ -53,7 +53,7 @@
 
 ## B. Orphan Questions
 
-- q_addon_goods_first_chance_tolerance, q_addon_goods_live_goods_motive, q_addon_goods_post_event_mailorder, q_addon_goods_regret_axis, q_addon_goods_scarcity_pressure, q_addon_goods_used_fallback, q_addon_goods_venue_motive, q_addon_goods_wait_tolerance, q_addon_preorder_restock, q_long_note
+- q_addon_goods_first_chance_tolerance, q_addon_goods_live_goods_motive, q_addon_goods_post_event_mailorder, q_addon_goods_regret_axis, q_addon_goods_scarcity_pressure, q_addon_goods_used_fallback, q_addon_goods_venue_motive, q_addon_goods_wait_tolerance, q_addon_preorder_restock, q_addon_voice_audio_bonus_value, q_addon_voice_cast_check, q_addon_voice_listen_intent, q_long_note
 
 ## C. Question Catalog Detail
 
@@ -2434,6 +2434,89 @@
 | low | 信頼根拠が弱い/返品厳しい | 信頼根拠が弱い/返品厳しい | 信頼根拠が弱い/返品厳しい | true |  | opportunityCost:72;regretRisk:80 |  |  |  |
 | medium | 評価は普通、条件は一部確認 | 評価は普通、条件は一部確認 | 評価は普通、条件は一部確認 | true |  | opportunityCost:56;regretRisk:58 |  |  |  |
 | unknown | 未確認 | 未確認 | 未確認 | true | unknown_info | opportunityCost:62;regretRisk:68 |  |  |  |
+
+</details>
+
+### q_addon_voice_audio_bonus_value
+- useCase: merch
+- type: single
+- scoring relevance: delta
+- impactCategory: score
+- relevanceSummary: score
+- behaviorRelevance: {"affectsScore":true,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: 
+- isOrphan: true
+- mapTo: 
+- tags: bonus_pressure_high, bonus_pressure_mid, unknown_voice_bonus, voice_bonus_core
+- unknown tags hints: unknown_voice_bonus
+- text_standard: 音声特典・店舗特典ドラマの価値はどれくらい？
+- text_kawaii: 音声特典や店舗特典ドラマ、どれくらい大事？
+- text_oshi: 音声 bonus / 店舗特典ドラマの重要度は？
+- sameAsStandard: false
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| core | 特典ドラマ/音声特典が本命に近い | 特典ドラマ/音声特典が本命に近い | 特典ドラマ/音声特典が本命に近い | true | bonus_pressure_high;voice_bonus_core | desire:74;impulse:70;regretRisk:68;urgency:72 |  |  |  |
+| nice_to_have | あれば嬉しいが、本体優先 | あれば嬉しいが、本体優先 | あれば嬉しいが、本体優先 | true | bonus_pressure_mid | desire:60;impulse:54;regretRisk:54;urgency:56 |  |  |  |
+| not_important | 特典は重要ではない | 特典は重要ではない | 特典は重要ではない | true |  | impulse:40;opportunityCost:42;regretRisk:42 |  |  |  |
+| unsure | まだ調べ切れていない/差が分からない | まだ調べ切れていない/差が分からない | まだ調べ切れていない/差が分からない | true | unknown_voice_bonus | opportunityCost:74;regretRisk:78;urgency:56 |  |  |  |
+
+</details>
+
+### q_addon_voice_cast_check
+- useCase: merch
+- type: single
+- scoring relevance: delta
+- impactCategory: score
+- relevanceSummary: score
+- behaviorRelevance: {"affectsScore":true,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: 
+- isOrphan: true
+- mapTo: 
+- tags: unknown_voice_cast, voice_cast_blocker
+- unknown tags hints: unknown_voice_cast
+- text_standard: ドラマCDとして、出演キャスト確認はどれくらい大事？
+- text_kawaii: 出演キャスト確認、どれくらい大事？
+- text_oshi: 出演キャスト確認の重要度は？
+- sameAsStandard: false
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| important_confirmed | 大事で、もう確認できている | 大事で、もう確認できている | 大事で、もう確認できている | true |  | desire:68;opportunityCost:38;regretRisk:38 |  |  |  |
+| important_unconfirmed | 大事だが、まだ確認できていない | 大事だが、まだ確認できていない | 大事だが、まだ確認できていない | true | unknown_voice_cast;voice_cast_blocker | opportunityCost:74;regretRisk:82 |  |  |  |
+| not_important | 今回はそこまで重要ではない | 今回はそこまで重要ではない | 今回はそこまで重要ではない | true |  | opportunityCost:46;regretRisk:46 |  |  |  |
+
+</details>
+
+### q_addon_voice_listen_intent
+- useCase: merch
+- type: single
+- scoring relevance: delta
+- impactCategory: score
+- relevanceSummary: score
+- behaviorRelevance: {"affectsScore":true,"affectsImpulseFlag":false,"affectsFutureUseFlag":false,"affectsTrendOrVagueFlag":false,"affectsMerchMethod":false,"affectsStorageGate":false}
+- appears in: 
+- isOrphan: true
+- mapTo: 
+- tags: unknown_voice_listen, voice_collecting_main, voice_listen_ready
+- unknown tags hints: unknown_voice_listen
+- text_standard: このドラマCD、実際に聴く予定はどれに近い？
+- text_kawaii: このドラマCD、実際に聴く予定は？
+- text_oshi: 実際の listen intent は？
+- sameAsStandard: false
+<details>
+<summary>Options</summary>
+
+| optionId | standard | kawaii | oshi | sameAsStandard | tags | delta | gb_buy | gb_stop | gb_net |
+|---|---|---|---|---|---|---|---|---|---|
+| collecting_main | 聴くより所持・回収の意味が強い | 聴くより所持・回収の意味が強い | 聴くより所持・回収の意味が強い | true | voice_collecting_main | desire:52;impulse:68;opportunityCost:72;regretRisk:68 |  |  |  |
+| listen_soon | 近いうちにちゃんと聴く予定 | 近いうちにちゃんと聴く予定 | 近いうちにちゃんと聴く予定 | true | voice_listen_ready | desire:74;opportunityCost:36;regretRisk:40 |  |  |  |
+| maybe_later | あとで聴くかも/保存寄り | あとで聴くかも/保存寄り | あとで聴くかも/保存寄り | true |  | desire:56;opportunityCost:56;regretRisk:54 |  |  |  |
+| not_sure | まだ自分でも決め切れていない | まだ自分でも決め切れていない | まだ自分でも決め切れていない | true | unknown_voice_listen | desire:48;impulse:58;opportunityCost:70;regretRisk:72 |  |  |  |
 
 </details>
 

@@ -9087,6 +9087,319 @@
     },
     {
       "useCase": "merch",
+      "questionId": "q_addon_voice_audio_bonus_value",
+      "questionType": "single",
+      "scoringRelevance": "delta",
+      "impactCategory": "score",
+      "behaviorRelevance": {
+        "affectsScore": true,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "score",
+      "mapTo": null,
+      "tags": [
+        "bonus_pressure_high",
+        "bonus_pressure_mid",
+        "unknown_voice_bonus",
+        "voice_bonus_core"
+      ],
+      "unknownTagHints": [
+        "unknown_voice_bonus"
+      ],
+      "appearsInBranches": [],
+      "isOrphan": true,
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "音声特典・店舗特典ドラマの価値はどれくらい？",
+        "kawaii": "音声特典や店舗特典ドラマ、どれくらい大事？",
+        "oshi": "音声 bonus / 店舗特典ドラマの重要度は？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "core",
+          "labels": {
+            "standard": "特典ドラマ/音声特典が本命に近い",
+            "kawaii": "特典ドラマ/音声特典が本命に近い",
+            "oshi": "特典ドラマ/音声特典が本命に近い"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "desire": 74,
+            "urgency": 72,
+            "impulse": 70,
+            "regretRisk": 68
+          },
+          "tags": [
+            "bonus_pressure_high",
+            "voice_bonus_core"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "nice_to_have",
+          "labels": {
+            "standard": "あれば嬉しいが、本体優先",
+            "kawaii": "あれば嬉しいが、本体優先",
+            "oshi": "あれば嬉しいが、本体優先"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "desire": 60,
+            "urgency": 56,
+            "impulse": 54,
+            "regretRisk": 54
+          },
+          "tags": [
+            "bonus_pressure_mid"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "not_important",
+          "labels": {
+            "standard": "特典は重要ではない",
+            "kawaii": "特典は重要ではない",
+            "oshi": "特典は重要ではない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "impulse": 40,
+            "opportunityCost": 42,
+            "regretRisk": 42
+          },
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "unsure",
+          "labels": {
+            "standard": "まだ調べ切れていない/差が分からない",
+            "kawaii": "まだ調べ切れていない/差が分からない",
+            "oshi": "まだ調べ切れていない/差が分からない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 78,
+            "opportunityCost": 74,
+            "urgency": 56
+          },
+          "tags": [
+            "unknown_voice_bonus"
+          ],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_voice_cast_check",
+      "questionType": "single",
+      "scoringRelevance": "delta",
+      "impactCategory": "score",
+      "behaviorRelevance": {
+        "affectsScore": true,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "score",
+      "mapTo": null,
+      "tags": [
+        "unknown_voice_cast",
+        "voice_cast_blocker"
+      ],
+      "unknownTagHints": [
+        "unknown_voice_cast"
+      ],
+      "appearsInBranches": [],
+      "isOrphan": true,
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "ドラマCDとして、出演キャスト確認はどれくらい大事？",
+        "kawaii": "出演キャスト確認、どれくらい大事？",
+        "oshi": "出演キャスト確認の重要度は？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "important_confirmed",
+          "labels": {
+            "standard": "大事で、もう確認できている",
+            "kawaii": "大事で、もう確認できている",
+            "oshi": "大事で、もう確認できている"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "desire": 68,
+            "regretRisk": 38,
+            "opportunityCost": 38
+          },
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "important_unconfirmed",
+          "labels": {
+            "standard": "大事だが、まだ確認できていない",
+            "kawaii": "大事だが、まだ確認できていない",
+            "oshi": "大事だが、まだ確認できていない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 82,
+            "opportunityCost": 74
+          },
+          "tags": [
+            "unknown_voice_cast",
+            "voice_cast_blocker"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "not_important",
+          "labels": {
+            "standard": "今回はそこまで重要ではない",
+            "kawaii": "今回はそこまで重要ではない",
+            "oshi": "今回はそこまで重要ではない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "regretRisk": 46,
+            "opportunityCost": 46
+          },
+          "tags": [],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
+      "questionId": "q_addon_voice_listen_intent",
+      "questionType": "single",
+      "scoringRelevance": "delta",
+      "impactCategory": "score",
+      "behaviorRelevance": {
+        "affectsScore": true,
+        "affectsImpulseFlag": false,
+        "affectsFutureUseFlag": false,
+        "affectsTrendOrVagueFlag": false,
+        "affectsMerchMethod": false,
+        "affectsStorageGate": false
+      },
+      "relevanceSummary": "score",
+      "mapTo": null,
+      "tags": [
+        "unknown_voice_listen",
+        "voice_collecting_main",
+        "voice_listen_ready"
+      ],
+      "unknownTagHints": [
+        "unknown_voice_listen"
+      ],
+      "appearsInBranches": [],
+      "isOrphan": true,
+      "sameAsStandard": false,
+      "styles": {
+        "standard": "このドラマCD、実際に聴く予定はどれに近い？",
+        "kawaii": "このドラマCD、実際に聴く予定は？",
+        "oshi": "実際の listen intent は？"
+      },
+      "scaleLabels": null,
+      "options": [
+        {
+          "optionId": "collecting_main",
+          "labels": {
+            "standard": "聴くより所持・回収の意味が強い",
+            "kawaii": "聴くより所持・回収の意味が強い",
+            "oshi": "聴くより所持・回収の意味が強い"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "desire": 52,
+            "impulse": 68,
+            "regretRisk": 68,
+            "opportunityCost": 72
+          },
+          "tags": [
+            "voice_collecting_main"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "listen_soon",
+          "labels": {
+            "standard": "近いうちにちゃんと聴く予定",
+            "kawaii": "近いうちにちゃんと聴く予定",
+            "oshi": "近いうちにちゃんと聴く予定"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "desire": 74,
+            "regretRisk": 40,
+            "opportunityCost": 36
+          },
+          "tags": [
+            "voice_listen_ready"
+          ],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "maybe_later",
+          "labels": {
+            "standard": "あとで聴くかも/保存寄り",
+            "kawaii": "あとで聴くかも/保存寄り",
+            "oshi": "あとで聴くかも/保存寄り"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "desire": 56,
+            "regretRisk": 54,
+            "opportunityCost": 56
+          },
+          "tags": [],
+          "buyStopDelta": null
+        },
+        {
+          "optionId": "not_sure",
+          "labels": {
+            "standard": "まだ自分でも決め切れていない",
+            "kawaii": "まだ自分でも決め切れていない",
+            "oshi": "まだ自分でも決め切れていない"
+          },
+          "sameAsStandard": true,
+          "mapTo": null,
+          "delta": {
+            "desire": 48,
+            "impulse": 58,
+            "regretRisk": 72,
+            "opportunityCost": 70
+          },
+          "tags": [
+            "unknown_voice_listen"
+          ],
+          "buyStopDelta": null
+        }
+      ]
+    },
+    {
+      "useCase": "merch",
       "questionId": "q_alternative_plan",
       "questionType": "single",
       "scoringRelevance": "none",
