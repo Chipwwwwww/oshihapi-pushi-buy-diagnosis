@@ -1,7 +1,7 @@
 import { parseSearchClues } from "@/src/oshihapi/input/parseSearchClues";
 import { planProviderCards } from "@/src/oshihapi/providerPlanner";
 import type { ProviderDiagnostics } from "@/src/oshihapi/providerPlanner";
-import type { GoodsClass, ItemKind } from "@/src/oshihapi/model";
+import type { DisplayVerdictKey, GoodsClass, HoldSubtype, ItemKind, Decision } from "@/src/oshihapi/model";
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -13,6 +13,9 @@ type ScenarioSpec = {
   rawClue: string;
   itemKind: ItemKind;
   goodsClass: GoodsClass;
+  verdict?: Decision;
+  holdSubtype?: HoldSubtype;
+  displayVerdictKey?: DisplayVerdictKey;
   confidence: number;
   resultTags?: string[];
   expected: string[];
@@ -57,13 +60,16 @@ async function runScenario(spec: ScenarioSpec) {
   const searchClues = parseSearchClues(spec.rawClue);
   const result = await planProviderCards({
     runId: `planner-sanity-${spec.id}`,
-    verdict: "THINK",
+    verdict: spec.verdict ?? "THINK",
+    holdSubtype: spec.holdSubtype,
+    displayVerdictKey: spec.displayVerdictKey,
     itemKind: spec.itemKind,
     goodsClass: spec.goodsClass,
     confidence: spec.confidence,
     resultTags: spec.resultTags ?? [],
     searchClues,
     ...DELIVERY_READY_BASE,
+    surugayaKeyword: spec.rawClue,
   });
 
   spec.assertions(result);
@@ -214,6 +220,69 @@ const SCENARIOS: ScenarioSpec[] = [
         findEvaluation(result.diagnostics, "amazon")?.demotionReasons.includes("duplicate_risk_recovery_mismatch"),
         "blind_draw_used_market_fallback: diagnostics should explain generic-retail mismatch",
       );
+    },
+  },
+  {
+    id: "hold_needs_check_used_exit_only",
+    rawClue: "イベント限定 アクスタ",
+    itemKind: "goods",
+    goodsClass: "small_collection",
+    verdict: "THINK",
+    holdSubtype: "needs_check",
+    displayVerdictKey: "hold_needs_check",
+    confidence: 66,
+    resultTags: ["trust_gate_venue_unknown_heavy"],
+    expected: [
+      "hold.needs_check should keep used-exit scope narrow.",
+      "Only Mercari and Surugaya should remain visible for the used-exit layer.",
+      "Surugaya should use deterministic /out search routing.",
+    ],
+    improvedVsOldLogic: "Checklist-first hold states no longer leak generic purchase-style provider cards into the visible stack.",
+    assertions: (result) => {
+      const ids = topIds(result);
+      assert(ids.every((id) => id === "mercari" || id === "surugaya"), "hold_needs_check_used_exit_only: only Mercari/Surugaya should remain visible");
+      assert(
+        result.cards.find((card) => card.providerId === "surugaya")?.outHref.includes("dest=surugaya-search"),
+        "hold_needs_check_used_exit_only: Surugaya should use deterministic search out route",
+      );
+    },
+  },
+  {
+    id: "hold_conflicting_reference_only_scope",
+    rawClue: "中古 アクスタ",
+    itemKind: "used",
+    goodsClass: "small_collection",
+    verdict: "THINK",
+    holdSubtype: "conflicting",
+    displayVerdictKey: "hold_conflicting",
+    confidence: 74,
+    expected: [
+      "hold.conflicting should suppress generic purchase-style provider expansion.",
+      "Visible provider scope should stay on Mercari/Surugaya only.",
+    ],
+    improvedVsOldLogic: "Conflicting hold states now keep the visible provider layer subdued instead of broadening into more shopping prompts.",
+    assertions: (result) => {
+      const ids = topIds(result);
+      assert(ids.length > 0 && ids.every((id) => id === "mercari" || id === "surugaya"), "hold_conflicting_reference_only_scope: only Mercari/Surugaya should stay visible");
+    },
+  },
+  {
+    id: "stop_delayed_recheck_used_scope",
+    rawClue: "会場限定 缶バッジ",
+    itemKind: "goods",
+    goodsClass: "itabag_badge",
+    verdict: "SKIP",
+    displayVerdictKey: "stop",
+    confidence: 82,
+    resultTags: ["venue_limited_path_skip_atmosphere_driven_goods_chase"],
+    expected: [
+      "stop should keep used routing narrow and optional.",
+      "Visible provider scope should stay on Mercari/Surugaya only.",
+    ],
+    improvedVsOldLogic: "Stop states keep a rollback-safe delayed recheck scope without reopening the full provider wall.",
+    assertions: (result) => {
+      const ids = topIds(result);
+      assert(ids.every((id) => id === "mercari" || id === "surugaya"), "stop_delayed_recheck_used_scope: only Mercari/Surugaya should remain visible");
     },
   },
   {

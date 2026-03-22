@@ -10,6 +10,7 @@ import { loadRuns } from "@/src/oshihapi/runStorage";
 import { createReplayDraft } from "@/src/store/diagnosisStore";
 import { formatResultByMode } from "@/src/oshihapi/modes/formatResultByMode";
 import { MODE_DICTIONARY, ResultMode, Verdict } from "@/src/oshihapi/modes/mode_dictionary";
+import { buildUsedExitPlan, getUsedExitModeLabel } from "@/src/oshihapi/usedExitPlan";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -214,6 +215,16 @@ export default function HistoryPage() {
                 run.output.decision === "THINK" && run.output.holdSubtype
                   ? holdSubtypeLabels[run.output.holdSubtype] ?? decisionLabels[run.output.decision]
                   : decisionLabels[run.output.decision];
+              const usedExitPlan =
+                run.output.usedExitPlan ??
+                buildUsedExitPlan({
+                  decision: run.output.decision,
+                  holdSubtype: run.output.holdSubtype,
+                  itemKind: run.meta.itemKind,
+                  goodsClass: run.meta.goodsClass,
+                  resultTags: run.output.diagnosticTrace?.resultInputsSummary?.tags ?? [],
+                  holdTriggers: run.output.diagnosticTrace?.resultInputsSummary?.holdTriggers ?? [],
+                });
 
               const replayFromHistory = () => {
                 const draft = createReplayDraft(run, resultMode);
@@ -253,6 +264,11 @@ export default function HistoryPage() {
                     <p className="text-xs text-muted-foreground line-clamp-2">
                       要約: {run.output.reasons.slice(0, 2).map((reason) => reason.text).join(" / ") || "理由データなし"}
                     </p>
+                    {usedExitPlan ? (
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        中古出口: {getUsedExitModeLabel(usedExitPlan.mode)} / {usedExitPlan.why[0] ?? "診断に沿った補助導線"}
+                      </p>
+                    ) : null}
                     <p className="text-xs text-muted-foreground line-clamp-1">
                       種別サマリー: {itemKindLabels[run.meta.itemKind ?? "goods"] ?? (run.meta.itemKind ?? "goods")} / {run.output.blockingFactors?.slice(0, 1).join("") || "主要阻害なし"}
                     </p>

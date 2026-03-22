@@ -5,7 +5,7 @@ import {
   resolveAmazonAffiliateDestination,
 } from "@/src/oshihapi/amazonAffiliateConfig";
 import { getProviderConfig, type ProviderId } from "@/src/oshihapi/providerRegistry";
-import { resolveSurugayaAffiliateDestination } from "@/src/oshihapi/surugayaConfig";
+import { buildSurugayaKeyword, buildSurugayaSearchUrl, resolveSurugayaAffiliateDestination } from "@/src/oshihapi/surugayaConfig";
 import { resolveAmiamiAffiliateDestination } from "@/src/oshihapi/amiamiConfig";
 import { resolveGamersAffiliateDestination } from "@/src/oshihapi/gamersConfig";
 import { resolveHmvAffiliateDestination } from "@/src/oshihapi/hmvConfig";
@@ -41,6 +41,23 @@ export function GET(request: NextRequest): NextResponse {
     const target = resolveSurugayaAffiliateDestination({ itemKind, goodsClass });
     if (target) {
       const targetUrl = new URL(target);
+      if (isAllowlistedDomain("surugaya", targetUrl.hostname)) {
+        return NextResponse.redirect(targetUrl);
+      }
+    }
+    return fallbackToHome(request);
+  }
+
+  if (dest === "surugaya-search") {
+    const itemKind = (params.get("itemKind")?.trim() ?? undefined) as ItemKind | undefined;
+    const goodsClass = (params.get("gc")?.trim() ?? undefined) as GoodsClass | undefined;
+    const normalizedKeyword = buildSurugayaKeyword({
+      rawSearchWord: keyword,
+      itemKind,
+      goodsClass,
+    });
+    if (normalizedKeyword) {
+      const targetUrl = new URL(buildSurugayaSearchUrl(normalizedKeyword));
       if (isAllowlistedDomain("surugaya", targetUrl.hostname)) {
         return NextResponse.redirect(targetUrl);
       }

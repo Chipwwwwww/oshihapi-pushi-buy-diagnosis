@@ -64,6 +64,15 @@ export type HoldSubtype =
   | 'conflicting'
   | 'timing_wait';
 export type MerchMethod = 'USED_SINGLE' | 'BOX' | 'BLIND_DRAW' | 'PASS';
+export type UsedExitPlanMode =
+  | 'secondary_compare'
+  | 'check_first'
+  | 'timing_wait_route'
+  | 'delayed_recheck'
+  | 'reference_only';
+export type UsedExitProviderKey = 'mercari' | 'surugaya';
+export type UsedExitProviderRole = 'price_reference' | 'used_fallback' | 'stock_check';
+export type UsedExitProviderVisibility = 'primary' | 'secondary' | 'collapsed';
 
 export type ScoreDimension =
   | 'desire'
@@ -191,6 +200,28 @@ export type ResultInputsSummaryTrace = {
   stopSignals?: string[];
   blockers?: string[];
   holdTriggers?: string[];
+  usedExit?: {
+    shown: boolean;
+    mode: UsedExitPlanMode | null;
+    providers: UsedExitProviderKey[];
+    why: string[];
+    checklistFirstSuppressed: boolean;
+    suppressPurchaseTone: boolean;
+  };
+};
+
+export type UsedExitPlan = {
+  mode: UsedExitPlanMode;
+  why: string[];
+  whatToCheck?: string[];
+  providers: Array<{
+    key: UsedExitProviderKey;
+    role: UsedExitProviderRole;
+    visibility: UsedExitProviderVisibility;
+  }>;
+  whenToRecheck?: string | null;
+  afterChecklist?: string[];
+  suppressPurchaseTone?: boolean;
 };
 
 export type RandomGoodsPlan = {
@@ -331,6 +362,7 @@ export type DecisionOutput = {
     mediaEditionPlan?: MediaEditionPlan;
     randomGoodsPlan?: RandomGoodsPlan;
     venueLimitedGoodsPlan?: VenueLimitedGoodsPlan;
+    usedExitPlan?: UsedExitPlan;
   };
   bandTrace?: ResultBandTrace;
   decision: Decision;
@@ -370,6 +402,7 @@ export type DecisionOutput = {
   mediaEditionPlan?: MediaEditionPlan;
   randomGoodsPlan?: RandomGoodsPlan;
   venueLimitedGoodsPlan?: VenueLimitedGoodsPlan;
+  usedExitPlan?: UsedExitPlan;
 };
 
 
