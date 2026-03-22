@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-22T15:49:13.431Z",
+  "generatedAt": "2026-03-22T16:34:05.542Z",
   "scenarioCount": 32,
   "scenarios": [
     {
@@ -1232,6 +1232,7 @@
     "homepageFunnel": "pass",
     "draftInvalidation": "pass",
     "replaySeed": "pass",
+    "resultContractSweeper": "pass",
     "bandNarrowing": {
       "highSignalBuy": {
         "isHighSignalForBandNarrowing": true,
@@ -1557,6 +1558,759 @@
         "今回の intent 自体が「全部」より1点/1種寄りなので、セット圧をそのまま採用しない方がブレにくい。",
         "欠けを後から埋める余地があるなら、初動で過剰回収するより穴埋め前提の方が安全なことがある。",
         "1店舗で納得できる余地があるなら、全店 chase より「最も合う1店」を選ぶ方が後悔を減らしやすい。"
+      ]
+    }
+  ],
+  "resultContractSweeper": [
+    {
+      "id": "sweeper_blind_draw_exchange_path",
+      "family": "blind_draw / stop line / duplication tolerance / exchange tolerance",
+      "itemKind": "blind_draw",
+      "goodsClass": "small_collection",
+      "selectedAnswers": {
+        "q_goal": "single",
+        "q_motives_multi": [
+          "use"
+        ],
+        "q_addon_blind_draw_duplicate_tolerance": "low",
+        "q_addon_blind_draw_trade_intent": "yes",
+        "q_addon_blind_draw_exchange_friction": "low",
+        "q_addon_blind_draw_stop_budget": "strict",
+        "q_addon_blind_draw_single_fallback": "after_stop"
+      },
+      "verdict": "BUY",
+      "verdictFamily": "buy",
+      "holdSubtype": null,
+      "score": 0.11295000000000005,
+      "band": 18,
+      "lean": {
+        "heading": "判定の傾き",
+        "valueText": "11%"
+      },
+      "positiveFactors": [
+        "欲しい気持ちが強い",
+        "買った後の後悔リスクは低め",
+        "予算にまだ余裕がある"
+      ],
+      "negativeFactors": [],
+      "blocker": null,
+      "whyNotBuyYet": "BUY判定に必要な条件を満たしている。",
+      "whyNotSkipYet": "欲しい気持ちが強いため、満足可能性や機会価値がまだ残っており、即時見送りまでは至らないため。",
+      "nextStep": "追加で引かず、交換前提で整理する（連絡・梱包負担も込みで判断）",
+      "diagnosticsDisplayVerdictKey": "buy",
+      "traceFactorIds": [
+        {
+          "dimension": "desire",
+          "direction": "buy",
+          "label": "欲しい気持ちが強い"
+        },
+        {
+          "dimension": "regretRisk",
+          "direction": "buy",
+          "label": "買った後の後悔リスクは低め"
+        },
+        {
+          "dimension": "affordability",
+          "direction": "buy",
+          "label": "予算にまだ余裕がある"
+        },
+        {
+          "dimension": "urgency",
+          "direction": "buy",
+          "label": "今動く理由が強い"
+        },
+        {
+          "dimension": "impulse",
+          "direction": "buy",
+          "label": "勢い買いの温度は落ち着いている"
+        },
+        {
+          "dimension": "rarity",
+          "direction": "buy",
+          "label": "今回を逃すと拾いにくい"
+        },
+        {
+          "dimension": "restockChance",
+          "direction": "stop",
+          "label": "再販・再入荷の余地がある"
+        },
+        {
+          "dimension": "opportunityCost",
+          "direction": "stop",
+          "label": "他に優先したい使い道がある"
+        }
+      ]
+    },
+    {
+      "id": "sweeper_preorder_low_rerun",
+      "family": "preorder / waiting / bonus pressure / rerun likelihood low",
+      "itemKind": "preorder",
+      "goodsClass": "small_collection",
+      "selectedAnswers": {
+        "q_desire": 5,
+        "q_budget_pain": "ok",
+        "q_price_feel": "good",
+        "q_regret_impulse": "calm",
+        "q_goal": "single",
+        "q_motives_multi": [
+          "content",
+          "use"
+        ],
+        "q_addon_common_info": "enough",
+        "q_rarity_restock": "unlikely",
+        "q_urgency": "last",
+        "q_alternative_plan": "clear"
+      },
+      "verdict": "BUY",
+      "verdictFamily": "buy",
+      "holdSubtype": null,
+      "score": 0.2144196923076923,
+      "band": 18,
+      "lean": {
+        "heading": "判定の傾き",
+        "valueText": "21%"
+      },
+      "positiveFactors": [
+        "欲しい気持ちが強い",
+        "予算にまだ余裕がある",
+        "今回を逃すと拾いにくい"
+      ],
+      "negativeFactors": [],
+      "blocker": "不明点が残っている",
+      "whyNotBuyYet": "BUY判定に必要な条件を満たしている。",
+      "whyNotSkipYet": "欲しい気持ちが強いため、満足可能性や機会価値がまだ残っており、即時見送りまでは至らないため。",
+      "nextStep": "相場を1分だけ見る（中古/通販）",
+      "diagnosticsDisplayVerdictKey": "buy",
+      "traceFactorIds": [
+        {
+          "dimension": "desire",
+          "direction": "buy",
+          "label": "欲しい気持ちが強い"
+        },
+        {
+          "dimension": "affordability",
+          "direction": "buy",
+          "label": "予算にまだ余裕がある"
+        },
+        {
+          "dimension": "rarity",
+          "direction": "buy",
+          "label": "今回を逃すと拾いにくい"
+        },
+        {
+          "dimension": "urgency",
+          "direction": "buy",
+          "label": "今動く理由が強い"
+        },
+        {
+          "dimension": "restockChance",
+          "direction": "buy",
+          "label": "再販・再入荷の見込みが低い"
+        },
+        {
+          "dimension": "regretRisk",
+          "direction": "buy",
+          "label": "買った後の後悔リスクは低め"
+        },
+        {
+          "dimension": "opportunityCost",
+          "direction": "stop",
+          "label": "他に優先したい使い道がある"
+        },
+        {
+          "dimension": "impulse",
+          "direction": "buy",
+          "label": "勢い買いの温度は落ち着いている"
+        }
+      ]
+    },
+    {
+      "id": "sweeper_used_authenticity_conflict",
+      "family": "used / price-check / condition tolerance / authenticity/return sensitivity",
+      "itemKind": "used",
+      "goodsClass": "small_collection",
+      "selectedAnswers": {
+        "q_desire": 5,
+        "q_budget_pain": "ok",
+        "q_price_feel": "good",
+        "q_regret_impulse": "calm",
+        "q_goal": "single",
+        "q_motives_multi": [
+          "use"
+        ],
+        "q_addon_common_info": "enough",
+        "q_addon_used_condition": "hard",
+        "q_addon_used_price_gap": "small",
+        "q_addon_used_defect_return": "not_ok",
+        "q_addon_used_authenticity": "must",
+        "q_addon_used_seller_trust": "low"
+      },
+      "verdict": "THINK",
+      "verdictFamily": "hold",
+      "holdSubtype": "conflicting",
+      "score": 0.04567999999999997,
+      "band": 10,
+      "lean": {
+        "heading": "保留内の傾き",
+        "valueText": "保留帯の中央"
+      },
+      "positiveFactors": [
+        "欲しい気持ちが強い",
+        "予算にまだ余裕がある"
+      ],
+      "negativeFactors": [
+        "他に優先したい使い道がある",
+        "買った後の後悔リスクが高め"
+      ],
+      "blocker": "used特有のリスクが高い",
+      "whyNotBuyYet": "欲しい気持ちが強い一方で、他に優先したい使い道があるも強く、押し切るには危険なため。",
+      "whyNotSkipYet": "欲しい気持ちが強いため、満足可能性や機会価値がまだ残っており、即時見送りまでは至らないため。",
+      "nextStep": "24時間だけ寝かせる（クールダウン）",
+      "diagnosticsDisplayVerdictKey": "hold_conflicting",
+      "traceFactorIds": [
+        {
+          "dimension": "desire",
+          "direction": "buy",
+          "label": "欲しい気持ちが強い"
+        },
+        {
+          "dimension": "affordability",
+          "direction": "buy",
+          "label": "予算にまだ余裕がある"
+        },
+        {
+          "dimension": "opportunityCost",
+          "direction": "stop",
+          "label": "他に優先したい使い道がある"
+        },
+        {
+          "dimension": "regretRisk",
+          "direction": "stop",
+          "label": "買った後の後悔リスクが高め"
+        },
+        {
+          "dimension": "urgency",
+          "direction": "buy",
+          "label": "今動く理由が強い"
+        },
+        {
+          "dimension": "restockChance",
+          "direction": "stop",
+          "label": "再販・再入荷の余地がある"
+        },
+        {
+          "dimension": "rarity",
+          "direction": "buy",
+          "label": "今回を逃すと拾いにくい"
+        },
+        {
+          "dimension": "impulse",
+          "direction": "buy",
+          "label": "勢い買いの温度は落ち着いている"
+        }
+      ]
+    },
+    {
+      "id": "sweeper_media_bonus_pressure",
+      "family": "media / cast motive / rewatch frequency / limited edition / bonus pressure",
+      "itemKind": "goods",
+      "goodsClass": "media",
+      "selectedAnswers": {
+        "q_desire": 4,
+        "q_budget_pain": "some",
+        "q_price_feel": "normal",
+        "q_regret_impulse": "calm",
+        "q_goal": "single",
+        "q_motives_multi": [
+          "content",
+          "bonus",
+          "seiyuu_cast"
+        ],
+        "q_addon_common_info": "enough",
+        "q_addon_media_motive": "cast_performer",
+        "q_addon_media_support_scope": "one_oshi",
+        "q_addon_media_collection_budget": "balanced",
+        "q_addon_media_edition_intent": "limited_preferred",
+        "q_addon_media_bonus_importance": "high",
+        "q_addon_media_multi_store_tolerance": "all_bonuses_or_bust",
+        "q_addon_media_split_order_burden": "high",
+        "q_addon_media_random_goods_intent": "none",
+        "q_addon_voice_cd_kind": "store_bonus_audio",
+        "q_addon_voice_cast_check": "important_confirmed",
+        "q_addon_voice_bonus_is_audio": "core_audio",
+        "q_addon_voice_listen_timing": "archive_main"
+      },
+      "verdict": "BUY",
+      "verdictFamily": "buy",
+      "holdSubtype": null,
+      "score": 0.014719999999999964,
+      "band": 18,
+      "lean": {
+        "heading": "判定の傾き",
+        "valueText": "1%"
+      },
+      "positiveFactors": [
+        "欲しい気持ちが強い",
+        "今動く理由が強い",
+        "予算にまだ余裕がある"
+      ],
+      "negativeFactors": [
+        "買った後の後悔リスクが高め",
+        "勢いで押し切りやすい状態"
+      ],
+      "blocker": "勢い要素が強い",
+      "whyNotBuyYet": "BUY判定に必要な条件を満たしている。",
+      "whyNotSkipYet": "欲しい気持ちが強いため、満足可能性や機会価値がまだ残っており、即時見送りまでは至らないため。",
+      "nextStep": "split order は見送り、送料と管理負担が少ない 1店舗案に戻す",
+      "diagnosticsDisplayVerdictKey": "buy",
+      "traceFactorIds": [
+        {
+          "dimension": "desire",
+          "direction": "buy",
+          "label": "欲しい気持ちが強い"
+        },
+        {
+          "dimension": "regretRisk",
+          "direction": "stop",
+          "label": "買った後の後悔リスクが高め"
+        },
+        {
+          "dimension": "urgency",
+          "direction": "buy",
+          "label": "今動く理由が強い"
+        },
+        {
+          "dimension": "affordability",
+          "direction": "buy",
+          "label": "予算にまだ余裕がある"
+        },
+        {
+          "dimension": "impulse",
+          "direction": "stop",
+          "label": "勢いで押し切りやすい状態"
+        },
+        {
+          "dimension": "opportunityCost",
+          "direction": "stop",
+          "label": "他に優先したい使い道がある"
+        },
+        {
+          "dimension": "restockChance",
+          "direction": "stop",
+          "label": "再販・再入荷の余地がある"
+        },
+        {
+          "dimension": "rarity",
+          "direction": "stop",
+          "label": "あとから拾える余地がある"
+        }
+      ]
+    },
+    {
+      "id": "sweeper_high_desire_low_necessity",
+      "family": "high desire + low necessity",
+      "itemKind": "goods",
+      "goodsClass": "small_collection",
+      "selectedAnswers": {
+        "q_desire": 5,
+        "q_budget_pain": "some",
+        "q_price_feel": "high",
+        "q_regret_impulse": "fomo",
+        "q_goal": "single",
+        "q_motives_multi": [
+          "vague",
+          "fomo"
+        ],
+        "q_addon_common_info": "enough"
+      },
+      "verdict": "BUY",
+      "verdictFamily": "buy",
+      "holdSubtype": null,
+      "score": 0.044480000000000096,
+      "band": 18,
+      "lean": {
+        "heading": "判定の傾き",
+        "valueText": "4%"
+      },
+      "positiveFactors": [
+        "欲しい気持ちが強い",
+        "今動く理由が強い"
+      ],
+      "negativeFactors": [
+        "勢いで押し切りやすい状態",
+        "買った後の後悔リスクが高め"
+      ],
+      "blocker": "勢い要素が強い",
+      "whyNotBuyYet": "BUY判定に必要な条件を満たしている。",
+      "whyNotSkipYet": "欲しい気持ちが強いため、満足可能性や機会価値がまだ残っており、即時見送りまでは至らないため。",
+      "nextStep": "10分だけクールダウン（カート保持）→ その後もう一回だけ判断しよ。",
+      "diagnosticsDisplayVerdictKey": "buy",
+      "traceFactorIds": [
+        {
+          "dimension": "desire",
+          "direction": "buy",
+          "label": "欲しい気持ちが強い"
+        },
+        {
+          "dimension": "urgency",
+          "direction": "buy",
+          "label": "今動く理由が強い"
+        },
+        {
+          "dimension": "impulse",
+          "direction": "stop",
+          "label": "勢いで押し切りやすい状態"
+        },
+        {
+          "dimension": "regretRisk",
+          "direction": "stop",
+          "label": "買った後の後悔リスクが高め"
+        },
+        {
+          "dimension": "affordability",
+          "direction": "stop",
+          "label": "今月の負担が重い"
+        },
+        {
+          "dimension": "restockChance",
+          "direction": "buy",
+          "label": "再販・再入荷の見込みが低い"
+        },
+        {
+          "dimension": "rarity",
+          "direction": "stop",
+          "label": "あとから拾える余地がある"
+        },
+        {
+          "dimension": "opportunityCost",
+          "direction": "buy",
+          "label": "他に回したい使い道は少ない"
+        }
+      ]
+    },
+    {
+      "id": "sweeper_mild_middle_hold",
+      "family": "mild middle-band hold",
+      "itemKind": "goods",
+      "goodsClass": "small_collection",
+      "selectedAnswers": {
+        "q_desire": 4,
+        "q_budget_pain": "some",
+        "q_price_feel": "unknown",
+        "q_regret_impulse": "calm",
+        "q_goal": "single",
+        "q_motives_multi": [
+          "use"
+        ],
+        "q_addon_common_info": "lack"
+      },
+      "verdict": "THINK",
+      "verdictFamily": "hold",
+      "holdSubtype": "needs_check",
+      "score": -0.05748461538461543,
+      "band": 18,
+      "lean": {
+        "heading": "保留内の傾き",
+        "valueText": "保留帯の中央"
+      },
+      "positiveFactors": [
+        "欲しい気持ちが強い"
+      ],
+      "negativeFactors": [
+        "他に優先したい使い道がある"
+      ],
+      "blocker": "不明点が残っている",
+      "whyNotBuyYet": "他に優先したい使い道がある。 まだ不明点が残っており、相場・状態・再販導線などの重要確認が埋まるまで買い切れないため。",
+      "whyNotSkipYet": "欲しい気持ちが強いため、満足可能性や機会価値がまだ残っており、即時見送りまでは至らないため。",
+      "nextStep": "24時間だけ寝かせる（クールダウン）",
+      "diagnosticsDisplayVerdictKey": "hold_needs_check",
+      "traceFactorIds": [
+        {
+          "dimension": "desire",
+          "direction": "buy",
+          "label": "欲しい気持ちが強い"
+        },
+        {
+          "dimension": "opportunityCost",
+          "direction": "stop",
+          "label": "他に優先したい使い道がある"
+        },
+        {
+          "dimension": "affordability",
+          "direction": "buy",
+          "label": "予算にまだ余裕がある"
+        },
+        {
+          "dimension": "restockChance",
+          "direction": "stop",
+          "label": "再販・再入荷の余地がある"
+        },
+        {
+          "dimension": "urgency",
+          "direction": "stop",
+          "label": "今すぐでなくてもよい"
+        },
+        {
+          "dimension": "rarity",
+          "direction": "stop",
+          "label": "あとから拾える余地がある"
+        },
+        {
+          "dimension": "impulse",
+          "direction": "buy",
+          "label": "勢い買いの温度は落ち着いている"
+        },
+        {
+          "dimension": "regretRisk",
+          "direction": "buy",
+          "label": "買った後の後悔リスクは低め"
+        }
+      ]
+    },
+    {
+      "id": "sweeper_low_restock_expectation",
+      "family": "low rerun/reprint expectation",
+      "itemKind": "preorder",
+      "goodsClass": "small_collection",
+      "selectedAnswers": {
+        "q_desire": 2,
+        "q_budget_pain": "ok",
+        "q_price_feel": "low",
+        "q_regret_impulse": "calm",
+        "q_goal": "single",
+        "q_motives_multi": [
+          "content"
+        ],
+        "q_addon_common_info": "enough",
+        "q_rarity_restock": "unlikely",
+        "q_urgency": "low_stock",
+        "q_alternative_plan": "clear"
+      },
+      "verdict": "SKIP",
+      "verdictFamily": "stop",
+      "holdSubtype": null,
+      "score": -0.03968753846153849,
+      "band": 18,
+      "lean": {
+        "heading": "判定の傾き",
+        "valueText": "-4%"
+      },
+      "positiveFactors": [
+        "予算にまだ余裕がある",
+        "今回を逃すと拾いにくい",
+        "再販・再入荷の見込みが低い"
+      ],
+      "negativeFactors": [
+        "欲しい気持ちはまだ決め手ではない"
+      ],
+      "blocker": "不明点が残っている",
+      "whyNotBuyYet": "欲しい気持ちはまだ決め手ではない。 リスクに対して見返り確信が不足しているため。",
+      "whyNotSkipYet": "SKIP判定に必要な阻害要因が十分に揃っている。",
+      "nextStep": "相場を1分だけ見る（中古/通販）",
+      "diagnosticsDisplayVerdictKey": "stop",
+      "traceFactorIds": [
+        {
+          "dimension": "affordability",
+          "direction": "buy",
+          "label": "予算にまだ余裕がある"
+        },
+        {
+          "dimension": "desire",
+          "direction": "stop",
+          "label": "欲しい気持ちはまだ決め手ではない"
+        },
+        {
+          "dimension": "rarity",
+          "direction": "buy",
+          "label": "今回を逃すと拾いにくい"
+        },
+        {
+          "dimension": "restockChance",
+          "direction": "buy",
+          "label": "再販・再入荷の見込みが低い"
+        },
+        {
+          "dimension": "opportunityCost",
+          "direction": "stop",
+          "label": "他に優先したい使い道がある"
+        },
+        {
+          "dimension": "urgency",
+          "direction": "buy",
+          "label": "今動く理由が強い"
+        },
+        {
+          "dimension": "regretRisk",
+          "direction": "stop",
+          "label": "買った後の後悔リスクが高め"
+        },
+        {
+          "dimension": "impulse",
+          "direction": "buy",
+          "label": "勢い買いの温度は落ち着いている"
+        }
+      ]
+    },
+    {
+      "id": "sweeper_ambiguous_legitimate_hold",
+      "family": "ambiguous-but-legitimate hold",
+      "itemKind": "goods",
+      "goodsClass": "small_collection",
+      "selectedAnswers": {
+        "q_desire": 4,
+        "q_budget_pain": "ok",
+        "q_price_feel": "unknown",
+        "q_regret_impulse": "calm",
+        "q_addon_common_info": "lack",
+        "q_addon_goods_event_limit_context": "venue_limited",
+        "q_addon_goods_post_event_mailorder": "unknown",
+        "q_addon_goods_wait_tolerance": "unknown",
+        "q_addon_goods_used_fallback": "unknown"
+      },
+      "verdict": "THINK",
+      "verdictFamily": "hold",
+      "holdSubtype": "needs_check",
+      "score": -0.037134461538461505,
+      "band": 18,
+      "lean": {
+        "heading": "保留内の傾き",
+        "valueText": "保留帯の中央"
+      },
+      "positiveFactors": [
+        "欲しい気持ちが強い",
+        "予算にまだ余裕がある"
+      ],
+      "negativeFactors": [
+        "他に優先したい使い道がある"
+      ],
+      "blocker": "不明点が残っている",
+      "whyNotBuyYet": "他に優先したい使い道がある。 まだ不明点が残っており、相場・状態・再販導線などの重要確認が埋まるまで買い切れないため。",
+      "whyNotSkipYet": "欲しい気持ちが強いため、満足可能性や機会価値がまだ残っており、即時見送りまでは至らないため。",
+      "nextStep": "まず「本当に会場限定か」「事後通販の根拠」「待てるか」「中古回復を使うか」を確認する。",
+      "diagnosticsDisplayVerdictKey": "hold_needs_check",
+      "traceFactorIds": [
+        {
+          "dimension": "desire",
+          "direction": "buy",
+          "label": "欲しい気持ちが強い"
+        },
+        {
+          "dimension": "opportunityCost",
+          "direction": "stop",
+          "label": "他に優先したい使い道がある"
+        },
+        {
+          "dimension": "affordability",
+          "direction": "buy",
+          "label": "予算にまだ余裕がある"
+        },
+        {
+          "dimension": "urgency",
+          "direction": "buy",
+          "label": "今動く理由が強い"
+        },
+        {
+          "dimension": "rarity",
+          "direction": "buy",
+          "label": "今回を逃すと拾いにくい"
+        },
+        {
+          "dimension": "regretRisk",
+          "direction": "buy",
+          "label": "買った後の後悔リスクは低め"
+        },
+        {
+          "dimension": "restockChance",
+          "direction": "buy",
+          "label": "再販・再入荷の見込みが低い"
+        },
+        {
+          "dimension": "impulse",
+          "direction": "stop",
+          "label": "勢いで押し切りやすい状態"
+        }
+      ]
+    },
+    {
+      "id": "sweeper_clear_skip",
+      "family": "cases that should clearly land closer to BUY / HOLD / SKIP",
+      "itemKind": "goods",
+      "goodsClass": "small_collection",
+      "selectedAnswers": {
+        "q_desire": 1,
+        "q_budget_pain": "force",
+        "q_price_feel": "high",
+        "q_regret_impulse": "fomo",
+        "q_addon_common_info": "lack",
+        "q_goal": "set",
+        "q_motives_multi": [
+          "vague",
+          "fomo"
+        ]
+      },
+      "verdict": "SKIP",
+      "verdictFamily": "stop",
+      "holdSubtype": null,
+      "score": -0.3730892307692308,
+      "band": 18,
+      "lean": {
+        "heading": "判定の傾き",
+        "valueText": "-37%"
+      },
+      "positiveFactors": [
+        "今動く理由が強い"
+      ],
+      "negativeFactors": [
+        "欲しい気持ちはまだ決め手ではない",
+        "買った後の後悔リスクが高め",
+        "今月の負担が重い"
+      ],
+      "blocker": "予算圧が高い",
+      "whyNotBuyYet": "欲しい気持ちはまだ決め手ではない。 リスクに対して見返り確信が不足しているため。",
+      "whyNotSkipYet": "SKIP判定に必要な阻害要因が十分に揃っている。",
+      "nextStep": "10分だけクールダウン（カート保持）→ その後もう一回だけ判断しよ。",
+      "diagnosticsDisplayVerdictKey": "stop",
+      "traceFactorIds": [
+        {
+          "dimension": "desire",
+          "direction": "stop",
+          "label": "欲しい気持ちはまだ決め手ではない"
+        },
+        {
+          "dimension": "regretRisk",
+          "direction": "stop",
+          "label": "買った後の後悔リスクが高め"
+        },
+        {
+          "dimension": "affordability",
+          "direction": "stop",
+          "label": "今月の負担が重い"
+        },
+        {
+          "dimension": "opportunityCost",
+          "direction": "stop",
+          "label": "他に優先したい使い道がある"
+        },
+        {
+          "dimension": "urgency",
+          "direction": "buy",
+          "label": "今動く理由が強い"
+        },
+        {
+          "dimension": "impulse",
+          "direction": "stop",
+          "label": "勢いで押し切りやすい状態"
+        },
+        {
+          "dimension": "restockChance",
+          "direction": "buy",
+          "label": "再販・再入荷の見込みが低い"
+        },
+        {
+          "dimension": "rarity",
+          "direction": "stop",
+          "label": "あとから拾える余地がある"
+        }
       ]
     }
   ],

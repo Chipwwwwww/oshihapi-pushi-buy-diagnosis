@@ -45,7 +45,7 @@ const FACTOR_LABELS: Record<ScoreDimension, { buy: string; stop: string }> = {
   },
 };
 
-const DISPLAY_FACTOR_MIN_ABS = 0.03;
+export const DISPLAY_FACTOR_MIN_ABS = 0.03;
 
 export function buildSignedFactorContributions(
   scores: Record<ScoreDimension, number>,
@@ -68,16 +68,28 @@ export function buildSignedFactorContributions(
     .sort((a, b) => Math.abs(b.signedContribution) - Math.abs(a.signedContribution));
 }
 
+
+export function getVisibleSignedFactorContributions(
+  contributions: SignedFactorContribution[],
+  direction: "buy" | "stop",
+  count = 3,
+): SignedFactorContribution[] {
+  return contributions
+    .filter((entry) => entry.direction === direction && Math.abs(entry.signedContribution) >= DISPLAY_FACTOR_MIN_ABS)
+    .sort((a, b) => Math.abs(b.signedContribution) - Math.abs(a.signedContribution))
+    .slice(0, count);
+}
+
+export function isHoldLeanDisplayCoherent(valueText: string): boolean {
+  return valueText.includes("保留") && !valueText.includes("%");
+}
+
 export function getSignedFactorLabels(
   contributions: SignedFactorContribution[],
   direction: "buy" | "stop",
   count = 3,
 ): string[] {
-  return contributions
-    .filter((entry) => entry.direction === direction && Math.abs(entry.signedContribution) >= DISPLAY_FACTOR_MIN_ABS)
-    .sort((a, b) => Math.abs(b.signedContribution) - Math.abs(a.signedContribution))
-    .slice(0, count)
-    .map((entry) => entry.label);
+  return getVisibleSignedFactorContributions(contributions, direction, count).map((entry) => entry.label);
 }
 
 export function getLeanDisplay(decision: Decision, score: number): {

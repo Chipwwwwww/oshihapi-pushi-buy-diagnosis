@@ -11,7 +11,7 @@ Module._resolveFilename = function patchedResolve(request, parent, isMain, optio
   return originalResolveFilename.call(this, request, parent, isMain, options);
 };
 
-require.extensions['.ts'] = function registerTs(module, filename) {
+function registerTs(module, filename) {
   const source = fs.readFileSync(filename, 'utf8');
   const transpiled = ts.transpileModule(source, {
     compilerOptions: {
@@ -23,7 +23,10 @@ require.extensions['.ts'] = function registerTs(module, filename) {
     fileName: filename,
   });
   module._compile(transpiled.outputText, filename);
-};
+}
+
+require.extensions['.ts'] = registerTs;
+require.extensions['.tsx'] = registerTs;
 
 const target = process.argv[2];
 if (!target) {
